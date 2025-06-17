@@ -20,9 +20,12 @@ EXPORT QObject *HighlightWidget(QWidget *widget, QColor startColor,
 
 EXPORT void SetHeightToContentHeight(QListWidget *list);
 EXPORT void SetButtonIcon(QAbstractButton *button, const char *path);
+
 EXPORT int
 FindIdxInRagne(QComboBox *list, int start, int stop, const std::string &value,
 	       Qt::MatchFlags = Qt::MatchExactly | Qt::MatchCaseSensitive);
+EXPORT void SetRowVisibleByValue(QComboBox *list, const QString &value,
+				 bool show);
 
 EXPORT bool DisplayMessage(const QString &msg, bool question = false,
 			   bool modal = true);

@@ -20,6 +20,11 @@ int FindIdxInRagne(QComboBox *list, int start, int stop,
 	return -1;
 }
 
+void SetRowMatchingValueVisible(QComboBox *list, const QString &value,
+				bool show)
+{
+}
+
 bool DisplayMessage(const QString &msg, bool question, bool modal)
 {
 	return false;

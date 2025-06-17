@@ -32,6 +32,7 @@ public:
 		SETTINGS_CHANGED,
 		INDIVIDUAL_SETTING_MATCH,
 		INDIVIDUAL_SETTING_CHANGED,
+		INDIVIDUAL_SETTING_LIST_ENTRY_MATCH,
 	};
 	void SetCondition(Condition);
 	Condition GetCondition() const { return _condition; }

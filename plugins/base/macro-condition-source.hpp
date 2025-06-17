@@ -33,6 +33,7 @@ public:
 		INDIVIDUAL_SETTING_CHANGED,
 		HEIGHT,
 		WIDTH,
+		INDIVIDUAL_SETTING_LIST_ENTRY_MATCH,
 	};
 	void SetCondition(Condition);
 	Condition GetCondition() const { return _condition; }

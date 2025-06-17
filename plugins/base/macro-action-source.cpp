@@ -3,6 +3,7 @@
 #include "json-helpers.hpp"
 #include "selection-helpers.hpp"
 #include "source-settings-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <obs-frontend-api.h>
 
@@ -67,10 +68,13 @@ const static std::map<obs_deinterlace_field_order, std::string>
 		 "AdvSceneSwitcher.action.source.deinterlaceOrder.bottomFieldFirst"},
 };
 
-const static std::map<MacroActionSource::SettingsInputMethod, std::string>
+static const std::vector<
+	std::pair<MacroActionSource::SettingsInputMethod, std::string>>
 	inputMethods = {
 		{MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL,
 		 "AdvSceneSwitcher.action.source.inputMethod.individualManual"},
+		{MacroActionSource::SettingsInputMethod::INDIVIDUAL_LIST_ENTRY,
+		 "AdvSceneSwitcher.action.source.inputMethod.individualListEntryManual"},
 		{MacroActionSource::SettingsInputMethod::INDIVIDUAL_TEMPVAR,
 		 "AdvSceneSwitcher.action.source.inputMethod.individualTempvar"},
 		{MacroActionSource::SettingsInputMethod::JSON_STRING,
@@ -118,6 +122,10 @@ bool MacroActionSource::PerformAction()
 		switch (_settingsInputMethod) {
 		case SettingsInputMethod::INDIVIDUAL_MANUAL:
 			SetSourceSetting(s, _setting, _manualSettingValue);
+			break;
+		case SettingsInputMethod::INDIVIDUAL_LIST_ENTRY:
+			SetSourceSettingListEntryValueByName(
+				s, _setting, _manualSettingValue);
 			break;
 		case SettingsInputMethod::INDIVIDUAL_TEMPVAR: {
 			auto var = _tempVar.GetTempVariable(GetMacro());
@@ -263,9 +271,8 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-template<class T>
-static inline void populateModeSelection(QComboBox *list,
-					 const std::map<T, std::string> &modes)
+template<typename T>
+static inline void populateModeSelection(QComboBox *list, const T &modes)
 {
 	list->clear();
 	for (const auto &[value, name] : modes) {
@@ -343,7 +350,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 
 	auto entryLayout = new QHBoxLayout;
 	entryLayout->setContentsMargins(0, 0, 0, 0);
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
 		{"{{actions}}", _actions},
 		{"{{settings}}", _sourceSettings},
@@ -444,6 +451,13 @@ void MacroActionSourceEdit::GetSettingsClicked()
 					      _entryData->_setting)
 				.value_or(""));
 		break;
+	case MacroActionSource::SettingsInputMethod::INDIVIDUAL_LIST_ENTRY:
+		_manualSettingValue->setPlainText(
+			GetSourceSettingListEntryName(
+				_entryData->_source.GetSource(),
+				_entryData->_setting)
+				.value_or(""));
+		break;
 	case MacroActionSource::SettingsInputMethod::INDIVIDUAL_TEMPVAR:
 		break;
 	case MacroActionSource::SettingsInputMethod::JSON_STRING:
@@ -497,6 +511,7 @@ void MacroActionSourceEdit::SelectionChanged(const SourceSetting &setting)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
+	SetWidgetVisibility();
 }
 
 void MacroActionSourceEdit::ManualSettingsValueChanged()
@@ -512,6 +527,22 @@ void MacroActionSourceEdit::ManualSettingsValueChanged()
 void MacroActionSourceEdit::RefreshVariableSourceSelectionValue()
 {
 	_sourceSettings->SetSource(_entryData->_source.GetSource());
+}
+
+static QString GetIndividualListEntryName()
+{
+	static const auto matchesInput =
+		[](const std::pair<MacroActionSource::SettingsInputMethod,
+				   std::string> &p) {
+			return p.first ==
+			       MacroActionSource::SettingsInputMethod::
+				       INDIVIDUAL_LIST_ENTRY;
+		};
+	static const QString listValueText(
+		obs_module_text(std::find_if(inputMethods.begin(),
+					     inputMethods.end(), matchesInput)
+					->second.c_str()));
+	return listValueText;
 }
 
 void MacroActionSourceEdit::SetWidgetVisibility()
@@ -532,6 +563,11 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 		_entryData->_settingsInputMethod !=
 			MacroActionSource::SettingsInputMethod::
 				INDIVIDUAL_TEMPVAR);
+
+	SetRowVisibleByValue(_settingsInputMethods,
+			     GetIndividualListEntryName(),
+			     _entryData->_setting.IsList());
+
 	_tempVars->setVisible(_entryData->_action ==
 				      MacroActionSource::Action::SETTINGS &&
 			      _entryData->_settingsInputMethod ==
@@ -539,8 +575,11 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 					      INDIVIDUAL_TEMPVAR);
 
 	if (_entryData->_action == MacroActionSource::Action::SETTINGS &&
-	    _entryData->_settingsInputMethod ==
-		    MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL) {
+	    (_entryData->_settingsInputMethod ==
+		     MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL ||
+	     _entryData->_settingsInputMethod ==
+		     MacroActionSource::SettingsInputMethod::
+			     INDIVIDUAL_LIST_ENTRY)) {
 		RemoveStretchIfPresent(_settingsLayout);
 		_manualSettingValue->show();
 	} else {
@@ -563,8 +602,12 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 		MacroActionSource::Action::DEINTERLACE_FIELD_ORDER);
 
 	_refreshSettingSelection->setVisible(
-		_entryData->_settingsInputMethod ==
-			MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL &&
+		(_entryData->_settingsInputMethod ==
+			 MacroActionSource::SettingsInputMethod::
+				 INDIVIDUAL_MANUAL ||
+		 _entryData->_settingsInputMethod ==
+			 MacroActionSource::SettingsInputMethod::
+				 INDIVIDUAL_LIST_ENTRY) &&
 		_entryData->_source.GetType() ==
 			SourceSelection::Type::VARIABLE);
 

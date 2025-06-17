@@ -3,6 +3,7 @@
 #include "json-helpers.hpp"
 #include "source-settings-helpers.hpp"
 #include "selection-helpers.hpp"
+#include "ui-helpers.hpp"
 
 namespace advss {
 
@@ -26,10 +27,13 @@ const static std::map<MacroActionFilter::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.filter.type.pressSettingsButton"},
 };
 
-const static std::map<MacroActionFilter::SettingsInputMethod, std::string>
+const static std::vector<
+	std::pair<MacroActionFilter::SettingsInputMethod, std::string>>
 	inputMethods = {
 		{MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL,
 		 "AdvSceneSwitcher.action.filter.inputMethod.individualManual"},
+		{MacroActionFilter::SettingsInputMethod::INDIVIDUAL_LIST_ENTRY,
+		 "AdvSceneSwitcher.action.filter.inputMethod.individualListEntryManual"},
 		{MacroActionFilter::SettingsInputMethod::INDIVIDUAL_TEMPVAR,
 		 "AdvSceneSwitcher.action.filter.inputMethod.individualTempvar"},
 		{MacroActionFilter::SettingsInputMethod::JSON_STRING,
@@ -58,6 +62,10 @@ static void performActionHelper(
 		switch (settingsInputMethod) {
 		case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL:
 			SetSourceSetting(source, setting, manualSettingValue);
+			break;
+		case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_LIST_ENTRY:
+			SetSourceSettingListEntryValueByName(
+				source, setting, manualSettingValue);
 			break;
 		case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_TEMPVAR: {
 			auto var = tempVar.GetTempVariable(macro);
@@ -373,6 +381,16 @@ void MacroActionFilterEdit::GetSettingsClicked()
 				.value_or(""));
 		break;
 	}
+	case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_LIST_ENTRY: {
+		const auto filters =
+			_entryData->_filter.GetFilters(_entryData->_source);
+		_manualSettingValue->setPlainText(
+			GetSourceSettingListEntryName(
+				filters.empty() ? nullptr : filters.at(0),
+				_entryData->_setting)
+				.value_or(""));
+		break;
+	}
 	case MacroActionFilter::SettingsInputMethod::INDIVIDUAL_TEMPVAR:
 		break;
 	case MacroActionFilter::SettingsInputMethod::JSON_STRING: {
@@ -415,6 +433,7 @@ void MacroActionFilterEdit::SelectionChanged(const SourceSetting &setting)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_setting = setting;
+	SetWidgetVisibility();
 }
 
 void MacroActionFilterEdit::ManualSettingsValueChanged()
@@ -438,6 +457,22 @@ void MacroActionFilterEdit::ButtonChanged(const SourceSettingButton &button)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_button = button;
+}
+
+static QString GetIndividualListEntryName()
+{
+	static const auto matchesInput =
+		[](const std::pair<MacroActionFilter::SettingsInputMethod,
+				   std::string> &p) {
+			return p.first ==
+			       MacroActionFilter::SettingsInputMethod::
+				       INDIVIDUAL_LIST_ENTRY;
+		};
+	static const QString listValueText(
+		obs_module_text(std::find_if(inputMethods.begin(),
+					     inputMethods.end(), matchesInput)
+					->second.c_str()));
+	return listValueText;
 }
 
 void MacroActionFilterEdit::SetWidgetVisibility()
@@ -464,9 +499,16 @@ void MacroActionFilterEdit::SetWidgetVisibility()
 				      MacroActionFilter::SettingsInputMethod::
 					      INDIVIDUAL_TEMPVAR);
 
+	SetRowVisibleByValue(_settingsInputMethods,
+			     GetIndividualListEntryName(),
+			     _entryData->_setting.IsList());
+
 	if (_entryData->_action == MacroActionFilter::Action::SETTINGS &&
-	    _entryData->_settingsInputMethod ==
-		    MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL) {
+	    (_entryData->_settingsInputMethod ==
+		     MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL ||
+	     _entryData->_settingsInputMethod ==
+		     MacroActionFilter::SettingsInputMethod::
+			     INDIVIDUAL_LIST_ENTRY)) {
 		RemoveStretchIfPresent(_settingsLayout);
 		_manualSettingValue->show();
 	} else {
@@ -475,8 +517,12 @@ void MacroActionFilterEdit::SetWidgetVisibility()
 	}
 
 	_refreshSettingSelection->setVisible(
-		_entryData->_settingsInputMethod ==
-			MacroActionFilter::SettingsInputMethod::INDIVIDUAL_MANUAL &&
+		(_entryData->_settingsInputMethod ==
+			 MacroActionFilter::SettingsInputMethod::
+				 INDIVIDUAL_MANUAL ||
+		 _entryData->_settingsInputMethod ==
+			 MacroActionFilter::SettingsInputMethod::
+				 INDIVIDUAL_LIST_ENTRY) &&
 		(_entryData->_source.GetType() ==
 			 SourceSelection::Type::VARIABLE ||
 		 _entryData->_filter.GetType() ==
