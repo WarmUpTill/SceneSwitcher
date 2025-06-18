@@ -80,6 +80,8 @@ function(set_target_properties_plugin target)
 
   configure_file(cmake/windows/resources/installer-Windows.iss.in
                  "${CMAKE_CURRENT_BINARY_DIR}/installer-Windows.generated.iss")
+  configure_file(data/res/images/logo.ico
+                 "${CMAKE_CURRENT_BINARY_DIR}/installer.ico" COPYONLY)
 
   configure_file(cmake/windows/resources/resource.rc.in
                  "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc")
