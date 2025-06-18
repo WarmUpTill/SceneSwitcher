@@ -20,6 +20,8 @@ OutputBaseFilename={#MyAppName}-{#MyAppVersion}-Windows-Installer
 Compression=lzma
 SolidCompression=yes
 DirExistsWarning=no
+SetupIconFile=installer.ico
+UninstallDisplayIcon={app}\data\obs-plugins\advanced-scene-switcher\res\images\logo.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
