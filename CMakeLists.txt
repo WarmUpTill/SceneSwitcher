@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.26)
+cmake_minimum_required(VERSION 3.21...3.26)
 
 project(advanced-scene-switcher VERSION 1.0.0)
 
