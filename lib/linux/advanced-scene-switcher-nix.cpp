@@ -280,6 +280,11 @@ int getActiveWindow(Window *&window)
 
 void GetCurrentWindowTitle(std::string &title)
 {
+	if (KWin) {
+		title = FocusNotifier::getActiveWindowTitle();
+		return;
+	}
+
 	Window *data = 0;
 	if (getActiveWindow(data) != Success || !data) {
 		return;
@@ -291,10 +296,6 @@ void GetCurrentWindowTitle(std::string &title)
 
 	auto name = getWindowName(data[0]);
 	XFree(data);
-
-	if (KWin) {
-		name = FocusNotifier::getActiveWindowTitle();
-	}
 
 	if (name.empty()) {
 		return;
