@@ -9,6 +9,7 @@
 #include "ui-helpers.hpp"
 
 #include <QHBoxLayout>
+#include "macro-edit.hpp"
 
 namespace advss {
 
