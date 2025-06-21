@@ -447,7 +447,8 @@ else()
     )
   endif()
   target_include_directories(${LIB_NAME} PRIVATE "${PROC_INCLUDE_DIR}")
-  target_sources(${LIB_NAME} PRIVATE lib/linux/advanced-scene-switcher-nix.cpp lib/linux/kwin-helpers.cpp)
+  target_sources(${LIB_NAME} PRIVATE lib/linux/advanced-scene-switcher-nix.cpp
+                                     lib/linux/kwin-helpers.cpp)
 
   # Don't include irrelevant folders into sources archive
   list(APPEND CPACK_SOURCE_IGNORE_FILES "\\.deps/.*")
