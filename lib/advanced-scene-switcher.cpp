@@ -146,16 +146,7 @@ void AdvSceneSwitcher::LoadUI()
 bool AdvSceneSwitcher::eventFilter(QObject *obj, QEvent *event)
 {
 	auto eventType = event->type();
-	if (obj == ui->macroElseActions && eventType == QEvent::Resize) {
-		QResizeEvent *resizeEvent = static_cast<QResizeEvent *>(event);
-
-		if (resizeEvent->size().height() == 0) {
-			SetElseActionsStateToHidden();
-			return QDialog::eventFilter(obj, event);
-		}
-
-		SetElseActionsStateToVisible();
-	} else if (eventType == QEvent::KeyPress) {
+	if (eventType == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 		auto pressedKey = keyEvent->key();
 
@@ -742,6 +733,21 @@ void AdvSceneSwitcher::HighlightMacroSettingsButton(bool enable)
 	}
 
 	highlight = HighlightWidget(ui->macroSettings, Qt::green);
+}
+
+void AdvSceneSwitcher::HighlightAction(int idx, QColor color) const
+{
+	ui->macroEdit->HighlightAction(idx, color);
+}
+
+void AdvSceneSwitcher::HighlightElseAction(int idx, QColor color) const
+{
+	ui->macroEdit->HighlightElseAction(idx, color);
+}
+
+void AdvSceneSwitcher::HighlightCondition(int idx, QColor color) const
+{
+	ui->macroEdit->HighlightCondition(idx, color);
 }
 
 void HighlightMacroSettingsButton(bool enable)

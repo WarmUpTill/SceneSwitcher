@@ -13,7 +13,7 @@ struct MacroSegmentCopyInfo {
 };
 static MacroSegmentCopyInfo copyInfo;
 
-void AdvSceneSwitcher::CopyMacroSegment()
+void MacroEdit::CopyMacroSegment()
 {
 	copyInfo.segment.reset();
 	copyInfo.type = MacroSegmentCopyInfo::Type::NONE;
@@ -23,7 +23,7 @@ void AdvSceneSwitcher::CopyMacroSegment()
 		return;
 	}
 
-	auto macro = GetSelectedMacro();
+	auto macro = _currentMacro;
 	if (!macro) {
 		return;
 	}
@@ -43,13 +43,13 @@ void AdvSceneSwitcher::CopyMacroSegment()
 	}
 }
 
-void AdvSceneSwitcher::PasteMacroSegment()
+void MacroEdit::PasteMacroSegment()
 {
 	if (copyInfo.type == MacroSegmentCopyInfo::Type::NONE) {
 		return;
 	}
 
-	auto macro = GetSelectedMacro();
+	auto macro = _currentMacro;
 	if (!macro || !copyInfo.segment) {
 		return;
 	}
@@ -113,14 +113,14 @@ void SetCopySegmentTargetActionType(bool setToElseAction)
 	}
 }
 
-void SetupSegmentCopyPasteShortcutHandlers(AdvSceneSwitcher *window)
+void SetupSegmentCopyPasteShortcutHandlers(MacroEdit *edit)
 {
-	auto copyShortcut = new QShortcut(QKeySequence("Ctrl+C"), window);
-	QWidget::connect(copyShortcut, &QShortcut::activated, window,
-			 &AdvSceneSwitcher::CopyMacroSegment);
-	auto pasteShortcut = new QShortcut(QKeySequence("Ctrl+V"), window);
-	QWidget::connect(pasteShortcut, &QShortcut::activated, window,
-			 &AdvSceneSwitcher::PasteMacroSegment);
+	auto copyShortcut = new QShortcut(QKeySequence("Ctrl+C"), edit);
+	QWidget::connect(copyShortcut, &QShortcut::activated, edit,
+			 &MacroEdit::CopyMacroSegment);
+	auto pasteShortcut = new QShortcut(QKeySequence("Ctrl+V"), edit);
+	QWidget::connect(pasteShortcut, &QShortcut::activated, edit,
+			 &MacroEdit::PasteMacroSegment);
 }
 
 } // namespace advss
