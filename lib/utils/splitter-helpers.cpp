@@ -30,4 +30,36 @@ void LoadSplitterPos(QList<int> &sizes, obs_data_t *obj,
 	obs_data_array_release(array);
 }
 
+void CenterSplitterPosition(QSplitter *splitter)
+{
+	SetSplitterPositionByFraction(splitter, 0.5);
+}
+
+void SetSplitterPositionByFraction(QSplitter *splitter, double fraction)
+{
+	int value1 = (double)QWIDGETSIZE_MAX * fraction;
+	int value2 = (double)QWIDGETSIZE_MAX * (1.0 - fraction);
+	splitter->setSizes(QList<int>() << value1 << value2);
+}
+
+void MaximizeFirstSplitterEntry(QSplitter *splitter)
+{
+	QList<int> newSizes;
+	newSizes << QWIDGETSIZE_MAX;
+	for (int i = 0; i < splitter->sizes().size() - 1; i++) {
+		newSizes << 0;
+	}
+	splitter->setSizes(newSizes);
+}
+
+void ReduceSizeOfSplitterIdx(QSplitter *splitter, int idx)
+{
+	auto sizes = splitter->sizes();
+	int sum = sizes[0] + sizes[1];
+	int reducedSize = sum / 10;
+	sizes[idx] = reducedSize;
+	sizes[(idx + 1) % 2] = sum - reducedSize;
+	splitter->setSizes(sizes);
+}
+
 } // namespace advss
