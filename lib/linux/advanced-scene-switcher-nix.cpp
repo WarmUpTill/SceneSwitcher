@@ -32,6 +32,7 @@
 #endif
 #include <fstream>
 #include <sstream>
+#include "kwin-helpers.h"
 
 namespace advss {
 
@@ -43,6 +44,10 @@ typedef int (*XScreenSaverQueryInfoFunc)(Display *, Window, XScreenSaverInfo *);
 static XScreenSaverAllocInfoFunc allocSSFunc = nullptr;
 static XScreenSaverQueryInfoFunc querySSFunc = nullptr;
 bool canGetIdleTime = false;
+
+static bool KWin = false;
+static FocusNotifier notifier;
+static QString KWinScriptObjectPath;
 
 static QLibrary *libprocps = nullptr;
 #ifdef PROCPS_AVAILABLE
@@ -275,6 +280,11 @@ int getActiveWindow(Window *&window)
 
 void GetCurrentWindowTitle(std::string &title)
 {
+	if (KWin) {
+		title = FocusNotifier::getActiveWindowTitle();
+		return;
+	}
+
 	Window *data = 0;
 	if (getActiveWindow(data) != Success || !data) {
 		return;
@@ -286,6 +296,7 @@ void GetCurrentWindowTitle(std::string &title)
 
 	auto name = getWindowName(data[0]);
 	XFree(data);
+
 	if (name.empty()) {
 		return;
 	}
@@ -412,6 +423,10 @@ void GetProcessList(QStringList &processes)
 
 long getForegroundProcessPid()
 {
+	if (KWin) {
+		return FocusNotifier::getActiveWindowPID();
+	}
+
 	Window *window;
 	if (getActiveWindow(window) != Success || !window || !*window) {
 		return -1;
@@ -437,6 +452,7 @@ long getForegroundProcessPid()
 
 	pid = *((long *)prop);
 	XFree(prop);
+
 	return pid;
 }
 
@@ -562,6 +578,17 @@ void PlatformInit()
 		return;
 	}
 
+	KWin = isKWinAvailable();
+	if (!(KWin && startKWinScript(KWinScriptObjectPath) &&
+	      registerKWinDBusListener(&notifier))) {
+		// something bad happened while trying to initialize
+		// the KWin script/dbus so disable it
+		KWin = false;
+		blog(LOG_INFO, "not using KWin compat");
+	} else {
+		blog(LOG_INFO, "using KWin compat");
+	}
+
 	initXss();
 	initProcps();
 	initProc2();
@@ -583,6 +610,8 @@ void PlatformCleanup()
 	cleanupHelper(libproc2);
 	cleanupDisplay();
 	XSetErrorHandler(NULL);
+	if (KWin && !KWinScriptObjectPath.isEmpty())
+		stopKWinScript(KWinScriptObjectPath);
 }
 
 } // namespace advss

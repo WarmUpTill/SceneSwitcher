@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16...3.26)
+cmake_minimum_required(VERSION 3.21...3.26)
 
 project(advanced-scene-switcher VERSION 1.0.0)
 
@@ -415,6 +415,7 @@ else()
   set_target_properties(${LIB_NAME} PROPERTIES PREFIX "")
   set_target_properties(${LIB_NAME} PROPERTIES SOVERSION 1)
 
+  find_package(Qt6 REQUIRED COMPONENTS DBus)
   find_package(X11 REQUIRED COMPONENTS Xss)
   target_include_directories(${LIB_NAME} PRIVATE "${X11_INCLUDE_DIR}"
                                                  "${X11_Xss_INCLUDE_PATH}")
@@ -446,7 +447,8 @@ else()
     )
   endif()
   target_include_directories(${LIB_NAME} PRIVATE "${PROC_INCLUDE_DIR}")
-  target_sources(${LIB_NAME} PRIVATE lib/linux/advanced-scene-switcher-nix.cpp)
+  target_sources(${LIB_NAME} PRIVATE lib/linux/advanced-scene-switcher-nix.cpp
+                                     lib/linux/kwin-helpers.cpp)
 
   # Don't include irrelevant folders into sources archive
   list(APPEND CPACK_SOURCE_IGNORE_FILES "\\.deps/.*")
