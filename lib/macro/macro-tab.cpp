@@ -1,16 +1,15 @@
 #include "advanced-scene-switcher.hpp"
 #include "action-queue.hpp"
-#include "cursor-shape-changer.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
 #include "macro-settings.hpp"
-#include "macro-segment-copy-paste.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
 #include "math-helpers.hpp"
 #include "name-dialog.hpp"
 #include "path-helpers.hpp"
+#include "splitter-helpers.hpp"
 #include "switcher-data.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
@@ -18,9 +17,7 @@
 
 #include <obs-frontend-api.h>
 #include <QColor>
-#include <QGraphicsOpacityEffect>
 #include <QMenu>
-#include <QPropertyAnimation>
 
 namespace advss {
 
@@ -193,20 +190,14 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 		}
 	}
 
-	const auto clearWidgetCache = [this](Macro *macro) {
-		ui->conditionsList->ClearWidgetsFromCacheFor(macro);
-		ui->actionsList->ClearWidgetsFromCacheFor(macro);
-		ui->elseActionsList->ClearWidgetsFromCacheFor(macro);
-	};
-
 	if (macro->IsGroup()) {
 		std::vector<std::shared_ptr<Macro>> macros = {macro};
 		addGroupSubitems(macros, macro);
 		for (auto macro : macros) {
-			clearWidgetCache(macro.get());
+			ui->macroEdit->ClearSegmentWidgetCacheFor(macro.get());
 		}
 	} else {
-		clearWidgetCache(macro.get());
+		ui->macroEdit->ClearSegmentWidgetCacheFor(macro.get());
 	}
 
 	// Don't cache widgets for about to be deleted macros
@@ -337,77 +328,6 @@ void AdvSceneSwitcher::ExportMacros() const
 	QString exportString(json);
 
 	MacroExportImportDialog::ExportMacros(exportString);
-}
-
-static bool
-isValidMacroSegmentIdx(const std::deque<std::shared_ptr<MacroSegment>> &list,
-		       int idx)
-{
-	return (idx > 0 || (unsigned)idx < list.size());
-}
-
-void AdvSceneSwitcher::SetupMacroSegmentSelection(MacroSection type, int idx)
-{
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-
-	MacroSegmentList *setList = nullptr, *resetList1 = nullptr,
-			 *resetList2 = nullptr;
-	int *setIdx = nullptr, *resetIdx1 = nullptr, *resetIdx2 = nullptr;
-	std::deque<std::shared_ptr<MacroSegment>> segements;
-
-	switch (type) {
-	case AdvSceneSwitcher::MacroSection::CONDITIONS:
-		setList = ui->conditionsList;
-		setIdx = &currentConditionIdx;
-		segements = {macro->Conditions().begin(),
-			     macro->Conditions().end()};
-
-		resetList1 = ui->actionsList;
-		resetList2 = ui->elseActionsList;
-		resetIdx1 = &currentActionIdx;
-		resetIdx2 = &currentElseActionIdx;
-		break;
-	case AdvSceneSwitcher::MacroSection::ACTIONS:
-		setList = ui->actionsList;
-		setIdx = &currentActionIdx;
-		segements = {macro->Actions().begin(), macro->Actions().end()};
-
-		resetList1 = ui->conditionsList;
-		resetList2 = ui->elseActionsList;
-		resetIdx1 = &currentConditionIdx;
-		resetIdx2 = &currentElseActionIdx;
-		break;
-	case AdvSceneSwitcher::MacroSection::ELSE_ACTIONS:
-		setList = ui->elseActionsList;
-		setIdx = &currentElseActionIdx;
-		segements = {macro->ElseActions().begin(),
-			     macro->ElseActions().end()};
-
-		resetList1 = ui->actionsList;
-		resetList2 = ui->conditionsList;
-		resetIdx1 = &currentActionIdx;
-		resetIdx2 = &currentConditionIdx;
-		break;
-	default:
-		break;
-	}
-
-	setList->SetSelection(idx);
-	resetList1->SetSelection(-1);
-	resetList2->SetSelection(-1);
-	if (isValidMacroSegmentIdx(segements, idx)) {
-		*setIdx = idx;
-	} else {
-		*setIdx = -1;
-	}
-	*resetIdx1 = -1;
-	*resetIdx2 = -1;
-
-	lastInteracted = type;
-	HighlightControls();
 }
 
 bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
@@ -564,223 +484,13 @@ void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value) const
 	macro->SetMatchOnChange(value);
 }
 
-void AdvSceneSwitcher::PopulateMacroActions(Macro &m, uint32_t afterIdx)
-{
-	auto &actions = m.Actions();
-	ui->actionsList->SetHelpMsgVisible(actions.size() == 0);
-
-	if (ui->actionsList->PopulateWidgetsFromCache(&m)) {
-		return;
-	}
-
-	// The layout system has not completed geometry propagation yet, so we
-	// can skip those checks for now
-	ui->actionsList->SetVisibilityCheckEnable(false);
-
-	for (; afterIdx < actions.size(); afterIdx++) {
-		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
-						    actions[afterIdx]->GetId());
-		ui->actionsList->Add(newEntry);
-	}
-
-	// Give the layout system time before enabling the visibility checks and
-	// fully constructing the visible macro segments
-	QTimer::singleShot(0, this, [this]() {
-		ui->actionsList->SetVisibilityCheckEnable(true);
-	});
-}
-
-void AdvSceneSwitcher::PopulateMacroElseActions(Macro &m, uint32_t afterIdx)
-{
-	auto &actions = m.ElseActions();
-	ui->elseActionsList->SetHelpMsgVisible(actions.size() == 0);
-
-	if (ui->elseActionsList->PopulateWidgetsFromCache(&m)) {
-		return;
-	}
-
-	// The layout system has not completed geometry propagation yet, so we
-	// can skip those checks for now
-	ui->elseActionsList->SetVisibilityCheckEnable(false);
-
-	for (; afterIdx < actions.size(); afterIdx++) {
-		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
-						    actions[afterIdx]->GetId());
-		ui->elseActionsList->Add(newEntry);
-	}
-
-	// Give the layout system time before enabling the visibility checks and
-	// fully constructing the visible macro segments
-	QTimer::singleShot(0, this, [this]() {
-		ui->elseActionsList->SetVisibilityCheckEnable(true);
-	});
-}
-
-void AdvSceneSwitcher::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
-{
-	bool root = afterIdx == 0;
-	auto &conditions = m.Conditions();
-	ui->conditionsList->SetHelpMsgVisible(conditions.size() == 0);
-
-	if (ui->conditionsList->PopulateWidgetsFromCache(&m)) {
-		return;
-	}
-
-	// The layout system has not completed geometry propagation yet, so we
-	// can skip those checks for now
-	ui->conditionsList->SetVisibilityCheckEnable(false);
-
-	for (; afterIdx < conditions.size(); afterIdx++) {
-		auto newEntry = new MacroConditionEdit(
-			this, &conditions[afterIdx],
-			conditions[afterIdx]->GetId(), root);
-		ui->conditionsList->Add(newEntry);
-		root = false;
-	}
-
-	// Give the layout system time before enabling the visibility checks and
-	// fully constructing the visible macro segments
-	QTimer::singleShot(0, this, [this]() {
-		ui->conditionsList->SetVisibilityCheckEnable(true);
-	});
-}
-
-void AdvSceneSwitcher::SetActionData(Macro &m) const
-{
-	auto &actions = m.Actions();
-	for (int idx = 0; idx < ui->actionsList->ContentLayout()->count();
-	     idx++) {
-		auto item = ui->actionsList->ContentLayout()->itemAt(idx);
-		if (!item) {
-			continue;
-		}
-		auto widget = static_cast<MacroActionEdit *>(item->widget());
-		if (!widget) {
-			continue;
-		}
-		widget->SetEntryData(&*(actions.begin() + idx));
-	}
-}
-
-void AdvSceneSwitcher::SetElseActionData(Macro &m) const
-{
-	auto &actions = m.ElseActions();
-	for (int idx = 0; idx < ui->elseActionsList->ContentLayout()->count();
-	     idx++) {
-		auto item = ui->elseActionsList->ContentLayout()->itemAt(idx);
-		if (!item) {
-			continue;
-		}
-		auto widget = static_cast<MacroActionEdit *>(item->widget());
-		if (!widget) {
-			continue;
-		}
-		widget->SetEntryData(&*(actions.begin() + idx));
-	}
-}
-
-void AdvSceneSwitcher::SetConditionData(Macro &m) const
-{
-	auto &conditions = m.Conditions();
-	for (int idx = 0; idx < ui->conditionsList->ContentLayout()->count();
-	     idx++) {
-		auto item = ui->conditionsList->ContentLayout()->itemAt(idx);
-		if (!item) {
-			continue;
-		}
-		auto widget = static_cast<MacroConditionEdit *>(item->widget());
-		if (!widget) {
-			continue;
-		}
-		widget->SetEntryData(&*(conditions.begin() + idx));
-	}
-}
-
-static void maximizeFirstSplitterEntry(QSplitter *splitter)
-{
-	QList<int> newSizes;
-	newSizes << 999999;
-	for (int i = 0; i < splitter->sizes().size() - 1; i++) {
-		newSizes << 0;
-	}
-	splitter->setSizes(newSizes);
-}
-
-static void centerSplitterPosition(QSplitter *splitter)
-{
-	splitter->setSizes(QList<int>() << 999999 << 999999);
-}
-
-void AdvSceneSwitcher::SetEditMacro(Macro &m)
-{
-	{
-		const QSignalBlocker b1(ui->macroName);
-		const QSignalBlocker b2(ui->runMacroInParallel);
-		const QSignalBlocker b3(ui->runMacroOnChange);
-		ui->macroName->setText(m.Name().c_str());
-		ui->runMacroInParallel->setChecked(m.RunInParallel());
-		ui->runMacroOnChange->setChecked(m.MatchOnChange());
-	}
-	ui->conditionsList->Clear();
-	ui->actionsList->Clear();
-	ui->elseActionsList->Clear();
-
-	m.ResetUIHelpers();
-
-	PopulateMacroConditions(m);
-	PopulateMacroActions(m);
-	PopulateMacroElseActions(m);
-	SetMacroEditAreaDisabled(false);
-
-	currentActionIdx = -1;
-	currentElseActionIdx = -1;
-	currentConditionIdx = -1;
-	HighlightControls();
-
-	if (m.IsGroup()) {
-		SetMacroEditAreaDisabled(true);
-		ui->macroName->setEnabled(true);
-		centerSplitterPosition(ui->macroActionConditionSplitter);
-		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
-		return;
-	}
-
-	if (!m.HasValidSplitterPositions()) {
-		centerSplitterPosition(ui->macroActionConditionSplitter);
-		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
-		return;
-	}
-
-	ui->macroActionConditionSplitter->setSizes(
-		m.GetActionConditionSplitterPosition());
-	ui->macroElseActionSplitter->setSizes(
-		m.GetElseActionSplitterPosition());
-}
-
 void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable) const
 {
 	ui->macroName->setDisabled(disable);
 	ui->runMacro->setDisabled(disable);
 	ui->runMacroInParallel->setDisabled(disable);
 	ui->runMacroOnChange->setDisabled(disable);
-	ui->macroActions->setDisabled(disable);
-	ui->macroConditions->setDisabled(disable);
-	ui->macroActionConditionSplitter->setDisabled(disable);
-}
-
-void AdvSceneSwitcher::HighlightAction(int idx, QColor color) const
-{
-	ui->actionsList->Highlight(idx, color);
-}
-
-void AdvSceneSwitcher::HighlightElseAction(int idx, QColor color) const
-{
-	ui->elseActionsList->Highlight(idx, color);
-}
-
-void AdvSceneSwitcher::HighlightCondition(int idx, QColor color) const
-{
-	ui->conditionsList->Highlight(idx, color);
+	ui->macroEdit->SetControlsDisabled(disable);
 }
 
 std::shared_ptr<Macro> AdvSceneSwitcher::GetSelectedMacro() const
@@ -793,40 +503,6 @@ std::vector<std::shared_ptr<Macro>> AdvSceneSwitcher::GetSelectedMacros() const
 	return ui->macros->GetCurrentMacros();
 }
 
-void AdvSceneSwitcher::MacroSelectionAboutToChange() const
-{
-	if (loading) {
-		return;
-	}
-
-	if (!ui->macroName->isEnabled()) { // No macro is selected
-		return;
-	}
-
-	auto macro = GetMacroByQString(ui->macroName->text());
-	if (!macro) {
-		return;
-	}
-
-	macro->SetActionConditionSplitterPosition(
-		ui->macroActionConditionSplitter->sizes());
-
-	auto elsePos = ui->macroElseActionSplitter->sizes();
-	// If only conditions are visible maximize the actions to avoid neither
-	// actions nor elseActions being visible when the condition <-> action
-	// splitter is moved
-	if (elsePos[0] == 0 && elsePos[1] == 0) {
-		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
-		return;
-	}
-	macro->SetElseActionSplitterPosition(
-		ui->macroElseActionSplitter->sizes());
-
-	ui->conditionsList->CacheCurrentWidgetsFor(macro);
-	ui->actionsList->CacheCurrentWidgetsFor(macro);
-	ui->elseActionsList->CacheCurrentWidgetsFor(macro);
-}
-
 void AdvSceneSwitcher::MacroSelectionChanged()
 {
 	if (loading) {
@@ -836,17 +512,28 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		SetMacroEditAreaDisabled(true);
-		ui->conditionsList->Clear();
-		ui->actionsList->Clear();
-		ui->elseActionsList->Clear();
-		ui->conditionsList->SetHelpMsgVisible(true);
-		ui->actionsList->SetHelpMsgVisible(true);
-		ui->elseActionsList->SetHelpMsgVisible(true);
-		centerSplitterPosition(ui->macroActionConditionSplitter);
-		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
+		ui->macroEdit->SetMacro(macro);
 		return;
 	}
-	SetEditMacro(*macro);
+
+	{
+		const QSignalBlocker b1(ui->macroName);
+		const QSignalBlocker b2(ui->runMacroInParallel);
+		const QSignalBlocker b3(ui->runMacroOnChange);
+		ui->macroName->setText(macro->Name().c_str());
+		ui->runMacroInParallel->setChecked(macro->RunInParallel());
+		ui->runMacroOnChange->setChecked(macro->MatchOnChange());
+	}
+
+	macro->ResetUIHelpers();
+	ui->macroEdit->SetMacro(macro);
+	SetMacroEditAreaDisabled(false);
+
+	if (macro->IsGroup()) {
+		SetMacroEditAreaDisabled(true);
+		ui->macroName->setEnabled(true);
+		return;
+	}
 
 	if (GetGlobalMacroSettings()._saveSettingsOnMacroChange) {
 		obs_frontend_save();
@@ -871,16 +558,6 @@ void AdvSceneSwitcher::HighlightOnChange() const
 	}
 }
 
-static void resetSegmentHighlights(MacroSegmentList *list)
-{
-	MacroSegmentEdit *widget = nullptr;
-	for (int i = 0; (widget = list->WidgetAt(i)); i++) {
-		if (widget && widget->Data()) {
-			(void)widget->Data()->GetHighlightAndReset();
-		}
-	}
-}
-
 void AdvSceneSwitcher::on_macroSettings_clicked()
 {
 	GlobalMacroSettings prop = GetGlobalMacroSettings();
@@ -897,28 +574,13 @@ void AdvSceneSwitcher::on_macroSettings_clicked()
 	// would have been highlighted at least once since the moment the
 	// highlighting was disabled
 	if (prop._highlightConditions) {
-		resetSegmentHighlights(ui->conditionsList);
+		ui->macroEdit->ResetConditionHighlights();
 	}
 	if (prop._highlightActions) {
-		resetSegmentHighlights(ui->actionsList);
-		resetSegmentHighlights(ui->elseActionsList);
+		ui->macroEdit->ResetActionHighlights();
 	}
 
 	SetCheckIntervalTooLowVisibility();
-}
-
-static void moveControlsToSplitter(QSplitter *splitter, int idx,
-				   QLayoutItem *item)
-{
-	static int splitterHandleWidth = 32;
-	auto handle = splitter->handle(idx);
-	auto layout = item->layout();
-	int leftMargin, rightMargin;
-	layout->getContentsMargins(&leftMargin, nullptr, &rightMargin, nullptr);
-	layout->setContentsMargins(leftMargin, 0, rightMargin, 0);
-	handle->setLayout(layout);
-	splitter->setHandleWidth(splitterHandleWidth);
-	splitter->setStyleSheet("QSplitter::handle {background: transparent;}");
 }
 
 static bool shouldRestoreSplitter(const QList<int> &pos)
@@ -933,36 +595,6 @@ static bool shouldRestoreSplitter(const QList<int> &pos)
 		}
 	}
 	return true;
-}
-
-static void runSegmentHighligtChecksHelper(MacroSegmentList *list)
-{
-	MacroSegmentEdit *widget = nullptr;
-	for (int i = 0; (widget = list->WidgetAt(i)); i++) {
-		if (widget->Data() && widget->Data()->GetHighlightAndReset()) {
-			list->Highlight(i);
-		}
-	}
-}
-
-static void runSegmentHighligtChecks(AdvSceneSwitcher *ss)
-{
-	if (!ss || !HighlightUIElementsEnabled()) {
-		return;
-	}
-	auto macro = ss->GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-
-	const auto &settings = GetGlobalMacroSettings();
-	if (settings._highlightConditions) {
-		runSegmentHighligtChecksHelper(ss->ui->conditionsList);
-	}
-	if (settings._highlightActions) {
-		runSegmentHighligtChecksHelper(ss->ui->actionsList);
-		runSegmentHighligtChecksHelper(ss->ui->elseActionsList);
-	}
 }
 
 static QToolBar *
@@ -993,7 +625,6 @@ setupToolBar(const std::initializer_list<std::initializer_list<QWidget *>>
 
 void AdvSceneSwitcher::SetupMacroTab()
 {
-	ui->macroElseActions->installEventFilter(this);
 	ui->macros->installEventFilter(this);
 
 	if (GetMacros().size() == 0 && !switcher->disableHints) {
@@ -1006,45 +637,13 @@ void AdvSceneSwitcher::SetupMacroTab()
 
 	ui->macros->Reset(GetMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
-	connect(ui->macros, SIGNAL(MacroSelectionAboutToChange()), this,
-		SLOT(MacroSelectionAboutToChange()));
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
 		SLOT(MacroSelectionChanged()));
 	ui->runMacro->SetMacroTree(ui->macros);
 
-	ui->conditionsList->SetHelpMsg(
-		obs_module_text("AdvSceneSwitcher.macroTab.editConditionHelp"));
-	connect(ui->conditionsList, &MacroSegmentList::SelectionChanged, this,
-		&AdvSceneSwitcher::MacroConditionSelectionChanged);
-	connect(ui->conditionsList, &MacroSegmentList::Reorder, this,
-		&AdvSceneSwitcher::MacroConditionReorder);
-
-	ui->actionsList->SetHelpMsg(
-		obs_module_text("AdvSceneSwitcher.macroTab.editActionHelp"));
-	connect(ui->actionsList, &MacroSegmentList::SelectionChanged, this,
-		&AdvSceneSwitcher::MacroActionSelectionChanged);
-	connect(ui->actionsList, &MacroSegmentList::Reorder, this,
-		&AdvSceneSwitcher::MacroActionReorder);
-
-	ui->elseActionsList->SetHelpMsg(obs_module_text(
-		"AdvSceneSwitcher.macroTab.editElseActionHelp"));
-	connect(ui->elseActionsList, &MacroSegmentList::SelectionChanged, this,
-		&AdvSceneSwitcher::MacroElseActionSelectionChanged);
-	connect(ui->elseActionsList, &MacroSegmentList::Reorder, this,
-		&AdvSceneSwitcher::MacroElseActionReorder);
-
 	ui->macros->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->macros, &QWidget::customContextMenuRequested, this,
 		&AdvSceneSwitcher::ShowMacroContextMenu);
-	ui->actionsList->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->actionsList, &QWidget::customContextMenuRequested, this,
-		&AdvSceneSwitcher::ShowMacroActionsContextMenu);
-	ui->elseActionsList->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->elseActionsList, &QWidget::customContextMenuRequested, this,
-		&AdvSceneSwitcher::ShowMacroElseActionsContextMenu);
-	ui->conditionsList->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->conditionsList, &QWidget::customContextMenuRequested, this,
-		&AdvSceneSwitcher::ShowMacroConditionsContextMenu);
 
 	SetMacroEditAreaDisabled(true);
 	ui->macroPriorityWarning->setVisible(
@@ -1055,65 +654,9 @@ void AdvSceneSwitcher::SetupMacroTab()
 		SLOT(HighlightOnChange()));
 	onChangeHighlightTimer.start();
 
-	// Set action and condition toolbars
-	const std::string pathPrefix =
-		GetDataFilePath("res/images/" + GetThemeTypeName());
-	SetButtonIcon(ui->actionTop, (pathPrefix + "DoubleUp.svg").c_str());
-	SetButtonIcon(ui->actionBottom,
-		      (pathPrefix + "DoubleDown.svg").c_str());
-	SetButtonIcon(ui->elseActionTop, (pathPrefix + "DoubleUp.svg").c_str());
-	SetButtonIcon(ui->elseActionBottom,
-		      (pathPrefix + "DoubleDown.svg").c_str());
-	SetButtonIcon(ui->conditionTop, (pathPrefix + "DoubleUp.svg").c_str());
-	SetButtonIcon(ui->conditionBottom,
-		      (pathPrefix + "DoubleDown.svg").c_str());
-	SetButtonIcon(ui->toggleElseActions,
-		      (pathPrefix + "NotEqual.svg").c_str());
-
-	auto conditionToolbar =
-		setupToolBar({{ui->conditionAdd, ui->conditionRemove},
-			      {ui->conditionTop, ui->conditionUp,
-			       ui->conditionDown, ui->conditionBottom}});
-	auto actionToolbar = setupToolBar({{ui->actionAdd, ui->actionRemove},
-					   {ui->actionTop, ui->actionUp,
-					    ui->actionDown, ui->actionBottom}});
-	auto elseActionToolbar =
-		setupToolBar({{ui->elseActionAdd, ui->elseActionRemove},
-			      {ui->elseActionTop, ui->elseActionUp,
-			       ui->elseActionDown, ui->elseActionBottom}});
-
-	ui->conditionControlsLayout->addWidget(conditionToolbar);
-	ui->actionControlsLayout->insertWidget(0, actionToolbar);
-	ui->elseActionControlsLayout->addWidget(elseActionToolbar);
-
-	// Move condition controls into splitter handle layout
-	moveControlsToSplitter(ui->macroActionConditionSplitter, 1,
-			       ui->macroConditionsLayout->takeAt(1));
-	moveControlsToSplitter(ui->macroElseActionSplitter, 1,
-			       ui->macroActionsLayout->takeAt(1));
-
-	// Override splitter cursor icon when hovering over controls in splitter
-	SetCursorOnWidgetHover(ui->conditionAdd, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->conditionRemove,
-			       Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->conditionTop, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->conditionUp, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->conditionDown, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->conditionBottom,
-			       Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->actionAdd, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->actionRemove, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->actionTop, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->actionUp, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->actionDown, Qt::CursorShape::ArrowCursor);
-	SetCursorOnWidgetHover(ui->actionBottom, Qt::CursorShape::ArrowCursor);
-
 	// Reserve more space for macro edit area than for the macro list
 	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
 	ui->macroListMacroEditSplitter->setStretchFactor(1, 4);
-
-	centerSplitterPosition(ui->macroActionConditionSplitter);
-	maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
 
 	if (switcher->saveWindowGeo) {
 		if (shouldRestoreSplitter(
@@ -1122,14 +665,6 @@ void AdvSceneSwitcher::SetupMacroTab()
 				switcher->macroListMacroEditSplitterPosition);
 		}
 	}
-
-	SetupSegmentCopyPasteShortcutHandlers(this);
-
-	// Macro segment highlight
-	auto timer = new QTimer(this);
-	connect(timer, &QTimer::timeout,
-		[this]() { runSegmentHighligtChecks(this); });
-	timer->start(1500);
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
@@ -1192,183 +727,6 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	menu.exec(globalPos);
 }
 
-static bool handleCustomLabelRename(MacroSegmentEdit *segmentEdit)
-{
-	std::string label;
-	auto segment = segmentEdit->Data();
-	if (!segment) {
-		return false;
-	}
-
-	bool accepted = NameDialog::AskForName(
-		GetSettingsWindow(),
-		obs_module_text(
-			"AdvSceneSwitcher.macroTab.segment.setCustomLabel"),
-		"", label, QString::fromStdString(segment->GetCustomLabel()));
-	if (!accepted) {
-		return false;
-	}
-
-	segment->SetCustomLabel(label);
-	segmentEdit->HeaderInfoChanged("");
-	return true;
-}
-
-static void handleCustomLabelEnableChange(MacroSegmentEdit *segmentEdit,
-					  QAction *contextMenuOption)
-{
-	bool enable = contextMenuOption->isChecked();
-	auto segment = segmentEdit->Data();
-	segment->SetUseCustomLabel(enable);
-	if (!enable) {
-		segmentEdit->HeaderInfoChanged(
-			QString::fromStdString(segment->GetShortDesc()));
-		return;
-	}
-
-	if (!handleCustomLabelRename(segmentEdit)) {
-		segment->SetUseCustomLabel(false);
-	}
-}
-
-static void setupSegmentLabelContextMenuEntries(MacroSegmentEdit *segmentEdit,
-						QMenu &menu)
-{
-	if (!segmentEdit) {
-		return;
-	}
-
-	auto segment = segmentEdit ? segmentEdit->Data() : nullptr;
-	const bool customLabelIsEnabled = segment &&
-					  segment->GetUseCustomLabel();
-
-	auto enableCustomLabel = menu.addAction(obs_module_text(
-		"AdvSceneSwitcher.macroTab.segment.useCustomLabel"));
-	enableCustomLabel->setCheckable(true);
-	enableCustomLabel->setChecked(customLabelIsEnabled);
-	QWidget::connect(enableCustomLabel, &QAction::triggered,
-			 [segmentEdit, enableCustomLabel]() {
-				 handleCustomLabelEnableChange(
-					 segmentEdit, enableCustomLabel);
-			 });
-
-	if (!customLabelIsEnabled) {
-		return;
-	}
-
-	auto customLabelRename = menu.addAction(obs_module_text(
-		"AdvSceneSwitcher.macroTab.segment.customLabelRename"));
-	QWidget::connect(customLabelRename, &QAction::triggered,
-			 [segmentEdit]() {
-				 handleCustomLabelRename(segmentEdit);
-			 });
-}
-
-static void setupCopyPasteContextMenuEnry(AdvSceneSwitcher *ss,
-					  MacroSegmentEdit *segmentEdit,
-					  QMenu &menu)
-{
-	auto copy = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.segment.copy"), ss,
-		[ss]() { ss->CopyMacroSegment(); });
-	copy->setEnabled(!!segmentEdit);
-
-	bool pasteAsElseAction = true;
-	const char *pasteText = "AdvSceneSwitcher.macroTab.segment.paste";
-	if (MacroActionIsInClipboard()) {
-		if (IsCursorInWidgetArea(ss->ui->macroActions)) {
-			pasteAsElseAction = false;
-			pasteText =
-				"AdvSceneSwitcher.macroTab.segment.pasteAction";
-		} else if (IsCursorInWidgetArea(ss->ui->macroElseActions)) {
-			pasteAsElseAction = true;
-			pasteText =
-				"AdvSceneSwitcher.macroTab.segment.pasteElseAction";
-		}
-	}
-	auto paste = menu.addAction(
-		obs_module_text(pasteText), ss, [ss, pasteAsElseAction]() {
-			SetCopySegmentTargetActionType(pasteAsElseAction);
-			ss->PasteMacroSegment();
-		});
-	paste->setEnabled(MacroSegmentIsInClipboard());
-}
-
-static void setupRemoveContextMenuEnry(
-	AdvSceneSwitcher *ss,
-	const std::function<void(AdvSceneSwitcher *, int)> &remove,
-	const QPoint &pos, MacroSegmentList *list, QMenu &menu)
-{
-	const auto segmentEditIndex = list->IndexAt(pos);
-	if (segmentEditIndex == -1) {
-		return;
-	}
-
-	menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.segment.remove"), ss,
-		[ss, remove, segmentEditIndex]() {
-			remove(ss, segmentEditIndex);
-		});
-}
-
-static void setupConextMenu(AdvSceneSwitcher *ss, const QPoint &pos,
-			    std::function<void(AdvSceneSwitcher *, int)> remove,
-			    std::function<void(AdvSceneSwitcher *)> expand,
-			    std::function<void(AdvSceneSwitcher *)> collapse,
-			    std::function<void(AdvSceneSwitcher *)> maximize,
-			    std::function<void(AdvSceneSwitcher *)> minimize,
-			    MacroSegmentList *list)
-{
-	QMenu menu;
-	auto segmentEdit = list->WidgetAt(pos);
-
-	setupCopyPasteContextMenuEnry(ss, segmentEdit, menu);
-	menu.addSeparator();
-	setupRemoveContextMenuEnry(ss, remove, pos, list, menu);
-	menu.addSeparator();
-	setupSegmentLabelContextMenuEntries(segmentEdit, menu);
-	menu.addSeparator();
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.expandAll"),
-		       ss, [ss, expand]() { expand(ss); });
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.collapseAll"),
-		       ss, [ss, collapse]() { collapse(ss); });
-	menu.addSeparator();
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.maximize"),
-		       ss, [ss, maximize]() { maximize(ss); });
-	menu.addAction(obs_module_text("AdvSceneSwitcher.macroTab.minimize"),
-		       ss, [ss, minimize]() { minimize(ss); });
-	menu.exec(list->mapToGlobal(pos));
-}
-
-void AdvSceneSwitcher::ShowMacroActionsContextMenu(const QPoint &pos)
-{
-	setupConextMenu(this, pos, &AdvSceneSwitcher::RemoveMacroAction,
-			&AdvSceneSwitcher::ExpandAllActions,
-			&AdvSceneSwitcher::CollapseAllActions,
-			&AdvSceneSwitcher::MaximizeActions,
-			&AdvSceneSwitcher::MinimizeActions, ui->actionsList);
-}
-
-void AdvSceneSwitcher::ShowMacroElseActionsContextMenu(const QPoint &pos)
-{
-	setupConextMenu(this, pos, &AdvSceneSwitcher::RemoveMacroElseAction,
-			&AdvSceneSwitcher::ExpandAllElseActions,
-			&AdvSceneSwitcher::CollapseAllElseActions,
-			&AdvSceneSwitcher::MaximizeElseActions,
-			&AdvSceneSwitcher::MinimizeElseActions,
-			ui->elseActionsList);
-}
-
-void AdvSceneSwitcher::ShowMacroConditionsContextMenu(const QPoint &pos)
-{
-	setupConextMenu(this, pos, &AdvSceneSwitcher::RemoveMacroCondition,
-			&AdvSceneSwitcher::ExpandAllConditions,
-			&AdvSceneSwitcher::CollapseAllConditions,
-			&AdvSceneSwitcher::MaximizeConditions,
-			&AdvSceneSwitcher::MinimizeConditions,
-			ui->conditionsList);
-}
-
 void AdvSceneSwitcher::CopyMacro()
 {
 	const auto macro = GetSelectedMacro();
@@ -1396,336 +754,16 @@ void AdvSceneSwitcher::CopyMacro()
 	emit MacroAdded(QString::fromStdString(name));
 }
 
-static void setCollapsedHelper(const std::shared_ptr<Macro> &m,
-			       MacroSegmentList *list, bool collapsed)
+bool MacroTabIsInFocus()
 {
-	if (!m) {
-		return;
-	}
-	list->SetCollapsed(collapsed);
-}
-
-void AdvSceneSwitcher::ExpandAllActions() const
-{
-	setCollapsedHelper(GetSelectedMacro(), ui->actionsList, false);
-}
-
-void AdvSceneSwitcher::ExpandAllElseActions() const
-{
-	setCollapsedHelper(GetSelectedMacro(), ui->elseActionsList, false);
-}
-
-void AdvSceneSwitcher::ExpandAllConditions() const
-{
-	setCollapsedHelper(GetSelectedMacro(), ui->conditionsList, false);
-}
-
-void AdvSceneSwitcher::CollapseAllActions() const
-{
-	setCollapsedHelper(GetSelectedMacro(), ui->actionsList, true);
-}
-
-void AdvSceneSwitcher::CollapseAllElseActions() const
-{
-	setCollapsedHelper(GetSelectedMacro(), ui->elseActionsList, true);
-}
-
-void AdvSceneSwitcher::CollapseAllConditions() const
-{
-	setCollapsedHelper(GetSelectedMacro(), ui->conditionsList, true);
-}
-
-static void reduceSizeOfSplitterIdx(QSplitter *splitter, int idx)
-{
-	auto sizes = splitter->sizes();
-	int sum = sizes[0] + sizes[1];
-	int reducedSize = sum / 10;
-	sizes[idx] = reducedSize;
-	sizes[(idx + 1) % 2] = sum - reducedSize;
-	splitter->setSizes(sizes);
-}
-
-void AdvSceneSwitcher::MinimizeActions() const
-{
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-	if (macro->ElseActions().size() == 0) {
-		reduceSizeOfSplitterIdx(ui->macroActionConditionSplitter, 1);
-	} else {
-		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
-		reduceSizeOfSplitterIdx(ui->macroActionConditionSplitter, 1);
-	}
-}
-
-void AdvSceneSwitcher::MaximizeActions() const
-{
-	MinimizeElseActions();
-	MinimizeConditions();
-}
-
-void AdvSceneSwitcher::MinimizeElseActions() const
-{
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-	if (macro->ElseActions().size() == 0) {
-		maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
-	} else {
-		reduceSizeOfSplitterIdx(ui->macroElseActionSplitter, 1);
-	}
-}
-
-void AdvSceneSwitcher::MaximizeElseActions() const
-{
-	MinimizeConditions();
-	reduceSizeOfSplitterIdx(ui->macroElseActionSplitter, 0);
-}
-
-void AdvSceneSwitcher::MinimizeConditions() const
-{
-	reduceSizeOfSplitterIdx(ui->macroActionConditionSplitter, 0);
-}
-
-void AdvSceneSwitcher::MaximizeConditions() const
-{
-	MinimizeElseActions();
-	MinimizeActions();
-}
-
-void AdvSceneSwitcher::on_toggleElseActions_clicked() const
-{
-	auto elsePosition = ui->macroElseActionSplitter->sizes();
-	if (elsePosition[1] == 0) {
-		centerSplitterPosition(ui->macroElseActionSplitter);
-		return;
-	}
-
-	maximizeFirstSplitterEntry(ui->macroElseActionSplitter);
-}
-
-void AdvSceneSwitcher::SetElseActionsStateToHidden() const
-{
-	ui->toggleElseActions->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.macroTab.toggleElseActions.show.tooltip"));
-	ui->toggleElseActions->setChecked(false);
-}
-
-void AdvSceneSwitcher::SetElseActionsStateToVisible() const
-{
-	ui->toggleElseActions->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.macroTab.toggleElseActions.hide.tooltip"));
-	ui->toggleElseActions->setChecked(true);
+	return AdvSceneSwitcher::window &&
+	       AdvSceneSwitcher::window->MacroTabIsInFocus();
 }
 
 bool AdvSceneSwitcher::MacroTabIsInFocus()
 {
 	return isActiveWindow() && isAncestorOf(focusWidget()) &&
 	       (ui->tabWidget->currentWidget()->objectName() == "macroTab");
-}
-
-void AdvSceneSwitcher::UpMacroSegementHotkey()
-{
-	if (!MacroTabIsInFocus()) {
-		return;
-	}
-
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-	int actionSize = macro->Actions().size();
-	int conditionSize = macro->Conditions().size();
-
-	if (currentActionIdx == -1 && currentConditionIdx == -1) {
-		if (lastInteracted == MacroSection::CONDITIONS) {
-			if (conditionSize == 0) {
-				MacroActionSelectionChanged(0);
-			} else {
-				MacroConditionSelectionChanged(0);
-			}
-		} else {
-			if (actionSize == 0) {
-				MacroConditionSelectionChanged(0);
-			} else {
-				MacroActionSelectionChanged(0);
-			}
-		}
-		return;
-	}
-
-	if (currentActionIdx > 0) {
-		MacroActionSelectionChanged(currentActionIdx - 1);
-		return;
-	}
-	if (currentConditionIdx > 0) {
-		MacroConditionSelectionChanged(currentConditionIdx - 1);
-		return;
-	}
-	if (currentActionIdx == 0) {
-		if (conditionSize == 0) {
-			MacroActionSelectionChanged(actionSize - 1);
-		} else {
-			MacroConditionSelectionChanged(conditionSize - 1);
-		}
-		return;
-	}
-	if (currentConditionIdx == 0) {
-		if (actionSize == 0) {
-			MacroConditionSelectionChanged(conditionSize - 1);
-		} else {
-			MacroActionSelectionChanged(actionSize - 1);
-		}
-		return;
-	}
-}
-
-void AdvSceneSwitcher::DownMacroSegementHotkey()
-{
-	if (!MacroTabIsInFocus()) {
-		return;
-	}
-
-	auto macro = GetSelectedMacro();
-	if (!macro) {
-		return;
-	}
-	int actionSize = macro->Actions().size();
-	int conditionSize = macro->Conditions().size();
-
-	if (currentActionIdx == -1 && currentConditionIdx == -1) {
-		if (lastInteracted == MacroSection::CONDITIONS) {
-			if (conditionSize == 0) {
-				MacroActionSelectionChanged(0);
-			} else {
-				MacroConditionSelectionChanged(0);
-			}
-		} else {
-			if (actionSize == 0) {
-				MacroConditionSelectionChanged(0);
-			} else {
-				MacroActionSelectionChanged(0);
-			}
-		}
-		return;
-	}
-
-	if (currentActionIdx < actionSize - 1) {
-		MacroActionSelectionChanged(currentActionIdx + 1);
-		return;
-	}
-	if (currentConditionIdx < conditionSize - 1) {
-		MacroConditionSelectionChanged(currentConditionIdx + 1);
-		return;
-	}
-	if (currentActionIdx == actionSize - 1) {
-		if (conditionSize == 0) {
-			MacroActionSelectionChanged(0);
-		} else {
-			MacroConditionSelectionChanged(0);
-		}
-		return;
-	}
-	if (currentConditionIdx == conditionSize - 1) {
-		if (actionSize == 0) {
-			MacroConditionSelectionChanged(0);
-		} else {
-			MacroActionSelectionChanged(0);
-		}
-		return;
-	}
-}
-
-void AdvSceneSwitcher::DeleteMacroSegementHotkey()
-{
-	if (!MacroTabIsInFocus()) {
-		return;
-	}
-
-	if (currentActionIdx != -1) {
-		RemoveMacroAction(currentActionIdx);
-	} else if (currentConditionIdx != -1) {
-		RemoveMacroCondition(currentConditionIdx);
-	}
-}
-
-static void fade(QWidget *widget, bool fadeOut)
-{
-	const double fadeOutOpacity = 0.3;
-	// Don't use exactly 1.0 as for some reason this causes buttons in
-	// macroSplitter handle layout to not be redrawn unless mousing over
-	// them
-	const double fadeInOpacity = 0.99;
-	auto curEffect = widget->graphicsEffect();
-	if (curEffect) {
-		auto curOpacity =
-			dynamic_cast<QGraphicsOpacityEffect *>(curEffect);
-		if (curOpacity &&
-		    ((fadeOut && DoubleEquals(curOpacity->opacity(),
-					      fadeOutOpacity, 0.0001)) ||
-		     (!fadeOut && DoubleEquals(curOpacity->opacity(),
-					       fadeInOpacity, 0.0001)))) {
-			return;
-		}
-	} else if (!fadeOut) {
-		return;
-	}
-	delete curEffect;
-	QGraphicsOpacityEffect *opacityEffect = new QGraphicsOpacityEffect();
-	widget->setGraphicsEffect(opacityEffect);
-	QPropertyAnimation *animation =
-		new QPropertyAnimation(opacityEffect, "opacity");
-	animation->setDuration(350);
-	animation->setStartValue(fadeOut ? fadeInOpacity : fadeOutOpacity);
-	animation->setEndValue(fadeOut ? fadeOutOpacity : fadeInOpacity);
-	animation->setEasingCurve(QEasingCurve::OutQuint);
-	animation->start(QPropertyAnimation::DeleteWhenStopped);
-}
-
-static void fadeWidgets(const std::vector<QWidget *> &widgets, bool fadeOut)
-{
-	for (const auto &widget : widgets) {
-		fade(widget, fadeOut);
-	}
-}
-
-void AdvSceneSwitcher::HighlightControls() const
-{
-	const std::vector<QWidget *> conditionControls{
-		ui->conditionAdd, ui->conditionRemove, ui->conditionTop,
-		ui->conditionUp,  ui->conditionDown,   ui->conditionBottom,
-	};
-	const std::vector<QWidget *> actionControls{
-		ui->actionAdd, ui->actionRemove, ui->actionTop,
-		ui->actionUp,  ui->actionDown,   ui->actionBottom,
-	};
-	const std::vector<QWidget *> elseActionControls{
-		ui->elseActionAdd, ui->elseActionRemove, ui->elseActionTop,
-		ui->elseActionUp,  ui->elseActionDown,   ui->elseActionBottom,
-	};
-
-	if ((currentActionIdx == -1 && currentConditionIdx == -1 &&
-	     currentElseActionIdx == -1)) {
-		fadeWidgets(conditionControls, false);
-		fadeWidgets(actionControls, false);
-		fadeWidgets(elseActionControls, false);
-	} else if (currentConditionIdx != -1) {
-		fadeWidgets(conditionControls, false);
-		fadeWidgets(actionControls, true);
-		fadeWidgets(elseActionControls, true);
-	} else if (currentActionIdx != -1) {
-		fadeWidgets(conditionControls, true);
-		fadeWidgets(actionControls, false);
-		fadeWidgets(elseActionControls, true);
-	} else if (currentElseActionIdx != -1) {
-		fadeWidgets(conditionControls, true);
-		fadeWidgets(actionControls, true);
-		fadeWidgets(elseActionControls, false);
-	} else {
-		assert(false);
-	}
 }
 
 } // namespace advss
