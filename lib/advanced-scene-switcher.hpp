@@ -79,6 +79,7 @@ public slots:
 	/* --- Begin of macro tab section --- */
 public:
 	void SetupMacroTab();
+	bool MacroTabIsInFocus();
 	bool AddNewMacro(std::shared_ptr<Macro> &res, std::string &name,
 			 std::string format = "");
 	void RemoveMacro(std::shared_ptr<Macro> &);
@@ -86,7 +87,6 @@ public:
 	void RenameMacro(std::shared_ptr<Macro> &, const QString &name);
 	std::shared_ptr<Macro> GetSelectedMacro() const;
 	std::vector<std::shared_ptr<Macro>> GetSelectedMacros() const;
-	void SetEditMacro(Macro &m);
 	void SetMacroEditAreaDisabled(bool) const;
 	void HighlightAction(int idx, QColor color = QColor(Qt::green)) const;
 	void HighlightElseAction(int idx,
@@ -111,82 +111,14 @@ public slots:
 	void on_macroName_editingFinished();
 	void on_runMacroInParallel_stateChanged(int value) const;
 	void on_runMacroOnChange_stateChanged(int value) const;
-	void on_conditionAdd_clicked();
-	void on_conditionRemove_clicked();
-	void on_conditionTop_clicked();
-	void on_conditionUp_clicked();
-	void on_conditionDown_clicked();
-	void on_conditionBottom_clicked();
-	void on_actionAdd_clicked();
-	void on_actionRemove_clicked();
-	void on_actionTop_clicked();
-	void on_actionUp_clicked();
-	void on_actionDown_clicked();
-	void on_actionBottom_clicked();
-	void on_toggleElseActions_clicked() const;
-	void on_elseActionAdd_clicked();
-	void on_elseActionRemove_clicked();
-	void on_elseActionTop_clicked();
-	void on_elseActionUp_clicked();
-	void on_elseActionDown_clicked();
-	void on_elseActionBottom_clicked();
-	void MacroSelectionAboutToChange() const;
 	void MacroSelectionChanged();
-	void UpMacroSegementHotkey();
-	void DownMacroSegementHotkey();
-	void DeleteMacroSegementHotkey();
 	void ShowMacroContextMenu(const QPoint &);
-	void ShowMacroActionsContextMenu(const QPoint &);
-	void ShowMacroElseActionsContextMenu(const QPoint &);
-	void ShowMacroConditionsContextMenu(const QPoint &);
 	void CopyMacro();
 	void RenameSelectedMacro();
 	void ExportMacros() const;
 	void ImportMacros();
-	void ExpandAllActions() const;
-	void ExpandAllElseActions() const;
-	void ExpandAllConditions() const;
-	void CollapseAllActions() const;
-	void CollapseAllElseActions() const;
-	void CollapseAllConditions() const;
-	void MinimizeActions() const;
-	void MaximizeActions() const;
-	void MinimizeElseActions() const;
-	void MaximizeElseActions() const;
-	void MinimizeConditions() const;
-	void MaximizeConditions() const;
-	void SetElseActionsStateToHidden() const;
-	void SetElseActionsStateToVisible() const;
-	void MacroActionSelectionChanged(int idx);
-	void MacroActionReorder(int to, int target);
-	void AddMacroAction(Macro *macro, int idx, const std::string &id,
-			    obs_data_t *data);
-	void AddMacroAction(int idx);
-	void RemoveMacroAction(int idx);
-	void MoveMacroActionUp(int idx);
-	void MoveMacroActionDown(int idx);
-	void MacroElseActionSelectionChanged(int idx);
-	void MacroElseActionReorder(int to, int target);
-	void AddMacroElseAction(Macro *macro, int idx, const std::string &id,
-				obs_data_t *data);
-	void AddMacroElseAction(int idx);
-	void RemoveMacroElseAction(int idx);
-	void SwapElseActions(Macro *m, int pos1, int pos2);
-	void MoveMacroElseActionUp(int idx);
-	void MoveMacroElseActionDown(int idx);
-	void MacroConditionSelectionChanged(int idx);
-	void MacroConditionReorder(int to, int target);
-	void AddMacroCondition(int idx);
-	void AddMacroCondition(Macro *macro, int idx, const std::string &id,
-			       obs_data_t *data, Logic::Type logic);
-	void RemoveMacroCondition(int idx);
-	void MoveMacroConditionUp(int idx);
-	void MoveMacroConditionDown(int idx);
-	void HighlightControls() const;
 	void HighlightOnChange() const;
 	void on_macroSettings_clicked();
-	void CopyMacroSegment();
-	void PasteMacroSegment();
 
 signals:
 	void MacroAdded(const QString &name);
@@ -201,16 +133,7 @@ signals:
 	void ConnectionRemoved(const QString &);
 
 private:
-	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };
-
-	void SetupMacroSegmentSelection(MacroSection type, int idx);
 	bool ResolveMacroImportNameConflict(std::shared_ptr<Macro> &);
-	bool MacroTabIsInFocus();
-
-	MacroSection lastInteracted = MacroSection::CONDITIONS;
-	int currentConditionIdx = -1;
-	int currentActionIdx = -1;
-	int currentElseActionIdx = -1;
 
 	/* --- End of macro tab section --- */
 

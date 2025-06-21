@@ -163,7 +163,7 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	switcher->windowSize = this->size();
 	switcher->macroListMacroEditSplitterPosition =
 		ui->macroListMacroEditSplitter->sizes();
-	MacroSelectionAboutToChange(); // Trigger saving of splitter states
+	ui->macroEdit->SetMacro(nullptr); // Trigger saving of splitter states
 
 	obs_frontend_save();
 }

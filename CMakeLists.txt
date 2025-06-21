@@ -123,6 +123,8 @@ target_sources(
           lib/macro/macro-condition.hpp
           lib/macro/macro-dock.cpp
           lib/macro/macro-dock.hpp
+          lib/macro/macro-edit.cpp
+          lib/macro/macro-edit.hpp
           lib/macro/macro-export-import-dialog.cpp
           lib/macro/macro-export-import-dialog.hpp
           lib/macro/macro-helpers.cpp
