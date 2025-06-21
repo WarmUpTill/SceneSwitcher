@@ -1,5 +1,7 @@
 #include "splitter-helpers.hpp"
 
+#include <QSplitter>
+
 namespace advss {
 
 void SaveSplitterPos(const QList<int> &sizes, obs_data_t *obj,
@@ -28,6 +30,31 @@ void LoadSplitterPos(QList<int> &sizes, obs_data_t *obj,
 		obs_data_release(item);
 	}
 	obs_data_array_release(array);
+}
+
+void CenterSplitterPosition(QSplitter *splitter)
+{
+	splitter->setSizes(QList<int>() << 999999 << 999999);
+}
+
+void MaximizeFirstSplitterEntry(QSplitter *splitter)
+{
+	QList<int> newSizes;
+	newSizes << 999999;
+	for (int i = 0; i < splitter->sizes().size() - 1; i++) {
+		newSizes << 0;
+	}
+	splitter->setSizes(newSizes);
+}
+
+void ReduceSizeOfSplitterIdx(QSplitter *splitter, int idx)
+{
+	auto sizes = splitter->sizes();
+	int sum = sizes[0] + sizes[1];
+	int reducedSize = sum / 10;
+	sizes[idx] = reducedSize;
+	sizes[(idx + 1) % 2] = sum - reducedSize;
+	splitter->setSizes(sizes);
 }
 
 } // namespace advss
