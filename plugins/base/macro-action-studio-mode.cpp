@@ -9,7 +9,7 @@ const std::string MacroActionSudioMode::id = "studio_mode";
 
 bool MacroActionSudioMode::_registered = MacroActionFactory::Register(
 	MacroActionSudioMode::id,
-	{MacroActionSudioMode::Create, MacroActionSudioModeEdit::Create,
+	{MacroActionSudioMode::Create, MacroActionStudioModeEdit::Create,
 	 "AdvSceneSwitcher.action.studioMode"});
 
 const static std::map<MacroActionSudioMode::Action, std::string> actionTypes = {
@@ -124,11 +124,11 @@ static inline void populateActionSelection(QComboBox *list)
 	}
 }
 
-MacroActionSudioModeEdit::MacroActionSudioModeEdit(
+MacroActionStudioModeEdit::MacroActionStudioModeEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSudioMode> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox()),
-	  _scenes(new SceneSelectionWidget(window(), true, true, true, true))
+	  _scenes(new SceneSelectionWidget(this, true, true, true, true))
 {
 	populateActionSelection(_actions);
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
@@ -151,7 +151,7 @@ MacroActionSudioModeEdit::MacroActionSudioModeEdit(
 	_loading = false;
 }
 
-void MacroActionSudioModeEdit::UpdateEntryData()
+void MacroActionStudioModeEdit::UpdateEntryData()
 {
 	if (!_entryData) {
 		return;
@@ -162,7 +162,7 @@ void MacroActionSudioModeEdit::UpdateEntryData()
 	SetWidgetVisibility();
 }
 
-void MacroActionSudioModeEdit::SceneChanged(const SceneSelection &s)
+void MacroActionStudioModeEdit::SceneChanged(const SceneSelection &s)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
@@ -170,7 +170,7 @@ void MacroActionSudioModeEdit::SceneChanged(const SceneSelection &s)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroActionSudioModeEdit::SetWidgetVisibility()
+void MacroActionStudioModeEdit::SetWidgetVisibility()
 {
 	_scenes->setVisible(_entryData->_action ==
 			    MacroActionSudioMode::Action::SET_SCENE);
@@ -181,7 +181,7 @@ void MacroActionSudioModeEdit::SetWidgetVisibility()
 	}
 }
 
-void MacroActionSudioModeEdit::ActionChanged(int index)
+void MacroActionStudioModeEdit::ActionChanged(int index)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionSudioMode::Action>(

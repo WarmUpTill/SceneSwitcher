@@ -127,7 +127,7 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneVisibility> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), true, false, true, true)),
+	  _scenes(new SceneSelectionWidget(this, true, false, true, true)),
 	  _sources(new SceneItemSelectionWidget(parent)),
 	  _actions(new QComboBox())
 {

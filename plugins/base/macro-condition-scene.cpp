@@ -264,8 +264,7 @@ static inline void populateTypeSelection(QComboBox *list)
 MacroConditionSceneEdit::MacroConditionSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionScene> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), true, false, false,
-					   false)),
+	  _scenes(new SceneSelectionWidget(this, true, false, false, false)),
 	  _sceneType(new QComboBox()),
 	  _pattern(new QLineEdit()),
 	  _useTransitionTargetScene(new QCheckBox(obs_module_text(

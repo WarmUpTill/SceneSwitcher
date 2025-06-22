@@ -112,7 +112,7 @@ void MacroActionSceneLock::ResolveVariablesToFixedValues()
 MacroActionSceneLockEdit::MacroActionSceneLockEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneLock> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), true, false, true, true)),
+	  _scenes(new SceneSelectionWidget(this, true, false, true, true)),
 	  _sources(new SceneItemSelectionWidget(parent)),
 	  _actions(new QComboBox())
 {
