@@ -10,11 +10,12 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	: ListEditor(parent, reorder),
 	  _allowDuplicates(allowDuplicates)
 {
-	QWidget::connect(window(),
+	QWidget::connect(GetSettingsWindow(),
 			 SIGNAL(MacroRenamed(const QString &, const QString &)),
 			 this,
 			 SLOT(MacroRename(const QString &, const QString &)));
-	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
 	UpdateListSize();
 }

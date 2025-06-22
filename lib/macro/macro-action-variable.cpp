@@ -884,7 +884,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	QWidget::connect(_segmentIdx,
 			 SIGNAL(SelectionChanged(const IntVariable &)), this,
 			 SLOT(SegmentIndexChanged(const IntVariable &)));
-	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
 	QWidget::connect(
 		_subStringStart,

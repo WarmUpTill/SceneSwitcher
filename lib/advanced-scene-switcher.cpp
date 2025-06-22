@@ -599,7 +599,7 @@ static void handleSceneCollectionChanging()
 		AdvSceneSwitcher::window->close();
 	}
 	if (!switcher->stop) {
-		switcher->sceneColletionStop = true;
+		switcher->sceneCollectionStop = true;
 		switcher->Stop();
 	}
 }
