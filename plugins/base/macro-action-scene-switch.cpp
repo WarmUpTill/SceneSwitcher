@@ -224,7 +224,7 @@ static inline void populateTypeSelection(QComboBox *list)
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSwitchScene> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), true, true, true)),
+	  _scenes(new SceneSelectionWidget(this, true, true, true)),
 	  _transitions(new TransitionSelectionWidget(this)),
 	  _duration(new DurationSelection(parent, false)),
 	  _blockUntilTransitionDone(new QCheckBox(obs_module_text(

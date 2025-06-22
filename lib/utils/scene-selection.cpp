@@ -314,12 +314,14 @@ SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 			 SLOT(SelectionChanged(int)));
 
 	// Scene groups
-	QWidget::connect(window(), SIGNAL(SceneGroupAdded(const QString &)),
-			 this, SLOT(ItemAdd(const QString &)));
-	QWidget::connect(window(), SIGNAL(SceneGroupRemoved(const QString &)),
-			 this, SLOT(ItemRemove(const QString &)));
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(SceneGroupAdded(const QString &)), this,
+			 SLOT(ItemAdd(const QString &)));
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(SceneGroupRemoved(const QString &)), this,
+			 SLOT(ItemRemove(const QString &)));
 	QWidget::connect(
-		window(),
+		GetSettingsWindow(),
 		SIGNAL(SceneGroupRenamed(const QString &, const QString &)),
 		this, SLOT(ItemRename(const QString &, const QString &)));
 

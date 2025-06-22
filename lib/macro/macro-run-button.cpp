@@ -11,10 +11,14 @@ namespace advss {
 MacroRunButton::MacroRunButton(QWidget *parent) : QPushButton(parent)
 {
 	installEventFilter(this);
-	auto parentWindow = window();
-	if (parentWindow) {
-		parentWindow->installEventFilter(this);
-	}
+
+	// GetSettingsWindow() might still return null while this constructor is called
+	QTimer::singleShot(0, this, [this]() {
+		auto parentWindow = GetSettingsWindow();
+		if (parentWindow) {
+			parentWindow->installEventFilter(this);
+		}
+	});
 
 	setToolTip(obs_module_text("AdvSceneSwitcher.macroTab.run.tooltip"));
 

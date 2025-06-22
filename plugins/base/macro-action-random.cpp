@@ -1,6 +1,7 @@
 #include "macro-action-random.hpp"
 #include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <cstdlib>
 
@@ -105,7 +106,8 @@ MacroActionRandomEdit::MacroActionRandomEdit(
 	QWidget::connect(_list, SIGNAL(Removed(int)), this, SLOT(Remove(int)));
 	QWidget::connect(_list, SIGNAL(Replaced(int, const std::string &)),
 			 this, SLOT(Replace(int, const std::string &)));
-	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_allowRepeat, SIGNAL(stateChanged(int)), this,
 			 SLOT(AllowRepeatChanged(int)));

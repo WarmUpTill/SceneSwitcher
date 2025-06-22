@@ -272,9 +272,10 @@ TempVariableSelection::TempVariableSelection(QWidget *parent)
 			 SLOT(SelectionIdxChanged(int)));
 	QWidget::connect(_selection, SIGNAL(highlighted(int)), this,
 			 SLOT(HighlightChanged(int)));
-	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentsChanged()));
-	QWidget::connect(window(),
+	QWidget::connect(GetSettingsWindow(),
 			 SIGNAL(SegmentTempVarsChanged(MacroSegment *)), this,
 			 SLOT(SegmentTempVarsChanged(MacroSegment *)));
 
@@ -334,7 +335,8 @@ void TempVariableSelection::HighlightChanged(int idx)
 
 void TempVariableSelection::PopulateSelection()
 {
-	auto advssWindow = qobject_cast<AdvSceneSwitcher *>(window());
+	auto advssWindow =
+		qobject_cast<AdvSceneSwitcher *>(GetSettingsWindow());
 	if (!advssWindow) {
 		return;
 	}
@@ -367,7 +369,8 @@ void TempVariableSelection::PopulateSelection()
 
 void TempVariableSelection::HighlightSelection(const TempVariableRef &var)
 {
-	auto advssWindow = qobject_cast<AdvSceneSwitcher *>(window());
+	auto advssWindow =
+		qobject_cast<AdvSceneSwitcher *>(GetSettingsWindow());
 	if (!advssWindow) {
 		return;
 	}
@@ -394,7 +397,8 @@ QString TempVariableSelection::SetupInfoLabel()
 {
 	auto currentSelection = _selection->itemData(_selection->currentIndex())
 					.value<TempVariableRef>();
-	auto advssWindow = qobject_cast<AdvSceneSwitcher *>(window());
+	auto advssWindow =
+		qobject_cast<AdvSceneSwitcher *>(GetSettingsWindow());
 	if (!advssWindow) {
 		_info->setToolTip("");
 		_info->hide();
