@@ -17,7 +17,7 @@ namespace advss {
 std::map<std::pair<MidiDeviceType, std::string>, MidiDeviceInstance *>
 	MidiDeviceInstance::devices = {};
 
-static bool setupDeviceObservers()
+static bool setupMidiDeviceObservers()
 {
 	static std::vector<libremidi::observer> observers;
 	try {
@@ -74,10 +74,18 @@ static bool setupDeviceObservers()
 		blog(LOG_WARNING, "Failed to setup midi device observers: %s",
 		     error.what());
 	}
+
+	blog(LOG_INFO, "%s complete", __func__);
 	return true;
 }
 
-static bool deviceObserversAreSetup = setupDeviceObservers();
+static bool setup()
+{
+	std::thread t([]() { setupMidiDeviceObservers(); });
+	t.detach();
+	return true;
+}
+static bool setupDone = setup();
 
 void MidiDeviceInstance::ResetAllDevices()
 {
