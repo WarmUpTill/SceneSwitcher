@@ -32,7 +32,6 @@ private:
 	friend class SourceSettingSelection;
 };
 
-std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source);
 std::optional<std::string> GetSourceSettingValue(const OBSWeakSource &source,
 						 const SourceSetting &setting);
 std::optional<std::string>
