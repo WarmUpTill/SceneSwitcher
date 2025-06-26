@@ -82,19 +82,28 @@ bool MacroConditionSource::CheckCondition()
 		ret = obs_source_showing(s);
 		break;
 	case Condition::ALL_SETTINGS_MATCH: {
-		ret = CompareSourceSettings(_source.GetSource(), _settings,
-					    _regex);
-		const auto settings = GetSourceSettings(_source.GetSource());
-		SetVariableValue(settings);
-		SetTempVarValue("settings", settings);
+		const auto settings = GetSourceSettings(_source.GetSource(),
+							_includeDefaults);
+		if (!settings) {
+			break;
+		}
+
+		ret = CompareSourceSettings(*settings, _settings, _regex);
+		SetVariableValue(*settings);
+		SetTempVarValue("settings", *settings);
 		break;
 	}
 	case Condition::SETTINGS_CHANGED: {
-		const auto settings = GetSourceSettings(_source.GetSource());
-		ret = !_currentSettings.empty() && settings != _currentSettings;
+		const auto settings = GetSourceSettings(_source.GetSource(),
+							_includeDefaults);
+		ret = _currentSettings.has_value() &&
+		      settings != _currentSettings;
 		_currentSettings = settings;
-		SetVariableValue(settings);
-		SetTempVarValue("settings", settings);
+		if (!settings) {
+			break;
+		}
+		SetVariableValue(*settings);
+		SetTempVarValue("settings", *settings);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_MATCH: {
@@ -135,13 +144,13 @@ bool MacroConditionSource::CheckCondition()
 	}
 	case Condition::HEIGHT: {
 		const auto height = obs_source_get_height(s);
-		ret = compareSourceSize(_comparision, height, _size);
+		ret = compareSourceSize(_comparison, height, _size);
 		SetTempVarValue("height", std::to_string(height));
 		break;
 	}
 	case Condition::WIDTH: {
 		const auto width = obs_source_get_width(s);
-		ret = compareSourceSize(_comparision, width, _size);
+		ret = compareSourceSize(_comparison, width, _size);
 		SetTempVarValue("width", std::to_string(width));
 		break;
 	}
@@ -165,8 +174,9 @@ bool MacroConditionSource::Save(obs_data_t *obj) const
 	_regex.Save(obj);
 	_setting.Save(obj);
 	_size.Save(obj, "size");
-	obs_data_set_int(obj, "sizeComparisionMethod",
-			 static_cast<int>(_comparision));
+	obs_data_set_int(obj, "sizeComparisonMethod",
+			 static_cast<int>(_comparison));
+	obs_data_set_bool(obj, "includeDefaults", _includeDefaults);
 	return true;
 }
 
@@ -185,8 +195,11 @@ bool MacroConditionSource::Load(obs_data_t *obj)
 	}
 	_setting.Load(obj);
 	_size.Load(obj, "size");
-	_comparision = static_cast<SizeComparision>(
-		obs_data_get_int(obj, "sizeComparisionMethod"));
+	_comparison = static_cast<SizeComparision>(obs_data_get_int(
+		obj, obs_data_has_user_value(obj, "sizeComparisionMethod")
+			     ? "sizeComparisionMethod"
+			     : "sizeComparisonMethod"));
+	_includeDefaults = obs_data_get_bool(obj, "includeDefaults");
 	return true;
 }
 
@@ -268,7 +281,11 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	  _refreshSettingSelection(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.source.refresh"))),
 	  _size(new VariableSpinBox(this)),
-	  _sizeCompareMethods(new QComboBox())
+	  _sizeCompareMethods(new QComboBox()),
+	  _includeDefaults(new QCheckBox(
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.source.includeDefaults"),
+		  this))
 {
 	populateSelection(_conditions, sourceConditionTypes);
 	populateSelection(_sizeCompareMethods, compareMethods);
@@ -300,6 +317,8 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 		this, SLOT(SizeChanged(const NumberVariable<int> &)));
 	QWidget::connect(_sizeCompareMethods, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(CompareMethodChanged(int)));
+	QWidget::connect(_includeDefaults, SIGNAL(stateChanged(int)), this,
+			 SLOT(IncludeDefaultsChanged(int)));
 
 	auto line1Layout = new QHBoxLayout;
 	line1Layout->setContentsMargins(0, 0, 0, 0);
@@ -328,6 +347,7 @@ MacroConditionSourceEdit::MacroConditionSourceEdit(
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
 	mainLayout->addLayout(line3Layout);
+	mainLayout->addWidget(_includeDefaults);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -364,8 +384,12 @@ void MacroConditionSourceEdit::GetSettingsClicked()
 	QString value;
 	if (_entryData->GetCondition() ==
 	    MacroConditionSource::Condition::ALL_SETTINGS_MATCH) {
-		value = FormatJsonString(
-			GetSourceSettings(_entryData->_source.GetSource()));
+		const auto settings =
+			GetSourceSettings(_entryData->_source.GetSource(),
+					  _entryData->_includeDefaults);
+		if (settings) {
+			value = FormatJsonString(*settings);
+		}
 	} else if (_entryData->GetCondition() ==
 		   MacroConditionSource::Condition::
 			   INDIVIDUAL_SETTING_LIST_ENTRY_MATCH) {
@@ -427,8 +451,14 @@ void MacroConditionSourceEdit::SizeChanged(const NumberVariable<int> &value)
 void MacroConditionSourceEdit::CompareMethodChanged(int index)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_comparision =
+	_entryData->_comparison =
 		static_cast<MacroConditionSource::SizeComparision>(index);
+}
+
+void MacroConditionSourceEdit::IncludeDefaultsChanged(int state)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_includeDefaults = state;
 }
 
 static QString GetIndividualListEntryName()
@@ -500,6 +530,10 @@ void MacroConditionSourceEdit::SetWidgetVisibility()
 	SetRowVisibleByValue(_conditions, GetIndividualListEntryName(),
 			     _entryData->_setting.IsList());
 
+	_includeDefaults->setVisible(
+		_entryData->GetCondition() ==
+		MacroConditionSource::Condition::ALL_SETTINGS_MATCH);
+
 	adjustSize();
 	updateGeometry();
 }
@@ -519,7 +553,8 @@ void MacroConditionSourceEdit::UpdateEntryData()
 					_entryData->_setting);
 	_size->SetValue(_entryData->_size);
 	_sizeCompareMethods->setCurrentIndex(
-		static_cast<int>(_entryData->_comparision));
+		static_cast<int>(_entryData->_comparison));
+	_includeDefaults->setChecked(_entryData->_includeDefaults);
 	SetWidgetVisibility();
 }
 

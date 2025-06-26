@@ -396,9 +396,10 @@ void MacroActionFilterEdit::GetSettingsClicked()
 	case MacroActionFilter::SettingsInputMethod::JSON_STRING: {
 		const auto filters =
 			_entryData->_filter.GetFilters(_entryData->_source);
+		const auto settings = GetSourceSettings(
+			filters.empty() ? nullptr : filters.at(0), true);
 		_settingsString->setPlainText(
-			FormatJsonString(GetSourceSettings(
-				filters.empty() ? nullptr : filters.at(0))));
+			FormatJsonString(settings ? *settings : ""));
 		break;
 	}
 	}
