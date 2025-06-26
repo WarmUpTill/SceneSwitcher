@@ -411,6 +411,11 @@ void MacroSegmentList::SetVisibilityCheckEnable(bool enable)
 	}
 }
 
+bool MacroSegmentList::IsEmpty() const
+{
+	return _contentLayout->count() == 0;
+}
+
 void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
 {
 	if (!_checkVisibility) {
