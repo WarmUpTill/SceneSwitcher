@@ -256,6 +256,34 @@ bool MacroEdit::eventFilter(QObject *obj, QEvent *event)
 	return QWidget::eventFilter(obj, event);
 }
 
+QSize MacroEdit::sizeHint() const
+{
+	int width = 0;
+	int height = 0;
+
+	const auto calcSize = [&width, &height](MacroSegmentList *list) {
+		if (list->IsEmpty()) {
+			list->SetHelpMsgVisible(true);
+			const auto sh = list->sizeHint();
+			width += sh.width();
+			height += sh.height();
+			return;
+		}
+
+		if (list->widget()) {
+			QSize contentSize = list->widget()->sizeHint();
+			width = std::max(width, contentSize.width());
+			height += contentSize.height();
+		}
+	};
+
+	calcSize(ui->actionsList);
+	calcSize(ui->elseActionsList);
+	calcSize(ui->conditionsList);
+
+	return QSize(width, height);
+}
+
 static bool
 isValidMacroSegmentIdx(const std::deque<std::shared_ptr<MacroSegment>> &list,
 		       int idx)

@@ -113,6 +113,7 @@ signals:
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override;
+	QSize sizeHint() const override;
 
 private:
 	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };
