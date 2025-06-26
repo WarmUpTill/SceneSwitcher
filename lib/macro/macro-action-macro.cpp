@@ -14,6 +14,11 @@ bool MacroActionMacro::_registered = MacroActionFactory::Register(
 
 bool MacroActionMacro::PerformAction()
 {
+	if (_action == Action::NESTED_MACRO) {
+		const bool conditionsMatched = _nestedMacro->CheckConditions();
+		return _nestedMacro->PerformActions(conditionsMatched);
+	}
+
 	auto macro = _macro.GetMacro();
 	if (!macro) {
 		return true;
@@ -32,7 +37,7 @@ bool MacroActionMacro::PerformAction()
 	case Action::RESET_COUNTER:
 		macro->ResetRunCount();
 		break;
-	case Action::RUN:
+	case Action::RUN_ACTIONS:
 		RunActions(macro.get());
 		break;
 	case Action::STOP:
@@ -80,7 +85,7 @@ void MacroActionMacro::LogAction() const
 		ablog(LOG_INFO, "reset counter for \"%s\"",
 		      macro->Name().c_str());
 		break;
-	case Action::RUN:
+	case Action::RUN_ACTIONS:
 		ablog(LOG_INFO, "run nested macro \"%s\"",
 		      macro->Name().c_str());
 		break;
@@ -99,6 +104,9 @@ void MacroActionMacro::LogAction() const
 		ablog(LOG_INFO, "toggled action %d of macro \"%s\"",
 		      _actionIndex.GetValue(), macro->Name().c_str());
 		break;
+	case Action::NESTED_MACRO:
+		ablog(LOG_INFO, "run nested macro");
+		break;
 	default:
 		break;
 	}
@@ -111,6 +119,9 @@ bool MacroActionMacro::Save(obs_data_t *obj) const
 	_actionIndex.Save(obj, "actionIndex");
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_runOptions.Save(obj);
+	OBSDataAutoRelease nestedMacroData = obs_data_create();
+	_nestedMacro->Save(nestedMacroData);
+	obs_data_set_obj(obj, "nestedMacro", nestedMacroData);
 	return true;
 }
 
@@ -122,6 +133,14 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 	_action = static_cast<MacroActionMacro::Action>(
 		obs_data_get_int(obj, "action"));
 	_runOptions.Load(obj);
+
+	if (obs_data_has_user_value(obj, "nestedMacro")) {
+		OBSDataAutoRelease nestedMacroData =
+			obs_data_get_obj(obj, "nestedMacro");
+		_nestedMacro->Load(nestedMacroData);
+		_nestedMacro->PostLoad();
+	}
+
 	return true;
 }
 
@@ -204,7 +223,9 @@ static void populateActionSelection(QComboBox *list)
 			 "AdvSceneSwitcher.action.macro.type.togglePause"},
 			{MacroActionMacro::Action::RESET_COUNTER,
 			 "AdvSceneSwitcher.action.macro.type.resetCounter"},
-			{MacroActionMacro::Action::RUN,
+			{MacroActionMacro::Action::NESTED_MACRO,
+			 "AdvSceneSwitcher.action.macro.type.nestedMacro"},
+			{MacroActionMacro::Action::RUN_ACTIONS,
 			 "AdvSceneSwitcher.action.macro.type.run"},
 			{MacroActionMacro::Action::STOP,
 			 "AdvSceneSwitcher.action.macro.type.stop"},
@@ -261,13 +282,17 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	  _entryLayout(new QHBoxLayout()),
 	  _conditionLayout(new QHBoxLayout()),
 	  _reevaluateConditionStateLayout(new QHBoxLayout()),
-	  _setInputsLayout(new QHBoxLayout())
+	  _setInputsLayout(new QHBoxLayout()),
+	  _nestedMacro(new MacroEdit(this))
 {
 	populateActionSelection(_actions);
 	populateConditionBehaviorSelection(_conditionBehaviors);
 	populateActionTypeSelection(_actionTypes);
 
 	_conditionMacros->HideSelectedMacro();
+
+	_nestedMacro->setSizePolicy(QSizePolicy::Preferred,
+				    QSizePolicy::Preferred);
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
@@ -292,6 +317,13 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 			 this, SLOT(InputsChanged(const StringList &)));
 	QWidget::connect(_reevaluateConditionState, SIGNAL(stateChanged(int)),
 			 this, SLOT(ReevaluateConditionStateChanged(int)));
+	QWidget::connect(_nestedMacro, &MacroEdit::MacroSegmentOrderChanged,
+			 this, [this]() {
+				 _nestedMacro->adjustSize();
+				 _nestedMacro->updateGeometry();
+				 adjustSize();
+				 updateGeometry();
+			 });
 
 	_setInputsLayout->addWidget(_setInputs);
 	_setInputsLayout->addWidget(new HelpIcon(obs_module_text(
@@ -310,6 +342,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	layout->addLayout(_setInputsLayout);
 	layout->addWidget(_inputs);
 	layout->addWidget(_skipWhenPaused);
+	layout->addWidget(_nestedMacro);
 	setLayout(layout);
 	_entryData = entryData;
 	UpdateEntryData();
@@ -343,6 +376,13 @@ void MacroActionMacroEdit::UpdateEntryData()
 	_skipWhenPaused->setChecked(_entryData->_runOptions.skipWhenPaused);
 	_setInputs->setChecked(_entryData->_runOptions.setInputs);
 	SetupMacroInput(_entryData->_macro.GetMacro().get());
+
+	const auto &macro = _entryData->_nestedMacro;
+	_nestedMacro->SetMacro(macro);
+	_nestedMacro->PopulateMacroConditions(*macro);
+	_nestedMacro->PopulateMacroActions(*macro);
+	_nestedMacro->PopulateMacroElseActions(*macro);
+
 	SetWidgetVisibility();
 }
 
@@ -444,7 +484,8 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 
 	PlaceWidgets(
 		obs_module_text(
-			_entryData->_action == MacroActionMacro::Action::RUN
+			_entryData->_action ==
+					MacroActionMacro::Action::RUN_ACTIONS
 				? "AdvSceneSwitcher.action.macro.entry.run"
 				: "AdvSceneSwitcher.action.macro.entry.other"),
 		_entryLayout, placeholders);
@@ -460,7 +501,7 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 			_conditionLayout, placeholders);
 	}
 
-	if (_entryData->_action == MacroActionMacro::Action::RUN ||
+	if (_entryData->_action == MacroActionMacro::Action::RUN_ACTIONS ||
 	    _entryData->_action == MacroActionMacro::Action::STOP) {
 		_macros->HideSelectedMacro();
 	} else {
@@ -476,27 +517,34 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	_actionIndex->setVisible(isModifyingActionState);
 
 	SetLayoutVisible(_conditionLayout,
-			 _entryData->_action == MacroActionMacro::Action::RUN);
+			 _entryData->_action ==
+				 MacroActionMacro::Action::RUN_ACTIONS);
 	const bool needsAdditionalConditionWidgets =
-		_entryData->_action == MacroActionMacro::Action::RUN &&
+		_entryData->_action == MacroActionMacro::Action::RUN_ACTIONS &&
 		_entryData->_runOptions.logic !=
 			MacroActionMacro::RunOptions::Logic::IGNORE_CONDITIONS;
 	_conditionMacros->setVisible(needsAdditionalConditionWidgets);
 	SetLayoutVisible(_reevaluateConditionStateLayout,
 			 needsAdditionalConditionWidgets);
 	SetLayoutVisible(_setInputsLayout,
-			 _entryData->_action == MacroActionMacro::Action::RUN);
+			 _entryData->_action ==
+				 MacroActionMacro::Action::RUN_ACTIONS);
 	_inputs->setVisible(_entryData->_action ==
-				    MacroActionMacro::Action::RUN &&
+				    MacroActionMacro::Action::RUN_ACTIONS &&
 			    _entryData->_runOptions.setInputs);
-	HighlightMacroSettingsButton(_entryData->_action ==
-					     MacroActionMacro::Action::RUN &&
-				     _entryData->_runOptions.setInputs &&
-				     !_inputs->HasInputsToSet());
+	HighlightMacroSettingsButton(
+		_entryData->_action == MacroActionMacro::Action::RUN_ACTIONS &&
+		_entryData->_runOptions.setInputs &&
+		!_inputs->HasInputsToSet());
 	_actionTypes->setVisible(_entryData->_action ==
-				 MacroActionMacro::Action::RUN);
+				 MacroActionMacro::Action::RUN_ACTIONS);
 	_skipWhenPaused->setVisible(_entryData->_action ==
-				    MacroActionMacro::Action::RUN);
+				    MacroActionMacro::Action::RUN_ACTIONS);
+
+	_nestedMacro->setVisible(_entryData->_action ==
+				 MacroActionMacro::Action::NESTED_MACRO);
+	_macros->setVisible(_entryData->_action !=
+			    MacroActionMacro::Action::NESTED_MACRO);
 
 	adjustSize();
 	updateGeometry();

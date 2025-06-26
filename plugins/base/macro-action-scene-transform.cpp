@@ -399,7 +399,7 @@ static inline void populateActionSelection(QComboBox *list)
 MacroActionSceneTransformEdit::MacroActionSceneTransformEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneTransform> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), true, false, false, true)),
+	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _sources(new SceneItemSelectionWidget(parent)),
 	  _action(new QComboBox()),
 	  _rotation(new VariableDoubleSpinBox()),

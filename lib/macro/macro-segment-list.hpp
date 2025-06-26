@@ -35,6 +35,7 @@ public:
 	void SetSelection(int idx) const;
 	QVBoxLayout *ContentLayout() const { return _contentLayout; }
 	void SetVisibilityCheckEnable(bool enable);
+	bool IsEmpty() const;
 
 signals:
 	void SelectionChanged(int idx);

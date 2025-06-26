@@ -32,18 +32,18 @@ private:
 	static const std::string id;
 };
 
-class MacroActionSudioModeEdit : public QWidget {
+class MacroActionStudioModeEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	MacroActionSudioModeEdit(
+	MacroActionStudioModeEdit(
 		QWidget *parent,
 		std::shared_ptr<MacroActionSudioMode> entryData = nullptr);
 	void UpdateEntryData();
 	static QWidget *Create(QWidget *parent,
 			       std::shared_ptr<MacroAction> action)
 	{
-		return new MacroActionSudioModeEdit(
+		return new MacroActionStudioModeEdit(
 			parent, std::dynamic_pointer_cast<MacroActionSudioMode>(
 					action));
 	}

@@ -9,6 +9,7 @@
 #include "ui-helpers.hpp"
 
 #include <QHBoxLayout>
+#include "macro-edit.hpp"
 
 namespace advss {
 
@@ -31,7 +32,8 @@ MacroSegmentSelection::MacroSegmentSelection(QWidget *parent, Type type,
 		_index,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(IndexChanged(const NumberVariable<int> &)));
-	QWidget::connect(window(), SIGNAL(MacroSegmentOrderChanged()), this,
+	QWidget::connect(GetSettingsWindow(),
+			 SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
 
 	auto layout = new QHBoxLayout;

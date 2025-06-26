@@ -1,5 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
+#include "macro.hpp"
+#include "macro-edit.hpp"
 #include "macro-input.hpp"
 #include "macro-selection.hpp"
 #include "macro-segment-selection.hpp"
@@ -44,16 +46,18 @@ public:
 		PAUSE,
 		UNPAUSE,
 		RESET_COUNTER,
-		RUN,
+		RUN_ACTIONS,
 		STOP,
 		DISABLE_ACTION,
 		ENABLE_ACTION,
 		TOGGLE_ACTION,
 		TOGGLE_PAUSE,
+		NESTED_MACRO,
 	};
-	Action _action = Action::RUN;
+	Action _action = Action::NESTED_MACRO;
 	IntVariable _actionIndex = 1;
 	RunOptions _runOptions = {};
+	std::shared_ptr<Macro> _nestedMacro = std::make_shared<Macro>();
 
 private:
 	void RunActions(Macro *actionMacro) const;
@@ -112,6 +116,7 @@ private:
 	QHBoxLayout *_conditionLayout;
 	QHBoxLayout *_reevaluateConditionStateLayout;
 	QHBoxLayout *_setInputsLayout;
+	MacroEdit *_nestedMacro;
 
 	std::shared_ptr<MacroActionMacro> _entryData;
 	bool _loading = true;

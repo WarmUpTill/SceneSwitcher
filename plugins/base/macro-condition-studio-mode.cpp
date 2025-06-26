@@ -90,7 +90,7 @@ MacroConditionStudioModeEdit::MacroConditionStudioModeEdit(
 	: QWidget(parent)
 {
 	_condition = new QComboBox();
-	_scenes = new SceneSelectionWidget(window(), true, false, true, true);
+	_scenes = new SceneSelectionWidget(this, true, false, true, true);
 
 	populateConditionSelection(_condition);
 
