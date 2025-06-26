@@ -17,26 +17,38 @@ bool MacroSegmentList::_useCache = true;
 
 MacroSegmentList::MacroSegmentList(QWidget *parent)
 	: QScrollArea(parent),
+	  _stackedWidget(new QStackedWidget(this)),
 	  _layout(new QVBoxLayout),
 	  _contentLayout(new QVBoxLayout),
-	  _helpMsg(new QLabel)
+	  _helpMsg(new QLabel(this))
 {
 	_helpMsg->setWordWrap(true);
 	_helpMsg->setAlignment(Qt::AlignCenter);
+	auto helpWidget = new QWidget(this);
+	auto helpLayout = new QVBoxLayout(helpWidget);
+	helpLayout->addWidget(_helpMsg);
+	helpLayout->setAlignment(Qt::AlignCenter);
+
+	auto contentWidget = new QWidget(this);
+	contentWidget->setLayout(_contentLayout);
 	_contentLayout->setSpacing(0);
-	auto helperLayout = new QGridLayout();
-	helperLayout->addWidget(_helpMsg, 0, 0,
-				Qt::AlignHCenter | Qt::AlignVCenter);
-	helperLayout->addLayout(_contentLayout, 0, 0);
-	helperLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
-	_layout->addLayout(helperLayout, 10);
-	_layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding,
-					 QSizePolicy::Expanding));
-	auto wrapper = new QWidget;
-	wrapper->setLayout(_layout);
-	setWidget(wrapper);
+
+	auto contentWrapper = new QWidget(this);
+	auto wrapperLayout = new QVBoxLayout(contentWrapper);
+	wrapperLayout->setContentsMargins(0, 0, 0, 0);
+	wrapperLayout->addWidget(contentWidget);
+	// Move macro segments to the top of the list
+	wrapperLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding,
+					       QSizePolicy::Expanding));
+
+	_stackedWidget->addWidget(helpWidget);
+	_stackedWidget->addWidget(contentWrapper);
+
+	setWidget(_stackedWidget);
 	setWidgetResizable(true);
 	setAcceptDrops(true);
+
+	SetHelpMsgVisible(true);
 
 	connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
 		[this]() { SetupVisibleMacroSegmentWidgets(); });
@@ -107,9 +119,11 @@ void MacroSegmentList::SetHelpMsg(const QString &msg) const
 	_helpMsg->setText(msg);
 }
 
-void MacroSegmentList::SetHelpMsgVisible(bool visible) const
+void MacroSegmentList::SetHelpMsgVisible(bool visible)
 {
-	_helpMsg->setVisible(visible);
+	_stackedWidget->setCurrentIndex(visible ? 0 : 1);
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroSegmentList::Insert(int idx, QWidget *widget)
@@ -117,23 +131,33 @@ void MacroSegmentList::Insert(int idx, QWidget *widget)
 	widget->installEventFilter(this);
 	_contentLayout->insertWidget(idx, widget);
 	SetupVisibleMacroSegmentWidgets();
+	SetHelpMsgVisible(false);
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroSegmentList::Add(QWidget *widget)
 {
-	widget->installEventFilter(this);
-	_contentLayout->addWidget(widget);
-	SetupVisibleMacroSegmentWidgets();
+	Insert(_contentLayout->count(), widget);
 }
 
-void MacroSegmentList::Remove(int idx) const
+void MacroSegmentList::Remove(int idx)
 {
 	DeleteLayoutItemWidget(_contentLayout->takeAt(idx));
+	adjustSize();
+	updateGeometry();
+	if (IsEmpty()) {
+		SetHelpMsgVisible(true);
+	}
 }
 
-void MacroSegmentList::Clear(int idx) const
+void MacroSegmentList::Clear(int idx)
 {
 	ClearLayout(_contentLayout, idx);
+	adjustSize();
+	updateGeometry();
+
+	SetHelpMsgVisible(true);
 }
 
 void MacroSegmentList::SetCachingEnabled(bool enable)
@@ -178,6 +202,8 @@ bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
 		widget->show();
 	}
 
+	adjustSize();
+	updateGeometry();
 	return true;
 }
 
@@ -411,6 +437,24 @@ void MacroSegmentList::SetVisibilityCheckEnable(bool enable)
 	}
 }
 
+bool MacroSegmentList::IsEmpty() const
+{
+	return _contentLayout->count() == 0;
+}
+
+QSize MacroSegmentList::minimumSizeHint() const
+{
+	return _stackedWidget->currentWidget()->minimumSizeHint();
+}
+
+QSize MacroSegmentList::sizeHint() const
+{
+	const auto contentSize = _stackedWidget->currentWidget()->sizeHint();
+	const auto hint =
+		QSize(width(), contentSize.height() + 2 * frameWidth());
+	return hint;
+}
+
 void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
 {
 	if (!_checkVisibility) {
@@ -428,6 +472,7 @@ void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
 
 		segment->SetupWidgets();
 	}
+	updateGeometry();
 }
 
 int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos) const
