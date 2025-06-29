@@ -16,25 +16,28 @@ bool MacroActionAudio::_registered = MacroActionFactory::Register(
 	{MacroActionAudio::Create, MacroActionAudioEdit::Create,
 	 "AdvSceneSwitcher.action.audio"});
 
-static const std::map<MacroActionAudio::Action, std::string> actionTypes = {
-	{MacroActionAudio::Action::MUTE,
-	 "AdvSceneSwitcher.action.audio.type.mute"},
-	{MacroActionAudio::Action::UNMUTE,
-	 "AdvSceneSwitcher.action.audio.type.unmute"},
-	{MacroActionAudio::Action::SOURCE_VOLUME,
-	 "AdvSceneSwitcher.action.audio.type.sourceVolume"},
-	{MacroActionAudio::Action::MASTER_VOLUME,
-	 "AdvSceneSwitcher.action.audio.type.masterVolume"},
-	{MacroActionAudio::Action::SYNC_OFFSET,
-	 "AdvSceneSwitcher.action.audio.type.syncOffset"},
-	{MacroActionAudio::Action::MONITOR,
-	 "AdvSceneSwitcher.action.audio.type.monitor"},
-	{MacroActionAudio::Action::BALANCE,
-	 "AdvSceneSwitcher.action.audio.type.balance"},
-	{MacroActionAudio::Action::ENABLE_ON_TRACK,
-	 "AdvSceneSwitcher.action.audio.type.enableOnTrack"},
-	{MacroActionAudio::Action::DISABLE_ON_TRACK,
-	 "AdvSceneSwitcher.action.audio.type.disableOnTrack"},
+static const std::vector<std::pair<MacroActionAudio::Action, std::string>>
+	actionTypes = {
+		{MacroActionAudio::Action::MUTE,
+		 "AdvSceneSwitcher.action.audio.type.mute"},
+		{MacroActionAudio::Action::UNMUTE,
+		 "AdvSceneSwitcher.action.audio.type.unmute"},
+		{MacroActionAudio::Action::TOGGLE_MUTE,
+		 "AdvSceneSwitcher.action.audio.type.toggleMute"},
+		{MacroActionAudio::Action::SOURCE_VOLUME,
+		 "AdvSceneSwitcher.action.audio.type.sourceVolume"},
+		{MacroActionAudio::Action::MASTER_VOLUME,
+		 "AdvSceneSwitcher.action.audio.type.masterVolume"},
+		{MacroActionAudio::Action::SYNC_OFFSET,
+		 "AdvSceneSwitcher.action.audio.type.syncOffset"},
+		{MacroActionAudio::Action::MONITOR,
+		 "AdvSceneSwitcher.action.audio.type.monitor"},
+		{MacroActionAudio::Action::BALANCE,
+		 "AdvSceneSwitcher.action.audio.type.balance"},
+		{MacroActionAudio::Action::ENABLE_ON_TRACK,
+		 "AdvSceneSwitcher.action.audio.type.enableOnTrack"},
+		{MacroActionAudio::Action::DISABLE_ON_TRACK,
+		 "AdvSceneSwitcher.action.audio.type.disableOnTrack"},
 };
 
 static const std::map<MacroActionAudio::FadeType, std::string> fadeTypes = {
@@ -255,6 +258,9 @@ bool MacroActionAudio::PerformAction()
 	case Action::UNMUTE:
 		obs_source_set_muted(s, false);
 		break;
+	case Action::TOGGLE_MUTE:
+		obs_source_set_muted(s, !obs_source_muted(s));
+		break;
 	case Action::SOURCE_VOLUME:
 	case Action::MASTER_VOLUME:
 		if (_fade) {
@@ -287,7 +293,10 @@ bool MacroActionAudio::PerformAction()
 
 void MacroActionAudio::LogAction() const
 {
-	auto it = actionTypes.find(_action);
+	auto it = std::find_if(
+		actionTypes.begin(), actionTypes.end(),
+		[this](const std::pair<MacroActionAudio::Action, std::string>
+			       &item) { return item.first == _action; });
 	if (it != actionTypes.end()) {
 		auto &[_, action] = *it;
 		ablog(LOG_INFO,
@@ -632,8 +641,7 @@ void MacroActionAudioEdit::SetWidgetVisibility()
 	if (_entryData->_action != MacroActionAudio::Action::MASTER_VOLUME &&
 	    obs_get_version() >= MAKE_SEMANTIC_VERSION(29, 0, 0)) {
 		_actions->removeItem(_actions->findText(obs_module_text(
-			actionTypes.at(MacroActionAudio::Action::MASTER_VOLUME)
-				.c_str())));
+			"AdvSceneSwitcher.action.audio.type.masterVolume")));
 	}
 
 	updateGeometry();

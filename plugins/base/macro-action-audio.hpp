@@ -34,6 +34,7 @@ public:
 		BALANCE,
 		ENABLE_ON_TRACK,
 		DISABLE_ON_TRACK,
+		TOGGLE_MUTE,
 	};
 
 	enum class FadeType {
