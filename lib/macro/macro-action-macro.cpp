@@ -293,6 +293,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 
 	_nestedMacro->setSizePolicy(QSizePolicy::Preferred,
 				    QSizePolicy::Preferred);
+	_nestedMacro->SetAutoResizeMacroSegmentListsEnabled(true);
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
@@ -319,6 +320,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 			 this, SLOT(ReevaluateConditionStateChanged(int)));
 	QWidget::connect(_nestedMacro, &MacroEdit::MacroSegmentOrderChanged,
 			 this, [this]() {
+				 auto size = _nestedMacro->sizeHint();
 				 _nestedMacro->adjustSize();
 				 _nestedMacro->updateGeometry();
 				 adjustSize();
