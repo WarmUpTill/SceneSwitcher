@@ -36,6 +36,8 @@ MacroSegmentList::MacroSegmentList(QWidget *parent)
 	wrapper->setLayout(_layout);
 	setWidget(wrapper);
 	setWidgetResizable(true);
+	setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 	setAcceptDrops(true);
 
 	connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
@@ -117,6 +119,9 @@ void MacroSegmentList::Insert(int idx, QWidget *widget)
 	widget->installEventFilter(this);
 	_contentLayout->insertWidget(idx, widget);
 	SetupVisibleMacroSegmentWidgets();
+	//if (_autoResizeEnabled) {
+	//	UpdateSizeToFitContent();
+	//}
 }
 
 void MacroSegmentList::Add(QWidget *widget)
@@ -124,16 +129,25 @@ void MacroSegmentList::Add(QWidget *widget)
 	widget->installEventFilter(this);
 	_contentLayout->addWidget(widget);
 	SetupVisibleMacroSegmentWidgets();
+	//if (_autoResizeEnabled) {
+	//	UpdateSizeToFitContent();
+	//}
 }
 
-void MacroSegmentList::Remove(int idx) const
+void MacroSegmentList::Remove(int idx)
 {
 	DeleteLayoutItemWidget(_contentLayout->takeAt(idx));
+	//if (_autoResizeEnabled) {
+	//	UpdateSizeToFitContent();
+	//}}
 }
 
-void MacroSegmentList::Clear(int idx) const
+void MacroSegmentList::Clear(int idx)
 {
 	ClearLayout(_contentLayout, idx);
+	//if (_autoResizeEnabled) {
+	//	UpdateSizeToFitContent();
+	//}
 }
 
 void MacroSegmentList::SetCachingEnabled(bool enable)
@@ -343,6 +357,26 @@ void MacroSegmentList::ClearWidgetCache()
 	}
 }
 
+void MacroSegmentList::UpdateSizeToFitContent()
+{
+	auto content = widget();
+	if (!content) {
+		return;
+	}
+
+	QSize contentSize = content->sizeHint();
+	QSize frameMargins = QSize(verticalScrollBar()->isVisible()
+					   ? verticalScrollBar()->width()
+					   : 0,
+				   horizontalScrollBar()->isVisible()
+					   ? horizontalScrollBar()->height()
+					   : 0);
+
+	QSize newSize = contentSize + QSize(frameWidth() * 2, frameWidth() * 2);
+	const auto oldWidth = width();
+	resize(oldWidth, newSize.height());
+}
+
 static bool isInUpperHalfOf(const QPoint &pos, const QRect &rect)
 {
 	return QRect(rect.topLeft(),
@@ -414,6 +448,49 @@ void MacroSegmentList::SetVisibilityCheckEnable(bool enable)
 bool MacroSegmentList::IsEmpty() const
 {
 	return _contentLayout->count() == 0;
+}
+
+//QSize MacroSegmentList::sizeHint() const
+//{
+//	if (IsEmpty()) {
+//		if (_helpMsg->isVisible()) {
+//			return _helpMsg->sizeHint();
+//		}
+//		return QScrollArea::sizeHint();
+//	}
+//
+//	int width = 0;
+//	int height = 0;
+//
+//	for (int i = 0; i < _layout->count(); i++) {
+//		auto item = _contentLayout->itemAt(0);
+//
+//		//if (scrollArea->widget()) {
+//		//	QSize contentSize = scrollArea->widget()->sizeHint();
+//		//	width = std::max(width, contentSize.width());
+//		//	height += contentSize.height();
+//		//}
+//	}
+//	return widget()->sizeHint();
+//}
+
+void MacroSegmentList::SetAutoResizeEnabled(bool enabled)
+{
+	if (_autoResizeEnabled == enabled)
+		return;
+
+	_autoResizeEnabled = enabled;
+
+	if (enabled) {
+		//setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+		//setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+		UpdateSizeToFitContent();
+	} else {
+		// Restore default scrollbar behavior
+		setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+		setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+		updateGeometry(); // Let the layout system recompute size
+	}
 }
 
 void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
@@ -572,6 +649,9 @@ void MacroSegmentList::resizeEvent(QResizeEvent *event)
 {
 	QScrollArea::resizeEvent(event);
 	SetupVisibleMacroSegmentWidgets();
+	if (_autoResizeEnabled) {
+		UpdateSizeToFitContent();
+	}
 }
 
 } // namespace advss

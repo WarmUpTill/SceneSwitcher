@@ -98,6 +98,17 @@ MacroEdit::MacroEdit(QWidget *parent) : ui(new Ui_MacroEdit)
 	connect(ui->conditionsList, &QWidget::customContextMenuRequested, this,
 		&MacroEdit::ShowMacroConditionsContextMenu);
 
+	const auto updateSize = [this]() {
+		adjustSize();
+		updateGeometry();
+	};
+	connect(ui->actionsList, &MacroSegmentList::updateGeometry, this,
+		updateSize);
+	connect(ui->elseActionsList, &MacroSegmentList::updateGeometry, this,
+		updateSize);
+	connect(ui->conditionsList, &MacroSegmentList::updateGeometry, this,
+		updateSize);
+
 	// Set action and condition toolbars
 	const std::string pathPrefix =
 		GetDataFilePath("res/images/" + GetThemeTypeName());
@@ -278,8 +289,11 @@ QSize MacroEdit::sizeHint() const
 	};
 
 	calcSize(ui->actionsList);
-	calcSize(ui->elseActionsList);
 	calcSize(ui->conditionsList);
+
+	if (ElseSectionIsVisible()) {
+		calcSize(ui->elseActionsList);
+	}
 
 	return QSize(width, height);
 }
@@ -383,6 +397,12 @@ void MacroEdit::RunSegmentHighlightChecks()
 		runSegmentHighlightChecksHelper(ui->actionsList);
 		runSegmentHighlightChecksHelper(ui->elseActionsList);
 	}
+}
+
+bool MacroEdit::ElseSectionIsVisible() const
+{
+	const auto elsePosition = ui->macroElseActionSplitter->sizes();
+	return elsePosition[1] != 0;
 }
 
 void MacroEdit::PopulateMacroActions(Macro &m, uint32_t afterIdx)
@@ -557,8 +577,7 @@ void MacroEdit::MaximizeConditions() const
 
 void MacroEdit::on_toggleElseActions_clicked() const
 {
-	auto elsePosition = ui->macroElseActionSplitter->sizes();
-	if (elsePosition[1] == 0) {
+	if (!ElseSectionIsVisible()) {
 		CenterSplitterPosition(ui->macroElseActionSplitter);
 		return;
 	}
@@ -1713,6 +1732,13 @@ void MacroEdit::SwapConditions(Macro *m, int pos1, int pos2)
 	widget2->SetRootNode(root);
 	widget1->SetRootNode(false);
 	emit(MacroSegmentOrderChanged());
+}
+
+void MacroEdit::SetAutoResizeMacroSegmentListsEnabled(bool enabled)
+{
+	ui->actionsList->SetAutoResizeEnabled(enabled);
+	ui->elseActionsList->SetAutoResizeEnabled(enabled);
+	ui->conditionsList->SetAutoResizeEnabled(enabled);
 }
 
 void MacroEdit::MoveMacroConditionUp(int idx)

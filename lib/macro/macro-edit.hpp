@@ -35,6 +35,8 @@ public:
 	void SwapActions(Macro *m, int pos1, int pos2);
 	void SwapElseActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
+	void SetAutoResizeMacroSegmentListsEnabled(bool enabled);
+	QSize sizeHint() const override;
 
 public slots:
 	void on_conditionAdd_clicked();
@@ -113,7 +115,6 @@ signals:
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override;
-	QSize sizeHint() const override;
 
 private:
 	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };
@@ -128,6 +129,7 @@ private:
 			 const std::function<void(MacroEdit *)> &minimize,
 			 MacroSegmentList *list);
 	void RunSegmentHighlightChecks();
+	bool ElseSectionIsVisible() const;
 
 	MacroSection lastInteracted = MacroSection::CONDITIONS;
 	int currentConditionIdx = -1;

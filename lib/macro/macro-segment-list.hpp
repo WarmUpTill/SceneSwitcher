@@ -24,8 +24,8 @@ public:
 	int IndexAt(const QPoint &) const;
 	void Insert(int idx, QWidget *widget);
 	void Add(QWidget *widget);
-	void Remove(int idx) const;
-	void Clear(int idx = 0) const; // Clear all elements >= idx
+	void Remove(int idx);
+	void Clear(int idx = 0); // Clear all elements >= idx
 	static void SetCachingEnabled(bool enable);
 	void CacheCurrentWidgetsFor(const Macro *);
 	bool PopulateWidgetsFromCache(const Macro *);
@@ -36,6 +36,7 @@ public:
 	QVBoxLayout *ContentLayout() const { return _contentLayout; }
 	void SetVisibilityCheckEnable(bool enable);
 	bool IsEmpty() const;
+	void SetAutoResizeEnabled(bool enabled);
 
 signals:
 	void SelectionChanged(int idx);
@@ -63,6 +64,7 @@ private:
 	QRect GetContentItemRectWithPadding(int idx) const;
 	void HideLastDropLine();
 	void ClearWidgetCache();
+	void UpdateSizeToFitContent();
 
 	int _dragPosition = -1;
 	int _dropLineIdx = -1;
@@ -75,6 +77,7 @@ private:
 	QLabel *_helpMsg;
 
 	bool _checkVisibility = true;
+	bool _autoResizeEnabled = false;
 
 	static bool _useCache;
 	std::unordered_map<const Macro *, std::vector<QWidget *>> _widgetCache;
