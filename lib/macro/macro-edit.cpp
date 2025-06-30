@@ -2,6 +2,7 @@
 #include "cursor-shape-changer.hpp"
 #include "macro.hpp"
 #include "macro-action-edit.hpp"
+#include "macro-action-macro.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-segment-copy-paste.hpp"
 #include "macro-segment-list.hpp"
@@ -98,16 +99,8 @@ MacroEdit::MacroEdit(QWidget *parent) : ui(new Ui_MacroEdit)
 	connect(ui->conditionsList, &QWidget::customContextMenuRequested, this,
 		&MacroEdit::ShowMacroConditionsContextMenu);
 
-	const auto updateSize = [this]() {
-		adjustSize();
-		updateGeometry();
-	};
-	connect(ui->actionsList, &MacroSegmentList::updateGeometry, this,
-		updateSize);
-	connect(ui->elseActionsList, &MacroSegmentList::updateGeometry, this,
-		updateSize);
-	connect(ui->conditionsList, &MacroSegmentList::updateGeometry, this,
-		updateSize);
+	connect(this, &MacroEdit::updateGeometry, this,
+		[this]() { AutoSetupSplitterPositions(); });
 
 	// Set action and condition toolbars
 	const std::string pathPrefix =
@@ -218,9 +211,18 @@ void MacroEdit::SetMacro(const std::shared_ptr<Macro> &macro)
 		return;
 	}
 
+	PopulateMacroConditions(*macro);
+	PopulateMacroActions(*macro);
+	PopulateMacroElseActions(*macro);
+
 	if (macro->IsGroup()) {
 		CenterSplitterPosition(ui->macroActionConditionSplitter);
 		MaximizeFirstSplitterEntry(ui->macroElseActionSplitter);
+		return;
+	}
+
+	if (_autoCenterSplitters) {
+		AutoSetupSplitterPositions();
 		return;
 	}
 
@@ -265,37 +267,6 @@ bool MacroEdit::eventFilter(QObject *obj, QEvent *event)
 
 	SetElseActionsStateToVisible();
 	return QWidget::eventFilter(obj, event);
-}
-
-QSize MacroEdit::sizeHint() const
-{
-	int width = 0;
-	int height = 0;
-
-	const auto calcSize = [&width, &height](MacroSegmentList *list) {
-		if (list->IsEmpty()) {
-			list->SetHelpMsgVisible(true);
-			const auto sh = list->sizeHint();
-			width += sh.width();
-			height += sh.height();
-			return;
-		}
-
-		if (list->widget()) {
-			QSize contentSize = list->widget()->sizeHint();
-			width = std::max(width, contentSize.width());
-			height += contentSize.height();
-		}
-	};
-
-	calcSize(ui->actionsList);
-	calcSize(ui->conditionsList);
-
-	if (ElseSectionIsVisible()) {
-		calcSize(ui->elseActionsList);
-	}
-
-	return QSize(width, height);
 }
 
 static bool
@@ -373,7 +344,18 @@ static void runSegmentHighlightChecksHelper(MacroSegmentList *list)
 {
 	MacroSegmentEdit *widget = nullptr;
 	for (int i = 0; (widget = list->WidgetAt(i)); i++) {
-		if (widget->Data() && widget->Data()->GetHighlightAndReset()) {
+		const auto data = widget->Data();
+
+		// No need to highlight nested macro action as it itself will
+		// highlight its segments if required
+		auto macroAction = dynamic_cast<MacroActionMacro *>(data.get());
+		if (macroAction &&
+		    macroAction->_action ==
+			    MacroActionMacro::Action::NESTED_MACRO) {
+			continue;
+		}
+
+		if (data && data->GetHighlightAndReset()) {
 			list->Highlight(i);
 		}
 	}
@@ -384,6 +366,7 @@ void MacroEdit::RunSegmentHighlightChecks()
 	if (!HighlightUIElementsEnabled()) {
 		return;
 	}
+
 	auto macro = _currentMacro;
 	if (!macro) {
 		return;
@@ -1736,6 +1719,7 @@ void MacroEdit::SwapConditions(Macro *m, int pos1, int pos2)
 
 void MacroEdit::SetAutoResizeMacroSegmentListsEnabled(bool enabled)
 {
+	_autoCenterSplitters = enabled;
 	ui->actionsList->SetAutoResizeEnabled(enabled);
 	ui->elseActionsList->SetAutoResizeEnabled(enabled);
 	ui->conditionsList->SetAutoResizeEnabled(enabled);
@@ -1822,6 +1806,25 @@ void MacroEdit::MacroConditionReorder(int to, int from)
 	}
 	HighlightCondition(to);
 	emit(MacroSegmentOrderChanged());
+}
+
+void MacroEdit::AutoSetupSplitterPositions()
+{
+	if (!_autoCenterSplitters) {
+		return;
+	}
+
+	ui->macroActionConditionSplitter->setSizes(
+		{ui->macroConditions->sizeHint().height(),
+		 ui->macroElseActionSplitter->sizeHint().height()});
+
+	if (!ui->elseActionsList->IsEmpty()) {
+		return;
+	}
+
+	ui->macroElseActionSplitter->setSizes(
+		{ui->macroActions->sizeHint().height(),
+		 ui->macroElseActions->sizeHint().height()});
 }
 
 } // namespace advss

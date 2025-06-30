@@ -37,6 +37,7 @@ public:
 	void SetVisibilityCheckEnable(bool enable);
 	bool IsEmpty() const;
 	void SetAutoResizeEnabled(bool enabled);
+	QSize sizeHint() const;
 
 signals:
 	void SelectionChanged(int idx);
@@ -64,7 +65,7 @@ private:
 	QRect GetContentItemRectWithPadding(int idx) const;
 	void HideLastDropLine();
 	void ClearWidgetCache();
-	void UpdateSizeToFitContent();
+	//void UpdateSizeToFitContent();
 
 	int _dragPosition = -1;
 	int _dropLineIdx = -1;

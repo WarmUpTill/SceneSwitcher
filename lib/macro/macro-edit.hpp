@@ -26,9 +26,6 @@ public:
 				QColor color = QColor(Qt::green)) const;
 	void ResetConditionHighlights();
 	void ResetActionHighlights();
-	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
-	void PopulateMacroElseActions(Macro &m, uint32_t afterIdx = 0);
-	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void SetActionData(Macro &m) const;
 	void SetElseActionData(Macro &m) const;
 	void SetConditionData(Macro &m) const;
@@ -36,7 +33,6 @@ public:
 	void SwapElseActions(Macro *m, int pos1, int pos2);
 	void SwapConditions(Macro *m, int pos1, int pos2);
 	void SetAutoResizeMacroSegmentListsEnabled(bool enabled);
-	QSize sizeHint() const override;
 
 public slots:
 	void on_conditionAdd_clicked();
@@ -105,6 +101,7 @@ public slots:
 	void HighlightControls() const;
 	void CopyMacroSegment();
 	void PasteMacroSegment();
+	void AutoSetupSplitterPositions();
 
 signals:
 	void MacroAdded(const QString &name);
@@ -119,6 +116,9 @@ protected:
 private:
 	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };
 
+	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
+	void PopulateMacroElseActions(Macro &m, uint32_t afterIdx = 0);
+	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void SetupMacroSegmentSelection(MacroSection type, int idx);
 	void
 	SetupContextMenu(const QPoint &pos,
@@ -130,6 +130,8 @@ private:
 			 MacroSegmentList *list);
 	void RunSegmentHighlightChecks();
 	bool ElseSectionIsVisible() const;
+
+	bool _autoCenterSplitters = false;
 
 	MacroSection lastInteracted = MacroSection::CONDITIONS;
 	int currentConditionIdx = -1;
