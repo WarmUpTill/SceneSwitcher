@@ -75,13 +75,7 @@ public:
 		std::shared_ptr<MacroActionMacro> entryData = nullptr);
 	~MacroActionMacroEdit();
 	void UpdateEntryData();
-	static QWidget *Create(QWidget *parent,
-			       std::shared_ptr<MacroAction> action)
-	{
-		return new MacroActionMacroEdit(
-			parent,
-			std::dynamic_pointer_cast<MacroActionMacro>(action));
-	}
+	static QWidget *Create(QWidget *, std::shared_ptr<MacroAction>);
 
 private slots:
 	void MacroChanged(const QString &text);

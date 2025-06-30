@@ -320,7 +320,8 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 			 this, SLOT(ReevaluateConditionStateChanged(int)));
 	QWidget::connect(_nestedMacro, &MacroEdit::MacroSegmentOrderChanged,
 			 this, [this]() {
-				 auto size = _nestedMacro->sizeHint();
+				 // TODO:
+				 // Is this really needed?
 				 _nestedMacro->adjustSize();
 				 _nestedMacro->updateGeometry();
 				 adjustSize();
@@ -381,11 +382,15 @@ void MacroActionMacroEdit::UpdateEntryData()
 
 	const auto &macro = _entryData->_nestedMacro;
 	_nestedMacro->SetMacro(macro);
-	_nestedMacro->PopulateMacroConditions(*macro);
-	_nestedMacro->PopulateMacroActions(*macro);
-	_nestedMacro->PopulateMacroElseActions(*macro);
 
 	SetWidgetVisibility();
+}
+
+QWidget *MacroActionMacroEdit::Create(QWidget *parent,
+				      std::shared_ptr<MacroAction> action)
+{
+	return new MacroActionMacroEdit(
+		parent, std::dynamic_pointer_cast<MacroActionMacro>(action));
 }
 
 void MacroActionMacroEdit::MacroChanged(const QString &text)
