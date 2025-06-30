@@ -525,10 +525,6 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 
 	macro->ResetUIHelpers();
 	ui->macroEdit->SetMacro(macro);
-
-	ui->macroEdit->PopulateMacroConditions(*macro);
-	ui->macroEdit->PopulateMacroActions(*macro);
-	ui->macroEdit->PopulateMacroElseActions(*macro);
 	SetMacroEditAreaDisabled(false);
 
 	if (macro->IsGroup()) {
