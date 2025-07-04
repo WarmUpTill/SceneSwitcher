@@ -219,6 +219,8 @@ target_sources(
           lib/utils/priority-helper.hpp
           lib/utils/regex-config.cpp
           lib/utils/regex-config.hpp
+          lib/utils/resizable-widget.cpp
+          lib/utils/resizable-widget.hpp
           lib/utils/resizing-text-edit.cpp
           lib/utils/resizing-text-edit.hpp
           lib/utils/resource-table.cpp
