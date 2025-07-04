@@ -5,6 +5,7 @@
 #include "macro-input.hpp"
 #include "macro-selection.hpp"
 #include "macro-segment-selection.hpp"
+#include "resizable-widget.hpp"
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -66,7 +67,7 @@ private:
 	static const std::string id;
 };
 
-class MacroActionMacroEdit final : public QWidget {
+class MacroActionMacroEdit final : public ResizableWidget {
 	Q_OBJECT
 
 public:

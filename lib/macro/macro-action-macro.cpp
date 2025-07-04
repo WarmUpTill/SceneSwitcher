@@ -263,7 +263,7 @@ static void populateActionTypeSelection(QComboBox *list)
 
 MacroActionMacroEdit::MacroActionMacroEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMacro> entryData)
-	: QWidget(parent),
+	: ResizableWidget(parent),
 	  _macros(new MacroSelection(parent)),
 	  _actionIndex(new MacroSegmentSelection(
 		  this, MacroSegmentSelection::Type::ACTION)),
@@ -291,10 +291,6 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 
 	_conditionMacros->HideSelectedMacro();
 
-	_nestedMacro->setSizePolicy(QSizePolicy::Preferred,
-				    QSizePolicy::Preferred);
-	_nestedMacro->SetAutoResizeMacroSegmentListsEnabled(true);
-
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
@@ -318,15 +314,6 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 			 this, SLOT(InputsChanged(const StringList &)));
 	QWidget::connect(_reevaluateConditionState, SIGNAL(stateChanged(int)),
 			 this, SLOT(ReevaluateConditionStateChanged(int)));
-	QWidget::connect(_nestedMacro, &MacroEdit::MacroSegmentOrderChanged,
-			 this, [this]() {
-				 // TODO:
-				 // Is this really needed?
-				 _nestedMacro->adjustSize();
-				 _nestedMacro->updateGeometry();
-				 adjustSize();
-				 updateGeometry();
-			 });
 
 	_setInputsLayout->addWidget(_setInputs);
 	_setInputsLayout->addWidget(new HelpIcon(obs_module_text(
@@ -552,6 +539,8 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 				 MacroActionMacro::Action::NESTED_MACRO);
 	_macros->setVisible(_entryData->_action !=
 			    MacroActionMacro::Action::NESTED_MACRO);
+	SetResizingEnabled(_entryData->_action ==
+			   MacroActionMacro::Action::NESTED_MACRO);
 
 	adjustSize();
 	updateGeometry();
