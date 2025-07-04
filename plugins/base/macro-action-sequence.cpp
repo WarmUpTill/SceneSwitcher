@@ -212,7 +212,7 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 			 SLOT(ContinueFromClicked()));
 	QWidget::connect(_restart, SIGNAL(stateChanged(int)), this,
 			 SLOT(RestartChanged(int)));
-	QWidget::connect(window(), SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(this, SIGNAL(MacroRemoved(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));

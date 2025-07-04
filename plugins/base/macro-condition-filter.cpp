@@ -52,18 +52,28 @@ bool MacroConditionFilter::CheckConditionHelper(const OBSWeakSource &filter)
 		ret = !obs_source_enabled(filterSource);
 		break;
 	case Condition::SETTINGS_MATCH: {
-		ret = CompareSourceSettings(filter, _settings, _regex);
-		const auto settings = GetSourceSettings(filter);
-		SetVariableValue(settings);
-		SetTempVarValue("settings", settings);
+		const auto settings =
+			GetSourceSettings(filter, _includeDefaults);
+		if (!settings) {
+			break;
+		}
+
+		ret = CompareSourceSettings(*settings, _settings, _regex);
+		SetVariableValue(*settings);
+		SetTempVarValue("settings", *settings);
 		break;
 	}
 	case Condition::SETTINGS_CHANGED: {
-		const auto settings = GetSourceSettings(filter);
-		ret = !_currentSettings.empty() && settings != _currentSettings;
+		const auto settings =
+			GetSourceSettings(filter, _includeDefaults);
+		ret = _currentSettings.has_value() &&
+		      settings != _currentSettings;
 		_currentSettings = settings;
-		SetVariableValue(settings);
-		SetTempVarValue("settings", settings);
+		if (!settings) {
+			break;
+		}
+		SetVariableValue(*settings);
+		SetTempVarValue("settings", *settings);
 		break;
 	}
 	case Condition::INDIVIDUAL_SETTING_MATCH: {
@@ -134,6 +144,7 @@ bool MacroConditionFilter::Save(obs_data_t *obj) const
 	_settings.Save(obj, "settings");
 	_regex.Save(obj);
 	_setting.Save(obj);
+	obs_data_set_bool(obj, "includeDefaults", _includeDefaults);
 	return true;
 }
 
@@ -152,6 +163,7 @@ bool MacroConditionFilter::Load(obs_data_t *obj)
 			obs_data_get_bool(obj, "regex"));
 	}
 	_setting.Load(obj);
+	_includeDefaults = obs_data_get_bool(obj, "includeDefaults");
 	return true;
 }
 
@@ -221,8 +233,12 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	  _settings(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(parent)),
 	  _settingSelection(new SourceSettingSelection()),
-	  _refreshSettingSelection(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.condition.filter.refresh")))
+	  _refreshSettingSelection(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.condition.filter.refresh"))),
+	  _includeDefaults(new QCheckBox(
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.filter.includeDefaults"),
+		  this))
 {
 	populateConditionSelection(_conditions);
 
@@ -249,6 +265,8 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 			 SLOT(SettingSelectionChanged(const SourceSetting &)));
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
+	QWidget::connect(_includeDefaults, SIGNAL(stateChanged(int)), this,
+			 SLOT(IncludeDefaultsChanged(int)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{sources}}", _sources},
@@ -280,6 +298,7 @@ MacroConditionFilterEdit::MacroConditionFilterEdit(
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
 	mainLayout->addLayout(line3Layout);
+	mainLayout->addWidget(_includeDefaults);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -332,7 +351,11 @@ void MacroConditionFilterEdit::GetSettingsClicked()
 	QString value;
 	if (_entryData->GetCondition() ==
 	    MacroConditionFilter::Condition::SETTINGS_MATCH) {
-		value = FormatJsonString(GetSourceSettings(filters.at(0)));
+		const auto settings = GetSourceSettings(
+			filters.at(0), _entryData->_includeDefaults);
+		if (settings) {
+			value = FormatJsonString(*settings);
+		}
 	} else if (_entryData->GetCondition() ==
 		   MacroConditionFilter::Condition::
 			   INDIVIDUAL_SETTING_LIST_ENTRY_MATCH) {
@@ -385,6 +408,12 @@ void MacroConditionFilterEdit::RefreshVariableSourceSelectionValue()
 	const auto filters =
 		_entryData->_filter.GetFilters(_entryData->_source);
 	_settingSelection->SetSource(filters.empty() ? nullptr : filters.at(0));
+}
+
+void MacroConditionFilterEdit::IncludeDefaultsChanged(int state)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_includeDefaults = state;
 }
 
 static QString GetIndividualListEntryName()
@@ -440,6 +469,10 @@ void MacroConditionFilterEdit::SetWidgetVisibility()
 	SetRowVisibleByValue(_conditions, GetIndividualListEntryName(),
 			     _entryData->_setting.IsList());
 
+	_includeDefaults->setVisible(
+		_entryData->GetCondition() ==
+		MacroConditionFilter::Condition::SETTINGS_MATCH);
+
 	adjustSize();
 	updateGeometry();
 }
@@ -461,6 +494,7 @@ void MacroConditionFilterEdit::UpdateEntryData()
 	_settingSelection->SetSelection(filters.empty() ? nullptr
 							: filters.at(0),
 					_entryData->_setting);
+	_includeDefaults->setChecked(_entryData->_includeDefaults);
 	SetWidgetVisibility();
 
 	adjustSize();

@@ -197,7 +197,7 @@ static inline void populateConditionSelection(QComboBox *list)
 MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionSceneOrder> entryData)
 	: QWidget(parent),
-	  _scenes(new SceneSelectionWidget(window(), true, false, false, true)),
+	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _conditions(new QComboBox()),
 	  _sources(new SceneItemSelectionWidget(parent)),
 	  _sources2(new SceneItemSelectionWidget(parent)),

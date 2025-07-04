@@ -36,6 +36,8 @@ MacroSegmentList::MacroSegmentList(QWidget *parent)
 	wrapper->setLayout(_layout);
 	setWidget(wrapper);
 	setWidgetResizable(true);
+	setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 	setAcceptDrops(true);
 
 	connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
@@ -117,23 +119,29 @@ void MacroSegmentList::Insert(int idx, QWidget *widget)
 	widget->installEventFilter(this);
 	_contentLayout->insertWidget(idx, widget);
 	SetupVisibleMacroSegmentWidgets();
+	SetHelpMsgVisible(false);
+	updateGeometry();
 }
 
 void MacroSegmentList::Add(QWidget *widget)
 {
-	widget->installEventFilter(this);
-	_contentLayout->addWidget(widget);
-	SetupVisibleMacroSegmentWidgets();
+	Insert(_contentLayout->count(), widget);
 }
 
-void MacroSegmentList::Remove(int idx) const
+void MacroSegmentList::Remove(int idx)
 {
 	DeleteLayoutItemWidget(_contentLayout->takeAt(idx));
+	if (IsEmpty()) {
+		SetHelpMsgVisible(true);
+	}
+	updateGeometry();
 }
 
-void MacroSegmentList::Clear(int idx) const
+void MacroSegmentList::Clear(int idx)
 {
 	ClearLayout(_contentLayout, idx);
+	SetHelpMsgVisible(true);
+	updateGeometry();
 }
 
 void MacroSegmentList::SetCachingEnabled(bool enable)
@@ -411,6 +419,38 @@ void MacroSegmentList::SetVisibilityCheckEnable(bool enable)
 	}
 }
 
+bool MacroSegmentList::IsEmpty() const
+{
+	return _contentLayout->count() == 0;
+}
+
+QSize MacroSegmentList::sizeHint() const
+{
+	if (!widget() || !_autoResizeEnabled) {
+		return QScrollArea::sizeHint();
+	}
+
+	if (IsEmpty()) {
+		return _helpMsg->sizeHint();
+	}
+
+	const auto contentSize = widget()->sizeHint();
+	const auto hint =
+		QSize(width(), contentSize.height() + 2 * frameWidth());
+
+	return hint;
+}
+
+void MacroSegmentList::SetAutoResizeEnabled(bool enabled)
+{
+	if (_autoResizeEnabled == enabled) {
+		return;
+	}
+
+	_autoResizeEnabled = enabled;
+	updateGeometry();
+}
+
 void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
 {
 	if (!_checkVisibility) {
@@ -428,6 +468,7 @@ void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
 
 		segment->SetupWidgets();
 	}
+	updateGeometry();
 }
 
 int MacroSegmentList::GetSegmentIndexFromPos(const QPoint &pos) const

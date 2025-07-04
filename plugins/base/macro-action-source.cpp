@@ -461,8 +461,10 @@ void MacroActionSourceEdit::GetSettingsClicked()
 	case MacroActionSource::SettingsInputMethod::INDIVIDUAL_TEMPVAR:
 		break;
 	case MacroActionSource::SettingsInputMethod::JSON_STRING:
-		_settingsString->setPlainText(FormatJsonString(
-			GetSourceSettings(_entryData->_source.GetSource())));
+		const auto settings = GetSourceSettings(
+			_entryData->_source.GetSource(), true);
+		_settingsString->setPlainText(
+			FormatJsonString(settings ? *settings : ""));
 		break;
 	}
 }

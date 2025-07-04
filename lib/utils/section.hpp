@@ -21,9 +21,6 @@ public:
 	void AddHeaderWidget(QWidget *);
 	void SetCollapsed(bool);
 
-protected:
-	bool eventFilter(QObject *obj, QEvent *event) override;
-
 private slots:
 	void AnimationFinish();
 	void Collapse(bool collapse);
@@ -41,7 +38,7 @@ private:
 	QFrame *_headerLine;
 	QParallelAnimationGroup *_toggleAnimation = nullptr;
 	QParallelAnimationGroup *_contentAnimation = nullptr;
-	QScrollArea *_contentArea = nullptr;
+	QWidget *_contentArea = nullptr;
 	QWidget *_content = nullptr;
 	int _animationDuration;
 	std::atomic_bool _transitioning = {false};

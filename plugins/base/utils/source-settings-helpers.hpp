@@ -1,13 +1,17 @@
 #pragma once
-#include <obs.hpp>
-#include <string>
 #include <regex-config.hpp>
+
+#include <obs.hpp>
+
+#include <optional>
+#include <string>
 
 namespace advss {
 
-std::string GetSourceSettings(OBSWeakSource ws);
+std::optional<std::string> GetSourceSettings(OBSWeakSource ws,
+					     bool includeDefaults);
 void SetSourceSettings(obs_source_t *s, const std::string &settings);
-bool CompareSourceSettings(const OBSWeakSource &source,
+bool CompareSourceSettings(const std::string &sourceSettings,
 			   const std::string &settings,
 			   const RegexConfig &regex);
 
