@@ -122,6 +122,10 @@ void Section::SetCollapsed(bool collapsed)
 
 bool Section::eventFilter(QObject *obj, QEvent *event)
 {
+	if (event->type() == QEvent::Resize) {
+		blog(LOG_DEBUG, "blub");
+	}
+
 	if (event->type() == QEvent::Resize && !_transitioning && !_collapsed) {
 		if (_contentHeight != _content->sizeHint().height()) {
 			_contentHeight = _content->sizeHint().height();
