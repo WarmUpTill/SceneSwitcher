@@ -4160,6 +4160,7 @@
   <tabstop>runMacroInParallel</tabstop>
   <tabstop>runMacroOnChange</tabstop>
   <tabstop>macroSettings</tabstop>
+  <tabstop>macroEdit</tabstop>
   <tabstop>sceneGroups</tabstop>
   <tabstop>sceneGroupAdd</tabstop>
   <tabstop>sceneGroupRemove</tabstop>

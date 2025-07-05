@@ -359,6 +359,30 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>conditionsList</tabstop>
+  <tabstop>conditionAdd</tabstop>
+  <tabstop>conditionRemove</tabstop>
+  <tabstop>conditionTop</tabstop>
+  <tabstop>conditionUp</tabstop>
+  <tabstop>conditionDown</tabstop>
+  <tabstop>conditionBottom</tabstop>
+  <tabstop>actionsList</tabstop>
+  <tabstop>actionAdd</tabstop>
+  <tabstop>actionRemove</tabstop>
+  <tabstop>actionTop</tabstop>
+  <tabstop>actionUp</tabstop>
+  <tabstop>actionDown</tabstop>
+  <tabstop>actionBottom</tabstop>
+  <tabstop>toggleElseActions</tabstop>
+  <tabstop>elseActionsList</tabstop>
+  <tabstop>elseActionAdd</tabstop>
+  <tabstop>elseActionRemove</tabstop>
+  <tabstop>elseActionTop</tabstop>
+  <tabstop>elseActionUp</tabstop>
+  <tabstop>elseActionDown</tabstop>
+  <tabstop>elseActionBottom</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
