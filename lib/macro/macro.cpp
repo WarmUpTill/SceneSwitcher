@@ -984,7 +984,7 @@ bool Macro::Load(obs_data_t *obj)
 		auto newEntry = MacroActionFactory::Create(id, this);
 		if (newEntry) {
 			_elseActions.emplace_back(newEntry);
-			auto action = _actions.back().get();
+			auto action = _elseActions.back().get();
 			action->WithLock([action, &arrayObj]() {
 				action->Load(arrayObj);
 			});
