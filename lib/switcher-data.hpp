@@ -102,7 +102,7 @@ public:
 	bool firstBoot = true;
 	bool transitionActive = false;
 	bool sceneColletionStop = false;
-	bool obsIsShuttingDown = false;
+	std::atomic_bool obsIsShuttingDown = {false};
 	bool firstInterval = true;
 	bool firstIntervalAfterStop = true;
 	bool startupLoadDone = false;
