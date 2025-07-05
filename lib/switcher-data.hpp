@@ -45,6 +45,9 @@ std::unique_lock<std::mutex> *GetSwitcherLoopLock();
 
 class SwitcherData {
 public:
+	SwitcherData(obs_module_t *modulePtr, translateFunc translate);
+	~SwitcherData();
+
 	void Thread();
 	void Start();
 	void Stop();
@@ -85,9 +88,6 @@ public:
 
 	/* --- End of saving / loading section --- */
 
-	SwitcherData(obs_module_t *m, translateFunc t);
-	inline ~SwitcherData() { Stop(); }
-
 public:
 	SwitcherThread *th = nullptr;
 	std::mutex m;
@@ -102,7 +102,7 @@ public:
 	bool firstBoot = true;
 	bool transitionActive = false;
 	bool sceneColletionStop = false;
-	bool obsIsShuttingDown = false;
+	std::atomic_bool obsIsShuttingDown = {false};
 	bool firstInterval = true;
 	bool firstIntervalAfterStop = true;
 	bool startupLoadDone = false;

@@ -25,6 +25,14 @@ SwitcherData::SwitcherData(obs_module_t *m, translateFunc t)
 	_translate = t;
 }
 
+SwitcherData::~SwitcherData()
+{
+	// Assume that OBS is shutting down, as the switcher object will only be
+	// destroyed when the plugin is unloaded
+	obsIsShuttingDown = true;
+	Stop();
+}
+
 const char *SwitcherData::Translate(const char *text)
 {
 	return _translate(text);

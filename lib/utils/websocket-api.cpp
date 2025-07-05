@@ -117,9 +117,25 @@ void RegisterWebsocketRequest(
 	});
 }
 
+static bool websocketModuleIsLoaded()
+{
+	bool websocketModuleFound = false;
+	const auto checkModule = [](void *param, obs_module_t *module) {
+		bool *moduleFound = static_cast<bool *>(param);
+		auto name = obs_get_module_name(module);
+		if (name && strcmp(name, "obs-websocket") == 0) {
+			*moduleFound = true;
+		}
+	};
+	obs_enum_modules(checkModule, &websocketModuleFound);
+	return websocketModuleFound;
+}
+
 void SendWebsocketVendorEvent(const std::string &eventName, obs_data_t *data)
 {
-	if (OBSIsShuttingDown()) {
+	// If obs-websocket was loaded, but was unloaded at some point any calls
+	// to obs_websocket_vendor_emit_event() will segfault
+	if (OBSIsShuttingDown() || !websocketModuleIsLoaded()) {
 		return;
 	}
 	obs_websocket_vendor_emit_event(vendor, eventName.c_str(), data);
