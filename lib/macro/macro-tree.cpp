@@ -1181,6 +1181,16 @@ bool MacroTree::SelectionEmpty() const
 	return selectedIndexes().empty();
 }
 
+bool MacroTree::GroupsExist() const
+{
+	for (const auto &macro : GetMacros()) {
+		if (macro->IsGroup()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void MacroTree::ExpandGroup(std::shared_ptr<Macro> item) const
 {
 	auto *mtm = GetModel();
@@ -1291,6 +1301,26 @@ void MacroTree::UngroupSelectedGroups()
 	QModelIndexList indices = selectedIndexes();
 	GetModel()->UngroupSelectedGroups(indices);
 	assert(GetModel()->IsInValidState());
+}
+
+void MacroTree::ExpandAll()
+{
+	for (const auto &macro : GetMacros()) {
+		if (!macro->IsGroup()) {
+			continue;
+		}
+		ExpandGroup(macro);
+	}
+}
+
+void MacroTree::CollapseAll()
+{
+	for (const auto &macro : GetMacros()) {
+		if (!macro->IsGroup()) {
+			continue;
+		}
+		CollapseGroup(macro);
+	}
 }
 
 void MacroTree::SelectionChangedHelper(const QItemSelection &,
