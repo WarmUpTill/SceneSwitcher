@@ -123,7 +123,9 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	}
 
 	if (selectedMacro->IsGroup()) {
-		ui->macros->Add(newMacro, selectedMacro);
+		ui->macros->ExpandGroup(selectedMacro);
+		Macro::PrepareMoveToGroup(selectedMacro, newMacro);
+		ui->macros->AddToGroup(newMacro, selectedMacro);
 		emit MacroAdded(QString::fromStdString(name));
 		return;
 	}

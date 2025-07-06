@@ -91,6 +91,8 @@ private:
 	void MoveItemAfter(const std::shared_ptr<Macro> &item,
 			   const std::shared_ptr<Macro> &after);
 	void Add(std::shared_ptr<Macro> item);
+	void MoveToBeginningOfGroup(std::shared_ptr<Macro> item,
+				    std::shared_ptr<Macro>);
 	void Remove(std::shared_ptr<Macro> item);
 	std::shared_ptr<Macro> Neighbor(const std::shared_ptr<Macro> &m,
 					bool above) const;
@@ -126,6 +128,8 @@ public:
 	void Reset(std::deque<std::shared_ptr<Macro>> &, bool highlight);
 	void Add(std::shared_ptr<Macro> item,
 		 std::shared_ptr<Macro> after = {}) const;
+	void AddToGroup(std::shared_ptr<Macro> item,
+			std::shared_ptr<Macro> group) const;
 	void Remove(std::shared_ptr<Macro> item) const;
 	void Up(std::shared_ptr<Macro> item) const;
 	void Down(std::shared_ptr<Macro> item) const;
@@ -135,6 +139,8 @@ public:
 	bool GroupedItemsSelected() const;
 	bool SingleItemSelected() const;
 	bool SelectionEmpty() const;
+	void ExpandGroup(std::shared_ptr<Macro> item) const;
+	void CollapseGroup(std::shared_ptr<Macro> item) const;
 
 public slots:
 	void GroupSelectedItems();
