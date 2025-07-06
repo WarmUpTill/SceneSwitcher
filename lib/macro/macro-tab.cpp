@@ -1148,6 +1148,17 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 			 !ui->macros->GroupsSelected());
 	menu.addSeparator();
 
+	auto rename = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.rename"), this,
+		&AdvSceneSwitcher::RenameSelectedMacro);
+	rename->setEnabled(ui->macros->SingleItemSelected());
+
+	auto remove = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.remove"), this,
+		&AdvSceneSwitcher::on_macroRemove_clicked);
+	remove->setDisabled(ui->macros->SelectionEmpty());
+	menu.addSeparator();
+
 	auto group = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.group"), ui->macros,
 		&MacroTree::GroupSelectedItems);
@@ -1159,17 +1170,16 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 		obs_module_text("AdvSceneSwitcher.macroTab.ungroup"),
 		ui->macros, &MacroTree::UngroupSelectedGroups);
 	ungroup->setEnabled(ui->macros->GroupsSelected());
-	menu.addSeparator();
 
-	auto rename = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.rename"), this,
-		&AdvSceneSwitcher::RenameSelectedMacro);
-	rename->setEnabled(ui->macros->SingleItemSelected());
+	auto expandAll = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.expandAllGroups"),
+		ui->macros, &MacroTree::ExpandAll);
+	expandAll->setEnabled(ui->macros->GroupsExist());
 
-	auto remove = menu.addAction(
-		obs_module_text("AdvSceneSwitcher.macroTab.remove"), this,
-		&AdvSceneSwitcher::on_macroRemove_clicked);
-	remove->setDisabled(ui->macros->SelectionEmpty());
+	auto collapseAll = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.collapseAllGroups"),
+		ui->macros, &MacroTree::CollapseAll);
+	collapseAll->setEnabled(ui->macros->GroupsExist());
 	menu.addSeparator();
 
 	auto exportAction = menu.addAction(

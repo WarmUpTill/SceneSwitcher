@@ -139,12 +139,15 @@ public:
 	bool GroupedItemsSelected() const;
 	bool SingleItemSelected() const;
 	bool SelectionEmpty() const;
+	bool GroupsExist() const;
 	void ExpandGroup(std::shared_ptr<Macro> item) const;
 	void CollapseGroup(std::shared_ptr<Macro> item) const;
 
 public slots:
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();
+	void ExpandAll();
+	void CollapseAll();
 	void SelectionChangedHelper(const QItemSelection &,
 				    const QItemSelection &);
 
