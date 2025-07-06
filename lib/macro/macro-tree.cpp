@@ -414,6 +414,20 @@ void MacroTreeModel::Add(std::shared_ptr<Macro> item)
 				      QItemSelectionModel::Select);
 }
 
+void MacroTreeModel::MoveToBeginningOfGroup(std::shared_ptr<Macro> item,
+					    std::shared_ptr<Macro> group)
+{
+	auto it = std::find(_macros.begin(), _macros.end(), item);
+	assert(it != _macros.end());
+	std::shared_ptr<Macro> tmp = *it;
+	_macros.erase(it);
+	it = std::find(_macros.begin(), _macros.end(), group);
+	assert(it != _macros.end());
+	_macros.insert(std::next(it), tmp);
+
+	Reset(_macros);
+}
+
 void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 {
 	auto lock = LockContext();
@@ -789,6 +803,13 @@ void MacroTree::Add(std::shared_ptr<Macro> item,
 	assert(GetModel()->IsInValidState());
 }
 
+void MacroTree::AddToGroup(std::shared_ptr<Macro> item,
+			   std::shared_ptr<Macro> group) const
+{
+	GetModel()->Add(item);
+	GetModel()->MoveToBeginningOfGroup(item, group);
+}
+
 std::shared_ptr<Macro> MacroTree::GetCurrentMacro() const
 {
 	return GetModel()->GetCurrentMacro();
@@ -1158,6 +1179,18 @@ bool MacroTree::SingleItemSelected() const
 bool MacroTree::SelectionEmpty() const
 {
 	return selectedIndexes().empty();
+}
+
+void MacroTree::ExpandGroup(std::shared_ptr<Macro> item) const
+{
+	auto *mtm = GetModel();
+	mtm->ExpandGroup(item);
+}
+
+void MacroTree::CollapseGroup(std::shared_ptr<Macro> item) const
+{
+	auto *mtm = GetModel();
+	mtm->CollapseGroup(item);
 }
 
 void MacroTree::MoveItemBefore(const std::shared_ptr<Macro> &item,
