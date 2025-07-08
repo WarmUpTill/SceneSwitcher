@@ -478,7 +478,14 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 	macro->SetSkipExecOnStart(dialog._currentSkipOnStartup->isChecked());
 	macro->SetStopActionsIfNotDone(
 		dialog._currentStopActionsIfNotDone->isChecked());
-	macro->EnableDock(dialog._currentMacroRegisterDock->isChecked());
+
+	// Only apply "on change" to avoid recreation of the dock widget
+	const bool enableDock = dialog._currentMacroRegisterDock->isChecked();
+	if (macro->DockEnabled() != enableDock) {
+		macro->EnableDock(
+			dialog._currentMacroRegisterDock->isChecked());
+	}
+
 	macro->SetDockHasRunButton(
 		dialog._currentMacroDockAddRunButton->isChecked());
 	macro->SetDockHasPauseButton(
