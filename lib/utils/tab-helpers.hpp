@@ -18,5 +18,6 @@ void SetCurrentTab(QTabWidget *tabWidget);
 void SetupOtherTabs(QTabWidget *tabWidget);
 void SaveTabOrder(obs_data_t *obj);
 void LoadTabOrder(obs_data_t *obj);
+bool MacroTabIsInFocus();
 
 } // namespace advss

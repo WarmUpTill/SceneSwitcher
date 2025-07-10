@@ -4,23 +4,30 @@
 
 namespace advss {
 
-std::string GetSourceSettings(OBSWeakSource ws)
+std::optional<std::string> GetSourceSettings(OBSWeakSource ws,
+					     bool includeDefaults)
 {
 	if (!ws) {
-		return "";
+		return {};
 	}
 
-	std::string settings;
-	auto s = obs_weak_source_get_source(ws);
-	obs_data_t *data = obs_source_get_settings(s);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(ws);
+	OBSDataAutoRelease dataWithoutDefaults =
+		obs_source_get_settings(source);
+	if (!dataWithoutDefaults) {
+		return {};
+	}
+
+	OBSDataAutoRelease dataWithDefaults =
+		obs_data_get_defaults(dataWithoutDefaults);
+	obs_data_apply(dataWithDefaults, dataWithoutDefaults);
+
+	auto &data = includeDefaults ? dataWithDefaults : dataWithoutDefaults;
 	auto json = obs_data_get_json(data);
-	if (json) {
-		settings = json;
+	if (!json) {
+		return {};
 	}
-	obs_data_release(data);
-	obs_source_release(s);
-
-	return settings;
+	return json;
 }
 
 void SetSourceSettings(obs_source_t *s, const std::string &settings)
@@ -39,12 +46,11 @@ void SetSourceSettings(obs_source_t *s, const std::string &settings)
 	obs_data_release(data);
 }
 
-bool CompareSourceSettings(const OBSWeakSource &source,
+bool CompareSourceSettings(const std::string &sourceSettings,
 			   const std::string &settings,
 			   const RegexConfig &regex)
 {
-	std::string currentSettings = GetSourceSettings(source);
-	return MatchJson(currentSettings, settings, regex);
+	return MatchJson(sourceSettings, settings, regex);
 }
 
 } // namespace advss

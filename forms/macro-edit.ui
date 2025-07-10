@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MacroEdit</class>
+ <widget class="QWidget" name="MacroEdit">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QSplitter" name="macroActionConditionSplitter">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <widget class="QWidget" name="macroConditions" native="true">
+      <layout class="QVBoxLayout" name="macroConditionsLayout">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="advss::MacroSegmentList" name="conditionsList">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>1</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="conditionControlsLayout">
+         <property name="leftMargin">
+          <number>9</number>
+         </property>
+         <item>
+          <widget class="QToolButton" name="conditionAdd">
+           <property name="toolTip">
+            <string>AdvSceneSwitcher.macroTab.tooltip.conditionAddButton</string>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">addIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-plus</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="conditionRemove">
+           <property name="toolTip">
+            <string>AdvSceneSwitcher.macroTab.tooltip.conditionRemoveButton</string>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">removeIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-trash</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="conditionTop">
+           <property name="toolTip">
+            <string>AdvSceneSwitcher.macroTab.tooltip.conditionTopButton</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="conditionUp">
+           <property name="toolTip">
+            <string>AdvSceneSwitcher.macroTab.tooltip.conditionUpButton</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">upArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-up</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="conditionDown">
+           <property name="toolTip">
+            <string>AdvSceneSwitcher.macroTab.tooltip.conditionDownButton</string>
+           </property>
+           <property name="themeID" stdset="0">
+            <string notr="true">downArrowIconSmall</string>
+           </property>
+           <property name="class" stdset="0">
+            <string notr="true">icon-down</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="conditionBottom">
+           <property name="toolTip">
+            <string>AdvSceneSwitcher.macroTab.tooltip.conditionBottomButton</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QSplitter" name="macroElseActionSplitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <widget class="QWidget" name="macroActions" native="true">
+       <layout class="QVBoxLayout" name="macroActionsLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="advss::MacroSegmentList" name="actionsList">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>1</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="actionControlsLayout">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <item>
+           <widget class="QToolButton" name="actionAdd">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.actionAddButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">addIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-plus</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="actionRemove">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.actionRemoveButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">removeIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-trash</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="actionTop">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.actionTopButton</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="actionUp">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.actionUpButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">upArrowIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-up</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="actionDown">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.actionDownButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">downArrowIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-down</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="actionBottom">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.actionBottomButton</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_14">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QToolButton" name="toggleElseActions">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.toggleShowElseSection</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="macroElseActions" native="true">
+       <layout class="QVBoxLayout" name="macroElseActionsLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="advss::MacroSegmentList" name="elseActionsList">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>1</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="elseActionControlsLayout">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <item>
+           <widget class="QToolButton" name="elseActionAdd">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.elseActionAddButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">addIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-plus</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="elseActionRemove">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.elseActionRemoveButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">removeIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-trash</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="elseActionTop">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.elseActionTopButton</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="elseActionUp">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.elseActionUpButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">upArrowIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-up</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="elseActionDown">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.elseActionDownButton</string>
+            </property>
+            <property name="themeID" stdset="0">
+             <string notr="true">downArrowIconSmall</string>
+            </property>
+            <property name="class" stdset="0">
+             <string notr="true">icon-down</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="elseActionBottom">
+            <property name="toolTip">
+             <string>AdvSceneSwitcher.macroTab.tooltip.elseActionBottomButton</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>advss::MacroSegmentList</class>
+   <extends>QScrollArea</extends>
+   <header>macro-segment-list.hpp</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>conditionsList</tabstop>
+  <tabstop>conditionAdd</tabstop>
+  <tabstop>conditionRemove</tabstop>
+  <tabstop>conditionTop</tabstop>
+  <tabstop>conditionUp</tabstop>
+  <tabstop>conditionDown</tabstop>
+  <tabstop>conditionBottom</tabstop>
+  <tabstop>actionsList</tabstop>
+  <tabstop>actionAdd</tabstop>
+  <tabstop>actionRemove</tabstop>
+  <tabstop>actionTop</tabstop>
+  <tabstop>actionUp</tabstop>
+  <tabstop>actionDown</tabstop>
+  <tabstop>actionBottom</tabstop>
+  <tabstop>toggleElseActions</tabstop>
+  <tabstop>elseActionsList</tabstop>
+  <tabstop>elseActionAdd</tabstop>
+  <tabstop>elseActionRemove</tabstop>
+  <tabstop>elseActionTop</tabstop>
+  <tabstop>elseActionUp</tabstop>
+  <tabstop>elseActionDown</tabstop>
+  <tabstop>elseActionBottom</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

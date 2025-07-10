@@ -163,7 +163,7 @@ void AdvSceneSwitcher::closeEvent(QCloseEvent *)
 	switcher->windowSize = this->size();
 	switcher->macroListMacroEditSplitterPosition =
 		ui->macroListMacroEditSplitter->sizes();
-	MacroSelectionAboutToChange(); // Trigger saving of splitter states
+	ui->macroEdit->SetMacro(nullptr); // Trigger saving of splitter states
 
 	obs_frontend_save();
 }
@@ -535,8 +535,8 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	cooldown.Save(obj, "cooldown");
 	obs_data_set_bool(obj, "enableCooldown", enableCooldown);
 
-	obs_data_set_bool(obj, "active", sceneColletionStop ? true : !stop);
-	sceneColletionStop = false;
+	obs_data_set_bool(obj, "active", sceneCollectionStop ? true : !stop);
+	sceneCollectionStop = false;
 	obs_data_set_int(obj, "startup_behavior",
 			 static_cast<int>(startupBehavior));
 

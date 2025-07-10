@@ -49,7 +49,7 @@ void MacroSelection::SetCurrentMacro(const MacroRef &macro)
 
 void MacroSelection::HideSelectedMacro()
 {
-	auto ssWindow = static_cast<AdvSceneSwitcher *>(window());
+	auto ssWindow = static_cast<AdvSceneSwitcher *>(GetSettingsWindow());
 	if (!ssWindow) {
 		return;
 	}

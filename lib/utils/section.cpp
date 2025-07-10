@@ -44,6 +44,11 @@ Section::Section(const int animationDuration, QWidget *parent)
 
 void Section::Collapse(bool collapse)
 {
+	if (_contentHeight != _content->sizeHint().height()) {
+		_contentHeight = _content->sizeHint().height();
+	}
+	SetupAnimations();
+
 	_toggleButton->setChecked(collapse);
 	_toggleButton->setArrowType(collapse ? Qt::ArrowType::RightArrow
 					     : Qt::ArrowType::DownArrow);
@@ -72,7 +77,7 @@ void Section::SetContent(QWidget *w, bool collapsed)
 	delete _contentArea;
 
 	// Setup contentArea
-	_contentArea = new QScrollArea(this);
+	_contentArea = new QWidget(this);
 	_contentArea->setObjectName("macroSegmentContent");
 	_contentArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 	_contentArea->setStyleSheet(
@@ -93,12 +98,11 @@ void Section::SetContent(QWidget *w, bool collapsed)
 
 	SetupAnimations();
 
+	setMinimumHeight(_headerHeight);
 	if (collapsed) {
-		this->setMinimumHeight(_headerHeight);
 		_contentArea->setMaximumHeight(0);
 	} else {
-		this->setMinimumHeight(_headerHeight + _contentHeight);
-		_contentArea->setMaximumHeight(_contentHeight);
+		_contentArea->setMaximumHeight(QWIDGETSIZE_MAX);
 	}
 	const QSignalBlocker b(_toggleButton);
 	_toggleButton->setChecked(collapsed);
@@ -118,23 +122,6 @@ void Section::SetCollapsed(bool collapsed)
 		return;
 	}
 	Collapse(collapsed);
-}
-
-bool Section::eventFilter(QObject *obj, QEvent *event)
-{
-	if (event->type() == QEvent::Resize && !_transitioning && !_collapsed) {
-		if (_contentHeight != _content->sizeHint().height()) {
-			_contentHeight = _content->sizeHint().height();
-			setMaximumHeight(_headerHeight + _contentHeight);
-			setMinimumHeight(_headerHeight + _contentHeight);
-			_contentArea->setMaximumHeight(_contentHeight);
-			// Note: Calling this too frequently inside this event
-			// filter will cause a segfault for some reason
-			SetupAnimations();
-		}
-		setMinimumWidth(_content->sizeHint().width());
-	}
-	return QObject::eventFilter(obj, event);
 }
 
 void Section::SetupAnimations()
@@ -160,7 +147,7 @@ void Section::SetupAnimations()
 		SectionAnimation->setEndValue(_headerHeight + _contentHeight);
 	}
 
-	QPropertyAnimation *contentAnimation =
+	auto contentAnimation =
 		static_cast<QPropertyAnimation *>(_toggleAnimation->animationAt(
 			_toggleAnimation->animationCount() - 1));
 	contentAnimation->setDuration(_animationDuration);
@@ -185,6 +172,14 @@ void Section::CleanUpPreviousContent()
 void Section::AnimationFinish()
 {
 	_transitioning = false;
+
+	// Allow resizing if we are not currently transitioning or collapsed
+	if (!_collapsed) {
+		setMinimumHeight(0);
+		setMaximumHeight(QWIDGETSIZE_MAX);
+		_contentArea->setMaximumHeight(QWIDGETSIZE_MAX);
+	}
+
 	emit AnimationFinished();
 }
 

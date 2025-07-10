@@ -133,20 +133,6 @@ static void addSettingsHelper(obs_property_t *property,
 	} while (obs_property_next(&property));
 }
 
-std::vector<SourceSetting> GetSoruceSettings(obs_source_t *source)
-{
-	properties_t properties(obs_source_properties(source),
-				obs_properties_destroy);
-	if (!properties) {
-		return {};
-	}
-	std::vector<SourceSetting> settings;
-
-	auto it = obs_properties_first(properties.get());
-	addSettingsHelper(it, settings);
-	return settings;
-}
-
 static std::optional<std::string>
 getDataJsonWithDefaults(const OBSWeakSource &ws)
 {
@@ -495,11 +481,25 @@ void SourceSettingSelection::SelectionIdxChanged(int idx)
 	emit SelectionChanged(setting);
 }
 
+static std::vector<SourceSetting> getSourceSettings(obs_source_t *source)
+{
+	properties_t properties(obs_source_properties(source),
+				obs_properties_destroy);
+	if (!properties) {
+		return {};
+	}
+	std::vector<SourceSetting> settings;
+
+	auto it = obs_properties_first(properties.get());
+	addSettingsHelper(it, settings);
+	return settings;
+}
+
 void SourceSettingSelection::Populate(const OBSWeakSource &source)
 {
 	_settings->clear();
 	OBSSourceAutoRelease s = obs_weak_source_get_source(source);
-	auto settings = GetSoruceSettings(s);
+	const auto settings = getSourceSettings(s);
 	for (const auto &setting : settings) {
 		QVariant variant;
 		variant.setValue(setting);
