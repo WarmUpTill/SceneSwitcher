@@ -13,7 +13,7 @@
 
 namespace advss {
 
-static const int tokenGrabberPort = 8080;
+static const int tokenGrabberPort = 42171;
 
 static std::deque<std::shared_ptr<Item>> twitchTokens;
 
