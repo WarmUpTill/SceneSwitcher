@@ -76,8 +76,8 @@ MacroActionSystrayEdit::MacroActionSystrayEdit(
 	  _message(new VariableLineEdit(this)),
 	  _title(new VariableLineEdit(this)),
 	  _iconPath(new FileSelection()),
-	  _trayDisableWarning(
-		  new QLabel("AdvSceneSwitcher.action.systray.disabled"))
+	  _trayDisableWarning(new QLabel(
+		  obs_module_text("AdvSceneSwitcher.action.systray.disabled")))
 {
 	_iconPath->setToolTip(
 		obs_module_text("AdvSceneSwitcher.action.systray.iconHint"));
