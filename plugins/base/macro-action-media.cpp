@@ -237,7 +237,8 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.media.seek.percentage.label"))),
 	  _sources(new SourceSelectionWidget(this, getMediaSourcesList, true)),
-	  _sceneItems(new SceneItemSelectionWidget(parent, false)),
+	  _sceneItems(new SceneItemSelectionWidget(
+		  parent, SceneItemSelectionWidget::Placeholder::NONE)),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true, true))
 {
 	populateActionSelection(_actions);

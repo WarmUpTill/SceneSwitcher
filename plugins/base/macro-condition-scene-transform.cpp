@@ -335,7 +335,7 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _sources(new SceneItemSelectionWidget(
-		  parent, true, SceneItemSelectionWidget::Placeholder::ANY)),
+		  parent, SceneItemSelectionWidget::Placeholder::ANY)),
 	  _settingsType(new QComboBox()),
 	  _compare(new QComboBox()),
 	  _conditions(new QComboBox()),
