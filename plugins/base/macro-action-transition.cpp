@@ -237,7 +237,8 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTransition> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox),
-	  _sources(new SceneItemSelectionWidget(parent, false)),
+	  _sources(new SceneItemSelectionWidget(
+		  parent, SceneItemSelectionWidget::Placeholder::NONE)),
 	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _setTransition(new QCheckBox),
 	  _setDuration(new QCheckBox),

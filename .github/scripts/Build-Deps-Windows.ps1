@@ -209,7 +209,9 @@ function Build {
     $msbuildExe = vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
 
     if ($msbuildExe) {
+        $env:CL="/wd5287"
         Invoke-External $msbuildExe "${LibusbPath}/msvc/libusb.sln" /property:Configuration=Release /property:Platform=x64
+        Remove-Item Env:CL
 
         $libusbBuildResultDirectory = "${LibusbPath}/build/v143/x64/Release"
         if (-not (Test-Path -Path $libusbBuildResultDirectory)) {

@@ -29,6 +29,7 @@ public:
 		INDEX = 30,
 		INDEX_RANGE = 40,
 		ALL = 50,
+		ANY = 60,
 	};
 
 	// Name conflicts can happen if multiple instances of a given source are
@@ -90,12 +91,12 @@ class SceneItemSelectionWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	enum class Placeholder { ALL, ANY };
-	SceneItemSelectionWidget(QWidget *parent, bool addPlaceholder = true,
-				 Placeholder placeholderType = Placeholder::ALL);
+	enum class Placeholder { NONE, ALL, ANY, ANY_AND_ALL };
+	explicit SceneItemSelectionWidget(
+		QWidget *parent,
+		Placeholder placeholderType = Placeholder::ALL);
 	void SetSceneItem(const SceneItemSelection &);
 	void SetScene(const SceneSelection &);
-	void ShowPlaceholder(bool);
 	void SetPlaceholderType(Placeholder t, bool resetSelection = true);
 
 protected:
@@ -144,7 +145,6 @@ private:
 
 	SceneSelection _scene;
 	SceneItemSelection _currentSelection;
-	bool _hasPlaceholderEntry = false;
 	Placeholder _placeholder = Placeholder::ALL;
 
 	bool _showTypeSelection = false;
