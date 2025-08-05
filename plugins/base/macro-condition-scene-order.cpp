@@ -63,33 +63,97 @@ static std::vector<int> getSceneItemPositions(std::vector<OBSSceneItem> &items,
 	return positions;
 }
 
-static bool isAbove(std::vector<int> &pos1, std::vector<int> &pos2)
+static bool anyAboveAny(const std::vector<int> &a, const std::vector<int> &b)
 {
-	if (pos1.empty() || pos2.empty()) {
+	for (int ai : a)
+		for (int bi : b)
+			if (ai > bi)
+				return true;
+	return false;
+}
+
+static bool anyAboveAll(const std::vector<int> &a, const std::vector<int> &b)
+{
+	if (b.empty())
 		return false;
-	}
-	for (int i : pos1) {
-		for (int j : pos2) {
-			if (i <= j) {
-				return false;
+	int max_b = *std::max_element(b.begin(), b.end());
+	for (int ai : a)
+		if (ai > max_b)
+			return true;
+	return false;
+}
+
+static bool allAboveAny(const std::vector<int> &a, const std::vector<int> &b)
+{
+	for (int ai : a) {
+		bool found = false;
+		for (int bi : b) {
+			if (ai > bi) {
+				found = true;
+				break;
 			}
 		}
+		if (!found)
+			return false;
 	}
 	return true;
 }
 
-static bool isBelow(std::vector<int> &pos1, std::vector<int> &pos2)
+static bool allAboveAll(const std::vector<int> &a, const std::vector<int> &b)
 {
-	if (pos1.empty() || pos2.empty()) {
+	if (b.empty())
 		return false;
-	}
-	for (int i : pos1) {
-		for (int j : pos2) {
-			if (i >= j) {
-				return false;
+	int max_b = *std::max_element(b.begin(), b.end());
+	for (int ai : a)
+		if (ai <= max_b)
+			return false;
+	return true;
+}
+
+static bool anyBelowAny(const std::vector<int> &a, const std::vector<int> &b)
+{
+	for (int ai : a)
+		for (int bi : b)
+			if (ai < bi)
+				return true;
+	return false;
+}
+
+static bool anyBelowAll(const std::vector<int> &a, const std::vector<int> &b)
+{
+	if (b.empty())
+		return false;
+	int min_b = *std::min_element(b.begin(), b.end());
+	for (int ai : a)
+		if (ai < min_b)
+			return true;
+	return false;
+}
+
+static bool allBelowAny(const std::vector<int> &a, const std::vector<int> &b)
+{
+	for (int ai : a) {
+		bool found = false;
+		for (int bi : b) {
+			if (ai < bi) {
+				found = true;
+				break;
 			}
 		}
+		if (!found)
+			return false;
 	}
+	return true;
+}
+
+static bool allBelowAll(const std::vector<int> &a, const std::vector<int> &b)
+{
+	if (b.empty())
+		return false;
+	int min_b = *std::min_element(b.begin(), b.end());
+	for (int ai : a)
+		if (ai >= min_b)
+			return false;
 	return true;
 }
 
@@ -101,24 +165,58 @@ bool MacroConditionSceneOrder::CheckCondition()
 	}
 
 	auto items2 = _source2.GetSceneItems(_scene);
-	auto s = obs_weak_source_get_source(_scene.GetScene(false));
+	auto s = OBSGetStrongRef(_scene.GetScene(false));
 	auto scene = obs_scene_from_source(s);
 	auto positions1 = getSceneItemPositions(items1, scene);
 	auto positions2 = getSceneItemPositions(items2, scene);
 
-	bool ret = false;
+	const bool pos1IsAnyCheck = _source.IsSelectionOfTypeAny();
+	const bool pos2IsAnyCheck = _source2.IsSelectionOfTypeAny();
 
 	switch (_condition) {
 	case Condition::ABOVE:
-		ret = isAbove(positions1, positions2);
+		if (pos1IsAnyCheck) {
+			if (pos2IsAnyCheck) {
+				return anyAboveAny(positions1, positions2);
+			} else {
+				return anyAboveAll(positions1, positions2);
+			}
+		} else {
+			if (pos2IsAnyCheck) {
+				return allAboveAny(positions1, positions2);
+			} else {
+				return allAboveAll(positions1, positions2);
+			}
+		}
 		break;
 	case Condition::BELOW:
-		ret = isBelow(positions1, positions2);
+		if (pos1IsAnyCheck) {
+			if (pos2IsAnyCheck) {
+				return anyBelowAny(positions1, positions2);
+			} else {
+				return anyBelowAll(positions1, positions2);
+			}
+		} else {
+			if (pos2IsAnyCheck) {
+				return allBelowAny(positions1, positions2);
+			} else {
+				return allBelowAll(positions1, positions2);
+			}
+		}
 		break;
 	case Condition::POSITION:
-		for (int p : positions1) {
-			if (p == _position) {
-				ret = true;
+		if (pos1IsAnyCheck) {
+			for (int p : positions1) {
+				if (p == _position) {
+					return true;
+				}
+			}
+		} else {
+			if (positions1.size() == 1) {
+				return positions1[0] == _position;
+			} else {
+				// Multiple scene items can't have the same pos
+				return false;
 			}
 		}
 		break;
@@ -126,8 +224,7 @@ bool MacroConditionSceneOrder::CheckCondition()
 		break;
 	}
 
-	obs_source_release(s);
-	return ret;
+	return false;
 }
 
 bool MacroConditionSceneOrder::Save(obs_data_t *obj) const
@@ -199,23 +296,38 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _conditions(new QComboBox()),
-	  _sources(new SceneItemSelectionWidget(parent)),
-	  _sources2(new SceneItemSelectionWidget(parent)),
+	  _sources(new SceneItemSelectionWidget(
+		  parent,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+			  SceneItemSelection::Type::ANY,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ANY_AND_ALL)),
+	  _sources2(new SceneItemSelectionWidget(
+		  parent,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ANY,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ANY_AND_ALL)),
 	  _position(new VariableSpinBox()),
 	  _posInfo(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.condition.sceneOrder.positionInfo")))
 {
 	populateConditionSelection(_conditions);
-	if (entryData.get()) {
-		if (entryData->_condition ==
-		    MacroConditionSceneOrder::Condition::POSITION) {
-			_sources->SetPlaceholderType(
-				SceneItemSelectionWidget::Placeholder::ANY);
-		} else {
-			_sources->SetPlaceholderType(
-				SceneItemSelectionWidget::Placeholder::ALL);
-		}
-	}
 
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
@@ -238,18 +350,18 @@ MacroConditionSceneOrderEdit::MacroConditionSceneOrderEdit(
 		this, SLOT(PositionChanged(const NumberVariable<int> &)));
 
 	auto entryLayout = new QHBoxLayout();
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _scenes},     {"{{sources}}", _sources},
-		{"{{sources2}}", _sources2}, {"{{conditions}}", _conditions},
-		{"{{position}}", _position},
-	};
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.condition.sceneOrder.entry"),
-		entryLayout, widgetPlaceholders);
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(entryLayout);
-	mainLayout->addWidget(_posInfo);
-	setLayout(mainLayout);
+		entryLayout,
+		{{"{{scenes}}", _scenes},
+		 {"{{sources}}", _sources},
+		 {"{{sources2}}", _sources2},
+		 {"{{conditions}}", _conditions},
+		 {"{{position}}", _position}});
+	auto layout = new QVBoxLayout;
+	layout->addLayout(entryLayout);
+	layout->addWidget(_posInfo);
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -291,15 +403,6 @@ void MacroConditionSceneOrderEdit::ConditionChanged(int index)
 	}
 	SetWidgetVisibility(_entryData->_condition ==
 			    MacroConditionSceneOrder::Condition::POSITION);
-	if (_entryData->_condition ==
-	    MacroConditionSceneOrder::Condition::POSITION) {
-		_sources->SetPlaceholderType(
-			SceneItemSelectionWidget::Placeholder::ANY);
-	} else {
-		_sources->SetPlaceholderType(
-			SceneItemSelectionWidget::Placeholder::ALL);
-	}
-
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }

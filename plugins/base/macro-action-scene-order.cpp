@@ -276,8 +276,32 @@ MacroActionSceneOrderEdit::MacroActionSceneOrderEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneOrder> entryData)
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
-	  _sources(new SceneItemSelectionWidget(this)),
-	  _sources2(new SceneItemSelectionWidget(this)),
+	  _sources(new SceneItemSelectionWidget(
+		  this,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ALL)),
+	  _sources2(new SceneItemSelectionWidget(
+		  this,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ALL)),
 	  _actions(new QComboBox(this)),
 	  _position(new QSpinBox(this))
 {

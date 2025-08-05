@@ -237,7 +237,19 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTransition> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox),
-	  _sources(new SceneItemSelectionWidget(parent, false)),
+	  _sources(new SceneItemSelectionWidget(
+		  parent,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ALL)),
 	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _setTransition(new QCheckBox),
 	  _setDuration(new QCheckBox),
@@ -268,7 +280,7 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	QWidget::connect(_setDuration, SIGNAL(stateChanged(int)), this,
 			 SLOT(SetDurationChanged(int)));
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _actions},
 		{"{{sources}}", _sources},
 		{"{{scenes}}", _scenes},
@@ -277,7 +289,8 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 		{"{{setTransition}}", _setTransition},
 		{"{{setDuration}}", _setDuration},
 	};
-	QHBoxLayout *typeLayout = new QHBoxLayout;
+
+	auto typeLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.transition.entry.line1"),
 		     typeLayout, widgetPlaceholders);
@@ -287,7 +300,7 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.transition.entry.line3"),
 		     _durationLayout, widgetPlaceholders);
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(typeLayout);
 	mainLayout->addLayout(_transitionLayout);
 	mainLayout->addLayout(_durationLayout);

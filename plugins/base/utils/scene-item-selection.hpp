@@ -29,6 +29,7 @@ public:
 		INDEX = 30,
 		INDEX_RANGE = 40,
 		ALL = 50,
+		ANY = 60,
 	};
 
 	// Name conflicts can happen if multiple instances of a given source are
@@ -43,14 +44,16 @@ public:
 		INDIVIDUAL,
 	};
 
+	void SetType(Type t) { _type = t; }
 	Type GetType() const { return _type; }
 	NameConflictSelection GetIndexType() const;
 	std::vector<OBSSceneItem> GetSceneItems(const SceneSelection &) const;
+	bool IsSelectionOfTypeAny() const;
 	std::string ToString(bool resolve = false) const;
 
 	// TODO: Remove in future version
 	//
-	// Only exists to enable backwards compatabilty with older versions of
+	// Only exists to enable backwards compatibility with older versions of
 	// scene item visibility action
 	void SetSourceTypeSelection(const char *);
 
@@ -69,7 +72,7 @@ private:
 	std::vector<OBSSceneItem>
 	GetAllSceneItems(const SceneSelection &) const;
 
-	void ReduceBadedOnIndexSelection(std::vector<OBSSceneItem> &) const;
+	void ReduceBasedOnIndexSelection(std::vector<OBSSceneItem> &) const;
 
 	Type _type = Type::SOURCE_NAME;
 
@@ -90,13 +93,24 @@ class SceneItemSelectionWidget : public QWidget {
 	Q_OBJECT
 
 public:
-	enum class Placeholder { ALL, ANY };
-	SceneItemSelectionWidget(QWidget *parent, bool addPlaceholder = true,
-				 Placeholder placeholderType = Placeholder::ALL);
+	enum class NameClashMode { NONE, ALL, ANY, ANY_AND_ALL, HIDE };
+	explicit SceneItemSelectionWidget(
+		QWidget *parent,
+		const std::vector<SceneItemSelection::Type> &selections =
+			{
+				SceneItemSelection::Type::SOURCE_NAME,
+				SceneItemSelection::Type::VARIABLE_NAME,
+				SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+				SceneItemSelection::Type::SOURCE_GROUP,
+				SceneItemSelection::Type::SOURCE_TYPE,
+				SceneItemSelection::Type::INDEX,
+				SceneItemSelection::Type::INDEX_RANGE,
+				SceneItemSelection::Type::ALL,
+				SceneItemSelection::Type::ANY,
+			},
+		NameClashMode mode = NameClashMode::ANY_AND_ALL);
 	void SetSceneItem(const SceneItemSelection &);
 	void SetScene(const SceneSelection &);
-	void ShowPlaceholder(bool);
-	void SetPlaceholderType(Placeholder t, bool resetSelection = true);
 
 protected:
 	void showEvent(QShowEvent *event) override;
@@ -144,10 +158,8 @@ private:
 
 	SceneSelection _scene;
 	SceneItemSelection _currentSelection;
-	bool _hasPlaceholderEntry = false;
-	Placeholder _placeholder = Placeholder::ALL;
-
-	bool _showTypeSelection = false;
+	NameClashMode _nameClashMode = NameClashMode::ALL;
+	const std::vector<SceneItemSelection::Type> _selectionTypes;
 };
 
 class SceneItemTypeSelection : public QDialog {
@@ -156,8 +168,9 @@ class SceneItemTypeSelection : public QDialog {
 public:
 	SceneItemTypeSelection(QWidget *parent,
 			       const SceneItemSelection::Type &type);
-	static bool AskForSettings(QWidget *parent,
-				   SceneItemSelection::Type &type);
+	static bool AskForSettings(
+		QWidget *parent, SceneItemSelection::Type &type,
+		const std::vector<SceneItemSelection::Type> &allowedTypes);
 
 private:
 	QComboBox *_typeSelection;

@@ -237,7 +237,24 @@ MacroActionMediaEdit::MacroActionMediaEdit(
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.media.seek.percentage.label"))),
 	  _sources(new SourceSelectionWidget(this, getMediaSourcesList, true)),
-	  _sceneItems(new SceneItemSelectionWidget(parent, false)),
+	  _sceneItems(new SceneItemSelectionWidget(
+		  parent,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+		  },
+		  // All instances of a media source will be in the same state.
+		  // So, for example, restarting one instance of a source will
+		  // automatically restart all other instances of that source,
+		  // too.
+		  // Thus, we hide the name clash resolution options
+		  SceneItemSelectionWidget::NameClashMode::HIDE)),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true, true))
 {
 	populateActionSelection(_actions);
