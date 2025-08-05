@@ -113,7 +113,19 @@ MacroActionSceneLockEdit::MacroActionSceneLockEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSceneLock> entryData)
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true)),
-	  _sources(new SceneItemSelectionWidget(parent)),
+	  _sources(new SceneItemSelectionWidget(
+		  parent,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ALL)),
 	  _actions(new QComboBox())
 {
 	populateActionSelection(_actions);

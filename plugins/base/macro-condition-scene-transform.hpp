@@ -45,6 +45,10 @@ private:
 	bool CheckAllSettings(const std::vector<OBSSceneItem> &);
 	bool CheckSingleSetting(const std::vector<OBSSceneItem> &);
 	bool
+	AllSceneItemsTransformSettingChanged(const std::vector<OBSSceneItem> &);
+	bool
+	AllSceneItemsTransformSettingMatch(const std::vector<OBSSceneItem> &);
+	bool
 	AnySceneItemTransformSettingChanged(const std::vector<OBSSceneItem> &);
 	bool
 	AnySceneItemTransformSettingMatches(const std::vector<OBSSceneItem> &);

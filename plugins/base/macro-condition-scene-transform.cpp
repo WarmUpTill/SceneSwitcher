@@ -56,6 +56,22 @@ static bool doesTransformOfAnySceneItemMatch(
 	return ret;
 }
 
+static bool doesTransformOfAllSceneItemsMatch(
+	const std::vector<OBSSceneItem> &items, const std::string &jsonCompare,
+	const RegexConfig &regex, std::string &newVariable)
+{
+	bool ret = true;
+	std::string json;
+	for (const auto &item : items) {
+		json = GetSceneItemTransform(item);
+		if (!MatchJson(json, jsonCompare, regex)) {
+			ret = false;
+		}
+	}
+	newVariable = json;
+	return ret;
+}
+
 static bool
 didTransformOfAnySceneItemChange(const std::vector<OBSSceneItem> &items,
 				 std::vector<std::string> &previousTransform,
@@ -81,19 +97,57 @@ didTransformOfAnySceneItemChange(const std::vector<OBSSceneItem> &items,
 	return ret;
 }
 
+static bool
+didTransformOfAllSceneItemsChange(const std::vector<OBSSceneItem> &items,
+				  std::vector<std::string> &previousTransform,
+				  std::string &newVariable)
+{
+	const auto numItems = items.size();
+	if (previousTransform.size() != numItems) {
+		previousTransform.resize(numItems);
+		return false;
+	}
+
+	std::string json;
+	RegexConfig regex;
+	bool ret = true;
+	for (size_t idx = 0; idx < numItems; ++idx) {
+		auto const &item = items[idx];
+		json = GetSceneItemTransform(item);
+		if (MatchJson(json, previousTransform[idx], regex)) {
+			ret = false;
+		} else {
+			previousTransform[idx] = json;
+		}
+	}
+
+	newVariable = json;
+	return ret;
+}
+
 bool MacroConditionSceneTransform::CheckAllSettings(
 	const std::vector<OBSSceneItem> &items)
 {
 	std::string newVariable = "";
+
+	const bool checkAny = _source.IsSelectionOfTypeAny();
+
 	bool ret = false;
 	switch (_condition) {
 	case Condition::MATCHES:
-		ret = doesTransformOfAnySceneItemMatch(items, _transformString,
-						       _regex, newVariable);
+		ret = checkAny ? doesTransformOfAnySceneItemMatch(
+					 items, _transformString, _regex,
+					 newVariable)
+			       : doesTransformOfAllSceneItemsMatch(
+					 items, _transformString, _regex,
+					 newVariable);
 		break;
 	case Condition::CHANGED:
-		ret = didTransformOfAnySceneItemChange(
-			items, _previousTransform, newVariable);
+		ret = checkAny
+			      ? didTransformOfAnySceneItemChange(
+					items, _previousTransform, newVariable)
+			      : didTransformOfAllSceneItemsChange(
+					items, _previousTransform, newVariable);
 		break;
 
 	default:
@@ -200,16 +254,97 @@ void MacroConditionSceneTransform::SetTempVarHelper(
 bool MacroConditionSceneTransform::CheckSingleSetting(
 	const std::vector<OBSSceneItem> &items)
 {
-	if (_condition == Condition::CHANGED) {
-		return AnySceneItemTransformSettingChanged(items);
+	const bool checkAny = _source.IsSelectionOfTypeAny();
+
+	switch (_condition) {
+	case Condition::MATCHES:
+		return checkAny ? AnySceneItemTransformSettingMatches(items)
+				: AllSceneItemsTransformSettingMatch(items);
+	case Condition::CHANGED:
+		return checkAny ? AnySceneItemTransformSettingChanged(items)
+				: AllSceneItemsTransformSettingChanged(items);
+		break;
+	default:
+		break;
 	}
-	return AnySceneItemTransformSettingMatches(items);
+
+	return false;
+}
+
+bool MacroConditionSceneTransform::AllSceneItemsTransformSettingChanged(
+	const std::vector<OBSSceneItem> &items)
+{
+	if (_previousSettingValues.size() < items.size()) {
+		_previousSettingValues.resize(items.size());
+		return false;
+	}
+
+	if (_setting.GetID().empty()) {
+		return false;
+	}
+
+	bool ret = true;
+	std::vector<std::string> varValues;
+
+	for (size_t i = 0; i < items.size(); i++) {
+		const auto &item = items[i];
+		auto &previousValue = _previousSettingValues[i];
+
+		const auto currentValue =
+			GetTransformSettingValue(item, _setting);
+		if (!currentValue) {
+			continue;
+		}
+		varValues.emplace_back(*currentValue);
+
+		if (*currentValue == previousValue) {
+			ret = false;
+		}
+		previousValue = *currentValue;
+	}
+
+	SetTempVarHelper(varValues);
+	return ret;
+}
+
+bool MacroConditionSceneTransform::AllSceneItemsTransformSettingMatch(
+	const std::vector<OBSSceneItem> &items)
+{
+	if (_setting.GetID().empty()) {
+		return false;
+	}
+
+	bool ret = true;
+	std::vector<std::string> varValues;
+
+	for (const auto &item : items) {
+		const auto currentValue =
+			GetTransformSettingValue(item, _setting);
+		if (!currentValue) {
+			continue;
+		}
+		try {
+			if (!compareValue(_compare, std::stod(*currentValue),
+					  std::stod(_singleSetting))) {
+				ret = false;
+			}
+		} catch (std::invalid_argument &) {
+		} catch (std::out_of_range &) {
+		}
+
+		varValues.emplace_back(*currentValue);
+	}
+
+	SetTempVarHelper(varValues);
+	return ret;
 }
 
 bool MacroConditionSceneTransform::CheckCondition()
 {
 	auto items = _source.GetSceneItems(_scene);
 	if (items.empty()) {
+		_previousSettingValues.clear();
+		_previousTransform.clear();
 		return false;
 	}
 
@@ -335,7 +470,19 @@ MacroConditionSceneTransformEdit::MacroConditionSceneTransformEdit(
 	: QWidget(parent),
 	  _scenes(new SceneSelectionWidget(this, true, false, false, true)),
 	  _sources(new SceneItemSelectionWidget(
-		  parent, true, SceneItemSelectionWidget::Placeholder::ANY)),
+		  parent,
+		  {
+			  SceneItemSelection::Type::SOURCE_NAME,
+			  SceneItemSelection::Type::VARIABLE_NAME,
+			  SceneItemSelection::Type::SOURCE_NAME_PATTERN,
+			  SceneItemSelection::Type::SOURCE_GROUP,
+			  SceneItemSelection::Type::SOURCE_TYPE,
+			  SceneItemSelection::Type::INDEX,
+			  SceneItemSelection::Type::INDEX_RANGE,
+			  SceneItemSelection::Type::ALL,
+			  SceneItemSelection::Type::ANY,
+		  },
+		  SceneItemSelectionWidget::NameClashMode::ANY_AND_ALL)),
 	  _settingsType(new QComboBox()),
 	  _compare(new QComboBox()),
 	  _conditions(new QComboBox()),

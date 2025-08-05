@@ -31,7 +31,7 @@ public:
 	Condition _condition = Condition::SHOWN;
 
 private:
-	std::vector<bool> _previousVisibilty;
+	std::vector<bool> _previousVisibility;
 
 	static bool _registered;
 	static const std::string id;
