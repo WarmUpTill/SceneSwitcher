@@ -295,8 +295,10 @@ TransformSettingSelection::TransformSettingSelection(QWidget *parent)
 
 void TransformSettingSelection::SetSource(obs_scene_item *source)
 {
+	const auto current = _settings->currentData().value<TransformSetting>();
 	_settings->clear();
 	Populate(source);
+	SetSetting(current);
 }
 
 void TransformSettingSelection::SetSetting(const TransformSetting &setting)
