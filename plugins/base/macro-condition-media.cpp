@@ -185,6 +185,12 @@ void MacroConditionMedia::SetupTempVars()
 	MacroCondition::SetupTempVars();
 
 	if (_sourceType != SourceType::SOURCE) {
+		AddTempvar(
+			"source",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.media.source"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.media.source.description"));
 		return;
 	}
 
@@ -351,13 +357,23 @@ bool MacroConditionMedia::CheckCondition()
 	switch (_sourceType) {
 	case SourceType::ANY:
 		for (auto &source : _sourceGroup) {
-			match = match || source.CheckCondition();
+			const bool matched = source.CheckCondition();
+			if (matched) {
+				SetTempVarValue("source",
+						source.GetSource().ToString());
+			}
+			match = match || matched;
 		}
 		break;
 	case SourceType::ALL: {
 		bool res = true;
 		for (auto &source : _sourceGroup) {
-			res = res && source.CheckCondition();
+			const bool matched = source.CheckCondition();
+			if (matched) {
+				SetTempVarValue("source",
+						source.GetSource().ToString());
+			}
+			res = res && matched;
 		}
 		match = res;
 		break;
