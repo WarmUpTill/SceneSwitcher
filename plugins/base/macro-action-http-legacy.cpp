@@ -169,7 +169,8 @@ MacroActionHttpEdit::MacroActionHttpEdit(
 	  _headerListLayout(new QVBoxLayout()),
 	  _headerList(new StringListEdit(
 		  this, obs_module_text("AdvSceneSwitcher.action.http.headers"),
-		  obs_module_text("AdvSceneSwitcher.action.http.addHeader"))),
+		  obs_module_text("AdvSceneSwitcher.action.http.addHeader"),
+		  170, [](const std::string &input) { return input.empty(); })),
 	  _timeout(new DurationSelection(this, false))
 {
 	populateMethodSelection(_methods);
