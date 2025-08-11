@@ -46,14 +46,17 @@ void StringList::ResolveVariables()
 	}
 }
 
-StringListEdit::StringListEdit(QWidget *parent, const QString &addString,
-			       const QString &addStringDescription,
-			       int maxStringSize, bool allowEmtpy)
+StringListEdit::StringListEdit(
+	QWidget *parent, const QString &addString,
+	const QString &addStringDescription, int maxStringSize,
+	const std::function<bool(const std::string &)> &filter,
+	const std::function<void(std::string &input)> &preprocess)
 	: ListEditor(parent),
 	  _addString(addString),
 	  _addStringDescription(addStringDescription),
 	  _maxStringSize(maxStringSize),
-	  _allowEmpty(allowEmtpy)
+	  _filterCallback(filter),
+	  _preprocessCallback(preprocess)
 {
 }
 
@@ -77,15 +80,19 @@ void StringListEdit::SetMaxStringSize(int size)
 
 void StringListEdit::Add()
 {
-	std::string name;
+	std::string entry;
 	bool accepted = NameDialog::AskForName(this, _addString,
-					       _addStringDescription, name, "",
+					       _addStringDescription, entry, "",
 					       _maxStringSize, false);
-
-	if (!accepted || (!_allowEmpty && name.empty())) {
+	if (!accepted) {
 		return;
 	}
-	StringVariable string = name;
+
+	_preprocessCallback(entry);
+	if (_filterCallback(entry)) {
+		return;
+	}
+	StringVariable string = entry;
 	QVariant v = QVariant::fromValue(string);
 	QListWidgetItem *item = new QListWidgetItem(
 		QString::fromStdString(string.UnresolvedValue()), _list);
@@ -145,17 +152,21 @@ void StringListEdit::Down()
 
 void StringListEdit::Clicked(QListWidgetItem *item)
 {
-	std::string name;
+	std::string entry;
 	bool accepted = NameDialog::AskForName(this, _addString,
-					       _addStringDescription, name,
+					       _addStringDescription, entry,
 					       item->text(), _maxStringSize,
 					       false);
-
-	if (!accepted || (!_allowEmpty && name.empty())) {
+	if (!accepted) {
 		return;
 	}
 
-	StringVariable string = name;
+	_preprocessCallback(entry);
+	if (_filterCallback(entry)) {
+		return;
+	}
+
+	StringVariable string = entry;
 	QVariant v = QVariant::fromValue(string);
 	item->setText(QString::fromStdString(string.UnresolvedValue()));
 	item->setData(Qt::UserRole, string);

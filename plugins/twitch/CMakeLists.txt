@@ -94,6 +94,8 @@ target_sources(
           macro-condition-twitch.hpp
           points-reward-selection.cpp
           points-reward-selection.hpp
+          tag-selection.cpp
+          tag-selection.hpp
           token.cpp
           token.hpp
           twitch-helpers.cpp

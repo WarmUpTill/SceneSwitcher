@@ -12,6 +12,7 @@ class ADVSS_EXPORT ListEditor : public QWidget {
 
 public:
 	ListEditor(QWidget *parent = nullptr, bool reorder = true);
+	int count() const { return _list->count(); };
 
 protected:
 	void showEvent(QShowEvent *);

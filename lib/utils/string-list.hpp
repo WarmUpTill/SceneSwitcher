@@ -19,14 +19,20 @@ public:
 	friend class StringListEdit;
 };
 
-class ADVSS_EXPORT StringListEdit final : public ListEditor {
+class ADVSS_EXPORT StringListEdit : public ListEditor {
 	Q_OBJECT
 
 public:
-	StringListEdit(QWidget *parent, const QString &addString = "",
-		       const QString &addStringDescription = "",
-		       int maxStringSize = 170, bool allowEmtpy = false);
+	StringListEdit(
+		QWidget *parent, const QString &addString = "",
+		const QString &addStringDescription = "",
+		int maxStringSize = 170,
+		const std::function<bool(const std::string &)> &filter =
+			[](const std::string &) { return false; },
+		const std::function<void(std::string &input)> &preprocess =
+			[](std::string &) {});
 	void SetStringList(const StringList &);
+	StringList GetStringList() const { return _stringList; }
 	void SetMaxStringSize(int);
 
 private slots:
@@ -44,7 +50,8 @@ private:
 	QString _addString;
 	QString _addStringDescription;
 	int _maxStringSize = 170;
-	bool _allowEmpty = false;
+	std::function<bool(const std::string &)> _filterCallback;
+	std::function<void(std::string &)> _preprocessCallback;
 };
 
 } // namespace advss

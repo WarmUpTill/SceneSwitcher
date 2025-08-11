@@ -6,16 +6,10 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-namespace advss {
+namespace {
 
-static constexpr std::string_view clientID = "ds5tt4ogliifsqc04mz3d3etnck3e5";
 static const int cacheTimeoutSeconds = 10;
 static std::atomic_bool apiIsThrottling = {false};
-
-const char *GetClientID()
-{
-	return clientID.data();
-}
 
 class Args {
 public:
@@ -54,10 +48,10 @@ private:
 	httplib::Headers _headers;
 };
 
-}; // namespace advss
+}; // namespace
 
-template<> struct std::hash<advss::Args> {
-	inline std::size_t operator()(const advss::Args &args) const
+template<> struct std::hash<Args> {
+	inline std::size_t operator()(const Args &args) const
 	{
 		static constexpr auto hash_combine = [](std::size_t &seed,
 							std::size_t hashValue) {
@@ -84,6 +78,13 @@ template<> struct std::hash<advss::Args> {
 };
 
 namespace advss {
+
+static constexpr std::string_view clientID = "ds5tt4ogliifsqc04mz3d3etnck3e5";
+
+const char *GetClientID()
+{
+	return clientID.data();
+}
 
 struct CacheEntry {
 	RequestResult result;
@@ -255,7 +256,7 @@ static RequestResult sendPostRequest(const TwitchToken &token,
 				     const std::string &uri,
 				     const std::string &path,
 				     const httplib::Params &params,
-				     const OBSData &data)
+				     const std::string &data)
 {
 	if (apiIsThrottling) {
 		return {};
@@ -273,9 +274,8 @@ static RequestResult sendPostRequest(const TwitchToken &token,
 	vblog(LOG_INFO, "Twitch POST request to %s began", url.c_str());
 
 	auto headers = getTokenRequestHeaders(*tokenStr);
-	auto body = getRequestBody(data);
 	auto response =
-		cli.Post(pathWithParams, headers, body, "application/json");
+		cli.Post(pathWithParams, headers, data, "application/json");
 
 	return processResult(response, __func__);
 }
@@ -284,6 +284,15 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 			      const std::string &path,
 			      const httplib::Params &params,
 			      const OBSData &data, bool useCache)
+{
+	auto body = getRequestBody(data);
+	return SendPostRequest(token, uri, path, params, body, useCache);
+}
+
+RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
+			      const std::string &path,
+			      const httplib::Params &params,
+			      const std::string &data, bool useCache)
 {
 	if (apiIsThrottling) {
 		return {};
@@ -303,8 +312,7 @@ RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 	}
 
 	auto headers = getTokenRequestHeaders(*tokenStr);
-	auto body = getRequestBody(data);
-	Args args(uri, path, body, params, headers);
+	Args args(uri, path, data, params, headers);
 
 	if (!useCache) {
 		return sendPostRequest(token, uri, path, params, data);
@@ -326,7 +334,7 @@ static RequestResult sendPutRequest(const TwitchToken &token,
 				    const std::string &uri,
 				    const std::string &path,
 				    const httplib::Params &params,
-				    const OBSData &data)
+				    const std::string &data)
 {
 	if (apiIsThrottling) {
 		return {};
@@ -344,9 +352,8 @@ static RequestResult sendPutRequest(const TwitchToken &token,
 	vblog(LOG_INFO, "Twitch PUT request to %s began", url.c_str());
 
 	auto headers = getTokenRequestHeaders(*tokenStr);
-	auto body = getRequestBody(data);
 	auto response =
-		cli.Put(pathWithParams, headers, body, "application/json");
+		cli.Put(pathWithParams, headers, data, "application/json");
 
 	return processResult(response, __func__);
 }
@@ -355,6 +362,15 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 			     const std::string &path,
 			     const httplib::Params &params, const OBSData &data,
 			     bool useCache)
+{
+	auto body = getRequestBody(data);
+	return SendPutRequest(token, uri, path, params, body, useCache);
+}
+
+RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
+			     const std::string &path,
+			     const httplib::Params &params,
+			     const std::string &data, bool useCache)
 {
 	if (apiIsThrottling) {
 		return {};
@@ -374,8 +390,7 @@ RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 	}
 
 	auto headers = getTokenRequestHeaders(*tokenStr);
-	auto body = getRequestBody(data);
-	Args args(uri, path, body, params, headers);
+	Args args(uri, path, data, params, headers);
 
 	if (!useCache) {
 		return sendPutRequest(token, uri, path, params, data);
@@ -397,7 +412,7 @@ static RequestResult sendPatchRequest(const TwitchToken &token,
 				      const std::string &uri,
 				      const std::string &path,
 				      const httplib::Params &params,
-				      const OBSData &data)
+				      const std::string &data)
 {
 	if (apiIsThrottling) {
 		return {};
@@ -415,9 +430,8 @@ static RequestResult sendPatchRequest(const TwitchToken &token,
 	vblog(LOG_INFO, "Twitch PATCH request to %s began", url.c_str());
 
 	auto headers = getTokenRequestHeaders(*tokenStr);
-	auto body = getRequestBody(data);
 	auto response =
-		cli.Patch(pathWithParams, headers, body, "application/json");
+		cli.Patch(pathWithParams, headers, data, "application/json");
 
 	return processResult(response, __func__);
 }
@@ -426,6 +440,15 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 			       const std::string &path,
 			       const httplib::Params &params,
 			       const OBSData &data, bool useCache)
+{
+	auto body = getRequestBody(data);
+	return SendPatchRequest(token, uri, path, params, body, useCache);
+}
+
+RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
+			       const std::string &path,
+			       const httplib::Params &params,
+			       const std::string &data, bool useCache)
 {
 	if (apiIsThrottling) {
 		return {};
@@ -445,8 +468,7 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 	}
 
 	auto headers = getTokenRequestHeaders(*tokenStr);
-	auto body = getRequestBody(data);
-	Args args(uri, path, body, params, headers);
+	Args args(uri, path, data, params, headers);
 
 	if (!useCache) {
 		return sendPatchRequest(token, uri, path, params, data);

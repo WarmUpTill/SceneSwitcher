@@ -23,18 +23,30 @@ RequestResult SendGetRequest(const TwitchToken &token, const std::string &uri,
 			     bool useCache = false);
 RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
 			      const std::string &path,
+			      const httplib::Params &params,
+			      const OBSData &data, bool useCache = false);
+RequestResult SendPostRequest(const TwitchToken &token, const std::string &uri,
+			      const std::string &path,
 			      const httplib::Params &params = {},
-			      const OBSData &data = nullptr,
+			      const std::string &data = "",
 			      bool useCache = false);
 RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
 			     const std::string &path,
+			     const httplib::Params &params, const OBSData &data,
+			     bool useCache = false);
+RequestResult SendPutRequest(const TwitchToken &token, const std::string &uri,
+			     const std::string &path,
 			     const httplib::Params &params = {},
-			     const OBSData &data = nullptr,
+			     const std::string &data = "",
 			     bool useCache = false);
 RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 			       const std::string &path,
+			       const httplib::Params &params,
+			       const OBSData &data, bool useCache = false);
+RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
+			       const std::string &path,
 			       const httplib::Params &params = {},
-			       const OBSData &data = nullptr,
+			       const std::string &data = "",
 			       bool useCache = false);
 
 // Helper functions to set temp var values
