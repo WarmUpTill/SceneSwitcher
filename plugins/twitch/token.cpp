@@ -31,6 +31,7 @@ const std::unordered_map<std::string, std::string> TokenOption::_apiIdToLocale{
 	 "AdvSceneSwitcher.twitchToken.channel.raids.manage"},
 	{"moderator:manage:shoutouts",
 	 "AdvSceneSwitcher.twitchToken.moderator.shoutouts.manage"},
+	{"channel:read:ads", "AdvSceneSwitcher.twitchToken.channel.ads.read"},
 	{"channel:read:polls",
 	 "AdvSceneSwitcher.twitchToken.channel.polls.read"},
 	{"channel:manage:polls",

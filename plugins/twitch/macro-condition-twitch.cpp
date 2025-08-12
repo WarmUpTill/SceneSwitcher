@@ -113,6 +113,8 @@ const static std::map<MacroConditionTwitch::Condition, std::string> conditionTyp
 	 "AdvSceneSwitcher.condition.twitch.type.event.channel.stream.online.premiere"},
 	{MacroConditionTwitch::Condition::STREAM_ONLINE_RERUN_EVENT,
 	 "AdvSceneSwitcher.condition.twitch.type.event.channel.stream.online.rerun"},
+	{MacroConditionTwitch::Condition::COMMERCIAL_START,
+	 "AdvSceneSwitcher.condition.twitch.type.event.channel.commercial.start"},
 	{MacroConditionTwitch::Condition::LIVE_POLLING,
 	 "AdvSceneSwitcher.condition.twitch.type.polling.channel.live"},
 	{MacroConditionTwitch::Condition::TITLE_POLLING,
@@ -153,6 +155,8 @@ const static std::map<MacroConditionTwitch::Condition, std::string> eventIdentif
 	 "channel.shoutout.create"},
 	{MacroConditionTwitch::Condition::SHOUTOUT_INBOUND_EVENT,
 	 "channel.shoutout.receive"},
+	{MacroConditionTwitch::Condition::COMMERCIAL_START,
+	 "channel.ad_break.begin"},
 	{MacroConditionTwitch::Condition::POLL_START_EVENT,
 	 "channel.poll.begin"},
 	{MacroConditionTwitch::Condition::POLL_PROGRESS_EVENT,
@@ -689,6 +693,7 @@ bool MacroConditionTwitch::CheckCondition()
 	case Condition::RAID_INBOUND_EVENT:
 	case Condition::SHOUTOUT_OUTBOUND_EVENT:
 	case Condition::SHOUTOUT_INBOUND_EVENT:
+	case Condition::COMMERCIAL_START:
 	case Condition::POLL_START_EVENT:
 	case Condition::POLL_PROGRESS_EVENT:
 	case Condition::POLL_END_EVENT:
@@ -857,6 +862,7 @@ bool MacroConditionTwitch::ConditionIsSupportedByToken()
 			{Condition::SHOUTOUT_INBOUND_EVENT,
 			 {{"moderator:read:shoutouts"},
 			  {"moderator:manage:shoutouts"}}},
+			{Condition::COMMERCIAL_START, {{"channel:read:ads"}}},
 			{Condition::POLL_START_EVENT,
 			 {{"channel:read:polls"}, {"channel:manage:polls"}}},
 			{Condition::POLL_PROGRESS_EVENT,
@@ -970,6 +976,7 @@ void MacroConditionTwitch::RegisterEventSubscription()
 	case Condition::SUBSCRIPTION_GIFT_EVENT:
 	case Condition::SUBSCRIPTION_MESSAGE_EVENT:
 	case Condition::CHEER_EVENT:
+	case Condition::COMMERCIAL_START:
 	case Condition::POLL_START_EVENT:
 	case Condition::POLL_PROGRESS_EVENT:
 	case Condition::POLL_END_EVENT:
@@ -1196,6 +1203,14 @@ void MacroConditionTwitch::SetupTempVars()
 		setupTempVarHelper("is_anonymous", ".cheer");
 		setupTempVarHelper("message", ".cheer");
 		setupTempVarHelper("bits");
+		break;
+	case Condition::COMMERCIAL_START:
+		setupTempVarHelper("duration_seconds", ".commercial");
+		setupTempVarHelper("started_at", ".commercial");
+		setupTempVarHelper("is_automatic", ".commercial");
+		setupTempVarHelper("requester_user_id", ".commercial");
+		setupTempVarHelper("requester_user_login", ".commercial");
+		setupTempVarHelper("requester_user_name", ".commercial");
 		break;
 	case Condition::POLL_START_EVENT:
 	case Condition::POLL_PROGRESS_EVENT:
