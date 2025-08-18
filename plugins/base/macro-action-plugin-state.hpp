@@ -7,13 +7,6 @@
 
 namespace advss {
 
-enum class PluginStateAction {
-	STOP,
-	NO_MATCH_BEHAVIOUR,
-	IMPORT_SETTINGS,
-	TERMINATE,
-};
-
 class MacroActionPluginState : public MacroAction {
 public:
 	MacroActionPluginState(Macro *m) : MacroAction(m) {}
@@ -26,7 +19,17 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
 
-	PluginStateAction _action = PluginStateAction::STOP;
+	enum class Action {
+		STOP,
+		NO_MATCH_BEHAVIOUR,
+		IMPORT_SETTINGS,
+		TERMINATE,
+		ENABLE_MACRO_HIGHLIGHTING,
+		DISABLE_MACRO_HIGHLIGHTING,
+		TOGGLE_MACRO_HIGHLIGHTING,
+	};
+
+	Action _action = Action::STOP;
 	int _value = 0;
 	StringVariable _settingsPath;
 	OBSWeakSource _scene;
@@ -59,16 +62,16 @@ private slots:
 	void SceneChanged(const QString &text);
 	void PathChanged(const QString &text);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_actions;
 	QComboBox *_values;
 	QComboBox *_scenes;
 	FileSelection *_settings;
 	QLabel *_settingsWarning;
-	std::shared_ptr<MacroActionPluginState> _entryData;
 
-private:
-	void SetWidgetVisibility();
+	std::shared_ptr<MacroActionPluginState> _entryData;
 	bool _loading = true;
 };
 
