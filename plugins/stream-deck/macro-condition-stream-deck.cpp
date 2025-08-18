@@ -48,14 +48,25 @@ void receiveStreamDeckMessage(obs_data_t *request_data, obs_data_t *)
 	}
 	message.keyDown = obs_data_get_bool(data, "isKeyDownEvent");
 
-	OBSDataAutoRelease coordinates = obs_data_get_obj(data, "coordinates");
-	if (!coordinates) {
-		printParseError(request_data);
-		return;
-	}
+	const bool isMultiAction = obs_data_get_bool(data, "isInMultiAction");
+	if (!isMultiAction) {
+		OBSDataAutoRelease coordinates =
+			obs_data_get_obj(data, "coordinates");
+		if (!coordinates && !isMultiAction) {
+			printParseError(request_data);
+			return;
+		}
 
-	message.row = obs_data_get_int(coordinates, "row");
-	message.column = obs_data_get_int(coordinates, "column");
+		message.row = obs_data_get_int(coordinates, "row");
+		message.column = obs_data_get_int(coordinates, "column");
+	} else {
+		message.row = 0;
+		message.column = 0;
+		vblog(LOG_INFO,
+		      "received multi action stream deck message"
+		      " - setting coordinates to (%d, %d)",
+		      message.row, message.column);
+	}
 
 	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
 	if (!settings) {
