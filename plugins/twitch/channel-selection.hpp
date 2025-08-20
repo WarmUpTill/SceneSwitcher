@@ -51,7 +51,7 @@ struct TwitchChannel {
 	void SetName(const StringVariable &name) { _name = name; }
 	StringVariable GetName() const { return _name; }
 	std::string GetUserID(const TwitchToken &token) const;
-	bool IsValid(const std::string &id) const;
+	static bool IsValid(const std::string &id);
 	std::optional<ChannelLiveInfo> GetLiveInfo(const TwitchToken &) const;
 	std::optional<ChannelInfo> GetInfo(const TwitchToken &) const;
 	void ResolveVariables();
