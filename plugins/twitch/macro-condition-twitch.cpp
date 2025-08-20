@@ -1096,6 +1096,13 @@ void MacroConditionTwitch::AddChannelGenericEventSubscription(
 		return;
 	}
 
+	const auto channelID = _channel.GetUserID(*token);
+	if (!TwitchChannel::IsValid(channelID)) {
+		vblog(LOG_INFO, "skip %s because of invalid channel selection",
+		      __func__);
+		return;
+	}
+
 	OBSDataAutoRelease temp = obs_data_create();
 	Subscription subscription{temp.Get()};
 	obs_data_set_string(subscription.data, "type",
