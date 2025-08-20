@@ -375,18 +375,20 @@ void TempVariableSelection::HighlightSelection(const TempVariableRef &var)
 		return;
 	}
 
+	const auto color = GetThemeTypeName() == "Dark" ? Qt::white : Qt::blue;
+
 	auto type = var.GetType();
 	switch (type) {
 	case TempVariableRef::SegmentType::NONE:
 		return;
 	case TempVariableRef::SegmentType::CONDITION:
-		advssWindow->HighlightCondition(var.GetIdx(), Qt::white);
+		advssWindow->HighlightCondition(var.GetIdx(), color);
 		return;
 	case TempVariableRef::SegmentType::ACTION:
-		advssWindow->HighlightAction(var.GetIdx(), Qt::white);
+		advssWindow->HighlightAction(var.GetIdx(), color);
 		return;
 	case TempVariableRef::SegmentType::ELSEACTION:
-		advssWindow->HighlightElseAction(var.GetIdx(), Qt::white);
+		advssWindow->HighlightElseAction(var.GetIdx(), color);
 		return;
 	default:
 		break;
