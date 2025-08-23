@@ -3,6 +3,8 @@
 #include "file-selection.hpp"
 
 #include <obs.hpp>
+
+#include <QCheckBox>
 #include <QLabel>
 
 namespace advss {
@@ -33,6 +35,7 @@ public:
 	int _value = 0;
 	StringVariable _settingsPath;
 	OBSWeakSource _scene;
+	bool _confirmShutdown = true;
 
 private:
 	static bool _registered;
@@ -61,6 +64,7 @@ private slots:
 	void ValueChanged(int value);
 	void SceneChanged(const QString &text);
 	void PathChanged(const QString &text);
+	void ConfirmShutdownChanged(int);
 
 private:
 	void SetWidgetVisibility();
@@ -70,6 +74,7 @@ private:
 	QComboBox *_scenes;
 	FileSelection *_settings;
 	QLabel *_settingsWarning;
+	QCheckBox *_confirmShutdown;
 
 	std::shared_ptr<MacroActionPluginState> _entryData;
 	bool _loading = true;

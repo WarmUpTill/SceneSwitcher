@@ -56,7 +56,7 @@ static void setNoMatchBehaviour(int value, OBSWeakSource &scene)
 	}
 }
 
-static void closeOBSWindow()
+static void closeOBSWindow(void *)
 {
 	blog(LOG_WARNING, "closing OBS window now!");
 	auto obsWindow =
@@ -69,7 +69,7 @@ static void closeOBSWindow()
 	}
 }
 
-static void terminateOBS(void *)
+static void askTerminateOBS(void *)
 {
 	static std::mutex mtx;
 	static std::mutex waitMutex;
@@ -107,10 +107,10 @@ static void terminateOBS(void *)
 			if (abortTerminate) {
 				blog(LOG_INFO, "OBS shutdown was aborted");
 			} else {
-				closeOBSWindow();
+				closeOBSWindow(nullptr);
 			}
 		} else {
-			closeOBSWindow();
+			closeOBSWindow(nullptr);
 		}
 	});
 	thread.detach();
@@ -143,9 +143,11 @@ bool MacroActionPluginState::PerformAction()
 		// The settings will be invalid
 		return false;
 	case Action::TERMINATE: {
-		std::thread thread([]() {
-			obs_queue_task(OBS_TASK_UI, terminateOBS, nullptr,
-				       false);
+		std::thread thread([this]() {
+			obs_queue_task(OBS_TASK_UI,
+				       this->_confirmShutdown ? askTerminateOBS
+							      : closeOBSWindow,
+				       nullptr, false);
 		});
 		thread.detach();
 		break;
@@ -204,6 +206,7 @@ bool MacroActionPluginState::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "value", _value);
 	obs_data_set_string(obj, "scene", GetWeakSourceName(_scene).c_str());
 	_settingsPath.Save(obj, "settingsPath");
+	obs_data_set_bool(obj, "confirmShutdown", _confirmShutdown);
 	return true;
 }
 
@@ -216,6 +219,9 @@ bool MacroActionPluginState::Load(obs_data_t *obj)
 	const char *sceneName = obs_data_get_string(obj, "scene");
 	_scene = GetWeakSourceByName(sceneName);
 	_settingsPath.Load(obj, "settingsPath");
+	if (obs_data_has_user_value(obj, "confirmShutdown")) {
+		_confirmShutdown = obs_data_get_bool(obj, "confirmShutdown");
+	}
 	return true;
 }
 
@@ -276,7 +282,9 @@ MacroActionPluginStateEdit::MacroActionPluginStateEdit(
 	  _scenes(new QComboBox(this)),
 	  _settings(new FileSelection()),
 	  _settingsWarning(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.action.pluginState.importWarning")))
+		  "AdvSceneSwitcher.action.pluginState.importWarning"))),
+	  _confirmShutdown(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.pluginState.confirmShutdown")))
 {
 	populateActionSelection(_actions);
 	PopulateSceneSelection(_scenes);
@@ -289,16 +297,21 @@ MacroActionPluginStateEdit::MacroActionPluginStateEdit(
 			 this, SLOT(SceneChanged(const QString &)));
 	QWidget::connect(_settings, SIGNAL(PathChanged(const QString &)), this,
 			 SLOT(PathChanged(const QString &)));
+	QWidget::connect(_confirmShutdown, SIGNAL(stateChanged(int)), this,
+			 SLOT(ConfirmShutdownChanged(int)));
 
-	auto layout = new QHBoxLayout;
+	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.pluginState.entry"),
-		layout,
+		entryLayout,
 		{{"{{actions}}", _actions},
 		 {"{{values}}", _values},
 		 {"{{scenes}}", _scenes},
-		 {"{{settings}}", _settings},
-		 {"{{settingsWarning}}", _settingsWarning}});
+		 {"{{settings}}", _settings}});
+	auto layout = new QVBoxLayout;
+	layout->addLayout(entryLayout);
+	layout->addWidget(_settingsWarning);
+	layout->addWidget(_confirmShutdown);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -316,6 +329,7 @@ void MacroActionPluginStateEdit::UpdateEntryData()
 	_values->setCurrentIndex(_entryData->_value);
 	_scenes->setCurrentText(GetWeakSourceName(_entryData->_scene).c_str());
 	_settings->SetPath(_entryData->_settingsPath);
+	_confirmShutdown->setChecked(_entryData->_confirmShutdown);
 	SetWidgetVisibility();
 }
 
@@ -351,6 +365,12 @@ void MacroActionPluginStateEdit::PathChanged(const QString &text)
 	_entryData->_settingsPath = text.toStdString();
 }
 
+void MacroActionPluginStateEdit::ConfirmShutdownChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_confirmShutdown = value;
+}
+
 void MacroActionPluginStateEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -361,6 +381,7 @@ void MacroActionPluginStateEdit::SetWidgetVisibility()
 	_scenes->hide();
 	_settings->hide();
 	_settingsWarning->hide();
+	_confirmShutdown->hide();
 
 	switch (_entryData->_action) {
 	case MacroActionPluginState::Action::STOP:
@@ -375,6 +396,9 @@ void MacroActionPluginStateEdit::SetWidgetVisibility()
 	case MacroActionPluginState::Action::IMPORT_SETTINGS:
 		_settings->show();
 		_settingsWarning->show();
+		break;
+	case MacroActionPluginState::Action::TERMINATE:
+		_confirmShutdown->show();
 		break;
 	default:
 		break;
