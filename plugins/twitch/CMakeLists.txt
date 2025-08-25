@@ -86,6 +86,8 @@ target_sources(
           chat-connection.hpp
           chat-message-pattern.cpp
           chat-message-pattern.hpp
+          content-classification.cpp
+          content-classification.hpp
           event-sub.cpp
           event-sub.hpp
           macro-action-twitch.cpp
