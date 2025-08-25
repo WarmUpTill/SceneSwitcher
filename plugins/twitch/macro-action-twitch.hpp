@@ -4,6 +4,7 @@
 #include "category-selection.hpp"
 #include "channel-selection.hpp"
 #include "chat-connection.hpp"
+#include "content-classification.hpp"
 #include "points-reward-selection.hpp"
 #include "tag-selection.hpp"
 
@@ -29,7 +30,7 @@ public:
 		CHANNEL_INFO_LANGUAGE_SET = 30,
 		CHANNEL_INFO_DELAY_SET = 40,
 		CHANNEL_INFO_TAGS_SET = 50,
-		CHANNEL_INFO_CONTENT_LABELS_SET = 60, // TODO
+		CHANNEL_INFO_CONTENT_LABELS_SET = 60,
 		CHANNEL_INFO_BRANDED_CONTENT_ENABLE = 70,
 		CHANNEL_INFO_BRANDED_CONTENT_DISABLE = 71,
 
@@ -170,6 +171,7 @@ public:
 		obs_module_text("AdvSceneSwitcher.action.twitch.title.title");
 	TwitchCategory _category;
 	TwitchTagList _tags;
+	ContentClassification _contentClassification;
 	StringVariable _markerDescription = obs_module_text(
 		"AdvSceneSwitcher.action.twitch.marker.description");
 	bool _clipHasDelay = false;
@@ -238,6 +240,7 @@ private slots:
 	void StreamTitleChanged();
 	void CategoryChanged(const TwitchCategory &);
 	void TagsChanged(const TwitchTagList &tags);
+	void ContentClassificationChanged(const ContentClassification &ccl);
 	void MarkerDescriptionChanged();
 	void ClipHasDelayChanged(int state);
 	void DurationChanged(const Duration &);
@@ -273,6 +276,7 @@ private:
 	VariableLineEdit *_streamTitle;
 	TwitchCategoryWidget *_category;
 	TagListWidget *_tags;
+	ContentClassificationEdit *_contentClassification;
 	VariableLineEdit *_markerDescription;
 	QCheckBox *_clipHasDelay;
 	DurationSelection *_duration;
