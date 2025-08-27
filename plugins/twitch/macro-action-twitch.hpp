@@ -5,6 +5,7 @@
 #include "channel-selection.hpp"
 #include "chat-connection.hpp"
 #include "content-classification.hpp"
+#include "language-selection.hpp"
 #include "points-reward-selection.hpp"
 #include "tag-selection.hpp"
 
@@ -171,6 +172,7 @@ public:
 		obs_module_text("AdvSceneSwitcher.action.twitch.title.title");
 	TwitchCategory _category;
 	TwitchTagList _tags;
+	LanguageSelection _language;
 	ContentClassification _contentClassification;
 	StringVariable _markerDescription = obs_module_text(
 		"AdvSceneSwitcher.action.twitch.marker.description");
@@ -240,6 +242,7 @@ private slots:
 	void StreamTitleChanged();
 	void CategoryChanged(const TwitchCategory &);
 	void TagsChanged(const TwitchTagList &tags);
+	void LanguageChanged(const LanguageSelection &);
 	void ContentClassificationChanged(const ContentClassification &ccl);
 	void MarkerDescriptionChanged();
 	void ClipHasDelayChanged(int state);
@@ -276,6 +279,7 @@ private:
 	VariableLineEdit *_streamTitle;
 	TwitchCategoryWidget *_category;
 	TagListWidget *_tags;
+	LanguageSelectionWidget *_language;
 	ContentClassificationEdit *_contentClassification;
 	VariableLineEdit *_markerDescription;
 	QCheckBox *_clipHasDelay;

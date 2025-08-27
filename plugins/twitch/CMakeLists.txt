@@ -90,6 +90,8 @@ target_sources(
           content-classification.hpp
           event-sub.cpp
           event-sub.hpp
+          language-selection.cpp
+          language-selection.hpp
           macro-action-twitch.cpp
           macro-action-twitch.hpp
           macro-condition-twitch.cpp
