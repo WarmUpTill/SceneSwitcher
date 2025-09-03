@@ -31,6 +31,9 @@ public:
 		BASE_CANVAS_Y_VALUE,
 		OUTPUT_X_VALUE,
 		OUTPUT_Y_VALUE,
+		ENABLE_PREVIEW,
+		DISABLE_PREVIEW,
+		TOGGLE_PREVIEW,
 	};
 	Action _action = Action::FPS_COMMON_VALUE;
 	enum class FPSType {
