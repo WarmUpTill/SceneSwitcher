@@ -139,7 +139,6 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 		OBSDataAutoRelease nestedMacroData =
 			obs_data_get_obj(obj, "nestedMacro");
 		_nestedMacro->Load(nestedMacroData);
-		_nestedMacro->PostLoad();
 	}
 
 	_customWidgetHeight = obs_data_get_int(obj, "customWidgetHeight");
@@ -152,6 +151,7 @@ bool MacroActionMacro::PostLoad()
 	MacroRefAction::PostLoad();
 	MacroAction::PostLoad();
 	_runOptions.macro.PostLoad();
+	_nestedMacro->PostLoad();
 	return true;
 }
 
