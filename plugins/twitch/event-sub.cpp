@@ -379,6 +379,7 @@ void EventSub::HandleNotification(obs_data_t *data)
 
 void EventSub::HandleReconnect(obs_data_t *data)
 {
+	blog(LOG_INFO, "Twitch EventSub session_reconnect received");
 	OBSDataAutoRelease session = obs_data_get_obj(data, "session");
 	auto id = obs_data_get_string(session, "id");
 	if (!IsValidID(id)) {
@@ -386,10 +387,10 @@ void EventSub::HandleReconnect(obs_data_t *data)
 		      "ignoring Twitch EventSub reconnect message with invalid id");
 		return;
 	}
-	_url = obs_data_get_string(session, "reconnect_url");
-	websocketpp::lib::error_code ec;
-	_client.close(_connection, websocketpp::close::status::normal,
-		      "Twitch EventSub reconnecting", ec);
+	//_url = obs_data_get_string(session, "reconnect_url");
+	//websocketpp::lib::error_code ec;
+	//_client.close(_connection, websocketpp::close::status::normal,
+	//	      "Twitch EventSub reconnecting", ec);
 }
 
 void EventSub::HandleRevocation(obs_data_t *data)
@@ -426,8 +427,11 @@ void EventSub::HandleRevocation(obs_data_t *data)
 void EventSub::OnClose(connection_hdl hdl)
 {
 	EventSubWSClient::connection_ptr con = _client.get_con_from_hdl(hdl);
-	auto msg = con->get_ec().message();
-	blog(LOG_INFO, "Twitch EventSub connection closed: %s", msg.c_str());
+	const auto msg = con->get_ec().message();
+	const auto reason = con->get_remote_close_reason();
+	const auto code = con->get_remote_close_code();
+	blog(LOG_INFO, "Twitch EventSub connection closed: %s / %s (%d)",
+	     msg.c_str(), reason.c_str(), code);
 	ClearActiveSubscriptions();
 	_connected = false;
 }

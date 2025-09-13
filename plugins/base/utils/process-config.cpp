@@ -132,7 +132,7 @@ ProcessConfigEdit::ProcessConfigEdit(QWidget *parent)
 		  this, obs_module_text("AdvSceneSwitcher.process.addArgument"),
 		  obs_module_text(
 			  "AdvSceneSwitcher.process.addArgumentDescription"),
-		  4096, true)),
+		  4096)),
 	  _workingDirectory(new FileSelection(FileSelection::Type::FOLDER))
 {
 	_advancedSettingsLayout->setContentsMargins(0, 0, 0, 0);

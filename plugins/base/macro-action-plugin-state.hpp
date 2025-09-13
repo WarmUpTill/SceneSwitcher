@@ -3,16 +3,11 @@
 #include "file-selection.hpp"
 
 #include <obs.hpp>
+
+#include <QCheckBox>
 #include <QLabel>
 
 namespace advss {
-
-enum class PluginStateAction {
-	STOP,
-	NO_MATCH_BEHAVIOUR,
-	IMPORT_SETTINGS,
-	TERMINATE,
-};
 
 class MacroActionPluginState : public MacroAction {
 public:
@@ -26,10 +21,21 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
 
-	PluginStateAction _action = PluginStateAction::STOP;
+	enum class Action {
+		STOP,
+		NO_MATCH_BEHAVIOUR,
+		IMPORT_SETTINGS,
+		TERMINATE,
+		ENABLE_MACRO_HIGHLIGHTING,
+		DISABLE_MACRO_HIGHLIGHTING,
+		TOGGLE_MACRO_HIGHLIGHTING,
+	};
+
+	Action _action = Action::STOP;
 	int _value = 0;
 	StringVariable _settingsPath;
 	OBSWeakSource _scene;
+	bool _confirmShutdown = true;
 
 private:
 	static bool _registered;
@@ -58,17 +64,19 @@ private slots:
 	void ValueChanged(int value);
 	void SceneChanged(const QString &text);
 	void PathChanged(const QString &text);
+	void ConfirmShutdownChanged(int);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_actions;
 	QComboBox *_values;
 	QComboBox *_scenes;
 	FileSelection *_settings;
 	QLabel *_settingsWarning;
-	std::shared_ptr<MacroActionPluginState> _entryData;
+	QCheckBox *_confirmShutdown;
 
-private:
-	void SetWidgetVisibility();
+	std::shared_ptr<MacroActionPluginState> _entryData;
 	bool _loading = true;
 };
 

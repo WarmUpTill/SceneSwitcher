@@ -107,6 +107,8 @@ target_sources(
           lib/macro/macro-action-variable.hpp
           lib/macro/macro-action.cpp
           lib/macro/macro-action.hpp
+          lib/macro/macro-add-dialog.cpp
+          lib/macro/macro-add-dialog.hpp
           lib/macro/macro-condition-edit.cpp
           lib/macro/macro-condition-edit.hpp
           lib/macro/macro-condition-factory.cpp
