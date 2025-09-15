@@ -42,6 +42,7 @@ protected:
 	void SetupWidgetConnections();
 	void SetupLayout();
 	void SetWidgetVisibility();
+	void SetupContentIssueWarning() const;
 
 	QComboBox *_scriptType;
 	QComboBox *_language;
@@ -49,6 +50,7 @@ protected:
 	FileSelection *_path;
 	QPushButton *_openFile;
 	QHBoxLayout *_fileLayout;
+	QLabel *_contentIssueWarning;
 
 	std::shared_ptr<MacroSegmentScriptInline> _entryData;
 	bool _loading = true;
