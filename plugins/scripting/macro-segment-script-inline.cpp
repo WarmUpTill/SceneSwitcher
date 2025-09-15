@@ -5,6 +5,7 @@
 #include "ui-helpers.hpp"
 
 #include <QDesktopServices>
+#include <QFile>
 
 namespace advss {
 
@@ -57,6 +58,7 @@ MacroSegmentScriptInlineEdit::MacroSegmentScriptInlineEdit(
 	  _openFile(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.script.file.open"), this)),
 	  _fileLayout(new QHBoxLayout()),
+	  _contentIssueWarning(new QLabel(this)),
 	  _entryData(entryData)
 {
 	SetupLayout();
@@ -127,6 +129,8 @@ void MacroSegmentScriptInlineEdit::PathChanged(const QString &path)
 	const QSignalBlocker b(_path);
 	_path->SetPath(pathAdjusted);
 	_entryData->SetPath(pathAdjusted.toStdString());
+
+	SetupContentIssueWarning();
 }
 
 void MacroSegmentScriptInlineEdit::PopulateWidgets()
@@ -182,6 +186,7 @@ void MacroSegmentScriptInlineEdit::SetupLayout()
 	layout->addLayout(languageLayout);
 	layout->addLayout(_fileLayout);
 	layout->addWidget(_script);
+	layout->addWidget(_contentIssueWarning);
 	setLayout(layout);
 }
 
@@ -191,8 +196,66 @@ void MacroSegmentScriptInlineEdit::SetWidgetVisibility()
 			    InlineScript::Type::INLINE);
 	SetLayoutVisible(_fileLayout,
 			 _entryData->GetType() == InlineScript::Type::FILE);
+	SetupContentIssueWarning();
+
 	adjustSize();
 	updateGeometry();
+}
+
+void MacroSegmentScriptInlineEdit::SetupContentIssueWarning() const
+{
+	if (_entryData->GetType() == InlineScript::Type::INLINE) {
+		_contentIssueWarning->hide();
+		return;
+	}
+
+	const auto path = QString::fromStdString(_entryData->GetPath());
+	QFile file(path);
+
+	if (!file.exists()) {
+		_contentIssueWarning->setText(obs_module_text(
+			"AdvSceneSwitcher.script.file.warning.notFound"));
+		_contentIssueWarning->show();
+		return;
+	}
+
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		_contentIssueWarning->setText(obs_module_text(
+			"AdvSceneSwitcher.script.file.warning.openFail"));
+		_contentIssueWarning->show();
+		return;
+	}
+
+	QTextStream in(&file);
+	QStringList fileLines;
+
+	while (!in.atEnd()) {
+		QString line = in.readLine().trimmed();
+		fileLines << line.trimmed();
+	}
+
+	file.close();
+
+	static const QStringList requiredLinesLUA = {
+		"function script_load(settings)"};
+	static const QStringList requiredLinesPython = {
+		"def script_load(settings):"};
+
+	const auto &requiredLines = _entryData->GetLanguage() ==
+						    OBS_SCRIPT_LANG_PYTHON
+					    ? requiredLinesPython
+					    : requiredLinesLUA;
+
+	for (const QString &required : requiredLines) {
+		if (fileLines.contains(required)) {
+			_contentIssueWarning->hide();
+			return;
+		}
+	}
+
+	_contentIssueWarning->setText(obs_module_text(
+		"AdvSceneSwitcher.script.file.warning.loadMissing"));
+	_contentIssueWarning->show();
 }
 
 } // namespace advss
