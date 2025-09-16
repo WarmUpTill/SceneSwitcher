@@ -167,7 +167,17 @@ std::shared_ptr<MacroAction> MacroActionMacro::Create(Macro *m)
 
 std::shared_ptr<MacroAction> MacroActionMacro::Copy() const
 {
-	return std::make_shared<MacroActionMacro>(*this);
+	auto copy = std::make_shared<MacroActionMacro>(*this);
+
+	// Create a new nested macro
+	OBSDataAutoRelease data = obs_data_create();
+	_nestedMacro->Save(data);
+
+	copy->_nestedMacro = std::make_shared<Macro>();
+	copy->_nestedMacro->Load(data);
+	copy->_nestedMacro->PostLoad();
+
+	return copy;
 }
 
 void MacroActionMacro::ResolveVariablesToFixedValues()
