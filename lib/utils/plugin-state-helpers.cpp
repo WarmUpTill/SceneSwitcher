@@ -1,4 +1,5 @@
 #include "plugin-state-helpers.hpp"
+#include "advanced-scene-switcher.hpp"
 #include "switcher-data.hpp"
 
 namespace advss {
@@ -229,6 +230,32 @@ bool IsFirstInterval()
 bool IsFirstIntervalAfterStop()
 {
 	return GetSwitcher()->firstIntervalAfterStop;
+}
+
+void SetMacroHighlightingEnabled(bool enable)
+{
+	auto &settings = GetGlobalMacroSettings();
+	settings._highlightActions = enable;
+	settings._highlightConditions = enable;
+	settings._highlightExecuted = enable;
+
+	obs_queue_task(
+		OBS_TASK_UI,
+		[](void *) {
+			if (!SettingsWindowIsOpened()) {
+				return;
+			}
+			AdvSceneSwitcher::window->HighlightMacrosChanged(
+				GetGlobalMacroSettings()._highlightExecuted);
+		},
+		nullptr, false);
+}
+
+bool IsMacroHighlightingEnabled()
+{
+	const auto &settings = GetGlobalMacroSettings();
+	return settings._highlightActions || settings._highlightConditions ||
+	       settings._highlightExecuted;
 }
 
 } // namespace advss

@@ -197,7 +197,7 @@ void TwitchChannel::ResolveVariables()
 	_name.ResolveVariables();
 }
 
-bool TwitchChannel::IsValid(const std::string &id) const
+bool TwitchChannel::IsValid(const std::string &id)
 {
 	return id != "invalid" && !id.empty();
 }

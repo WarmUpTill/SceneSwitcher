@@ -34,6 +34,12 @@ const static std::map<MacroActionOBSSettings::Action, std::string> actionTypes =
 	 "AdvSceneSwitcher.action.obsSetting.action.setOutputCanvasX"},
 	{MacroActionOBSSettings::Action::OUTPUT_Y_VALUE,
 	 "AdvSceneSwitcher.action.obsSetting.action.setOutputCanvasY"},
+	{MacroActionOBSSettings::Action::ENABLE_PREVIEW,
+	 "AdvSceneSwitcher.action.obsSetting.action.enablePreview"},
+	{MacroActionOBSSettings::Action::DISABLE_PREVIEW,
+	 "AdvSceneSwitcher.action.obsSetting.action.disablePreview"},
+	{MacroActionOBSSettings::Action::TOGGLE_PREVIEW,
+	 "AdvSceneSwitcher.action.obsSetting.action.togglePreview"},
 };
 
 template<typename Func, typename... Args>
@@ -60,6 +66,17 @@ static auto getConfigValueHelper(Func func, Func defaultFunc, Args... args)
 		return defaultFunc(config, args...);
 	}
 	return std::optional<Ret>{};
+}
+
+static void setPreviewEnabled(bool enabled)
+{
+	static const auto enable = [](void *) {
+		obs_frontend_set_preview_enabled(true);
+	};
+	static const auto disable = [](void *) {
+		obs_frontend_set_preview_enabled(false);
+	};
+	obs_queue_task(OBS_TASK_UI, enabled ? enable : disable, nullptr, false);
 }
 
 bool MacroActionOBSSettings::PerformAction()
@@ -109,6 +126,15 @@ bool MacroActionOBSSettings::PerformAction()
 		setConfigValueHelper(config_set_uint, "Video", "OutputCY",
 				     static_cast<int>(_canvasSizeValue));
 		obs_frontend_reset_video();
+		break;
+	case Action::ENABLE_PREVIEW:
+		setPreviewEnabled(true);
+		break;
+	case Action::DISABLE_PREVIEW:
+		setPreviewEnabled(false);
+		break;
+	case Action::TOGGLE_PREVIEW:
+		setPreviewEnabled(!obs_frontend_preview_enabled());
 		break;
 	default:
 		break;
@@ -347,18 +373,6 @@ void MacroActionOBSSettingsEdit::SetWidgetVisibility()
 		return;
 	}
 
-	const bool isFPSSelection =
-		_entryData->_action ==
-			MacroActionOBSSettings::Action::FPS_TYPE ||
-		_entryData->_action ==
-			MacroActionOBSSettings::Action::FPS_COMMON_VALUE ||
-		_entryData->_action ==
-			MacroActionOBSSettings::Action::FPS_INT_VALUE ||
-		_entryData->_action ==
-			MacroActionOBSSettings::Action::FPS_DEN_VALUE ||
-		_entryData->_action ==
-			MacroActionOBSSettings::Action::FPS_NUM_VALUE;
-
 	_fpsType->setVisible(_entryData->_action ==
 			     MacroActionOBSSettings::Action::FPS_TYPE);
 	_fpsIntValue->setVisible(
@@ -371,9 +385,36 @@ void MacroActionOBSSettingsEdit::SetWidgetVisibility()
 	_fpsStringValue->setVisible(
 		_entryData->_action ==
 		MacroActionOBSSettings::Action::FPS_COMMON_VALUE);
-	_canvasSizeValue->setVisible(!isFPSSelection);
-	_getCurrentValue->setVisible(_entryData->_action !=
-				     MacroActionOBSSettings::Action::FPS_TYPE);
+
+	const bool needsSizeSelection =
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::BASE_CANVAS_X_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::BASE_CANVAS_Y_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::OUTPUT_X_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::OUTPUT_Y_VALUE;
+	_canvasSizeValue->setVisible(needsSizeSelection);
+
+	const bool canGetSettingsValue =
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::FPS_COMMON_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::FPS_INT_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::FPS_NUM_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::FPS_DEN_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::BASE_CANVAS_X_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::BASE_CANVAS_Y_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::OUTPUT_X_VALUE ||
+		_entryData->_action ==
+			MacroActionOBSSettings::Action::OUTPUT_Y_VALUE;
+	_getCurrentValue->setVisible(canGetSettingsValue);
 }
 
 void MacroActionOBSSettingsEdit::ActionChanged(int idx)

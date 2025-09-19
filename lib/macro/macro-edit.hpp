@@ -17,6 +17,7 @@ class MacroEdit : public QWidget {
 public:
 	MacroEdit(QWidget *parent, QStringList helpMsg = {});
 	void SetMacro(const std::shared_ptr<Macro> &);
+	std::shared_ptr<Macro> GetMacro() const;
 	void ClearSegmentWidgetCacheFor(Macro *) const;
 	void SetControlsDisabled(bool disable) const;
 	void HighlightAction(int idx, QColor color = QColor(Qt::green)) const;
@@ -108,7 +109,6 @@ signals:
 	void MacroRemoved(const QString &name);
 	void MacroRenamed(const QString &oldName, const QString &newName);
 	void MacroSegmentOrderChanged();
-	void SegmentTempVarsChanged(MacroSegment *);
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override;

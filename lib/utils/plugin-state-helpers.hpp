@@ -47,4 +47,7 @@ EXPORT bool InitialLoadIsComplete();
 EXPORT bool IsFirstInterval();
 EXPORT bool IsFirstIntervalAfterStop();
 
+EXPORT void SetMacroHighlightingEnabled(bool enable);
+EXPORT bool IsMacroHighlightingEnabled();
+
 } // namespace advss

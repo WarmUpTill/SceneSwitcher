@@ -17,6 +17,7 @@ bool MacroActionTwitch::_registered = MacroActionFactory::Register(
 void MacroActionTwitch::ResolveVariablesToFixedValues()
 {
 	_streamTitle.ResolveVariables();
+	_tags.ResolveVariables();
 	_markerDescription.ResolveVariables();
 	_duration.ResolveVariables();
 	_announcementMessage.ResolveVariables();
@@ -56,6 +57,12 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.channel.info.title.set"},
 	{MacroActionTwitch::Action::CHANNEL_INFO_CATEGORY_SET,
 	 "AdvSceneSwitcher.action.twitch.type.channel.info.category.set"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_TAGS_SET,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.tags.set"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_LANGUAGE_SET,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.language.set"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_CONTENT_LABELS_SET,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.contentClassification.set"},
 	{MacroActionTwitch::Action::RAID_START,
 	 "AdvSceneSwitcher.action.twitch.type.raid.start"},
 	{MacroActionTwitch::Action::COMMERCIAL_START,
@@ -517,6 +524,15 @@ bool MacroActionTwitch::PerformAction()
 	case Action::CHANNEL_INFO_CATEGORY_SET:
 		SetStreamCategory(token);
 		break;
+	case Action::CHANNEL_INFO_TAGS_SET:
+		_tags.SetStreamTags(*token);
+		break;
+	case Action::CHANNEL_INFO_LANGUAGE_SET:
+		_language.SetStreamLanguage(*token);
+		break;
+	case Action::CHANNEL_INFO_CONTENT_LABELS_SET:
+		_contentClassification.SetContentClassification(*token);
+		break;
 	case Action::RAID_START:
 		StartRaid(token);
 		break;
@@ -576,6 +592,9 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 			    GetWeakTwitchTokenName(_token).c_str());
 	_streamTitle.Save(obj, "streamTitle");
 	_category.Save(obj);
+	_tags.Save(obj);
+	_language.Save(obj);
+	_contentClassification.Save(obj);
 	_markerDescription.Save(obj, "markerDescription");
 	obs_data_set_bool(obj, "clipHasDelay", _clipHasDelay);
 	_duration.Save(obj);
@@ -604,6 +623,9 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_token = GetWeakTwitchTokenByName(obs_data_get_string(obj, "token"));
 	_streamTitle.Load(obj, "streamTitle");
 	_category.Load(obj);
+	_tags.Load(obj);
+	_language.Load(obj);
+	_contentClassification.Load(obj);
 	_markerDescription.Load(obj, "markerDescription");
 	_clipHasDelay = obs_data_get_bool(obj, "clipHasDelay");
 	_duration.Load(obj);
@@ -641,6 +663,10 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 			{Action::CHANNEL_INFO_TITLE_SET,
 			 {{"channel:manage:broadcast"}}},
 			{Action::CHANNEL_INFO_CATEGORY_SET,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_TAGS_SET,
+			 {{"channel:manage:broadcast"}}},
+			{Action::CHANNEL_INFO_CONTENT_LABELS_SET,
 			 {{"channel:manage:broadcast"}}},
 			{Action::CHANNEL_INFO_LANGUAGE_SET,
 			 {{"channel:manage:broadcast"}}},
@@ -815,6 +841,9 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _tokenWarning(new QLabel()),
 	  _streamTitle(new VariableLineEdit(this)),
 	  _category(new TwitchCategoryWidget(this)),
+	  _tags(new TagListWidget(this)),
+	  _language(new LanguageSelectionWidget(this)),
+	  _contentClassification(new ContentClassificationEdit(this)),
 	  _markerDescription(new VariableLineEdit(this)),
 	  _clipHasDelay(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.twitch.clip.hasDelay"))),
@@ -840,6 +869,9 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	mainLayout->addLayout(_layout);
 	mainLayout->addWidget(_announcementMessage);
 	mainLayout->addWidget(_chatMessage);
+	mainLayout->addWidget(_tags);
+	mainLayout->addWidget(_language);
+	mainLayout->addWidget(_contentClassification);
 	mainLayout->addWidget(_tokenWarning);
 	setLayout(mainLayout);
 
@@ -876,6 +908,9 @@ void MacroActionTwitchEdit::TwitchTokenChanged(const QString &token)
 	_category->SetToken(_entryData->_token);
 	_channel->SetToken(_entryData->_token);
 	_pointsReward->SetToken(_entryData->_token);
+	_tags->SetToken(_entryData->_token);
+	_language->SetToken(_entryData->_token);
+	_contentClassification->SetToken(_entryData->_token);
 	_entryData->ResetChatConnection();
 
 	SetWidgetVisibility();
@@ -928,6 +963,25 @@ void MacroActionTwitchEdit::CategoryChanged(const TwitchCategory &category)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_category = category;
+}
+
+void MacroActionTwitchEdit::TagsChanged(const TwitchTagList &tags)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_tags = tags;
+}
+
+void MacroActionTwitchEdit::LanguageChanged(const LanguageSelection &language)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_language = language;
+}
+
+void MacroActionTwitchEdit::ContentClassificationChanged(
+	const ContentClassification &ccl)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_contentClassification = ccl;
 }
 
 void MacroActionTwitchEdit::MarkerDescriptionChanged()
@@ -1010,6 +1064,18 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 	QWidget::connect(_category,
 			 SIGNAL(CategoryChanged(const TwitchCategory &)), this,
 			 SLOT(CategoryChanged(const TwitchCategory &)));
+	QWidget::connect(_tags, SIGNAL(TagListChanged(const TwitchTagList &)),
+			 this, SLOT(TagsChanged(const TwitchTagList &)));
+	QWidget::connect(_language,
+			 SIGNAL(LanguageChanged(const LanguageSelection &)),
+			 this,
+			 SLOT(LanguageChanged(const LanguageSelection &)));
+	QWidget::connect(_contentClassification,
+			 SIGNAL(ContentClassificationChanged(
+				 const ContentClassification &)),
+			 this,
+			 SLOT(ContentClassificationChanged(
+				 const ContentClassification &)));
 	QWidget::connect(_markerDescription, SIGNAL(editingFinished()), this,
 			 SLOT(MarkerDescriptionChanged()));
 	QObject::connect(_clipHasDelay, SIGNAL(stateChanged(int)), this,
@@ -1052,6 +1118,14 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 	_category->setVisible(
 		_entryData->GetAction() ==
 		MacroActionTwitch::Action::CHANNEL_INFO_CATEGORY_SET);
+	_tags->setVisible(_entryData->GetAction() ==
+			  MacroActionTwitch::Action::CHANNEL_INFO_TAGS_SET);
+	_language->setVisible(
+		_entryData->GetAction() ==
+		MacroActionTwitch::Action::CHANNEL_INFO_LANGUAGE_SET);
+	_contentClassification->setVisible(
+		_entryData->GetAction() ==
+		MacroActionTwitch::Action::CHANNEL_INFO_CONTENT_LABELS_SET);
 	_channel->setVisible(
 		_entryData->GetAction() ==
 			MacroActionTwitch::Action::RAID_START ||
@@ -1247,6 +1321,13 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_streamTitle->setText(_entryData->_streamTitle);
 	_category->SetToken(_entryData->_token);
 	_category->SetCategory(_entryData->_category);
+	_tags->SetTags(_entryData->_tags);
+	_tags->SetToken(_entryData->_token);
+	_language->SetLanguageSelection(_entryData->_language);
+	_language->SetToken(_entryData->_token);
+	_contentClassification->SetContentClassification(
+		_entryData->_contentClassification);
+	_contentClassification->SetToken(_entryData->_token);
 	_markerDescription->setText(_entryData->_markerDescription);
 	_clipHasDelay->setChecked(_entryData->_clipHasDelay);
 	_duration->SetDuration(_entryData->_duration);

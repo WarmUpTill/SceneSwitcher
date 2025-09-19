@@ -86,14 +86,20 @@ target_sources(
           chat-connection.hpp
           chat-message-pattern.cpp
           chat-message-pattern.hpp
+          content-classification.cpp
+          content-classification.hpp
           event-sub.cpp
           event-sub.hpp
+          language-selection.cpp
+          language-selection.hpp
           macro-action-twitch.cpp
           macro-action-twitch.hpp
           macro-condition-twitch.cpp
           macro-condition-twitch.hpp
           points-reward-selection.cpp
           points-reward-selection.hpp
+          tag-selection.cpp
+          tag-selection.hpp
           token.cpp
           token.hpp
           twitch-helpers.cpp

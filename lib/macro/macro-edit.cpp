@@ -236,6 +236,11 @@ void MacroEdit::SetMacro(const std::shared_ptr<Macro> &macro)
 	}
 }
 
+std::shared_ptr<Macro> MacroEdit::GetMacro() const
+{
+	return _currentMacro;
+}
+
 void MacroEdit::ClearSegmentWidgetCacheFor(Macro *macro) const
 {
 	ui->conditionsList->ClearWidgetsFromCacheFor(macro);
