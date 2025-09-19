@@ -125,7 +125,6 @@ signals:
 	void MacroRemoved(const QString &name);
 	void MacroRenamed(const QString &oldName, const QString &newName);
 	void MacroSegmentOrderChanged();
-	void SegmentTempVarsChanged(MacroSegment *);
 	void HighlightMacrosChanged(bool value);
 
 	void ConnectionAdded(const QString &);

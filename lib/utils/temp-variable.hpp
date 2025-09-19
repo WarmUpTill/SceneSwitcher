@@ -13,6 +13,7 @@
 namespace advss {
 
 class Macro;
+class MacroEdit;
 class MacroSegment;
 class TempVariableRef;
 class TempVariableSelection;
@@ -102,6 +103,19 @@ private:
 
 	FilterComboBox *_selection;
 	AutoUpdateTooltipLabel *_info;
+	MacroEdit *_macroEdit;
+};
+
+class TempVarSignalManager : public QObject {
+	Q_OBJECT
+public:
+	static TempVarSignalManager *Instance();
+
+signals:
+	void SegmentTempVarsChanged(MacroSegment *);
+
+private:
+	TempVarSignalManager();
 };
 
 void NotifyUIAboutTempVarChange(MacroSegment *);
