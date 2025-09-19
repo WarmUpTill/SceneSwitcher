@@ -1,7 +1,7 @@
 #include "temp-variable.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "obs-module-helper.hpp"
 #include "macro.hpp"
+#include "macro-edit.hpp"
 #include "macro-segment.hpp"
 #include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
@@ -247,14 +247,30 @@ bool TempVariableRef::operator==(const TempVariableRef &other) const
 	return segment == other._segment.lock();
 }
 
+static MacroEdit *findMacroEditParent(QWidget *widget)
+{
+	if (!widget) {
+		return nullptr;
+	}
+
+	auto macroEdit = qobject_cast<MacroEdit *>(widget);
+	if (macroEdit) {
+		return macroEdit;
+	}
+
+	return findMacroEditParent(widget->parentWidget());
+}
+
 TempVariableSelection::TempVariableSelection(QWidget *parent)
 	: QWidget(parent),
 	  _selection(new FilterComboBox(
 		  this, obs_module_text("AdvSceneSwitcher.tempVar.select"))),
-	  _info(new AutoUpdateTooltipLabel(this, [this]() {
-		  return SetupInfoLabel();
-	  }))
+	  _info(new AutoUpdateTooltipLabel(
+		  this, [this]() { return SetupInfoLabel(); })),
+	  _macroEdit(findMacroEditParent(parent))
 {
+	assert(_macroEdit);
+
 	QString path = GetThemeTypeName() == "Light"
 			       ? ":/res/images/help.svg"
 			       : ":/res/images/help_light.svg";
@@ -272,10 +288,9 @@ TempVariableSelection::TempVariableSelection(QWidget *parent)
 			 SLOT(SelectionIdxChanged(int)));
 	QWidget::connect(_selection, SIGNAL(highlighted(int)), this,
 			 SLOT(HighlightChanged(int)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroSegmentOrderChanged()), this,
+	QWidget::connect(_macroEdit, SIGNAL(MacroSegmentOrderChanged()), this,
 			 SLOT(MacroSegmentsChanged()));
-	QWidget::connect(GetSettingsWindow(),
+	QWidget::connect(TempVarSignalManager::Instance(),
 			 SIGNAL(SegmentTempVarsChanged(MacroSegment *)), this,
 			 SLOT(SegmentTempVarsChanged(MacroSegment *)));
 
@@ -335,13 +350,7 @@ void TempVariableSelection::HighlightChanged(int idx)
 
 void TempVariableSelection::PopulateSelection()
 {
-	auto advssWindow =
-		qobject_cast<AdvSceneSwitcher *>(GetSettingsWindow());
-	if (!advssWindow) {
-		return;
-	}
-
-	auto macro = advssWindow->GetSelectedMacro();
+	auto macro = _macroEdit->GetMacro();
 	if (!macro) {
 		return;
 	}
@@ -369,12 +378,6 @@ void TempVariableSelection::PopulateSelection()
 
 void TempVariableSelection::HighlightSelection(const TempVariableRef &var)
 {
-	auto advssWindow =
-		qobject_cast<AdvSceneSwitcher *>(GetSettingsWindow());
-	if (!advssWindow) {
-		return;
-	}
-
 	const auto color = GetThemeTypeName() == "Dark" ? Qt::white : Qt::blue;
 
 	auto type = var.GetType();
@@ -382,13 +385,13 @@ void TempVariableSelection::HighlightSelection(const TempVariableRef &var)
 	case TempVariableRef::SegmentType::NONE:
 		return;
 	case TempVariableRef::SegmentType::CONDITION:
-		advssWindow->HighlightCondition(var.GetIdx(), color);
+		_macroEdit->HighlightCondition(var.GetIdx(), color);
 		return;
 	case TempVariableRef::SegmentType::ACTION:
-		advssWindow->HighlightAction(var.GetIdx(), color);
+		_macroEdit->HighlightAction(var.GetIdx(), color);
 		return;
 	case TempVariableRef::SegmentType::ELSEACTION:
-		advssWindow->HighlightElseAction(var.GetIdx(), color);
+		_macroEdit->HighlightElseAction(var.GetIdx(), color);
 		return;
 	default:
 		break;
@@ -399,14 +402,7 @@ QString TempVariableSelection::SetupInfoLabel()
 {
 	auto currentSelection = _selection->itemData(_selection->currentIndex())
 					.value<TempVariableRef>();
-	auto advssWindow =
-		qobject_cast<AdvSceneSwitcher *>(GetSettingsWindow());
-	if (!advssWindow) {
-		_info->setToolTip("");
-		_info->hide();
-		return "";
-	}
-	auto macro = advssWindow->GetSelectedMacro();
+	auto macro = _macroEdit->GetMacro();
 	if (!macro) {
 		_info->setToolTip("");
 		_info->hide();
@@ -453,15 +449,20 @@ MacroSegment *TempVariableSelection::GetSegment() const
 	return segmentWidget->Data().get();
 }
 
+TempVarSignalManager::TempVarSignalManager() : QObject() {}
+
+TempVarSignalManager *TempVarSignalManager::Instance()
+{
+	static TempVarSignalManager manager;
+	return &manager;
+}
+
 void NotifyUIAboutTempVarChange(MacroSegment *segment)
 {
 	obs_queue_task(
 		OBS_TASK_UI,
 		[](void *segment) {
-			if (!SettingsWindowIsOpened()) {
-				return;
-			}
-			AdvSceneSwitcher::window->SegmentTempVarsChanged(
+			TempVarSignalManager::Instance()->SegmentTempVarsChanged(
 				(MacroSegment *)segment);
 		},
 		segment, false);
