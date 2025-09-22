@@ -201,7 +201,7 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 			 static_cast<int>(_settingsInputMethod));
 	_setting.Save(obj);
 	_manualSettingValue.Save(obj, "manualSettingValue");
-	_tempVar.Save(obj);
+	_tempVar.Save(obj, GetMacro());
 	_settingsString.Save(obj, "settings");
 	obs_data_set_int(obj, "deinterlaceMode",
 			 static_cast<int>(_deinterlaceMode));

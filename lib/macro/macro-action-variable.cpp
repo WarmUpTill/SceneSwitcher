@@ -480,7 +480,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_inputPlaceholder.Save(obj, "inputPlaceholder");
 	_envVariableName.Save(obj, "environmentVariableName");
 	_scene.Save(obj);
-	_tempVar.Save(obj);
+	_tempVar.Save(obj, GetMacro());
 	_sceneItemIndex.Save(obj, "sceneItemIndex");
 	obs_data_set_int(obj, "direction", static_cast<int>(_direction));
 	_stringLength.Save(obj, "stringLength");

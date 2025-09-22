@@ -61,7 +61,8 @@ private:
 
 class TempVariableRef {
 public:
-	EXPORT void Save(obs_data_t *, const char *name = "tempVar") const;
+	EXPORT void Save(obs_data_t *, Macro *,
+			 const char *name = "tempVar") const;
 	EXPORT void Load(obs_data_t *, Macro *, const char *name = "tempVar");
 	EXPORT std::optional<const TempVariable> GetTempVariable(Macro *) const;
 	EXPORT bool operator==(const TempVariableRef &other) const;
@@ -75,6 +76,8 @@ private:
 
 	std::string _id = "";
 	std::weak_ptr<MacroSegment> _segment;
+	int _depth = 0;
+
 	friend TempVariable;
 	friend TempVariableSelection;
 };
@@ -103,7 +106,7 @@ private:
 
 	FilterComboBox *_selection;
 	AutoUpdateTooltipLabel *_info;
-	MacroEdit *_macroEdit;
+	std::vector<MacroEdit *> _macroEdits;
 };
 
 class TempVarSignalManager : public QObject {

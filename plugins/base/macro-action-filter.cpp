@@ -127,7 +127,7 @@ bool MacroActionFilter::Save(obs_data_t *obj) const
 			 static_cast<int>(_settingsInputMethod));
 	_setting.Save(obj);
 	_manualSettingValue.Save(obj, "manualSettingValue");
-	_tempVar.Save(obj);
+	_tempVar.Save(obj, GetMacro());
 	_settingsString.Save(obj, "settings");
 	_button.Save(obj);
 	obs_data_set_int(obj, "version", 1);
