@@ -154,7 +154,7 @@ bool MacroConditionTempVar::CheckCondition()
 bool MacroConditionTempVar::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	_tempVar.Save(obj);
+	_tempVar.Save(obj, GetMacro());
 	obs_data_set_string(obj, "variableName",
 			    GetWeakVariableName(_variable2).c_str());
 	_strValue.Save(obj, "strValue");
