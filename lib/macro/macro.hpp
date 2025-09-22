@@ -88,7 +88,7 @@ public:
 	void SetInputVariables(const MacroInputVariables &);
 
 	// Temporary variable helpers
-	std::vector<TempVariable> GetTempVars(MacroSegment *filter) const;
+	std::vector<TempVariable> GetTempVars(const MacroSegment *filter) const;
 	std::optional<const TempVariable>
 	GetTempVar(const MacroSegment *, const std::string &id) const;
 	void InvalidateTempVarValues() const;
