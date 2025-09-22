@@ -605,7 +605,7 @@ void Macro::SetInputVariables(const MacroInputVariables &inputVariables)
 	_inputVariables = inputVariables;
 }
 
-std::vector<TempVariable> Macro::GetTempVars(MacroSegment *filter) const
+std::vector<TempVariable> Macro::GetTempVars(const MacroSegment *filter) const
 {
 	std::vector<TempVariable> res;
 
@@ -633,7 +633,7 @@ std::vector<TempVariable> Macro::GetTempVars(MacroSegment *filter) const
 					    return ptr.get() == segment;
 				    }) != _conditions.end();
 	};
-	auto isAction = [this](MacroSegment *segment) -> bool {
+	auto isAction = [this](const MacroSegment *segment) -> bool {
 		return std::find_if(_actions.begin(), _actions.end(),
 				    [segment](
 					    const std::shared_ptr<MacroSegment>
@@ -641,7 +641,7 @@ std::vector<TempVariable> Macro::GetTempVars(MacroSegment *filter) const
 					    return ptr.get() == segment;
 				    }) != _actions.end();
 	};
-	auto isElseAction = [this](MacroSegment *segment) -> bool {
+	auto isElseAction = [this](const MacroSegment *segment) -> bool {
 		return std::find_if(_elseActions.begin(), _elseActions.end(),
 				    [segment](
 					    const std::shared_ptr<MacroSegment>
