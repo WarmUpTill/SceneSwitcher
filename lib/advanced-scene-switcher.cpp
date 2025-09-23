@@ -552,18 +552,28 @@ static void resetLiveTime()
 
 static void checkAutoStartRecording()
 {
+	if (switcher->obsIsShuttingDown) {
+		return;
+	}
+
 	if (switcher->autoStartEvent == SwitcherData::AutoStart::RECORDING ||
 	    switcher->autoStartEvent ==
-		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING)
+		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING) {
 		switcher->Start();
+	}
 }
 
 static void checkAutoStartStreaming()
 {
+	if (switcher->obsIsShuttingDown) {
+		return;
+	}
+
 	if (switcher->autoStartEvent == SwitcherData::AutoStart::STREAMING ||
 	    switcher->autoStartEvent ==
-		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING)
+		    SwitcherData::AutoStart::RECORINDG_OR_STREAMING) {
 		switcher->Start();
+	}
 }
 
 static void handleTransitionEnd()
