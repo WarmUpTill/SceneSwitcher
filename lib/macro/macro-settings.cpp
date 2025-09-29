@@ -329,35 +329,38 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_currentSkipOnStartup->setChecked(macro->SkipExecOnStart());
 	_currentStopActionsIfNotDone->setChecked(macro->StopActionsIfNotDone());
 	_currentInputs->SetInputs(macro->GetInputVariables());
-	const bool dockEnabled = macro->DockEnabled();
+	const auto &dockSettings = macro->GetDockSettings();
+	const bool dockEnabled = dockSettings.DockEnabled();
 	_currentMacroRegisterDock->setChecked(dockEnabled);
-	_currentMacroDockAddRunButton->setChecked(macro->DockHasRunButton());
+	_currentMacroDockAddRunButton->setChecked(dockSettings.HasRunButton());
 	_currentMacroDockAddPauseButton->setChecked(
-		macro->DockHasPauseButton());
+		dockSettings.HasPauseButton());
 	_currentMacroDockAddStatusLabel->setChecked(
-		macro->DockHasStatusLabel());
+		dockSettings.HasStatusLabel());
 	_currentMacroDockHighlightIfConditionsTrue->setChecked(
-		macro->DockHighlightEnabled());
-	_runButtonText->setText(macro->RunButtonText());
-	_pauseButtonText->setText(macro->PauseButtonText());
-	_unpauseButtonText->setText(macro->UnpauseButtonText());
-	_conditionsTrueStatusText->setText(macro->ConditionsTrueStatusText());
-	_conditionsFalseStatusText->setText(macro->ConditionsFalseStatusText());
+		dockSettings.HighlightEnabled());
+	_runButtonText->setText(dockSettings.RunButtonText());
+	_pauseButtonText->setText(dockSettings.PauseButtonText());
+	_unpauseButtonText->setText(dockSettings.UnpauseButtonText());
+	_conditionsTrueStatusText->setText(
+		dockSettings.ConditionsTrueStatusText());
+	_conditionsFalseStatusText->setText(
+		dockSettings.ConditionsFalseStatusText());
 
 	_currentMacroDockAddRunButton->setVisible(dockEnabled);
 	_currentMacroDockAddPauseButton->setVisible(dockEnabled);
 	_currentMacroDockAddStatusLabel->setVisible(dockEnabled);
 	_currentMacroDockHighlightIfConditionsTrue->setVisible(dockEnabled);
 	SetGridLayoutRowVisible(_dockLayout, _runButtonTextRow,
-				dockEnabled && macro->DockHasRunButton());
+				dockEnabled && dockSettings.HasRunButton());
 	SetGridLayoutRowVisible(_dockLayout, _pauseButtonTextRow,
-				dockEnabled && macro->DockHasPauseButton());
+				dockEnabled && dockSettings.HasPauseButton());
 	SetGridLayoutRowVisible(_dockLayout, _unpauseButtonTextRow,
-				dockEnabled && macro->DockHasPauseButton());
+				dockEnabled && dockSettings.HasPauseButton());
 	SetGridLayoutRowVisible(_dockLayout, _conditionsTrueTextRow,
-				dockEnabled && macro->DockHasStatusLabel());
+				dockEnabled && dockSettings.HasStatusLabel());
 	SetGridLayoutRowVisible(_dockLayout, _conditionsFalseTextRow,
-				dockEnabled && macro->DockHasStatusLabel());
+				dockEnabled && dockSettings.HasStatusLabel());
 	MinimizeSizeOfColumn(_dockLayout, 0);
 	Resize();
 
@@ -479,29 +482,25 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 	macro->SetStopActionsIfNotDone(
 		dialog._currentStopActionsIfNotDone->isChecked());
 
-	// Only apply "on change" to avoid recreation of the dock widget
-	const bool enableDock = dialog._currentMacroRegisterDock->isChecked();
-	if (macro->DockEnabled() != enableDock) {
-		macro->EnableDock(
-			dialog._currentMacroRegisterDock->isChecked());
-	}
-
-	macro->SetDockHasRunButton(
+	auto &dockSettings = macro->GetDockSettings();
+	dockSettings.EnableDock(dialog._currentMacroRegisterDock->isChecked());
+	dockSettings.SetHasRunButton(
 		dialog._currentMacroDockAddRunButton->isChecked());
-	macro->SetDockHasPauseButton(
+	dockSettings.SetHasPauseButton(
 		dialog._currentMacroDockAddPauseButton->isChecked());
-	macro->SetDockHasStatusLabel(
+	dockSettings.SetHasStatusLabel(
 		dialog._currentMacroDockAddStatusLabel->isChecked());
-	macro->SetHighlightEnable(
+	dockSettings.SetHighlightEnable(
 		dialog._currentMacroDockHighlightIfConditionsTrue->isChecked());
-	macro->SetRunButtonText(dialog._runButtonText->text().toStdString());
-	macro->SetPauseButtonText(
+	dockSettings.SetRunButtonText(
+		dialog._runButtonText->text().toStdString());
+	dockSettings.SetPauseButtonText(
 		dialog._pauseButtonText->text().toStdString());
-	macro->SetUnpauseButtonText(
+	dockSettings.SetUnpauseButtonText(
 		dialog._unpauseButtonText->text().toStdString());
-	macro->SetConditionsTrueStatusText(
+	dockSettings.SetConditionsTrueStatusText(
 		dialog._conditionsTrueStatusText->text().toStdString());
-	macro->SetConditionsFalseStatusText(
+	dockSettings.SetConditionsFalseStatusText(
 		dialog._conditionsFalseStatusText->text().toStdString());
 	macro->SetInputVariables(dialog._currentInputs->GetInputs());
 	return true;
