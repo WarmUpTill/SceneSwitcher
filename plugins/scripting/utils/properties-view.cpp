@@ -41,6 +41,32 @@
 #include "obs-module-helper.hpp"
 #include "ui-helpers.hpp"
 
+#ifdef _MSC_VER
+#define PRAGMA_WARN_PUSH _Pragma("warning(push)")
+#define PRAGMA_WARN_POP _Pragma("warning(pop)")
+#define PRAGMA_WARN_DEPRECATION _Pragma("warning(disable: 4996)")
+#define PRAGMA_DISABLE_DEPRECATION _Pragma("warning(disable: 4996)")
+#elif defined(__clang__)
+#define PRAGMA_WARN_PUSH _Pragma("clang diagnostic push")
+#define PRAGMA_WARN_POP _Pragma("clang diagnostic pop")
+#define PRAGMA_WARN_DEPRECATION \
+	_Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"")
+#define PRAGMA_DISABLE_DEPRECATION \
+	_Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#elif defined(__GNUC__)
+#define PRAGMA_WARN_PUSH _Pragma("GCC diagnostic push")
+#define PRAGMA_WARN_POP _Pragma("GCC diagnostic pop")
+#define PRAGMA_WARN_DEPRECATION \
+	_Pragma("GCC diagnostic warning \"-Wdeprecated-declarations\"")
+#define PRAGMA_DISABLE_DEPRECATION \
+	_Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#else
+#define PRAGMA_WARN_PUSH
+#define PRAGMA_WARN_POP
+#define PRAGMA_WARN_DEPRECATION
+#define PRAGMA_DISABLE_DEPRECATION
+#endif
+
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 0, 0)
 
 #define QTStr(str) QString::fromUtf8(obs_module_text(str))
@@ -707,10 +733,13 @@ static QVariant from_obs_data(obs_data_t *data, const char *name,
 static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name,
 					 obs_combo_format format)
 {
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	return from_obs_data<
 		obs_data_get_autoselect_int, obs_data_get_autoselect_double,
 		obs_data_get_autoselect_string, obs_data_get_autoselect_bool>(
 		data, name, format);
+	PRAGMA_WARN_POP
 }
 
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
@@ -769,6 +798,8 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	if (obs_data_has_autoselect_value(settings, name)) {
 		QVariant autoselect =
 			from_obs_data_autoselect(settings, name, format);
@@ -783,6 +814,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 					   combined.arg(selected).arg(actual));
 		}
 	}
+	PRAGMA_WARN_POP
 
 	QAbstractItemModel *model = combo->model();
 	warning = idx != -1 &&
@@ -1442,10 +1474,13 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 
 	media_frames_per_second fps{};
 	media_frames_per_second *valid_fps = nullptr;
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	if (obs_data_item_get_autoselect_frames_per_second(obj.get(), &fps,
 							   nullptr) ||
 	    obs_data_item_get_frames_per_second(obj.get(), &fps, nullptr))
 		valid_fps = &fps;
+	PRAGMA_WARN_POP
 
 	const char *option = nullptr;
 	obs_data_item_get_frames_per_second(obj.get(), nullptr, &option);
