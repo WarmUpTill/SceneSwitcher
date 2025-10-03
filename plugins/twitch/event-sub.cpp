@@ -426,8 +426,11 @@ void EventSub::HandleRevocation(obs_data_t *data)
 void EventSub::OnClose(connection_hdl hdl)
 {
 	EventSubWSClient::connection_ptr con = _client.get_con_from_hdl(hdl);
-	auto msg = con->get_ec().message();
-	blog(LOG_INFO, "Twitch EventSub connection closed: %s", msg.c_str());
+	const auto msg = con->get_ec().message();
+	const auto reason = con->get_remote_close_reason();
+	const auto code = con->get_remote_close_code();
+	blog(LOG_INFO, "Twitch EventSub connection closed: %s / %s (%d)",
+	     msg.c_str(), reason.c_str(), code);
 	ClearActiveSubscriptions();
 	_connected = false;
 }
