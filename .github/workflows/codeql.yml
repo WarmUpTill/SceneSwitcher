@@ -1,0 +1,107 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [master]
+
+env:
+  OBS_TAG: 27.2.0
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+        with:
+          repository: obsproject/obs-studio
+          submodules: "recursive"
+          ref: "refs/tags/${{ env.OBS_TAG }}"
+      - name: "Checkout plugin"
+        uses: actions/checkout@v2.3.4
+        with:
+          path: UI/frontend-plugins/SceneSwitcher
+          submodules: "recursive"
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: cpp
+      - name: Add plugin to obs cmake
+        shell: bash
+        run: echo "add_subdirectory(SceneSwitcher)" >> UI/frontend-plugins/CMakeLists.txt
+      - name: Fetch Git Tags
+        run: git fetch --prune --tags --unshallow
+      - name: Install prerequisites (Apt)
+        shell: bash
+        run: |
+          sudo dpkg --add-architecture amd64
+          sudo apt-get -qq update
+          sudo apt-get install -y \
+            build-essential \
+            checkinstall \
+            cmake \
+            libasound2-dev \
+            libavcodec-dev \
+            libavdevice-dev \
+            libavfilter-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libcurl4-openssl-dev \
+            libfdk-aac-dev \
+            libfontconfig-dev \
+            libfreetype6-dev \
+            libgl1-mesa-dev \
+            libjack-jackd2-dev \
+            libjansson-dev \
+            libluajit-5.1-dev \
+            libpulse-dev \
+            libqt5x11extras5-dev \
+            libspeexdsp-dev \
+            libswresample-dev \
+            libswscale-dev \
+            libudev-dev \
+            libv4l-dev \
+            libva-dev \
+            libvlc-dev \
+            libx11-dev \
+            libx264-dev \
+            libxcb-randr0-dev \
+            libxcb-shm0-dev \
+            libxcb-xinerama0-dev \
+            libxcomposite-dev \
+            libxinerama-dev \
+            libxtst-dev \
+            libmbedtls-dev \
+            pkg-config \
+            python3-dev \
+            qtbase5-dev \
+            qtbase5-private-dev \
+            libqt5svg5-dev \
+            swig \
+            libxss-dev \
+            libx11-xcb-dev \
+            libxcb-xfixes0-dev \
+            libopencv-dev \
+            libprocps-dev \
+            libpci-dev
+      - name: "Configure"
+        shell: bash
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -DENABLE_PIPEWIRE=OFF -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DWITH_RTMPS=OFF -DBUILD_BROWSER=OFF ..
+      - name: "Build"
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make -j4
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
