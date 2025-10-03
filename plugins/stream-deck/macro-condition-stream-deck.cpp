@@ -274,8 +274,11 @@ MacroConditionStreamdeckEdit::MacroConditionStreamdeckEdit(
 	layout->addLayout(dataLayout);
 	layout->addWidget(_data);
 	layout->addWidget(_listen);
-	layout->addWidget(new QLabel(obs_module_text(
-		"AdvSceneSwitcher.condition.streamDeck.pluginDownload")));
+	auto label = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.condition.streamDeck.pluginDownload"));
+	label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+	label->setOpenExternalLinks(true);
+	layout->addWidget(label);
 	setLayout(layout);
 
 	_entryData = entryData;

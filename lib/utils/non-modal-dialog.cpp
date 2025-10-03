@@ -45,7 +45,10 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message, Type type,
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	auto layout = new QVBoxLayout(this);
-	layout->addWidget(new QLabel(message, this));
+	auto label = new QLabel(message, this);
+	label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+	label->setOpenExternalLinks(true);
+	layout->addWidget(label);
 
 	switch (type) {
 	case Type::INFO: {
