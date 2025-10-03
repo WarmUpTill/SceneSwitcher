@@ -379,6 +379,7 @@ void EventSub::HandleNotification(obs_data_t *data)
 
 void EventSub::HandleReconnect(obs_data_t *data)
 {
+	blog(LOG_INFO, "Twitch EventSub session_reconnect received");
 	OBSDataAutoRelease session = obs_data_get_obj(data, "session");
 	auto id = obs_data_get_string(session, "id");
 	if (!IsValidID(id)) {
@@ -386,10 +387,9 @@ void EventSub::HandleReconnect(obs_data_t *data)
 		      "ignoring Twitch EventSub reconnect message with invalid id");
 		return;
 	}
-	_url = obs_data_get_string(session, "reconnect_url");
-	websocketpp::lib::error_code ec;
-	_client.close(_connection, websocketpp::close::status::normal,
-		      "Twitch EventSub reconnecting", ec);
+
+	// TODO:
+	// Implement proper reconnect handing to avoid dropped events
 }
 
 void EventSub::HandleRevocation(obs_data_t *data)
