@@ -20,6 +20,11 @@ public:
 	void EnableDock(bool);
 	bool DockEnabled() const { return _registerDock; }
 
+	bool IsStandaloneDock() const { return _standaloneDock; }
+	void SetIsStandaloneDock(bool value);
+	std::string DockWindowName() const { return _dockWindow; }
+	void SetDockWindowName(const std::string &name) { _dockWindow = name; }
+
 	void SetHasRunButton(bool value);
 	bool HasRunButton() const { return _hasRunButton; }
 	void SetHasPauseButton(bool value);
@@ -46,7 +51,8 @@ private:
 	static std::string GenerateId();
 
 	bool _registerDock = false;
-	bool _addToDockWindow = true;
+	bool _standaloneDock = true;
+	std::string _dockWindow = "Dock";
 	bool _hasRunButton = true;
 	bool _hasPauseButton = true;
 	bool _hasStatusLabel = false;

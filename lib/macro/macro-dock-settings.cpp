@@ -1,13 +1,11 @@
 #include "macro-dock-settings.hpp"
 #include "macro-dock.hpp"
+#include "macro-dock-window.hpp"
 #include "macro.hpp"
 #include "plugin-state-helpers.hpp"
 
 #include <obs-frontend-api.h>
 #include <util/platform.h>
-
-// TODO: remove
-#include "macro-dock-window.hpp"
 
 #if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
 #include <QDockWidget>
@@ -82,6 +80,8 @@ void MacroDockSettings::Save(obs_data_t *obj, bool saveForCopy) const
 {
 	OBSDataAutoRelease dockSettings = obs_data_create();
 	obs_data_set_bool(dockSettings, "register", _registerDock);
+	obs_data_set_bool(dockSettings, "standaloneDock", _standaloneDock);
+	obs_data_set_string(dockSettings, "dockWindow", _dockWindow.c_str());
 	obs_data_set_bool(dockSettings, "hasRunButton", _hasRunButton);
 	obs_data_set_bool(dockSettings, "hasPauseButton", _hasPauseButton);
 	obs_data_set_bool(dockSettings, "hasStatusLabel", _hasStatusLabel);
@@ -128,6 +128,8 @@ void MacroDockSettings::Load(obs_data_t *obj)
 	const bool dockEnabled = obs_data_get_bool(dockSettings, "register");
 
 	// TODO: remove these default settings in a future version
+	obs_data_set_default_bool(dockSettings, "standaloneDock", true);
+	obs_data_set_default_string(dockSettings, "dockWindow", "Dock");
 	obs_data_set_default_string(
 		dockSettings, "runButtonText",
 		obs_module_text("AdvSceneSwitcher.macroDock.run"));
@@ -137,6 +139,8 @@ void MacroDockSettings::Load(obs_data_t *obj)
 	obs_data_set_default_string(
 		dockSettings, "unpauseButtonText",
 		obs_module_text("AdvSceneSwitcher.macroDock.unpause"));
+	_standaloneDock = obs_data_get_bool(dockSettings, "standaloneDock");
+	_dockWindow = obs_data_get_string(dockSettings, "dockWindow");
 	_runButtonText.Load(dockSettings, "runButtonText");
 	_pauseButtonText.Load(dockSettings, "pauseButtonText");
 	_unpauseButtonText.Load(dockSettings, "unpauseButtonText");
@@ -158,20 +162,8 @@ void MacroDockSettings::Load(obs_data_t *obj)
 	EnableDock(dockEnabled);
 }
 
-static void dostuff() {}
-
 void MacroDockSettings::EnableDock(bool enable)
 {
-	// TOOD: remove
-	static bool test = false;
-	MacroDockWindow *dockWindow = new MacroDockWindow();
-	if (!test) {
-		if (!obs_frontend_add_dock_by_id("blub", "testing",
-						 dockWindow)) {
-			blog(LOG_INFO, "failed to add macro dock window");
-		}
-		test = true;
-	}
 
 	// Only apply "on change" to avoid recreation of the dock widget
 	if (_registerDock == enable) {
@@ -192,9 +184,12 @@ void MacroDockSettings::EnableDock(bool enable)
 			      _unpauseButtonText, _conditionsTrueStatusText,
 			      _conditionsFalseStatusText, _highlight);
 
-	if (_addToDockWindow) {
-		dockWindow->AddMacroDock(_dock,
-					 QString::fromStdString(_macroName));
+	if (!_standaloneDock) {
+		auto window = GetDockWindowByName(_dockWindow);
+		if (!window) {
+			return;
+		}
+		window->AddMacroDock(_dock, QString::fromStdString(_macroName));
 		_registerDock = enable;
 		return;
 	}
@@ -210,6 +205,20 @@ void MacroDockSettings::EnableDock(bool enable)
 	}
 
 	_registerDock = enable;
+}
+
+void MacroDockSettings::SetIsStandaloneDock(bool value)
+{
+	if (_standaloneDock == value) {
+		return;
+	}
+
+	RemoveDock();
+	_standaloneDock = value;
+	if (_registerDock) {
+		_registerDock = false;
+		EnableDock(true);
+	}
 }
 
 void MacroDockSettings::SetHasRunButton(bool value)
@@ -306,6 +315,18 @@ StringVariable MacroDockSettings::ConditionsFalseStatusText() const
 void MacroDockSettings::HandleMacroNameChange()
 {
 	const auto newName = _macro->Name();
+
+	if (!_standaloneDock) {
+		auto window = GetDockWindowByName(_dockWindow);
+		if (!window) {
+			return;
+		}
+
+		window->RenameMacro(_macroName, newName);
+		_macroName = newName;
+		return;
+	}
+
 	if (_macroName != newName) {
 		RemoveDock();
 		_id = GenerateId();
@@ -320,16 +341,21 @@ void MacroDockSettings::HandleMacroNameChange()
 
 void MacroDockSettings::RemoveDock()
 {
-	if (_addToDockWindow) {
-		if (_dock) {
-			_dock->deleteLater();
-			_dock = nullptr;
-		}
+	if (_standaloneDock) {
+		obs_frontend_remove_dock(_id.c_str());
+		_dock = nullptr;
 		return;
 	}
 
-	obs_frontend_remove_dock(_id.c_str());
-	_dock = nullptr;
+	auto window = GetDockWindowByName(_dockWindow);
+	if (window) {
+		window->RemoveMacroDock(_dock);
+	}
+
+	if (_dock) {
+		_dock->deleteLater();
+		_dock = nullptr;
+	}
 }
 
 std::string MacroDockSettings::GenerateId()

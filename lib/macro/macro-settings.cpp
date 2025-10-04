@@ -94,6 +94,9 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	  _currentInputs(new MacroInputSelection()),
 	  _currentMacroRegisterDock(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentRegisterDock"))),
+	  _currentMacroIsStandaloneDock(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.currentIsStandaloneDock"))),
+	  _currentMacroDockWindowName(new QLineEdit(this)),
 	  _currentMacroDockAddRunButton(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDockAddRunButton"))),
 	  _currentMacroDockAddPauseButton(new QCheckBox(obs_module_text(
@@ -198,6 +201,15 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	int row = 0;
 	_dockLayout->addWidget(_currentMacroRegisterDock, row, 1, 1, 2);
 	row++;
+	_dockLayout->addWidget(_currentMacroIsStandaloneDock, row, 1, 1, 2);
+	row++;
+	_dockLayout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.macroTab.currentDockWindowName")),
+		row, 1);
+	_dockLayout->addWidget(_currentMacroDockWindowName, row, 2);
+	_dockWindowNameRow = row;
+	row++;
 	_dockLayout->addWidget(_currentMacroDockAddRunButton, row, 1, 1, 2);
 	row++;
 	_dockLayout->addWidget(
@@ -252,6 +264,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 
 	connect(_currentMacroRegisterDock, &QCheckBox::stateChanged, this,
 		&MacroSettingsDialog::DockEnableChanged);
+	connect(_currentMacroIsStandaloneDock, &QCheckBox::stateChanged, this,
+		&MacroSettingsDialog::IsStandaloneDockChanged);
 	connect(_currentMacroDockAddRunButton, &QCheckBox::stateChanged, this,
 		&MacroSettingsDialog::RunButtonEnableChanged);
 	connect(_currentMacroDockAddPauseButton, &QCheckBox::stateChanged, this,
@@ -332,6 +346,10 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	const auto &dockSettings = macro->GetDockSettings();
 	const bool dockEnabled = dockSettings.DockEnabled();
 	_currentMacroRegisterDock->setChecked(dockEnabled);
+	_currentMacroIsStandaloneDock->setChecked(
+		dockSettings.IsStandaloneDock());
+	_currentMacroDockWindowName->setText(
+		QString::fromStdString(dockSettings.DockWindowName()));
 	_currentMacroDockAddRunButton->setChecked(dockSettings.HasRunButton());
 	_currentMacroDockAddPauseButton->setChecked(
 		dockSettings.HasPauseButton());
@@ -401,6 +419,12 @@ void MacroSettingsDialog::DockEnableChanged(int enabled)
 		_dockLayout, _conditionsFalseTextRow,
 		enabled && _currentMacroDockAddStatusLabel->isChecked());
 
+	Resize();
+}
+
+void MacroSettingsDialog::IsStandaloneDockChanged(int enabled)
+{
+	SetGridLayoutRowVisible(_dockLayout, _dockWindowNameRow, !enabled);
 	Resize();
 }
 
@@ -484,6 +508,10 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 
 	auto &dockSettings = macro->GetDockSettings();
 	dockSettings.EnableDock(dialog._currentMacroRegisterDock->isChecked());
+	dockSettings.SetIsStandaloneDock(
+		dialog._currentMacroIsStandaloneDock->isChecked());
+	dockSettings.SetDockWindowName(
+		dialog._currentMacroDockWindowName->text().toStdString());
 	dockSettings.SetHasRunButton(
 		dialog._currentMacroDockAddRunButton->isChecked());
 	dockSettings.SetHasPauseButton(
