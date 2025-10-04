@@ -13,20 +13,18 @@ namespace advss {
 static std::unordered_map<std::string, MacroDockWindow *> windows;
 static std::mutex mutex;
 
-static bool setup()
-{
-	AddSaveStep([](obs_data_t *data) {});
-	AddLoadStep([](obs_data_t *data) {});
-	AddPostLoadStep([]() {});
-}
-
-static bool setupDone = setup();
-
 MacroDockWindow::MacroDockWindow(const std::string &name)
 	: QFrame(),
 	  _name(name),
 	  _window(new QMainWindow())
 {
+	static bool setupDone = []() {
+		AddSaveStep([](obs_data_t *data) {});
+		AddLoadStep([](obs_data_t *data) {});
+		AddPostLoadStep([]() {});
+		return true;
+	}();
+
 	setFrameShape(QFrame::StyledPanel);
 	setFrameShadow(QFrame::Sunken);
 	_window->setDockNestingEnabled(true);
