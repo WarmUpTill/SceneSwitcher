@@ -125,6 +125,8 @@ target_sources(
           lib/macro/macro-dock.hpp
           lib/macro/macro-dock-settings.hpp
           lib/macro/macro-dock-settings.cpp
+          lib/macro/macro-dock-window.cpp
+          lib/macro/macro-dock-window.hpp
           lib/macro/macro-edit.cpp
           lib/macro/macro-edit.hpp
           lib/macro/macro-export-import-dialog.cpp

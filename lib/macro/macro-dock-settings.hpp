@@ -46,6 +46,7 @@ private:
 	static std::string GenerateId();
 
 	bool _registerDock = false;
+	bool _addToDockWindow = true;
 	bool _hasRunButton = true;
 	bool _hasPauseButton = true;
 	bool _hasStatusLabel = false;

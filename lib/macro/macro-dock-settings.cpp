@@ -6,6 +6,9 @@
 #include <obs-frontend-api.h>
 #include <util/platform.h>
 
+// TODO: remove
+#include "macro-dock-window.hpp"
+
 #if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
 #include <QDockWidget>
 
@@ -155,8 +158,21 @@ void MacroDockSettings::Load(obs_data_t *obj)
 	EnableDock(dockEnabled);
 }
 
+static void dostuff() {}
+
 void MacroDockSettings::EnableDock(bool enable)
 {
+	// TOOD: remove
+	static bool test = false;
+	MacroDockWindow *dockWindow = new MacroDockWindow();
+	if (!test) {
+		if (!obs_frontend_add_dock_by_id("blub", "testing",
+						 dockWindow)) {
+			blog(LOG_INFO, "failed to add macro dock window");
+		}
+		test = true;
+	}
+
 	// Only apply "on change" to avoid recreation of the dock widget
 	if (_registerDock == enable) {
 		return;
@@ -175,6 +191,13 @@ void MacroDockSettings::EnableDock(bool enable)
 			      _runButtonText, _pauseButtonText,
 			      _unpauseButtonText, _conditionsTrueStatusText,
 			      _conditionsFalseStatusText, _highlight);
+
+	if (_addToDockWindow) {
+		dockWindow->AddMacroDock(_dock,
+					 QString::fromStdString(_macroName));
+		_registerDock = enable;
+		return;
+	}
 
 	if (!obs_frontend_add_dock_by_id(_id.c_str(), _macroName.c_str(),
 					 _dock)) {
@@ -297,6 +320,14 @@ void MacroDockSettings::HandleMacroNameChange()
 
 void MacroDockSettings::RemoveDock()
 {
+	if (_addToDockWindow) {
+		if (_dock) {
+			_dock->deleteLater();
+			_dock = nullptr;
+		}
+		return;
+	}
+
 	obs_frontend_remove_dock(_id.c_str());
 	_dock = nullptr;
 }
