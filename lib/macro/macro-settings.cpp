@@ -381,20 +381,6 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 				dockEnabled && dockSettings.HasStatusLabel());
 	MinimizeSizeOfColumn(_dockLayout, 0);
 	Resize();
-
-	// Try to set sensible initial size for the dialog window
-	QSize contentSize = contentWidget->sizeHint();
-	resize(contentSize.width() + layout->contentsMargins().left() +
-		       layout->contentsMargins().right() +
-		       dialogLayout->contentsMargins().left() +
-		       dialogLayout->contentsMargins().right() +
-		       scrollArea->verticalScrollBar()->sizeHint().width() + 20,
-	       contentSize.height() + dialogLayout->spacing() +
-		       buttonbox->sizeHint().height() +
-		       dialogLayout->contentsMargins().top() +
-		       dialogLayout->contentsMargins().bottom() +
-		       scrollArea->horizontalScrollBar()->sizeHint().height() +
-		       20);
 }
 
 void MacroSettingsDialog::DockEnableChanged(int enabled)
