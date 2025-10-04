@@ -22,6 +22,7 @@ SolidCompression=yes
 DirExistsWarning=no
 SetupIconFile=installer.ico
 UninstallDisplayIcon={app}\data\obs-plugins\advanced-scene-switcher\res\images\logo.ico
+DisableDirPage=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
