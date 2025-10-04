@@ -18,7 +18,7 @@ MacroDockWindow::MacroDockWindow(const std::string &name)
 	  _name(name),
 	  _window(new QMainWindow())
 {
-	static bool setupDone = []() {
+	[[maybe_unused]] static bool _ = []() {
 		AddSaveStep([](obs_data_t *data) {});
 		AddLoadStep([](obs_data_t *data) {});
 		AddPostLoadStep([]() {});
