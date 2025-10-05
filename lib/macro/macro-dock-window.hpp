@@ -17,6 +17,7 @@ public:
 	void RenameMacro(const std::string &oldName,
 			 const std::string &newName);
 	void RemoveMacroDock(QWidget *);
+	QMainWindow *GetWindow() const;
 
 private:
 	std::string _name;
