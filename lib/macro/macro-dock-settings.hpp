@@ -23,7 +23,7 @@ public:
 	bool IsStandaloneDock() const { return _standaloneDock; }
 	void SetIsStandaloneDock(bool value);
 	std::string DockWindowName() const { return _dockWindow; }
-	void SetDockWindowName(const std::string &name) { _dockWindow = name; }
+	void SetDockWindowName(const std::string &name);
 
 	void SetHasRunButton(bool value);
 	bool HasRunButton() const { return _hasRunButton; }
@@ -47,6 +47,7 @@ public:
 	void HandleMacroNameChange();
 
 private:
+	void ForceEnableDockIfEnabled();
 	void RemoveDock();
 	static std::string GenerateId();
 

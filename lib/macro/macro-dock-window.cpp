@@ -111,11 +111,13 @@ void MacroDockWindow::RenameMacro(const std::string &oldName,
 
 void MacroDockWindow::RemoveMacroDock(QWidget *widget)
 {
+	bool removedDock = false;
 	auto docks = _window->findChildren<QDockWidget *>();
 	for (const auto dock : docks) {
 		if (dock->widget() == widget) {
 			_window->removeDockWidget(dock);
 			dock->deleteLater();
+			removedDock = true;
 			break;
 		}
 	}
@@ -124,11 +126,12 @@ void MacroDockWindow::RemoveMacroDock(QWidget *widget)
 		return;
 	}
 
-	if (!_window->findChildren<QDockWidget *>().isEmpty()) {
+	const bool shouldRemoveDockWindow = docks.isEmpty() ||
+					    (removedDock && docks.count() == 1);
+	if (!shouldRemoveDockWindow) {
 		return;
 	}
 
-	// Clean up empty dock windows
 	std::lock_guard<std::mutex> lock(mutex);
 	auto it = windows.find(_name);
 	if (it != windows.end()) {

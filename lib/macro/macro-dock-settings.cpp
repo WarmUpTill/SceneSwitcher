@@ -221,6 +221,16 @@ void MacroDockSettings::SetIsStandaloneDock(bool value)
 	}
 }
 
+void MacroDockSettings::SetDockWindowName(const std::string &name)
+{
+	if (_dockWindow == name) {
+		return;
+	}
+	RemoveDock();
+	_dockWindow = name;
+	ForceEnableDockIfEnabled();
+}
+
 void MacroDockSettings::SetHasRunButton(bool value)
 {
 	_hasRunButton = value;
@@ -333,6 +343,11 @@ void MacroDockSettings::HandleMacroNameChange()
 		_macroName = newName;
 	}
 
+	ForceEnableDockIfEnabled();
+}
+
+void MacroDockSettings::ForceEnableDockIfEnabled()
+{
 	if (_registerDock) {
 		_registerDock = false;
 		EnableDock(true);
@@ -353,7 +368,6 @@ void MacroDockSettings::RemoveDock()
 	}
 
 	if (_dock) {
-		_dock->deleteLater();
 		_dock = nullptr;
 	}
 }
