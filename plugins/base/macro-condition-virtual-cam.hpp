@@ -6,11 +6,6 @@
 
 namespace advss {
 
-enum class VCamState {
-	STOP,
-	START,
-};
-
 class MacroConditionVCam : public MacroCondition {
 public:
 	MacroConditionVCam(Macro *m) : MacroCondition(m) {}
@@ -23,7 +18,12 @@ public:
 		return std::make_shared<MacroConditionVCam>(m);
 	}
 
-	VCamState _state = VCamState::STOP;
+	enum class Condition {
+		STOP,
+		START,
+	};
+
+	Condition _state = Condition::STOP;
 
 private:
 	static bool _registered;
@@ -49,11 +49,10 @@ public:
 private slots:
 	void StateChanged(int value);
 
-protected:
-	QComboBox *_states;
-	std::shared_ptr<MacroConditionVCam> _entryData;
-
 private:
+	QComboBox *_states;
+
+	std::shared_ptr<MacroConditionVCam> _entryData;
 	bool _loading = true;
 };
 

@@ -57,10 +57,6 @@ public:
 	bool AnySceneTransitionStarted();
 
 	void SetPreconditions();
-	void AddSaveStep(std::function<void(obs_data_t *)>);
-	void AddLoadStep(std::function<void(obs_data_t *)>);
-	void AddPostLoadStep(std::function<void()>);
-	void RunPostLoadSteps();
 	bool CheckForMatch(OBSWeakSource &scene, OBSWeakSource &transition,
 			   int &linger, bool &setPreviousSceneAsMatch,
 			   bool &macroMatch);
@@ -94,10 +90,6 @@ public:
 	std::unique_lock<std::mutex> *mainLoopLock = nullptr;
 	bool stop = false;
 	std::condition_variable cv;
-
-	std::vector<std::function<void(obs_data_t *)>> saveSteps;
-	std::vector<std::function<void(obs_data_t *)>> loadSteps;
-	std::vector<std::function<void()>> postLoadSteps;
 
 	bool firstBoot = true;
 	bool transitionActive = false;
