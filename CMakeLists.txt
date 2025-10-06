@@ -170,6 +170,8 @@ target_sources(
           lib/utils/auto-update-tooltip-label.hpp
           lib/utils/backup.cpp
           lib/utils/backup.hpp
+          lib/utils/canvas-helpers.cpp
+          lib/utils/canvas-helpers.hpp
           lib/utils/condition-logic.cpp
           lib/utils/condition-logic.hpp
           lib/utils/curl-helper.cpp

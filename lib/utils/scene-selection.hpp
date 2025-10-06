@@ -1,7 +1,5 @@
 #pragma once
-#include "filter-combo-box.hpp"
-
-#include <obs.hpp>
+#include "canvas-helpers.hpp"
 
 namespace advss {
 
@@ -24,19 +22,22 @@ public:
 	};
 
 	EXPORT Type GetType() const { return _type; }
+	EXPORT void SetScene(const OBSWeakSource &scene);
 	EXPORT OBSWeakSource GetScene(bool advance = true) const;
+	EXPORT OBSWeakCanvas GetCanvas() const { return _canvas; };
 	EXPORT std::string ToString(bool resolve = false) const;
 	EXPORT void ResolveVariables();
 
 private:
 	OBSWeakSource _scene;
+	OBSWeakCanvas _canvas;
 	SceneGroup *_group = nullptr;
 	std::weak_ptr<Variable> _variable;
 	Type _type = Type::SCENE;
 	friend class SceneSelectionWidget;
 };
 
-class SceneSelectionWidget : public FilterComboBox {
+class SceneSelectionWidget : public QWidget {
 	Q_OBJECT
 
 public:
@@ -45,15 +46,18 @@ public:
 				    bool previous = false, bool current = false,
 				    bool preview = false);
 	EXPORT void SetScene(const SceneSelection &);
+	void LockToMainCanvas();
 
 protected:
 	void showEvent(QShowEvent *event) override;
 
 signals:
 	void SceneChanged(const SceneSelection &);
+	void CanvasChanged(const OBSWeakCanvas &);
 
 private slots:
 	EXPORT void SelectionChanged(int);
+	EXPORT void CanvasChangedSlot(const OBSWeakCanvas &);
 	EXPORT void ItemAdd(const QString &name);
 	EXPORT void ItemRemove(const QString &name);
 	EXPORT void ItemRename(const QString &oldName, const QString &newName);
@@ -61,11 +65,15 @@ private slots:
 private:
 	void Reset();
 	SceneSelection CurrentSelection();
-	void PopulateSelection();
+	void PopulateSceneSelection(obs_weak_canvas_t *canvas);
 	bool IsCurrentSceneSelected(const QString &name);
 	bool IsPreviousSceneSelected(const QString &name);
 	bool IsPreviewSceneSelected(const QString &name);
 	bool NameUsed(const QString &name);
+	void Resize();
+
+	FilterComboBox *_scenes;
+	CanvasSelection *_canvas;
 
 	bool _current;
 	bool _previous;
@@ -73,7 +81,10 @@ private:
 	bool _variables;
 	bool _sceneGroups;
 
+	bool _forceMainCanvas = false;
+
 	SceneSelection _currentSelection;
+	bool _isPopulated = false;
 
 	// Order of entries
 	// 1. "select entry" entry
