@@ -30,13 +30,14 @@ public:
 
 private:
 	OBSWeakSource _scene;
+	OBSWeakCanvas _canvas;
 	SceneGroup *_group = nullptr;
 	std::weak_ptr<Variable> _variable;
 	Type _type = Type::SCENE;
 	friend class SceneSelectionWidget;
 };
 
-class SceneSelectionWidget : public FilterComboBox {
+class SceneSelectionWidget : public QWidget {
 	Q_OBJECT
 
 public:
@@ -54,6 +55,7 @@ signals:
 
 private slots:
 	EXPORT void SelectionChanged(int);
+	EXPORT void CanvasChanged(int);
 	EXPORT void ItemAdd(const QString &name);
 	EXPORT void ItemRemove(const QString &name);
 	EXPORT void ItemRename(const QString &oldName, const QString &newName);
@@ -61,11 +63,16 @@ private slots:
 private:
 	void Reset();
 	SceneSelection CurrentSelection();
-	void PopulateSelection();
+	void PopulateSceneSelection(obs_weak_canvas_t *canvas);
+	void PopulateCanvasSelection();
 	bool IsCurrentSceneSelected(const QString &name);
 	bool IsPreviousSceneSelected(const QString &name);
 	bool IsPreviewSceneSelected(const QString &name);
 	bool NameUsed(const QString &name);
+	void Resize();
+
+	FilterComboBox *_scenes;
+	FilterComboBox *_canvas;
 
 	bool _current;
 	bool _previous;
