@@ -75,7 +75,7 @@ jobs:
 
   macos-build:
     name: Build for macOS 🍏
-    runs-on: macos-14
+    runs-on: macos-15
     needs: check-event
     defaults:
       run:
@@ -107,8 +107,8 @@ jobs:
           print "pluginName=${product_name}" >> $GITHUB_OUTPUT
           print "pluginVersion=${git_tag}" >> $GITHUB_OUTPUT
 
-          print '::group::Enable Xcode 15.2'
-          sudo xcode-select --switch /Applications/Xcode_15.2.app/Contents/Developer
+          print '::group::Enable Xcode 16.1'
+          sudo xcode-select --switch /Applications/Xcode_16.1.0.app/Contents/Developer
           print '::endgroup::'
 
       - uses: actions/cache@v4
