@@ -6,6 +6,8 @@
 
 #include <QCheckBox>
 
+#include <obs.hpp>
+
 namespace advss {
 
 class MacroActionSwitchScene : public MacroAction {
@@ -21,8 +23,19 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
 
+	enum class Action {
+		SCENE_NAME,
+		SCENE_LIST_NEXT,
+		SCENE_LIST_PREVIOUS,
+		SCENE_LIST_INDEX,
+	};
+	Action _action = Action::SCENE_NAME;
+
 	enum class SceneType { PROGRAM, PREVIEW };
 	SceneType _sceneType = SceneType::PROGRAM;
+
+	OBSWeakCanvas _canvas;
+	IntVariable _index = 1;
 	SceneSelection _scene;
 	TransitionSelection _transition;
 	Duration _duration;
@@ -57,18 +70,32 @@ private slots:
 	void DurationChanged(const Duration &seconds);
 	void BlockUntilTransitionDoneChanged(int state);
 	void SceneTypeChanged(int);
+	void CanvasChanged(const OBSWeakCanvas &);
+	void SceneSelectionCanvasChanged(const OBSWeakCanvas &);
+	void ActionChanged(int);
+	void IndexChanged(const NumberVariable<int> &);
+	void UpdateSceneNameAtIndex();
 signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
+	void SetupWidgetConnections() const;
+	void SetWidgetData() const;
 	void SetWidgetVisibility();
 
+	QComboBox *_actions;
+	VariableSpinBox *_index;
 	SceneSelectionWidget *_scenes;
 	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
 	QCheckBox *_blockUntilTransitionDone;
 	QComboBox *_sceneTypes;
-	QHBoxLayout *_entryLayout;
+	CanvasSelection *_canvas;
+	QLabel *_sceneNameAtIndex;
+	QTimer *_updateSceneNameTimer;
+	QHBoxLayout *_actionLayout;
+	QHBoxLayout *_transitionLayout;
+	QLabel *_notSupportedWarning;
 
 	std::shared_ptr<MacroActionSwitchScene> _entryData;
 	bool _loading = true;
