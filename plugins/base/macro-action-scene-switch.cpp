@@ -19,14 +19,6 @@ bool MacroActionSwitchScene::_registered = MacroActionFactory::Register(
 	{MacroActionSwitchScene::Create, MacroActionSwitchSceneEdit::Create,
 	 "AdvSceneSwitcher.action.scene"});
 
-const static std::map<MacroActionSwitchScene::SceneType, std::string>
-	sceneTypes = {
-		{MacroActionSwitchScene::SceneType::PROGRAM,
-		 "AdvSceneSwitcher.action.scene.type.program"},
-		{MacroActionSwitchScene::SceneType::PREVIEW,
-		 "AdvSceneSwitcher.action.scene.type.preview"},
-};
-
 static void waitForTransitionChange(OBSWeakSource &transition,
 				    std::unique_lock<std::mutex> *lock,
 				    Macro *macro)
@@ -144,34 +136,92 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 
 bool MacroActionSwitchScene::PerformAction()
 {
-	auto scene = _scene.GetScene();
+	OBSWeakSource sceneToSwitchTo;
+	OBSWeakCanvas canvas;
+
+	switch (_action) {
+	case Action::SCENE_NAME:
+		sceneToSwitchTo = _scene.GetScene();
+		canvas = _scene.GetCanvas();
+		break;
+	case Action::SCENE_LIST_NEXT: {
+		const auto activeScene = GetActiveCanvasScene(_canvas);
+		const int currentIndex = GetIndexOfScene(_canvas, activeScene);
+		sceneToSwitchTo = GetSceneAtIndex(_canvas, currentIndex + 1);
+		canvas = _canvas;
+		break;
+	}
+	case Action::SCENE_LIST_PREVIOUS: {
+		const auto activeScene = GetActiveCanvasScene(_canvas);
+		const int currentIndex = GetIndexOfScene(_canvas, activeScene);
+		sceneToSwitchTo = GetSceneAtIndex(_canvas, currentIndex - 1);
+		canvas = _canvas;
+		break;
+	}
+	case Action::SCENE_LIST_INDEX: {
+		sceneToSwitchTo =
+			GetSceneAtIndex(_canvas, _index.GetValue() - 1);
+		canvas = _canvas;
+		break;
+	}
+	default:
+		break;
+	}
 
 	if (_sceneType == SceneType::PREVIEW) {
-		OBSSourceAutoRelease previewScneSource =
-			obs_weak_source_get_source(scene);
-		obs_frontend_set_current_preview_scene(previewScneSource);
+		OBSSourceAutoRelease previewSceneSource =
+			obs_weak_source_get_source(sceneToSwitchTo);
+		obs_frontend_set_current_preview_scene(previewSceneSource);
 		return true;
 	}
 
 	auto transition = _transition.GetTransition();
-	SwitchScene({scene, transition, (int)(_duration.Milliseconds())},
-		    obs_frontend_preview_program_mode_active());
-	if (_blockUntilTransitionDone && scene && scene != GetCurrentScene()) {
-		return WaitForTransition(scene, transition);
+	SwitchScene({sceneToSwitchTo, transition,
+		     (int)(_duration.Milliseconds())},
+		    obs_frontend_preview_program_mode_active(), canvas);
+	if (_blockUntilTransitionDone && sceneToSwitchTo &&
+	    sceneToSwitchTo != GetCurrentScene() && IsMainCanvas(canvas)) {
+		return WaitForTransition(sceneToSwitchTo, transition);
 	}
 	return true;
 }
 
 void MacroActionSwitchScene::LogAction() const
 {
-	ablog(LOG_INFO, "switch%s scene to '%s'",
-	      _sceneType == SceneType::PREVIEW ? " preview" : "",
-	      _scene.ToString(true).c_str());
+	if (!ActionLoggingEnabled()) {
+		return;
+	}
+
+	switch (_action) {
+	case Action::SCENE_NAME:
+		blog(LOG_INFO, "switch %s scene to '%s'",
+		     _sceneType == SceneType::PREVIEW ? " preview" : "program",
+		     _scene.ToString(true).c_str());
+		break;
+	case Action::SCENE_LIST_NEXT:
+		blog(LOG_INFO, "switch %s to next scene in scene list",
+		     _sceneType == SceneType::PREVIEW ? " preview" : "program");
+		break;
+	case Action::SCENE_LIST_PREVIOUS:
+		blog(LOG_INFO, "switch %s to previous scene in scene list",
+		     _sceneType == SceneType::PREVIEW ? " preview" : "program");
+		break;
+	case Action::SCENE_LIST_INDEX:
+		blog(LOG_INFO, "switch %s to scene at index %d in scene list",
+		     _sceneType == SceneType::PREVIEW ? " preview" : "program",
+		     _index.GetValue());
+		break;
+	default:
+		break;
+	}
 }
 
 bool MacroActionSwitchScene::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
+	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	obs_data_set_string(obj, "canvas", GetWeakCanvasName(_canvas).c_str());
+	_index.Save(obj, "index");
 	_scene.Save(obj);
 	_transition.Save(obj);
 	_duration.Save(obj);
@@ -184,6 +234,16 @@ bool MacroActionSwitchScene::Save(obs_data_t *obj) const
 bool MacroActionSwitchScene::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
+	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	if (obs_data_has_user_value(obj, "canvas")) {
+		_canvas =
+			GetWeakCanvasByName(obs_data_get_string(obj, "canvas"));
+	} else {
+		OBSCanvasAutoRelease main = obs_get_main_canvas();
+		_canvas = OBSGetWeakRef(main);
+	}
+
+	_index.Save(obj, "index");
 	_scene.Load(obj);
 	_transition.Load(obj);
 	_duration.Load(obj);
@@ -195,7 +255,7 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 
 std::string MacroActionSwitchScene::GetShortDesc() const
 {
-	return _scene.ToString();
+	return _action == Action::SCENE_NAME ? _scene.ToString() : "";
 }
 
 std::shared_ptr<MacroAction> MacroActionSwitchScene::Create(Macro *m)
@@ -214,61 +274,128 @@ void MacroActionSwitchScene::ResolveVariablesToFixedValues()
 	_duration.ResolveVariables();
 }
 
+template<typename T>
+static void populate(QComboBox *list, const std::map<T, std::string> &data)
+{
+	for (const auto &[value, name] : data) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(value));
+	}
+}
+
 static inline void populateTypeSelection(QComboBox *list)
 {
-	for (const auto &[_, name] : sceneTypes) {
-		list->addItem(obs_module_text(name.c_str()));
-	}
+	static const std::map<MacroActionSwitchScene::SceneType, std::string>
+		types = {
+			{MacroActionSwitchScene::SceneType::PROGRAM,
+			 "AdvSceneSwitcher.action.scene.type.program"},
+			{MacroActionSwitchScene::SceneType::PREVIEW,
+			 "AdvSceneSwitcher.action.scene.type.preview"},
+		};
+
+	populate(list, types);
+}
+
+static inline void populateActionSelection(QComboBox *list)
+{
+	static const std::map<MacroActionSwitchScene::Action, std::string>
+		actions = {
+			{MacroActionSwitchScene::Action::SCENE_NAME,
+			 "AdvSceneSwitcher.action.scene.action.fixed"},
+			{MacroActionSwitchScene::Action::SCENE_LIST_NEXT,
+			 "AdvSceneSwitcher.action.scene.action.sceneListNext"},
+			{MacroActionSwitchScene::Action::SCENE_LIST_PREVIOUS,
+			 "AdvSceneSwitcher.action.scene.action.sceneListPrevious"},
+			{MacroActionSwitchScene::Action::SCENE_LIST_INDEX,
+			 "AdvSceneSwitcher.action.scene.action.sceneListIndex"},
+		};
+
+	populate(list, actions);
 }
 
 MacroActionSwitchSceneEdit::MacroActionSwitchSceneEdit(
 	QWidget *parent, std::shared_ptr<MacroActionSwitchScene> entryData)
 	: QWidget(parent),
+	  _actions(new QComboBox(this)),
+	  _index(new VariableSpinBox(this)),
 	  _scenes(new SceneSelectionWidget(this, true, true, true)),
 	  _transitions(new TransitionSelectionWidget(this)),
-	  _duration(new DurationSelection(parent, false)),
+	  _duration(new DurationSelection(this, false)),
 	  _blockUntilTransitionDone(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.scene.blockUntilTransitionDone"))),
-	  _sceneTypes(new QComboBox()),
-	  _entryLayout(new QHBoxLayout())
+	  _sceneTypes(new QComboBox(this)),
+	  _canvas(new CanvasSelection(this)),
+	  _sceneNameAtIndex(new QLabel(this)),
+	  _updateSceneNameTimer(new QTimer(this)),
+	  _actionLayout(new QHBoxLayout()),
+	  _transitionLayout(new QHBoxLayout()),
+	  _notSupportedWarning(new QLabel(this))
 {
+	_index->setMinimum(1);
+	_index->setMaximum(999);
+
 	_duration->SpinBox()->setSpecialValueText("-");
+
 	populateTypeSelection(_sceneTypes);
+	populateActionSelection(_actions);
 
-	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
-			 this, SLOT(SceneChanged(const SceneSelection &)));
-	QWidget::connect(_transitions,
-			 SIGNAL(TransitionChanged(const TransitionSelection &)),
-			 this,
-			 SLOT(TransitionChanged(const TransitionSelection &)));
-	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
-			 this, SLOT(DurationChanged(const Duration &)));
-	QWidget::connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)),
-			 this, SLOT(BlockUntilTransitionDoneChanged(int)));
-	QWidget::connect(_sceneTypes, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(SceneTypeChanged(int)));
-
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.scene.entry"),
-		     _entryLayout,
-		     {{"{{scenes}}", _scenes},
-		      {"{{transitions}}", _transitions},
-		      {"{{duration}}", _duration},
-		      {"{{sceneTypes}}", _sceneTypes}});
+	SetupWidgetConnections();
 
 	auto mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(_entryLayout);
+	mainLayout->addLayout(_actionLayout);
+	mainLayout->addLayout(_transitionLayout);
 	mainLayout->addWidget(_blockUntilTransitionDone);
+	mainLayout->addWidget(_notSupportedWarning);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
-	_sceneTypes->setCurrentIndex(static_cast<int>(_entryData->_sceneType));
+	SetWidgetData();
+
+	SetWidgetVisibility();
+	_loading = false;
+}
+
+void MacroActionSwitchSceneEdit::SetupWidgetConnections() const
+{
+	connect(_actions, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(ActionChanged(int)));
+	connect(_sceneTypes, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(SceneTypeChanged(int)));
+	connect(_canvas, SIGNAL(CanvasChanged(const OBSWeakCanvas &)), this,
+		SLOT(CanvasChanged(const OBSWeakCanvas &)));
+	connect(_index,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(IndexChanged(const NumberVariable<int> &)));
+	connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)), this,
+		SLOT(SceneChanged(const SceneSelection &)));
+	connect(_scenes, SIGNAL(CanvasChanged(const OBSWeakCanvas &)), this,
+		SLOT(SceneSelectionCanvasChanged(const OBSWeakCanvas &)));
+	connect(_transitions,
+		SIGNAL(TransitionChanged(const TransitionSelection &)), this,
+		SLOT(TransitionChanged(const TransitionSelection &)));
+	connect(_duration, SIGNAL(DurationChanged(const Duration &)), this,
+		SLOT(DurationChanged(const Duration &)));
+	connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)), this,
+		SLOT(BlockUntilTransitionDoneChanged(int)));
+	connect(_updateSceneNameTimer, SIGNAL(timeout()), this,
+		SLOT(UpdateSceneNameAtIndex()));
+
+	_updateSceneNameTimer->setInterval(300);
+	_updateSceneNameTimer->start();
+}
+
+void MacroActionSwitchSceneEdit::SetWidgetData() const
+{
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
+	_index->SetValue(_entryData->_index);
+	_sceneTypes->setCurrentIndex(_sceneTypes->findData(
+		static_cast<int>(_entryData->_sceneType)));
 	_scenes->SetScene(_entryData->_scene);
 	_transitions->SetTransition(_entryData->_transition);
 	_duration->SetDuration(_entryData->_duration);
 	_blockUntilTransitionDone->setChecked(
 		_entryData->_blockUntilTransitionDone);
-	SetWidgetVisibility();
-	_loading = false;
 }
 
 void MacroActionSwitchSceneEdit::DurationChanged(const Duration &dur)
@@ -283,58 +410,182 @@ void MacroActionSwitchSceneEdit::BlockUntilTransitionDoneChanged(int state)
 	_entryData->_blockUntilTransitionDone = state;
 }
 
-void MacroActionSwitchSceneEdit::SceneTypeChanged(int value)
+void MacroActionSwitchSceneEdit::SceneTypeChanged(int)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_sceneType =
-		static_cast<MacroActionSwitchScene::SceneType>(value);
+	_entryData->_sceneType = static_cast<MacroActionSwitchScene::SceneType>(
+		_sceneTypes->currentData().toInt());
 	SetWidgetVisibility();
+}
+
+void MacroActionSwitchSceneEdit::CanvasChanged(const OBSWeakCanvas &canvas)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_canvas = canvas;
+	SetWidgetVisibility();
+}
+
+void MacroActionSwitchSceneEdit::SceneSelectionCanvasChanged(
+	const OBSWeakCanvas &)
+{
+	SetWidgetVisibility();
+}
+
+void MacroActionSwitchSceneEdit::ActionChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_action = static_cast<MacroActionSwitchScene::Action>(
+		_actions->currentData().toInt());
+	SetWidgetVisibility();
+}
+
+void MacroActionSwitchSceneEdit::IndexChanged(const NumberVariable<int> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_index = value;
+}
+
+void MacroActionSwitchSceneEdit::UpdateSceneNameAtIndex()
+{
+	if (!_entryData) {
+		return;
+	}
+
+	auto weakSource =
+		GetSceneAtIndex(_entryData->_canvas, _entryData->_index - 1);
+	if (!weakSource) {
+		_sceneNameAtIndex->setText("");
+		return;
+	}
+
+	OBSSourceAutoRelease source = OBSGetStrongRef(weakSource);
+	auto name = obs_source_get_name(source);
+	if (!name) {
+		_sceneNameAtIndex->setText("");
+		return;
+	}
+
+	const QString text = QString("(") + name + ")";
+	_sceneNameAtIndex->setText(text);
+}
+
+static bool
+shouldShowDurationInTransitionLayout(MacroActionSwitchScene::SceneType type,
+				     const TransitionSelection &transition)
+{
+	if (type == MacroActionSwitchScene::SceneType::PREVIEW) {
+		return false;
+	}
+
+	if (transition.GetType() != TransitionSelection::Type::TRANSITION) {
+		return true;
+	}
+
+	if (isUsingFixedLengthTransition(transition.GetTransition())) {
+		return false;
+	}
+
+	return true;
 }
 
 void MacroActionSwitchSceneEdit::SetWidgetVisibility()
 {
-	_entryLayout->removeWidget(_scenes);
-	_entryLayout->removeWidget(_transitions);
-	_entryLayout->removeWidget(_duration);
-	_entryLayout->removeWidget(_sceneTypes);
-	ClearLayout(_entryLayout);
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{scenes}}", _scenes},
-		{"{{transitions}}", _transitions},
-		{"{{duration}}", _duration},
+	_actionLayout->removeWidget(_sceneTypes);
+	_actionLayout->removeWidget(_actions);
+	_actionLayout->removeWidget(_scenes);
+	_actionLayout->removeWidget(_canvas);
+	_actionLayout->removeWidget(_index);
+	_actionLayout->removeWidget(_sceneNameAtIndex);
+	ClearLayout(_actionLayout);
+
+	const int canvasCount = GetCanvasCount();
+	const auto &action = _entryData->_action;
+
+	_scenes->setVisible(action ==
+			    MacroActionSwitchScene::Action::SCENE_NAME);
+	_canvas->setVisible(
+		action != MacroActionSwitchScene::Action::SCENE_NAME &&
+		canvasCount > 1);
+	_index->setVisible(action ==
+			   MacroActionSwitchScene::Action::SCENE_LIST_INDEX);
+	_sceneNameAtIndex->setVisible(
+		action == MacroActionSwitchScene::Action::SCENE_LIST_INDEX);
+
+	const std::unordered_map<std::string, QWidget *> actionWidgets = {
+		{"{{actions}}", _actions},
 		{"{{sceneTypes}}", _sceneTypes},
-	};
+		{"{{scenes}}", _scenes},
+		{"{{canvas}}", _canvas},
+		{"{{index}}", _index},
+		{"{{sceneNameAtIndex}}", _sceneNameAtIndex}};
 
-	if (_entryData->_sceneType ==
-	    MacroActionSwitchScene::SceneType::PREVIEW) {
-		_transitions->hide();
-		_duration->hide();
-		PlaceWidgets(
-			obs_module_text(
-				"AdvSceneSwitcher.action.scene.entry.preview"),
-			_entryLayout, widgetPlaceholders);
-		return;
+	const char *layoutString = "";
+	switch (action) {
+	case MacroActionSwitchScene::Action::SCENE_NAME:
+		layoutString =
+			"AdvSceneSwitcher.action.scene.layout.action.fixed";
+		break;
+	case MacroActionSwitchScene::Action::SCENE_LIST_NEXT:
+	case MacroActionSwitchScene::Action::SCENE_LIST_PREVIOUS:
+		layoutString =
+			(canvasCount > 1)
+				? "AdvSceneSwitcher.action.scene.layout.action.list"
+				: "AdvSceneSwitcher.action.scene.layout.action.list.noCanvasSelection";
+		break;
+	case MacroActionSwitchScene::Action::SCENE_LIST_INDEX:
+		layoutString =
+			(canvasCount > 1)
+				? "AdvSceneSwitcher.action.scene.layout.action.listIndex"
+				: "AdvSceneSwitcher.action.scene.layout.action.listIndex.noCanvasSelection";
+		break;
+	default:
+		break;
 	}
 
-	_transitions->show();
-	if (_entryData->_transition.GetType() !=
-	    TransitionSelection::Type::TRANSITION) {
-		_duration->show();
-	}
-	const bool fixedDuration = isUsingFixedLengthTransition(
-		_entryData->_transition.GetTransition());
-	_duration->setVisible(!fixedDuration);
+	PlaceWidgets(obs_module_text(layoutString), _actionLayout,
+		     actionWidgets);
 
-	if (fixedDuration) {
-		PlaceWidgets(
-			obs_module_text(
-				"AdvSceneSwitcher.action.scene.entry.noDuration"),
-			_entryLayout, widgetPlaceholders);
-	} else {
-		PlaceWidgets(
-			obs_module_text("AdvSceneSwitcher.action.scene.entry"),
-			_entryLayout, widgetPlaceholders);
-	}
+	_transitionLayout->removeWidget(_transitions);
+	_transitionLayout->removeWidget(_duration);
+	ClearLayout(_transitionLayout);
+
+	const bool shouldShowDuration = shouldShowDurationInTransitionLayout(
+		_entryData->_sceneType, _entryData->_transition);
+	_duration->setVisible(shouldShowDuration);
+
+	layoutString =
+		shouldShowDuration
+			? "AdvSceneSwitcher.action.scene.layout.transitionWithDuration"
+			: "AdvSceneSwitcher.action.scene.layout.transition";
+	PlaceWidgets(obs_module_text(layoutString), _transitionLayout,
+		     {{"{{transitions}}", _transitions},
+		      {"{{duration}}", _duration}});
+
+	const auto canvas = action == MacroActionSwitchScene::Action::SCENE_NAME
+				    ? _entryData->_scene.GetCanvas()
+				    : _entryData->_canvas;
+	const bool isMainCanvas = IsMainCanvas(canvas);
+	SetLayoutVisible(_transitionLayout, isMainCanvas);
+	_blockUntilTransitionDone->setVisible(isMainCanvas);
+
+	_scenes->setVisible(action ==
+			    MacroActionSwitchScene::Action::SCENE_NAME);
+	_index->setVisible(action ==
+			   MacroActionSwitchScene::Action::SCENE_LIST_INDEX);
+	_sceneNameAtIndex->setVisible(
+		action == MacroActionSwitchScene::Action::SCENE_LIST_INDEX);
+
+	const QString fmt = obs_module_text(
+		"AdvSceneSwitcher.action.scene.canvasNotSupported");
+	_notSupportedWarning->setText(
+		fmt.arg(QString::fromStdString(GetWeakCanvasName(canvas))));
+	_notSupportedWarning->setVisible(
+		!IsMainCanvas(canvas) &&
+		_entryData->_sceneType ==
+			MacroActionSwitchScene::SceneType::PREVIEW);
+
+	adjustSize();
+	updateGeometry();
 }
 
 void MacroActionSwitchSceneEdit::SceneChanged(const SceneSelection &s)
