@@ -115,7 +115,8 @@ static int getCountOfSceneItemOccurance(const SceneSelection &s,
 			obs_scene_enum_items(scene, countSceneItemName, data);
 			return true;
 		};
-		obs_enum_scenes(enumScenes, &data);
+		OBSCanvasAutoRelease canvas = OBSGetStrongRef(s.GetCanvas());
+		obs_canvas_enum_scenes(canvas, enumScenes, &data);
 	} else {
 		auto source = obs_weak_source_get_source(s.GetScene(false));
 		auto scene = obs_scene_from_source(source);
@@ -589,7 +590,8 @@ static QStringList getSceneItemsList(SceneSelection &s)
 			return true;
 		};
 
-		obs_enum_scenes(enumScenes, &names);
+		OBSCanvasAutoRelease canvas = OBSGetStrongRef(s.GetCanvas());
+		obs_canvas_enum_scenes(canvas, enumScenes, &names);
 	} else {
 		auto source = obs_weak_source_get_source(s.GetScene(false));
 		auto scene = obs_scene_from_source(source);
