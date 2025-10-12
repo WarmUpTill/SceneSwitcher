@@ -26,6 +26,8 @@ const static std::map<MacroConditionMacro::Type, std::string>
 		 "AdvSceneSwitcher.condition.macro.type.actionEnabled"},
 		{MacroConditionMacro::Type::PAUSED,
 		 "AdvSceneSwitcher.condition.macro.type.paused"},
+		{MacroConditionMacro::Type::ACTIONS_PERFORMED,
+		 "AdvSceneSwitcher.condition.macro.type.actionsPerformed"},
 };
 
 const static std::map<MacroConditionMacro::CounterCondition, std::string>
@@ -121,6 +123,16 @@ bool MacroConditionMacro::CheckPauseState()
 	return macro->Paused();
 }
 
+bool MacroConditionMacro::CheckActionsPerformed()
+{
+	auto macro = _macro.GetMacro();
+	if (!macro) {
+		return false;
+	}
+
+	return macro->WasExecutedSince(macro->LastConditionCheckTime());
+}
+
 bool MacroConditionMacro::CheckCountCondition()
 {
 	auto macro = _macro.GetMacro();
@@ -158,6 +170,8 @@ bool MacroConditionMacro::CheckCondition()
 		return CheckActionStateCondition();
 	case Type::PAUSED:
 		return CheckPauseState();
+	case Type::ACTIONS_PERFORMED:
+		return CheckActionsPerformed();
 	default:
 		break;
 	}
@@ -414,6 +428,9 @@ void MacroConditionMacroEdit::SetupWidgets()
 	case MacroConditionMacro::Type::PAUSED:
 		SetupPauseWidgets();
 		break;
+	case MacroConditionMacro::Type::ACTIONS_PERFORMED:
+		SetupActionsPerformedWidgets();
+		break;
 	default:
 		break;
 	}
@@ -472,6 +489,14 @@ void MacroConditionMacroEdit::SetupPauseWidgets()
 		     _settingsLine1, {{"{{macros}}", _macros}});
 }
 
+void MacroConditionMacroEdit::SetupActionsPerformedWidgets()
+{
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.macro.actionsPerformed.entry"),
+		_settingsLine1, {{"{{macros}}", _macros}});
+}
+
 void MacroConditionMacroEdit::SetWidgetVisibility()
 {
 	_macros->setVisible(
@@ -481,7 +506,9 @@ void MacroConditionMacroEdit::SetWidgetVisibility()
 			MacroConditionMacro::Type::ACTION_DISABLED ||
 		_entryData->GetType() ==
 			MacroConditionMacro::Type::ACTION_ENABLED ||
-		_entryData->GetType() == MacroConditionMacro::Type::PAUSED);
+		_entryData->GetType() == MacroConditionMacro::Type::PAUSED ||
+		_entryData->GetType() ==
+			MacroConditionMacro::Type::ACTIONS_PERFORMED);
 	_counterConditions->setVisible(_entryData->GetType() ==
 				       MacroConditionMacro::Type::COUNT);
 	_count->setVisible(_entryData->GetType() ==

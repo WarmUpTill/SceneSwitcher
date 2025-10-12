@@ -39,6 +39,7 @@ public:
 		ACTION_DISABLED,
 		ACTION_ENABLED,
 		PAUSED,
+		ACTIONS_PERFORMED,
 	};
 	void SetType(Type);
 	Type GetType() const { return _type; }
@@ -66,6 +67,7 @@ private:
 	bool CheckMultiStateCondition();
 	bool CheckActionStateCondition();
 	bool CheckPauseState();
+	bool CheckActionsPerformed();
 
 	void SetupTempVars();
 
@@ -134,6 +136,7 @@ private:
 	void SetupCountWidgets();
 	void SetupActionStateWidgets(bool enable);
 	void SetupPauseWidgets();
+	void SetupActionsPerformedWidgets();
 	void SetWidgetVisibility();
 	bool _loading = true;
 };
