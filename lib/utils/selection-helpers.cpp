@@ -4,6 +4,10 @@
 #include "source-helpers.hpp"
 #include "scene-group.hpp"
 
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(31, 1, 0)
+#include "canvas-helpers.hpp"
+#endif
+
 #include <obs-frontend-api.h>
 #include <QStandardItemModel>
 
@@ -38,7 +42,8 @@ static void hasFilterEnum(obs_source_t *, obs_source_t *filter, void *ptr)
 
 QStringList GetSourcesWithFilterNames()
 {
-	auto enumSourcesWithFilters = [](void *param, obs_source_t *source) {
+	static auto enumSourcesWithFilters = [](void *param,
+						obs_source_t *source) {
 		if (!source) {
 			return true;
 		}
@@ -53,7 +58,17 @@ QStringList GetSourcesWithFilterNames()
 
 	QStringList list;
 	obs_enum_sources(enumSourcesWithFilters, &list);
+
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(31, 1, 0)
 	obs_enum_scenes(enumSourcesWithFilters, &list);
+#else
+	static const auto enumCanvases = [](void *listPtr,
+					    obs_canvas_t *canvas) -> bool {
+		obs_canvas_enum_scenes(canvas, enumSourcesWithFilters, listPtr);
+		return true;
+	};
+	obs_enum_canvases(enumCanvases, &list);
+#endif
 	return list;
 }
 
