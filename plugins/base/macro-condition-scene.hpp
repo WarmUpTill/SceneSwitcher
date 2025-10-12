@@ -75,19 +75,21 @@ private slots:
 	void PatternChanged();
 	void UseTransitionTargetSceneChanged(int state);
 	void RegexChanged(const RegexConfig &);
+	void CanvasChanged(const OBSWeakCanvas &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SceneSelectionWidget *_scenes;
 	QComboBox *_sceneType;
 	QLineEdit *_pattern;
 	QCheckBox *_useTransitionTargetScene;
 	RegexConfigWidget *_regex;
-	std::shared_ptr<MacroConditionScene> _entryData;
+	QLabel *_canvasWarning;
 
-private:
-	void SetWidgetVisibility();
+	std::shared_ptr<MacroConditionScene> _entryData;
 	bool _loading = true;
 };
 

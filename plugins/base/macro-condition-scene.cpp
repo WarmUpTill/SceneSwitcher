@@ -41,8 +41,17 @@ static bool sceneNameMatchesRegex(const OBSWeakSource &scene,
 	return regex.Matches(GetWeakSourceName(scene), pattern);
 }
 
-static OBSWeakSource getCurrentSceneHelper(bool useTransitionTargetScene)
+static OBSWeakSource getCurrentSceneHelper(bool useTransitionTargetScene,
+					   obs_weak_canvas_t *canvas)
 {
+	if (!IsMainCanvas(canvas)) {
+		// An "active" scene doesn't necessarily have to be the current
+		// scene, but this is still the best guess for now without
+		// having more information about each canvas' specific frontend
+		// implementation
+		return GetActiveCanvasScene(canvas);
+	}
+
 	if (useTransitionTargetScene) {
 		auto current = obs_frontend_get_current_scene();
 		auto weak = obs_source_get_weak_source(current);
@@ -68,62 +77,119 @@ bool MacroConditionScene::CheckCondition()
 		_lastSceneChangeTime = GetLastSceneChangeTime();
 	}
 
+	const auto canvas = _scene.GetCanvas();
+
 	switch (_type) {
 	case Type::CURRENT: {
-		auto scene = getCurrentSceneHelper(_useTransitionTargetScene);
+		auto scene = getCurrentSceneHelper(_useTransitionTargetScene,
+						   canvas);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("current", GetWeakSourceName(scene));
-		return scene == _scene.GetScene(false);
+		SetTempVarValue("position",
+				std::to_string(GetIndexOfScene(canvas, scene)));
+		return scene && scene == _scene.GetScene(false);
 	}
 	case Type::PREVIOUS: {
+		if (!IsMainCanvas(canvas)) {
+			return false;
+		}
+
 		auto scene = getPreviousSceneHelper(_useTransitionTargetScene);
+		if (!scene) {
+			// Scene was never switched
+			return false;
+		}
+
 		SetVariableValue(GetWeakSourceName(scene));
+		SetTempVarValue("position",
+				std::to_string(GetIndexOfScene(canvas, scene)));
 		SetTempVarValue("previous", GetWeakSourceName(scene));
 		return scene == _scene.GetScene(false);
 	}
 	case Type::PREVIEW: {
+		if (!IsMainCanvas(canvas)) {
+			return false;
+		}
+
 		OBSSourceAutoRelease source =
 			obs_frontend_get_current_preview_scene();
 		OBSWeakSourceAutoRelease scene =
 			obs_source_get_weak_source(source);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("preview", GetWeakSourceName(scene));
-		return scene == _scene.GetScene(false);
+		SetTempVarValue("position", std::to_string(GetIndexOfScene(
+						    canvas, scene.Get())));
+		return scene && scene == _scene.GetScene(false);
 	}
 	case Type::CHANGED:
+		if (!IsMainCanvas(canvas)) {
+			return false;
+		}
+
 		SetVariableValue(GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("current",
 				GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("previous",
 				GetWeakSourceName(GetPreviousScene()));
+		SetTempVarValue("position",
+				std::to_string(GetIndexOfScene(
+					canvas, GetCurrentScene())));
 		return sceneChanged;
 	case Type::NOT_CHANGED:
+		if (!IsMainCanvas(canvas)) {
+			return false;
+		}
+
 		SetVariableValue(GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("current",
 				GetWeakSourceName(GetCurrentScene()));
 		SetTempVarValue("previous",
 				GetWeakSourceName(GetPreviousScene()));
+		SetTempVarValue("position",
+				std::to_string(GetIndexOfScene(
+					canvas, GetCurrentScene())));
 		return !sceneChanged;
 	case Type::CURRENT_PATTERN: {
-		auto scene = getCurrentSceneHelper(_useTransitionTargetScene);
+		auto scene = getCurrentSceneHelper(_useTransitionTargetScene,
+						   canvas);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("current", GetWeakSourceName(scene));
-		return sceneNameMatchesRegex(scene, _regex, _pattern);
+		SetTempVarValue("position",
+				std::to_string(GetIndexOfScene(canvas, scene)));
+		return scene && sceneNameMatchesRegex(scene, _regex, _pattern);
 	}
 	case Type::PREVIOUS_PATTERN: {
+		if (!IsMainCanvas(canvas)) {
+			return false;
+		}
+
 		auto scene = getPreviousSceneHelper(_useTransitionTargetScene);
+		if (!scene) {
+			// Scene was never switched
+			return false;
+		}
+
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("previous", GetWeakSourceName(scene));
+		SetTempVarValue("position",
+				std::to_string(GetIndexOfScene(canvas, scene)));
 		return sceneNameMatchesRegex(scene, _regex, _pattern);
 	}
 	case Type::PREVIEW_PATTERN: {
+		if (!IsMainCanvas(canvas)) {
+			return false;
+		}
+
 		OBSSourceAutoRelease source =
 			obs_frontend_get_current_preview_scene();
 		OBSWeakSourceAutoRelease scene =
 			obs_source_get_weak_source(source);
 		SetVariableValue(GetWeakSourceName(scene));
 		SetTempVarValue("preview", GetWeakSourceName(scene));
-		return sceneNameMatchesRegex(scene.Get(), _regex, _pattern);
+		SetTempVarValue("position", std::to_string(GetIndexOfScene(
+						    canvas, scene.Get())));
+		return scene &&
+		       sceneNameMatchesRegex(scene.Get(), _regex, _pattern);
 	}
 	}
 
@@ -214,6 +280,7 @@ std::string MacroConditionScene::GetShortDesc() const
 void MacroConditionScene::SetupTempVars()
 {
 	MacroCondition::SetupTempVars();
+
 	switch (_type) {
 	case Type::CURRENT:
 	case Type::CURRENT_PATTERN:
@@ -245,6 +312,9 @@ void MacroConditionScene::SetupTempVars()
 	default:
 		break;
 	}
+
+	AddTempvar("position",
+		   obs_module_text("AdvSceneSwitcher.tempVar.scene.position"));
 }
 
 void MacroConditionScene::SetType(const Type &type)
@@ -269,10 +339,13 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	  _pattern(new QLineEdit()),
 	  _useTransitionTargetScene(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"))),
-	  _regex(new RegexConfigWidget(this, false))
+	  _regex(new RegexConfigWidget(this, false)),
+	  _canvasWarning(new QLabel(this))
 {
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
 			 this, SLOT(SceneChanged(const SceneSelection &)));
+	QWidget::connect(_scenes, SIGNAL(CanvasChanged(const OBSWeakCanvas &)),
+			 this, SLOT(CanvasChanged(const OBSWeakCanvas &)));
 	QWidget::connect(_sceneType, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));
 	QWidget::connect(_pattern, SIGNAL(editingFinished()), this,
@@ -285,7 +358,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 
 	populateTypeSelection(_sceneType);
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{scenes}}", _scenes},
 		{"{{sceneType}}", _sceneType},
 		{"{{pattern}}", _pattern},
@@ -303,6 +376,7 @@ MacroConditionSceneEdit::MacroConditionSceneEdit(
 	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1Layout);
 	mainLayout->addLayout(line2Layout);
+	mainLayout->addWidget(_canvasWarning);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -344,41 +418,58 @@ void MacroConditionSceneEdit::RegexChanged(const RegexConfig &regex)
 	_entryData->_regex = regex;
 }
 
+void MacroConditionSceneEdit::CanvasChanged(const OBSWeakCanvas &)
+{
+	SetWidgetVisibility();
+}
+
 void MacroConditionSceneEdit::SetWidgetVisibility()
 {
-	_scenes->setVisible(
-		_entryData->GetType() == MacroConditionScene::Type::CURRENT ||
-		_entryData->GetType() == MacroConditionScene::Type::PREVIOUS ||
-		_entryData->GetType() == MacroConditionScene::Type::PREVIEW);
+	const auto type = _entryData->GetType();
+
+	_scenes->setVisible(type == MacroConditionScene::Type::CURRENT ||
+			    type == MacroConditionScene::Type::PREVIOUS ||
+			    type == MacroConditionScene::Type::PREVIEW);
 	_useTransitionTargetScene->setVisible(
-		_entryData->GetType() == MacroConditionScene::Type::CURRENT ||
-		_entryData->GetType() == MacroConditionScene::Type::PREVIOUS ||
-		_entryData->GetType() ==
-			MacroConditionScene::Type::CURRENT_PATTERN ||
-		_entryData->GetType() ==
-			MacroConditionScene::Type::PREVIOUS_PATTERN);
+		type == MacroConditionScene::Type::CURRENT ||
+		type == MacroConditionScene::Type::PREVIOUS ||
+		type == MacroConditionScene::Type::CURRENT_PATTERN ||
+		type == MacroConditionScene::Type::PREVIOUS_PATTERN);
 	const bool isUsingPattern =
-		_entryData->GetType() ==
-			MacroConditionScene::Type::CURRENT_PATTERN ||
-		_entryData->GetType() ==
-			MacroConditionScene::Type::PREVIOUS_PATTERN ||
-		_entryData->GetType() ==
-			MacroConditionScene::Type::PREVIEW_PATTERN;
+		type == MacroConditionScene::Type::CURRENT_PATTERN ||
+		type == MacroConditionScene::Type::PREVIOUS_PATTERN ||
+		type == MacroConditionScene::Type::PREVIEW_PATTERN;
 	_pattern->setVisible(isUsingPattern);
 	_regex->setVisible(isUsingPattern);
 
-	if (_entryData->GetType() == MacroConditionScene::Type::PREVIOUS ||
-	    _entryData->GetType() ==
-		    MacroConditionScene::Type::PREVIOUS_PATTERN) {
+	if (type == MacroConditionScene::Type::PREVIOUS ||
+	    type == MacroConditionScene::Type::PREVIOUS_PATTERN) {
 		_useTransitionTargetScene->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.scene.previousSceneTransitionBehaviour"));
 	}
-	if (_entryData->GetType() == MacroConditionScene::Type::CURRENT ||
-	    _entryData->GetType() ==
-		    MacroConditionScene::Type::CURRENT_PATTERN) {
+	if (type == MacroConditionScene::Type::CURRENT ||
+	    type == MacroConditionScene::Type::CURRENT_PATTERN) {
 		_useTransitionTargetScene->setText(obs_module_text(
 			"AdvSceneSwitcher.condition.scene.currentSceneTransitionBehaviour"));
 	}
+
+	const auto canvas = _entryData->_scene.GetCanvas();
+	const bool isUsingMainCanvas = IsMainCanvas(canvas);
+	_useTransitionTargetScene->setVisible(isUsingMainCanvas);
+
+	const QString fmt = obs_module_text(
+		"AdvSceneSwitcher.condition.scene.canvasNotSupported");
+	_canvasWarning->setText(
+		fmt.arg(QString::fromStdString(GetWeakCanvasName(canvas))));
+	_canvasWarning->setVisible(
+		canvas && !isUsingMainCanvas &&
+		(type == MacroConditionScene::Type::PREVIOUS ||
+		 type == MacroConditionScene::Type::PREVIEW ||
+		 type == MacroConditionScene::Type::CHANGED ||
+		 type == MacroConditionScene::Type::NOT_CHANGED ||
+		 type == MacroConditionScene::Type::PREVIOUS_PATTERN ||
+		 type == MacroConditionScene::Type::PREVIEW_PATTERN));
+
 	adjustSize();
 	updateGeometry();
 }
