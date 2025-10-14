@@ -1,9 +1,13 @@
 #include "scene-switch-helpers.hpp"
-#include "log-helper.hpp"
+#include "canvas-helpers.hpp"
 #include "source-helpers.hpp"
 #include "switcher-data.hpp"
 
 #include <obs-frontend-api.h>
+#include <obs-websocket-api.h>
+
+#undef blog
+#include "log-helper.hpp"
 
 namespace advss {
 
@@ -123,7 +127,13 @@ void RestoreTransitionOverride(obs_source_t *scene, const TransitionData &td)
 	obs_data_set_int(data, "transition_duration", td.duration);
 }
 
-void SwitchScene(const SceneSwitchInfo &sceneSwitch, bool force)
+static bool modifiesTransitionSettings(const SceneSwitchInfo &ssi)
+{
+	return ssi.duration != 0 || ssi.transition;
+}
+
+void SwitchScene(const SceneSwitchInfo &sceneSwitch, bool force,
+		 obs_weak_canvas_t *canvas)
 {
 	if (!sceneSwitch.scene) {
 		vblog(LOG_INFO, "nothing to switch to");
@@ -134,17 +144,40 @@ void SwitchScene(const SceneSwitchInfo &sceneSwitch, bool force)
 		obs_weak_source_get_source(sceneSwitch.scene);
 	OBSSourceAutoRelease currentSource = obs_frontend_get_current_scene();
 
-	if (source && (source != currentSource || force)) {
-		TransitionData currentTransitionData;
-		SetNextTransition(sceneSwitch, currentSource,
-				  currentTransitionData);
+	if (!source || (source == currentSource && !force)) {
+		return;
+	}
+
+	TransitionData currentTransitionData;
+	const bool modifiesTransition = modifiesTransitionSettings(sceneSwitch);
+
+	if (!canvas || IsMainCanvas(canvas)) { // Assume main canvas by default
+		if (modifiesTransition) {
+			SetNextTransition(sceneSwitch, currentSource,
+					  currentTransitionData);
+		}
 		obs_frontend_set_current_scene(source);
-		if (ShouldModifyTransitionOverrides()) {
+		if (modifiesTransition && ShouldModifyTransitionOverrides()) {
 			RestoreTransitionOverride(source,
 						  currentTransitionData);
 		}
+		vblog(LOG_INFO, "switched main canvas scene");
+		return;
+	}
 
-		vblog(LOG_INFO, "switched scene");
+	if (GetWeakCanvasName(canvas) == "Aitum Vertical") {
+		// Can't set transitions so we ignore these options
+		OBSDataAutoRelease data = obs_data_create();
+		obs_data_set_string(data, "vendorName",
+				    "aitum-vertical-canvas");
+		obs_data_set_string(data, "requestType", "switch_scene");
+		OBSDataAutoRelease requestData = obs_data_create();
+		obs_data_set_string(requestData, "scene",
+				    obs_source_get_name(source));
+		obs_data_set_obj(data, "requestData", requestData);
+		obs_websocket_request_response_free(
+			obs_websocket_call_request("CallVendorRequest", data));
+		vblog(LOG_INFO, "switched Aitum Vertical canvas scene");
 	}
 }
 

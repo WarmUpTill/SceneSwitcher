@@ -7,6 +7,10 @@
 
 namespace advss {
 
+#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(31, 1, 0)
+class obs_weak_canvas_t;
+#endif
+
 struct SceneSwitchInfo {
 	OBSWeakSource scene;
 	OBSWeakSource transition;
@@ -18,7 +22,8 @@ struct TransitionData {
 	int duration = 0;
 };
 
-EXPORT void SwitchScene(const SceneSwitchInfo &, bool force = false);
+EXPORT void SwitchScene(const SceneSwitchInfo &, bool force = false,
+			obs_weak_canvas_t *canvas = nullptr);
 void SwitchPreviewScene(const OBSWeakSource &scene);
 
 EXPORT std::chrono::high_resolution_clock::time_point
