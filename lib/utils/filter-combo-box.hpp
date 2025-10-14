@@ -18,6 +18,8 @@ public:
 	void setCurrentText(const QString &text);
 	void setItemText(int index, const QString &text);
 
+	QSize sizeHint() const override;
+
 protected:
 	void focusOutEvent(QFocusEvent *event) override;
 
