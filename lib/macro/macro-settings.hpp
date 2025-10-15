@@ -41,6 +41,7 @@ public:
 				   Macro *macro);
 private slots:
 	void DockEnableChanged(int);
+	void IsStandaloneDockChanged(int);
 	void RunButtonEnableChanged(int);
 	void PauseButtonEnableChanged(int);
 	void StatusLabelEnableChanged(int);
@@ -69,6 +70,8 @@ private:
 	QCheckBox *_currentStopActionsIfNotDone;
 	MacroInputSelection *_currentInputs;
 	QCheckBox *_currentMacroRegisterDock;
+	QCheckBox *_currentMacroIsStandaloneDock;
+	QLineEdit *_currentMacroDockWindowName;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
 	QCheckBox *_currentMacroDockAddStatusLabel;
@@ -81,6 +84,7 @@ private:
 	QGroupBox *_dockOptions;
 	QGridLayout *_dockLayout;
 
+	int _dockWindowNameRow = -1;
 	int _runButtonTextRow = -1;
 	int _pauseButtonTextRow = -1;
 	int _unpauseButtonTextRow = -1;
