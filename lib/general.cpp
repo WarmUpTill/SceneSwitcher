@@ -451,16 +451,14 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	}
 
 	// New post load steps to be declared during load
-	postLoadSteps.clear();
+	ClearPostLoadSteps();
 
 	// Needs to be loaded before any entries which might rely on scene group
 	// selections to be available.
 	loadSceneGroups(obj);
 	LoadVariables(obj);
 
-	for (const auto &func : loadSteps) {
-		func(obj);
-	}
+	RunLoadSteps(obj);
 
 	LoadMacros(obj);
 	LoadGlobalMacroSettings(obj);
@@ -516,9 +514,7 @@ void SwitcherData::SaveSettings(obs_data_t *obj)
 	SaveUISettings(obj);
 	SaveVersion(obj, g_GIT_SHA1);
 
-	for (const auto &func : saveSteps) {
-		func(obj);
-	}
+	RunSaveSteps(obj);
 }
 
 void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
