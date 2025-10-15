@@ -4,6 +4,10 @@
 
 namespace advss {
 
+static std::mutex initMutex;
+static std::mutex postLoadMutex;
+static std::mutex mutex;
+
 static std::vector<std::function<void()>> &getPluginInitSteps()
 {
 	static std::vector<std::function<void()>> steps;
@@ -40,7 +44,23 @@ static std::vector<std::function<void()>> &getStopSteps()
 	return steps;
 }
 
-static std::mutex mutex;
+static std::vector<std::function<void(obs_data_t *)>> &getSaveSteps()
+{
+	static std::vector<std::function<void(obs_data_t *)>> steps;
+	return steps;
+}
+
+static std::vector<std::function<void(obs_data_t *)>> &getLoadSteps()
+{
+	static std::vector<std::function<void(obs_data_t *)>> steps;
+	return steps;
+}
+
+static std::vector<std::function<void()>> &getPostLoadSteps()
+{
+	static std::vector<std::function<void()>> steps;
+	return steps;
+}
 
 void SavePluginSettings(obs_data_t *obj)
 {
@@ -54,17 +74,20 @@ void LoadPluginSettings(obs_data_t *obj)
 
 void AddSaveStep(std::function<void(obs_data_t *)> step)
 {
-	GetSwitcher()->AddSaveStep(step);
+	std::lock_guard<std::mutex> lock(mutex);
+	getSaveSteps().emplace_back(step);
 }
 
 void AddLoadStep(std::function<void(obs_data_t *)> step)
 {
-	GetSwitcher()->AddLoadStep(step);
+	std::lock_guard<std::mutex> lock(mutex);
+	getLoadSteps().emplace_back(step);
 }
 
 void AddPostLoadStep(std::function<void()> step)
 {
-	GetSwitcher()->AddPostLoadStep(step);
+	std::lock_guard<std::mutex> lock(postLoadMutex);
+	getPostLoadSteps().emplace_back(step);
 }
 
 void AddIntervalResetStep(std::function<void()> step)
@@ -73,20 +96,45 @@ void AddIntervalResetStep(std::function<void()> step)
 	getResetIntervalSteps().emplace_back(step);
 }
 
+void RunSaveSteps(obs_data_t *obj)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &func : getSaveSteps()) {
+		func(obj);
+	}
+}
+
+void RunLoadSteps(obs_data_t *obj)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &func : getLoadSteps()) {
+		func(obj);
+	}
+}
+
 void RunPostLoadSteps()
 {
-	GetSwitcher()->RunPostLoadSteps();
+	std::lock_guard<std::mutex> lock(postLoadMutex);
+	for (const auto &func : getPostLoadSteps()) {
+		func();
+	}
+}
+
+void ClearPostLoadSteps()
+{
+	std::lock_guard<std::mutex> lock(postLoadMutex);
+	getPostLoadSteps().clear();
 }
 
 void AddPluginInitStep(std::function<void()> step)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(initMutex);
 	getPluginInitSteps().emplace_back(step);
 }
 
 void AddPluginPostLoadStep(std::function<void()> step)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(initMutex);
 	getPluginPostLoadSteps().emplace_back(step);
 }
 
@@ -98,7 +146,7 @@ void AddPluginCleanupStep(std::function<void()> step)
 
 void RunPluginInitSteps()
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(initMutex);
 	for (const auto &step : getPluginInitSteps()) {
 		step();
 	}

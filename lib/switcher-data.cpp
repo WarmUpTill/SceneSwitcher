@@ -168,31 +168,6 @@ void SwitcherData::SaveVersion(obs_data_t *obj,
 	obs_data_set_string(obj, "version", currentVersion.c_str());
 }
 
-void SwitcherData::RunPostLoadSteps()
-{
-	for (const auto &func : postLoadSteps) {
-		func();
-	}
-	postLoadSteps.clear();
-}
-
-void SwitcherData::AddSaveStep(std::function<void(obs_data_t *)> function)
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-	saveSteps.emplace_back(function);
-}
-
-void SwitcherData::AddLoadStep(std::function<void(obs_data_t *)> function)
-{
-	std::lock_guard<std::mutex> lock(switcher->m);
-	loadSteps.emplace_back(function);
-}
-
-void SwitcherData::AddPostLoadStep(std::function<void()> function)
-{
-	postLoadSteps.emplace_back(function);
-}
-
 static void startHotkeyFunc(void *, obs_hotkey_id, obs_hotkey_t *, bool pressed)
 {
 	if (pressed) {
