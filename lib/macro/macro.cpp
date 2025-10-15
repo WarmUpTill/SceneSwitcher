@@ -1,7 +1,6 @@
 #include "macro.hpp"
 #include "macro-action-factory.hpp"
 #include "macro-condition-factory.hpp"
-#include "macro-dock.hpp"
 #include "macro-helpers.hpp"
 #include "macro-settings.hpp"
 #include "plugin-state-helpers.hpp"
@@ -15,69 +14,12 @@
 #include <QAction>
 #include <QMainWindow>
 #include <unordered_map>
-#include <util/platform.h>
-
-#if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(30, 0, 0)
-#include <QDockWidget>
-
-namespace {
-
-struct DockMapEntry {
-	QAction *action = nullptr;
-	QWidget *dock = nullptr;
-};
-
-} // namespace
-
-static std::unordered_map<const char *, DockMapEntry> dockIds;
-static std::mutex dockMutex;
-
-static bool obs_frontend_add_dock_by_id(const char *id, const char *title,
-					QWidget *widget)
-{
-	std::lock_guard<std::mutex> lock(dockMutex);
-	if (dockIds.count(id) > 0) {
-		return false;
-	}
-
-	widget->setObjectName(id);
-
-	auto dock = new QDockWidget();
-	dock->setWindowTitle(title);
-	dock->setWidget(widget);
-	dock->setFloating(true);
-	dock->setVisible(false);
-	dock->setFeatures(QDockWidget::DockWidgetClosable |
-			  QDockWidget::DockWidgetMovable |
-			  QDockWidget::DockWidgetFloatable);
-
-	auto action = static_cast<QAction *>(obs_frontend_add_dock(dock));
-	if (!action) {
-		return false;
-	}
-	dockIds[id] = {action, dock};
-	return true;
-}
-
-static void obs_frontend_remove_dock(const char *id)
-{
-	std::lock_guard<std::mutex> lock(dockMutex);
-	auto it = dockIds.find(id);
-	if (it == dockIds.end()) {
-		return;
-	}
-	it->second.action->deleteLater();
-	it->second.dock->deleteLater();
-	dockIds.erase(it);
-}
-
-#endif
 
 namespace advss {
 
 static std::deque<std::shared_ptr<Macro>> macros;
 
-Macro::Macro(const std::string &name)
+Macro::Macro(const std::string &name) : _dockSettings(this)
 {
 	SetName(name);
 }
@@ -99,12 +41,6 @@ Macro::~Macro()
 	_die = true;
 	Stop();
 	ClearHotkeys();
-
-	// Keep the dock widgets in case of shutdown so they can be restored by
-	// OBS on startup
-	if (!OBSIsShuttingDown()) {
-		RemoveDock();
-	}
 }
 
 std::shared_ptr<Macro>
@@ -412,15 +348,9 @@ bool Macro::ShouldRunActions() const
 
 void Macro::SetName(const std::string &name)
 {
-	const bool nameChanged = _name == name;
 	_name = name;
-
 	SetHotkeysDesc();
-
-	if (nameChanged) {
-		_dockId = GenerateDockId();
-	}
-	EnableDock(_registerDock);
+	_dockSettings.HandleMacroNameChange();
 }
 
 void Macro::ResetTimers()
@@ -819,7 +749,7 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 			  _useCustomConditionCheckInterval);
 	_customConditionCheckInterval.Save(obj, "customConditionCheckInterval");
 
-	SaveDockSettings(obj, saveForCopy);
+	_dockSettings.Save(obj, saveForCopy);
 
 	SaveSplitterPos(_actionConditionSplitterPosition, obj,
 			"macroActionConditionSplitterPosition");
@@ -905,7 +835,7 @@ bool Macro::Load(obs_data_t *obj)
 		obs_data_get_bool(obj, "useCustomConditionCheckInterval");
 	_customConditionCheckInterval.Load(obj, "customConditionCheckInterval");
 
-	LoadDockSettings(obj);
+	_dockSettings.Load(obj);
 
 	LoadSplitterPos(_actionConditionSplitterPosition, obj,
 			"macroActionConditionSplitterPosition");
@@ -1093,224 +1023,6 @@ void Macro::EnablePauseHotkeys(bool value)
 bool Macro::PauseHotkeysEnabled() const
 {
 	return _registerHotkeys;
-}
-
-void Macro::SaveDockSettings(obs_data_t *obj, bool saveForCopy) const
-{
-	auto dockSettings = obs_data_create();
-	obs_data_set_bool(dockSettings, "register", _registerDock);
-	obs_data_set_bool(dockSettings, "hasRunButton", _dockHasRunButton);
-	obs_data_set_bool(dockSettings, "hasPauseButton", _dockHasPauseButton);
-	obs_data_set_bool(dockSettings, "hasStatusLabel", _dockHasStatusLabel);
-	obs_data_set_bool(dockSettings, "highlightIfConditionsTrue",
-			  _dockHighlight);
-	_runButtonText.Save(dockSettings, "runButtonText");
-	_pauseButtonText.Save(dockSettings, "pauseButtonText");
-	_unpauseButtonText.Save(dockSettings, "unpauseButtonText");
-	_conditionsTrueStatusText.Save(dockSettings,
-				       "conditionsTrueStatusText");
-	_conditionsFalseStatusText.Save(dockSettings,
-					"conditionsFalseStatusText");
-	if (saveForCopy) {
-		auto uuid = GenerateDockId();
-		obs_data_set_string(dockSettings, "dockId", uuid.c_str());
-
-	} else {
-		obs_data_set_string(dockSettings, "dockId", _dockId.c_str());
-	}
-	obs_data_set_int(dockSettings, "version", 1);
-	obs_data_set_obj(obj, "dockSettings", dockSettings);
-	obs_data_release(dockSettings);
-}
-
-void Macro::LoadDockSettings(obs_data_t *obj)
-{
-	auto dockSettings = obs_data_get_obj(obj, "dockSettings");
-	if (!dockSettings) {
-		// TODO: Remove this fallback
-		_dockHasRunButton = obs_data_get_bool(obj, "dockHasRunButton");
-		_dockHasPauseButton =
-			obs_data_get_bool(obj, "dockHasPauseButton");
-		EnableDock(obs_data_get_bool(obj, "registerDock"));
-		return;
-	}
-
-	if (!obs_data_has_user_value(dockSettings, "version")) {
-		_dockId = std::string("ADVSS-") + _name;
-	} else {
-		_dockId = obs_data_get_string(dockSettings, "dockId");
-	}
-
-	const bool dockEnabled = obs_data_get_bool(dockSettings, "register");
-
-	// TODO: remove these default settings in a future version
-	obs_data_set_default_string(
-		dockSettings, "runButtonText",
-		obs_module_text("AdvSceneSwitcher.macroDock.run"));
-	obs_data_set_default_string(
-		dockSettings, "pauseButtonText",
-		obs_module_text("AdvSceneSwitcher.macroDock.pause"));
-	obs_data_set_default_string(
-		dockSettings, "unpauseButtonText",
-		obs_module_text("AdvSceneSwitcher.macroDock.unpause"));
-	_runButtonText.Load(dockSettings, "runButtonText");
-	_pauseButtonText.Load(dockSettings, "pauseButtonText");
-	_unpauseButtonText.Load(dockSettings, "unpauseButtonText");
-	_conditionsTrueStatusText.Load(dockSettings,
-				       "conditionsTrueStatusText");
-	_conditionsFalseStatusText.Load(dockSettings,
-					"conditionsFalseStatusText");
-	if (dockEnabled) {
-		_dockHasRunButton =
-			obs_data_get_bool(dockSettings, "hasRunButton");
-		_dockHasPauseButton =
-			obs_data_get_bool(dockSettings, "hasPauseButton");
-		_dockHasStatusLabel =
-			obs_data_get_bool(dockSettings, "hasStatusLabel");
-		_dockHighlight = obs_data_get_bool(dockSettings,
-						   "highlightIfConditionsTrue");
-	}
-	EnableDock(dockEnabled);
-	obs_data_release(dockSettings);
-}
-
-void Macro::EnableDock(bool value)
-{
-	// Reset dock regardless
-	RemoveDock();
-
-	if (!value) {
-		_registerDock = value;
-		return;
-	}
-
-	_dock = new MacroDock(GetWeakMacroByName(_name.c_str()), _runButtonText,
-			      _pauseButtonText, _unpauseButtonText,
-			      _conditionsTrueStatusText,
-			      _conditionsFalseStatusText, _dockHighlight);
-
-	if (!obs_frontend_add_dock_by_id(_dockId.c_str(), _name.c_str(),
-					 _dock)) {
-		blog(LOG_INFO, "failed to add macro dock for macro %s",
-		     _name.c_str());
-		_dock->deleteLater();
-		_dock = nullptr;
-		_registerDock = false;
-		return;
-	}
-
-	_registerDock = value;
-}
-
-void Macro::SetDockHasRunButton(bool value)
-{
-	_dockHasRunButton = value;
-	if (!_dock) {
-		return;
-	}
-	_dock->ShowRunButton(value);
-}
-
-void Macro::SetDockHasPauseButton(bool value)
-{
-	_dockHasPauseButton = value;
-	if (!_dock) {
-		return;
-	}
-	_dock->ShowPauseButton(value);
-}
-
-void Macro::SetDockHasStatusLabel(bool value)
-{
-	_dockHasStatusLabel = value;
-	if (!_dock) {
-		return;
-	}
-	_dock->ShowStatusLabel(value);
-}
-
-void Macro::SetHighlightEnable(bool value)
-{
-	_dockHighlight = value;
-	if (!_dock) {
-		return;
-	}
-	_dock->EnableHighlight(value);
-}
-
-void Macro::SetRunButtonText(const std::string &text)
-{
-	_runButtonText = text;
-	if (!_dock) {
-		return;
-	}
-	_dock->SetRunButtonText(text);
-}
-
-void Macro::SetPauseButtonText(const std::string &text)
-{
-	_pauseButtonText = text;
-	if (!_dock) {
-		return;
-	}
-	_dock->SetPauseButtonText(text);
-}
-
-void Macro::SetUnpauseButtonText(const std::string &text)
-{
-	_unpauseButtonText = text;
-	if (!_dock) {
-		return;
-	}
-	_dock->SetUnpauseButtonText(text);
-}
-
-void Macro::SetConditionsTrueStatusText(const std::string &text)
-{
-	_conditionsTrueStatusText = text;
-	if (!_dock) {
-		return;
-	}
-	_dock->SetConditionsTrueText(text);
-}
-
-StringVariable Macro::ConditionsTrueStatusText() const
-{
-	return _conditionsTrueStatusText;
-}
-
-void Macro::SetConditionsFalseStatusText(const std::string &text)
-{
-	_conditionsFalseStatusText = text;
-	if (!_dock) {
-		return;
-	}
-	_dock->SetConditionsFalseText(text);
-}
-
-StringVariable Macro::ConditionsFalseStatusText() const
-{
-	return _conditionsFalseStatusText;
-}
-
-void Macro::RemoveDock()
-{
-	obs_frontend_remove_dock(_dockId.c_str());
-	_dock = nullptr;
-}
-
-std::string Macro::GenerateDockId()
-{
-#if LIBOBS_API_VER > MAKE_SEMANTIC_VERSION(30, 0, 0)
-	auto uuid = os_generate_uuid();
-	auto id = std::string("advss-macro-dock-") + std::string(uuid);
-	bfree(uuid);
-	return id;
-
-#else
-	static std::atomic_int16_t idCounter = 0;
-	return std::to_string(++idCounter);
-#endif
 }
 
 static void pauseCB(void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed)

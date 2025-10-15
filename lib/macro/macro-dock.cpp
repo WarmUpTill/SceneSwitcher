@@ -30,9 +30,10 @@ MacroDock::MacroDock(std::weak_ptr<Macro> m,
 
 	auto macro = _macro.lock();
 	if (macro) {
-		_run->setVisible(macro->DockHasRunButton());
-		_pauseToggle->setVisible(macro->DockHasPauseButton());
-		_statusText->setVisible(macro->DockHasStatusLabel());
+		const auto &settings = macro->GetDockSettings();
+		_run->setVisible(settings.HasRunButton());
+		_pauseToggle->setVisible(settings.HasPauseButton());
+		_statusText->setVisible(settings.HasStatusLabel());
 	}
 
 	QWidget::connect(_run, SIGNAL(clicked()), this, SLOT(RunClicked()));
