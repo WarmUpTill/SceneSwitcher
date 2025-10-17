@@ -147,6 +147,7 @@ target_sources(
           lib/macro/macro-segment-list.hpp
           lib/macro/macro-segment-selection.cpp
           lib/macro/macro-segment-selection.hpp
+          lib/macro/macro-segment-unknown.hpp
           lib/macro/macro-segment.cpp
           lib/macro/macro-segment.hpp
           lib/macro/macro-selection.cpp

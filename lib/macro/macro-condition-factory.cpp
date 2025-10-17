@@ -1,21 +1,11 @@
 #include "macro-condition-factory.hpp"
+#include "macro-segment-unknown.hpp"
 
 #include <mutex>
 
 namespace advss {
 
-namespace {
-
-class MacroConditionUnknown : public MacroCondition {
-public:
-	MacroConditionUnknown(Macro *m) : MacroCondition(m) {}
-	bool CheckCondition() { return false; }
-	bool Save(obs_data_t *obj) const { return MacroCondition::Save(obj); };
-	bool Load(obs_data_t *obj) { return MacroCondition::Load(obj); };
-	std::string GetId() const { return "unknown"; }
-};
-
-} // namespace
+using MacroConditionUnknown = MacroSegmentUnknown<MacroCondition>;
 
 static std::recursive_mutex mutex;
 
@@ -46,9 +36,10 @@ bool MacroConditionFactory::Deregister(const std::string &id)
 	return true;
 }
 
-static std::shared_ptr<MacroCondition> createUnknownCondition(Macro *m)
+static std::shared_ptr<MacroCondition>
+createUnknownCondition(Macro *m, const std::string &id)
 {
-	return std::make_shared<MacroConditionUnknown>(m);
+	return std::make_shared<MacroConditionUnknown>(m, id);
 }
 
 std::shared_ptr<MacroCondition>
@@ -58,13 +49,7 @@ MacroConditionFactory::Create(const std::string &id, Macro *m)
 	if (auto it = GetMap().find(id); it != GetMap().end()) {
 		return it->second._create(m);
 	}
-	return createUnknownCondition(m);
-}
-
-static QWidget *createUnknownConditionWidget()
-{
-	return new QLabel(
-		obs_module_text("AdvSceneSwitcher.condition.unknown"));
+	return createUnknownCondition(m, id);
 }
 
 QWidget *
@@ -75,7 +60,7 @@ MacroConditionFactory::CreateWidget(const std::string &id, QWidget *parent,
 	if (auto it = GetMap().find(id); it != GetMap().end()) {
 		return it->second._createWidget(parent, cond);
 	}
-	return createUnknownConditionWidget();
+	return CreateUnknownSegmentWidget(false);
 }
 
 std::string MacroConditionFactory::GetConditionName(const std::string &id)

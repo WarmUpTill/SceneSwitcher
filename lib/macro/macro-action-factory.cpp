@@ -1,25 +1,11 @@
 #include "macro-action-factory.hpp"
+#include "macro-segment-unknown.hpp"
 
 #include <mutex>
 
 namespace advss {
 
-namespace {
-
-class MacroActionUnknown : public MacroAction {
-public:
-	MacroActionUnknown(Macro *m) : MacroAction(m) {}
-	std::shared_ptr<MacroAction> Copy() const
-	{
-		return std::make_shared<MacroActionUnknown>(GetMacro());
-	}
-	bool PerformAction() { return true; };
-	bool Save(obs_data_t *obj) const { return MacroAction::Save(obj); };
-	bool Load(obs_data_t *obj) { return MacroAction::Load(obj); };
-	std::string GetId() const { return "unknown"; }
-};
-
-} // namespace
+using MacroActionUnknown = MacroSegmentUnknown<MacroAction>;
 
 static std::recursive_mutex mutex;
 
@@ -49,9 +35,10 @@ bool MacroActionFactory::Deregister(const std::string &id)
 	return true;
 }
 
-static std::shared_ptr<MacroAction> createUnknownAction(Macro *m)
+static std::shared_ptr<MacroAction> createUnknownAction(Macro *m,
+							const std::string &id)
 {
-	return std::make_shared<MacroActionUnknown>(m);
+	return std::make_shared<MacroActionUnknown>(m, id);
 }
 
 std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string &id,
@@ -62,12 +49,7 @@ std::shared_ptr<MacroAction> MacroActionFactory::Create(const std::string &id,
 		return it->second._create(m);
 	}
 
-	return createUnknownAction(m);
-}
-
-static QWidget *createUnknownActionWidget()
-{
-	return new QLabel(obs_module_text("AdvSceneSwitcher.action.unknown"));
+	return createUnknownAction(m, id);
 }
 
 QWidget *MacroActionFactory::CreateWidget(const std::string &id,
@@ -79,7 +61,7 @@ QWidget *MacroActionFactory::CreateWidget(const std::string &id,
 		return it->second._createWidget(parent, action);
 	}
 
-	return createUnknownActionWidget();
+	return CreateUnknownSegmentWidget(true);
 }
 
 std::string MacroActionFactory::GetActionName(const std::string &id)
