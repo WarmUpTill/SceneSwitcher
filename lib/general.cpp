@@ -3,6 +3,7 @@
 #include "filter-combo-box.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "macro-settings.hpp"
 #include "path-helpers.hpp"
 #include "selection-helpers.hpp"
 #include "source-helpers.hpp"
@@ -536,8 +537,13 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_int(obj, "startup_behavior",
 			 static_cast<int>(startupBehavior));
 
-	obs_data_set_int(obj, "autoStartEvent",
-			 static_cast<int>(autoStartEvent));
+	OBSDataAutoRelease autoStart = obs_data_create();
+	obs_data_set_int(autoStart, "event", static_cast<int>(autoStartEvent));
+	obs_data_set_bool(autoStart, "useAutoStartScene", useAutoStartScene);
+	autoStartScene.Save(autoStart);
+	autoStartSceneName.Save(autoStart, "name");
+	autoStartSceneRegex.Save(autoStart);
+	obs_data_set_obj(obj, "autoStart", autoStart);
 
 	SaveLogLevel(obj);
 
@@ -595,8 +601,15 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 		stop = true;
 	}
 
-	autoStartEvent =
-		static_cast<AutoStart>(obs_data_get_int(obj, "autoStartEvent"));
+	OBSDataAutoRelease autoStart = obs_data_get_obj(obj, "autoStart");
+	autoStartEvent = static_cast<AutoStart>(
+		obs_data_has_user_value(obj, "autoStart")
+			? obs_data_get_int(autoStart, "event")
+			: obs_data_get_int(obj, "autoStartEvent"));
+	useAutoStartScene = obs_data_get_bool(autoStart, "useAutoStartScene");
+	autoStartScene.Load(autoStart);
+	autoStartSceneName.Load(autoStart, "name");
+	autoStartSceneRegex.Load(autoStart);
 
 	LoadLogLevel(obj);
 
@@ -684,6 +697,27 @@ void SwitcherData::CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 	}
 	if (switchIfNotMatching == NoMatchBehavior::RANDOM_SWITCH) {
 		match = checkRandom(scene, transition, sleep);
+	}
+}
+
+void SwitcherData::CheckAutoStart()
+{
+	if (!useAutoStartScene) {
+		return;
+	}
+
+	bool shouldStartPlugin = false;
+	if (autoStartSceneRegex.Enabled()) {
+		const auto currentSceneName = GetWeakSourceName(currentScene);
+		shouldStartPlugin = autoStartSceneRegex.Matches(
+			currentSceneName, autoStartSceneName);
+	} else {
+		shouldStartPlugin = autoStartScene.GetScene(false) ==
+				    currentScene;
+	}
+
+	if (shouldStartPlugin) {
+		Start();
 	}
 }
 
@@ -829,7 +863,7 @@ static void setupGeneralTabInactiveWarning(QTabWidget *tabs)
 	inactiveTimer->start();
 }
 
-void advss::AdvSceneSwitcher::SetCheckIntervalTooLowVisibility() const
+void AdvSceneSwitcher::SetCheckIntervalTooLowVisibility() const
 {
 	auto macro = GetMacroWithInvalidConditionInterval();
 	if (!macro) {
@@ -918,6 +952,75 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	populateAutoStartEventSelection(ui->autoStartEvent);
 	ui->autoStartEvent->setCurrentIndex(
 		static_cast<int>(switcher->autoStartEvent));
+	ui->autoStartSceneEnable->setChecked(switcher->useAutoStartScene);
+	ui->autoStartScene->SetScene(switcher->autoStartScene);
+	ui->autoStartScene->LockToMainCanvas();
+	ui->autoStartSceneName->setText(switcher->autoStartSceneName);
+	ui->autoStartSceneNameRegex->SetRegexConfig(
+		switcher->autoStartSceneRegex);
+
+	const auto setupAutoStartSceneLayoutVisibility = [this](bool useRegex) {
+		ui->autoStartSceneName->setVisible(useRegex);
+		ui->autoStartScene->setVisible(!useRegex);
+		if (useRegex) {
+			RemoveStretchIfPresent(ui->autoStartSceneLayout);
+		} else {
+			AddStretchIfNecessary(ui->autoStartSceneLayout);
+		}
+	};
+	setupAutoStartSceneLayoutVisibility(
+		switcher->autoStartSceneRegex.Enabled());
+
+	const auto setupAutoStartSceneWidgetState =
+		[this](bool useAutoStartScene) {
+			ui->autoStartScene->setEnabled(useAutoStartScene);
+			ui->autoStartSceneName->setEnabled(useAutoStartScene);
+			ui->autoStartSceneNameRegex->setEnabled(
+				useAutoStartScene);
+		};
+	setupAutoStartSceneWidgetState(switcher->useAutoStartScene);
+
+	connect(ui->autoStartSceneEnable, &QCheckBox::stateChanged, this,
+		[this, setupAutoStartSceneWidgetState](int enabled) {
+			if (loading) {
+				return;
+			}
+			std::lock_guard<std::mutex> lock(switcher->m);
+			switcher->useAutoStartScene = enabled;
+			setupAutoStartSceneWidgetState(enabled);
+		});
+
+	connect(ui->autoStartScene, &SceneSelectionWidget::SceneChanged, this,
+		[this](const SceneSelection &scene) {
+			if (loading) {
+				return;
+			}
+			std::lock_guard<std::mutex> lock(switcher->m);
+			switcher->autoStartScene = scene;
+			switcher->CheckAutoStart();
+		});
+	connect(ui->autoStartSceneName, &VariableLineEdit::editingFinished,
+		this, [this]() {
+			if (loading) {
+				return;
+			}
+			std::lock_guard<std::mutex> lock(switcher->m);
+			switcher->autoStartSceneName =
+				ui->autoStartSceneName->text().toStdString();
+			switcher->CheckAutoStart();
+		});
+	connect(ui->autoStartSceneNameRegex,
+		&RegexConfigWidget::RegexConfigChanged, this,
+		[this, setupAutoStartSceneLayoutVisibility](
+			const RegexConfig &regex) {
+			if (loading) {
+				return;
+			}
+			std::lock_guard<std::mutex> lock(switcher->m);
+			switcher->autoStartSceneRegex = regex;
+			setupAutoStartSceneLayoutVisibility(regex.Enabled());
+			switcher->CheckAutoStart();
+		});
 
 	// Set up status control
 	auto statusControl = new StatusControl(this, true);
