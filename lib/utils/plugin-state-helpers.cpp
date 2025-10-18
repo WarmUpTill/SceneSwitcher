@@ -1,5 +1,6 @@
 #include "plugin-state-helpers.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "macro-settings.hpp"
 #include "switcher-data.hpp"
 
 namespace advss {

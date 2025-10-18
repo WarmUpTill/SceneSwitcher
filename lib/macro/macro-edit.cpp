@@ -66,6 +66,8 @@ setupToolBar(const std::initializer_list<std::initializer_list<QWidget *>>
 MacroEdit::MacroEdit(QWidget *parent, QStringList helpMsg)
 	: ui(new Ui_MacroEdit)
 {
+	setParent(parent);
+
 	if (helpMsg.size() != 3) {
 		helpMsg << "AdvSceneSwitcher.macroTab.editConditionHelp"
 			<< "AdvSceneSwitcher.macroTab.editActionHelp"

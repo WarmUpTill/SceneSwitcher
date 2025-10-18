@@ -111,6 +111,10 @@ std::vector<ThreadPrio> GetThreadPrioMapping()
 
 bool SwitcherData::PrioFuncsValid()
 {
+	if (functionNamesByPriority.empty()) {
+		return false;
+	}
+
 	auto fNBPCopy = functionNamesByPriority;
 
 	std::sort(fNBPCopy.begin(), fNBPCopy.end());
