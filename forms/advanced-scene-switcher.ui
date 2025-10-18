@@ -87,6 +87,40 @@
                     <item row="4" column="1">
                      <widget class="QComboBox" name="autoStartEvent"/>
                     </item>
+                    <item row="4" column="0">
+                     <widget class="QLabel" name="label_10">
+                      <property name="text">
+                       <string>AdvSceneSwitcher.generalTab.status.autoStart.startup</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="0">
+                     <layout class="QVBoxLayout" name="verticalLayout_33">
+                      <item>
+                       <widget class="QLabel" name="label_4">
+                        <property name="text">
+                         <string>AdvSceneSwitcher.generalTab.status.checkInterval</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="checkIntervalTooLowWarning">
+                        <property name="text">
+                         <string/>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item row="3" column="1">
+                     <widget class="QComboBox" name="startupBehavior"/>
+                    </item>
+                    <item row="1" column="1">
+                     <widget class="QWidget" name="placeholder3" native="true"/>
+                    </item>
+                    <item row="1" column="0">
+                     <widget class="QWidget" name="placeholder" native="true"/>
+                    </item>
                     <item row="3" column="0">
                      <widget class="QLabel" name="label_64">
                       <property name="text">
@@ -94,16 +128,13 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="3" column="1">
-                     <widget class="QComboBox" name="startupBehavior"/>
+                    <item row="2" column="1">
+                     <widget class="QWidget" name="placeholder2" native="true"/>
                     </item>
-                    <item row="1" column="0">
-                     <widget class="QWidget" name="placeholder" native="true"/>
-                    </item>
-                    <item row="4" column="0">
-                     <widget class="QLabel" name="label_10">
+                    <item row="6" column="0">
+                     <widget class="QLabel" name="label_13">
                       <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.status.autoStart</string>
+                       <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
                       </property>
                      </widget>
                     </item>
@@ -130,35 +161,24 @@
                      </widget>
                     </item>
                     <item row="5" column="0">
-                     <widget class="QLabel" name="label_13">
+                     <widget class="QCheckBox" name="autoStartSceneEnable">
                       <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
+                       <string>AdvSceneSwitcher.generalTab.status.autoStart.scene</string>
                       </property>
                      </widget>
                     </item>
-                    <item row="0" column="0">
-                     <layout class="QVBoxLayout" name="verticalLayout_33">
+                    <item row="5" column="1">
+                     <layout class="QHBoxLayout" name="autoStartSceneLayout">
                       <item>
-                       <widget class="QLabel" name="label_4">
-                        <property name="text">
-                         <string>AdvSceneSwitcher.generalTab.status.checkInterval</string>
-                        </property>
-                       </widget>
+                       <widget class="advss::SceneSelectionWidget" name="autoStartScene" native="true"/>
                       </item>
                       <item>
-                       <widget class="QLabel" name="checkIntervalTooLowWarning">
-                        <property name="text">
-                         <string/>
-                        </property>
-                       </widget>
+                       <widget class="advss::VariableLineEdit" name="autoStartSceneName"/>
+                      </item>
+                      <item>
+                       <widget class="advss::RegexConfigWidget" name="autoStartSceneNameRegex" native="true"/>
                       </item>
                      </layout>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QWidget" name="placeholder2" native="true"/>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QWidget" name="placeholder3" native="true"/>
                     </item>
                    </layout>
                   </item>
@@ -4124,6 +4144,23 @@
    <header>macro-edit.hpp</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>advss::SceneSelectionWidget</class>
+   <extends>QWidget</extends>
+   <header>scene-selection.hpp</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>advss::VariableLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>variable-line-edit.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>advss::RegexConfigWidget</class>
+   <extends>QWidget</extends>
+   <header>regex-config.hpp</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>tabWidget</tabstop>
@@ -4131,6 +4168,10 @@
   <tabstop>checkInterval</tabstop>
   <tabstop>startupBehavior</tabstop>
   <tabstop>autoStartEvent</tabstop>
+  <tabstop>autoStartSceneEnable</tabstop>
+  <tabstop>autoStartScene</tabstop>
+  <tabstop>autoStartSceneName</tabstop>
+  <tabstop>autoStartSceneNameRegex</tabstop>
   <tabstop>logLevel</tabstop>
   <tabstop>saveWindowGeo</tabstop>
   <tabstop>showTrayNotifications</tabstop>

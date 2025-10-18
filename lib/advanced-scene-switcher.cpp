@@ -538,6 +538,7 @@ static void handleSceneChange()
 	}
 
 	switcher->checkDefaultSceneTransitions();
+	switcher->CheckAutoStart();
 }
 
 static void setLiveTime()

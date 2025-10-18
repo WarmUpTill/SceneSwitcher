@@ -14,10 +14,12 @@
 #include "switch-sequence.hpp"
 #include "switch-video.hpp"
 
-#include "macro-settings.hpp"
 #include "duration-control.hpp"
-#include "priority-helper.hpp"
 #include "plugin-state-helpers.hpp"
+#include "priority-helper.hpp"
+#include "regex-config.hpp"
+#include "scene-selection.hpp"
+#include "variable-string.hpp"
 
 #include <condition_variable>
 #include <vector>
@@ -62,6 +64,7 @@ public:
 			   bool &macroMatch);
 	void CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 				OBSWeakSource &transition, int &sleep);
+	void CheckAutoStart();
 
 	/* --- Start of saving / loading section --- */
 
@@ -118,6 +121,10 @@ public:
 		RECORINDG_OR_STREAMING
 	};
 	AutoStart autoStartEvent = AutoStart::NEVER;
+	bool useAutoStartScene = false;
+	SceneSelection autoStartScene;
+	StringVariable autoStartSceneName;
+	RegexConfig autoStartSceneRegex;
 	bool enableCooldown = false;
 	Duration cooldown;
 	bool showSystemTrayNotifications = false;
