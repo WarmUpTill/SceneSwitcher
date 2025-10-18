@@ -109,7 +109,7 @@ public:
 	/* --- Start of General tab section --- */
 
 	int interval = default_interval;
-	OBSWeakSource nonMatchingScene;
+	SceneSelection nonMatchingScene;
 	NoMatchBehavior switchIfNotMatching = NoMatchBehavior::NO_SWITCH;
 	Duration noMatchDelay;
 	enum class StartupBehavior { PERSIST = 0, START = 1, STOP = 2 };
