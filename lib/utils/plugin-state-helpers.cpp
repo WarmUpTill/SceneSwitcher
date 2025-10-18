@@ -238,7 +238,7 @@ NoMatchBehavior GetPluginNoMatchBehavior()
 
 void SetNoMatchScene(const OBSWeakSource &scene)
 {
-	GetSwitcher()->nonMatchingScene = scene;
+	GetSwitcher()->nonMatchingScene.SetScene(scene);
 }
 
 std::string ForegroundWindowTitle()

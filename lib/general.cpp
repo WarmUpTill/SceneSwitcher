@@ -26,15 +26,6 @@ void AdvSceneSwitcher::reject()
 	close();
 }
 
-void AdvSceneSwitcher::UpdateNonMatchingScene(const QString &name)
-{
-	OBSSourceAutoRelease scene =
-		obs_get_source_by_name(name.toUtf8().constData());
-	OBSWeakSourceAutoRelease ws = obs_source_get_weak_source(scene);
-
-	switcher->nonMatchingScene = ws;
-}
-
 void AdvSceneSwitcher::on_noMatchDontSwitch_clicked()
 {
 	if (loading) {
@@ -56,7 +47,6 @@ void AdvSceneSwitcher::on_noMatchSwitch_clicked()
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = NoMatchBehavior::SWITCH;
 	ui->noMatchSwitchScene->setEnabled(true);
-	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
 	ui->randomDisabledWarning->setVisible(true);
 }
 
@@ -130,17 +120,6 @@ void AdvSceneSwitcher::on_autoStartEvent_currentIndexChanged(int index)
 
 	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->autoStartEvent = static_cast<SwitcherData::AutoStart>(index);
-}
-
-void AdvSceneSwitcher::on_noMatchSwitchScene_currentTextChanged(
-	const QString &text)
-{
-	if (loading) {
-		return;
-	}
-
-	std::lock_guard<std::mutex> lock(switcher->m);
-	UpdateNonMatchingScene(text);
 }
 
 void AdvSceneSwitcher::on_checkInterval_valueChanged(int value)
@@ -522,9 +501,9 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 {
 	obs_data_set_int(obj, "interval", interval);
 
-	std::string nonMatchingSceneName = GetWeakSourceName(nonMatchingScene);
-	obs_data_set_string(obj, "non_matching_scene",
-			    nonMatchingSceneName.c_str());
+	OBSDataAutoRelease noMatchScene = obs_data_create();
+	nonMatchingScene.Save(noMatchScene);
+	obs_data_set_obj(obj, "noMatchScene", noMatchScene);
 	obs_data_set_int(obj, "switch_if_not_matching",
 			 static_cast<int>(switchIfNotMatching));
 	noMatchDelay.Save(obj, "noMatchDelay");
@@ -578,9 +557,14 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 				 static_cast<int>(NoMatchBehavior::NO_SWITCH));
 	switchIfNotMatching = static_cast<NoMatchBehavior>(
 		obs_data_get_int(obj, "switch_if_not_matching"));
-	std::string nonMatchingSceneName =
-		obs_data_get_string(obj, "non_matching_scene");
-	nonMatchingScene = GetWeakSourceByName(nonMatchingSceneName.c_str());
+
+	if (obs_data_has_user_value(obj, "noMatchScene")) {
+		OBSDataAutoRelease noMatchScene =
+			obs_data_get_obj(obj, "noMatchScene");
+		nonMatchingScene.Load(noMatchScene);
+	} else {
+		nonMatchingScene.Load(obj, "non_matching_scene");
+	}
 	noMatchDelay.Load(obj, "noMatchDelay");
 
 	cooldown.Load(obj, "cooldown");
@@ -689,10 +673,10 @@ void SwitcherData::CheckNoMatchSwitch(bool &match, OBSWeakSource &scene,
 		return;
 	}
 
-	if (switchIfNotMatching == NoMatchBehavior::SWITCH &&
-	    nonMatchingScene) {
+	auto noMatchScene = nonMatchingScene.GetScene(false);
+	if (switchIfNotMatching == NoMatchBehavior::SWITCH && noMatchScene) {
 		match = true;
-		scene = nonMatchingScene;
+		scene = noMatchScene;
 		transition = nullptr;
 	}
 	if (switchIfNotMatching == NoMatchBehavior::RANDOM_SWITCH) {
@@ -887,8 +871,6 @@ void AdvSceneSwitcher::SetCheckIntervalTooLowVisibility() const
 
 void AdvSceneSwitcher::SetupGeneralTab()
 {
-	PopulateSceneSelection(ui->noMatchSwitchScene, false);
-
 	if (switcher->switchIfNotMatching == NoMatchBehavior::SWITCH) {
 		ui->noMatchSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(true);
@@ -900,8 +882,17 @@ void AdvSceneSwitcher::SetupGeneralTab()
 		ui->noMatchRandomSwitch->setChecked(true);
 		ui->noMatchSwitchScene->setEnabled(false);
 	}
-	ui->noMatchSwitchScene->setCurrentText(
-		GetWeakSourceName(switcher->nonMatchingScene).c_str());
+	ui->noMatchSwitchScene->SetScene(switcher->nonMatchingScene);
+	ui->noMatchSwitchScene->LockToMainCanvas();
+
+	connect(ui->noMatchSwitchScene, &SceneSelectionWidget::SceneChanged,
+		this, [this](const SceneSelection &scene) {
+			if (loading) {
+				return;
+			}
+			std::lock_guard<std::mutex> lock(switcher->m);
+			switcher->nonMatchingScene = scene;
+		});
 
 	DurationSelection *noMatchDelay = new DurationSelection();
 	noMatchDelay->SetDuration(switcher->noMatchDelay);

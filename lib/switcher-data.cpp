@@ -44,11 +44,6 @@ void SwitcherData::Prune()
 		}
 	}
 
-	if (nonMatchingScene && !WeakSourceValid(nonMatchingScene)) {
-		switchIfNotMatching = NoMatchBehavior::NO_SWITCH;
-		nonMatchingScene = nullptr;
-	}
-
 	for (size_t i = 0; i < randomSwitches.size(); i++) {
 		RandomSwitch &s = randomSwitches[i];
 		if (!s.valid()) {

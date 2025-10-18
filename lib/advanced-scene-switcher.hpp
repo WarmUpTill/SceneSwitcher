@@ -45,7 +45,6 @@ protected:
 	/* --- Begin of general tab section --- */
 public:
 	void SetupGeneralTab();
-	void UpdateNonMatchingScene(const QString &name);
 	void SetDeprecationWarnings();
 
 public slots:
@@ -58,7 +57,6 @@ public slots:
 	void on_startupBehavior_currentIndexChanged(int index);
 	void on_logLevel_currentIndexChanged(int index);
 	void on_autoStartEvent_currentIndexChanged(int index);
-	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
 	void on_tabWidget_currentChanged(int index);
 	void on_exportSettings_clicked();
