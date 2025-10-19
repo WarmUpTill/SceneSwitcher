@@ -399,22 +399,6 @@ SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 	QWidget::connect(_canvas, SIGNAL(CanvasChanged(const OBSWeakCanvas &)),
 			 this, SIGNAL(CanvasChanged(const OBSWeakCanvas &)));
 
-	auto settingsWindow = GetSettingsWindow();
-	if (settingsWindow) {
-		QWidget::connect(settingsWindow,
-				 SIGNAL(SceneGroupAdded(const QString &)), this,
-				 SLOT(ItemAdd(const QString &)));
-		QWidget::connect(settingsWindow,
-				 SIGNAL(SceneGroupRemoved(const QString &)),
-				 this, SLOT(ItemRemove(const QString &)));
-		QWidget::connect(
-			settingsWindow,
-			SIGNAL(SceneGroupRenamed(const QString &,
-						 const QString &)),
-			this,
-			SLOT(ItemRename(const QString &, const QString &)));
-	}
-
 	// Variables
 	QWidget::connect(VariableSignalManager::Instance(),
 			 SIGNAL(Add(const QString &)), this,

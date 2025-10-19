@@ -118,17 +118,6 @@ public slots:
 	void HighlightOnChange() const;
 	void on_macroSettings_clicked();
 
-signals:
-	void MacroAdded(const QString &name);
-	void MacroRemoved(const QString &name);
-	void MacroRenamed(const QString &oldName, const QString &newName);
-	void MacroSegmentOrderChanged();
-	void HighlightMacrosChanged(bool value);
-
-	void ConnectionAdded(const QString &);
-	void ConnectionRenamed(const QString &oldName, const QString &newName);
-	void ConnectionRemoved(const QString &);
-
 private:
 	bool ResolveMacroImportNameConflict(std::shared_ptr<Macro> &);
 

@@ -1,6 +1,6 @@
 #include "plugin-state-helpers.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "macro-settings.hpp"
+#include "macro-signals.hpp"
 #include "switcher-data.hpp"
 
 namespace advss {
@@ -294,7 +294,7 @@ void SetMacroHighlightingEnabled(bool enable)
 			if (!SettingsWindowIsOpened()) {
 				return;
 			}
-			AdvSceneSwitcher::window->HighlightMacrosChanged(
+			MacroSignalManager::Instance()->HighlightChanged(
 				GetGlobalMacroSettings()._highlightExecuted);
 		},
 		nullptr, false);

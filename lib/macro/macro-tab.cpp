@@ -4,6 +4,7 @@
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
 #include "macro-settings.hpp"
+#include "macro-signals.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
 #include "math-helpers.hpp"
@@ -115,7 +116,8 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	auto selectedMacro = GetSelectedMacro();
 	if (!selectedMacro) {
 		ui->macros->Add(newMacro);
-		emit MacroAdded(QString::fromStdString(name));
+		MacroSignalManager::Instance()->Add(
+			QString::fromStdString(name));
 		return;
 	}
 
@@ -123,20 +125,22 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		ui->macros->ExpandGroup(selectedMacro);
 		Macro::PrepareMoveToGroup(selectedMacro, newMacro);
 		ui->macros->AddToGroup(newMacro, selectedMacro);
-		emit MacroAdded(QString::fromStdString(name));
+		MacroSignalManager::Instance()->Add(
+			QString::fromStdString(name));
 		return;
 	}
 
 	auto selectedMacroGroup = selectedMacro->Parent();
 	if (!selectedMacroGroup) {
 		ui->macros->Add(newMacro, selectedMacro);
-		emit MacroAdded(QString::fromStdString(name));
+		MacroSignalManager::Instance()->Add(
+			QString::fromStdString(name));
 		return;
 	}
 
 	Macro::PrepareMoveToGroup(selectedMacroGroup, newMacro);
 	ui->macros->Add(newMacro, selectedMacro);
-	emit MacroAdded(QString::fromStdString(name));
+	MacroSignalManager::Instance()->Add(QString::fromStdString(name));
 }
 
 static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
@@ -205,7 +209,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 	ui->macros->Remove(macro);
 	MacroSegmentList::SetCachingEnabled(!switcher->disableMacroWidgetCache);
 
-	emit MacroRemoved(name);
+	MacroSignalManager::Instance()->Remove(name);
 }
 
 void AdvSceneSwitcher::RemoveSelectedMacros()
@@ -251,7 +255,8 @@ void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
 		auto lock = LockContext();
 		macro->SetName(name.toStdString());
 	}
-	emit MacroRenamed(oldName, name);
+
+	MacroSignalManager::Instance()->Rename(oldName, name);
 }
 
 void AdvSceneSwitcher::on_macroRemove_clicked()
@@ -568,7 +573,8 @@ void AdvSceneSwitcher::on_macroSettings_clicked()
 	}
 
 	GetGlobalMacroSettings() = prop;
-	emit HighlightMacrosChanged(prop._highlightExecuted);
+	MacroSignalManager::Instance()->HighlightChanged(
+		prop._highlightExecuted);
 
 	// Reset highlights to avoid all macro segments being highlighted, which
 	// would have been highlighted at least once since the moment the
@@ -751,7 +757,7 @@ void AdvSceneSwitcher::CopyMacro()
 
 	ui->macros->Add(newMacro, macro);
 	disableAddButtonHighlight();
-	emit MacroAdded(QString::fromStdString(name));
+	MacroSignalManager::Instance()->Add(QString::fromStdString(name));
 }
 
 bool MacroTabIsInFocus()

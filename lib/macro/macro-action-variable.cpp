@@ -1,9 +1,9 @@
 #include "macro-action-variable.hpp"
-#include "advanced-scene-switcher.hpp"
 #include "json-helpers.hpp"
 #include "layout-helpers.hpp"
-#include "math-helpers.hpp"
 #include "macro-condition-edit.hpp"
+#include "macro-signals.hpp"
+#include "math-helpers.hpp"
 #include "macro.hpp"
 #include "non-modal-dialog.hpp"
 #include "source-helpers.hpp"
@@ -884,8 +884,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	QWidget::connect(_segmentIdx,
 			 SIGNAL(SelectionChanged(const IntVariable &)), this,
 			 SLOT(SegmentIndexChanged(const IntVariable &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroSegmentOrderChanged()), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(SegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
 	QWidget::connect(
 		_subStringStart,

@@ -1,6 +1,7 @@
 #include "macro-list.hpp"
 #include "macro-helpers.hpp"
 #include "macro-selection.hpp"
+#include "macro-signals.hpp"
 #include "obs-module-helper.hpp"
 #include "ui-helpers.hpp"
 
@@ -10,12 +11,11 @@ MacroList::MacroList(QWidget *parent, bool allowDuplicates, bool reorder)
 	: ListEditor(parent, reorder),
 	  _allowDuplicates(allowDuplicates)
 {
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroRenamed(const QString &, const QString &)),
-			 this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)), this,
 			 SLOT(MacroRename(const QString &, const QString &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
 	UpdateListSize();
 }

@@ -1,6 +1,7 @@
 #include "macro-action-sequence.hpp"
 #include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
+#include "macro-signals.hpp"
 
 namespace advss {
 
@@ -212,7 +213,8 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 			 SLOT(ContinueFromClicked()));
 	QWidget::connect(_restart, SIGNAL(stateChanged(int)), this,
 			 SLOT(RestartChanged(int)));
-	QWidget::connect(this, SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionChanged(int)));
