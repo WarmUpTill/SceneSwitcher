@@ -2,6 +2,7 @@
 #include "advanced-scene-switcher.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "macro-signals.hpp"
 #include "ui-helpers.hpp"
 
 #include <QDialogButtonBox>
@@ -20,15 +21,14 @@ MacroSelection::MacroSelection(QWidget *parent)
 		addItem(QString::fromStdString(m->Name()));
 	}
 
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroAdded(const QString &)), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Add(const QString &)), this,
 			 SLOT(MacroAdd(const QString &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroRenamed(const QString &, const QString &)),
-			 this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Rename(const QString &, const QString &)), this,
 			 SLOT(MacroRename(const QString &, const QString &)));
 }
 

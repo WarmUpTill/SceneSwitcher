@@ -1,5 +1,6 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
+#include "macro-signals.hpp"
 #include "path-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "ui-helpers.hpp"
@@ -79,10 +80,10 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 		_macro->SetPaused(!val);
 	};
 	connect(_running, &QAbstractButton::clicked, setRunning);
-	connect(_tree->window(), SIGNAL(HighlightMacrosChanged(bool)), this,
-		SLOT(EnableHighlight(bool)));
-	connect(_tree->window(),
-		SIGNAL(MacroRenamed(const QString &, const QString &)), this,
+	connect(MacroSignalManager::Instance(), SIGNAL(HighlightChanged(bool)),
+		this, SLOT(EnableHighlight(bool)));
+	connect(MacroSignalManager::Instance(),
+		SIGNAL(Rename(const QString &, const QString &)), this,
 		SLOT(MacroRenamed(const QString &, const QString &)));
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(HighlightIfExecuted()));
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(UpdatePaused()));

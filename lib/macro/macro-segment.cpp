@@ -256,28 +256,6 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent)
 
 	QWidget::connect(_section, &Section::Collapsed, this,
 			 &MacroSegmentEdit::Collapsed);
-	// Macro signals
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroAdded(const QString &)), this,
-			 SIGNAL(MacroAdded(const QString &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroRemoved(const QString &)), this,
-			 SIGNAL(MacroRemoved(const QString &)));
-	QWidget::connect(
-		GetSettingsWindow(),
-		SIGNAL(MacroRenamed(const QString &, const QString &)), this,
-		SIGNAL(MacroRenamed(const QString &, const QString &)));
-	// Scene group signals
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(SceneGroupAdded(const QString &)), this,
-			 SIGNAL(SceneGroupAdded(const QString &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(SceneGroupRemoved(const QString &)), this,
-			 SIGNAL(SceneGroupRemoved(const QString &)));
-	QWidget::connect(
-		GetSettingsWindow(),
-		SIGNAL(SceneGroupRenamed(const QString &, const QString)), this,
-		SIGNAL(SceneGroupRenamed(const QString &, const QString)));
 
 	auto frameLayout = new QGridLayout;
 	frameLayout->setContentsMargins(0, 0, 0, 0);

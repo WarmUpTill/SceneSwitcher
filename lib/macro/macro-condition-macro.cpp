@@ -1,6 +1,7 @@
 #include "macro-condition-macro.hpp"
 #include "layout-helpers.hpp"
 #include "macro-action-edit.hpp"
+#include "macro-signals.hpp"
 #include "macro.hpp"
 
 namespace advss {
@@ -321,7 +322,8 @@ MacroConditionMacroEdit::MacroConditionMacroEdit(
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));
-	QWidget::connect(parent, SIGNAL(MacroRemoved(const QString &)), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(Remove(const QString &)), this,
 			 SLOT(MacroRemove(const QString &)));
 	QWidget::connect(_types, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(TypeChanged(int)));

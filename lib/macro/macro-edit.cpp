@@ -7,6 +7,7 @@
 #include "macro-segment-copy-paste.hpp"
 #include "macro-segment-list.hpp"
 #include "macro-settings.hpp"
+#include "macro-signals.hpp"
 #include "math-helpers.hpp"
 #include "name-dialog.hpp"
 #include "path-helpers.hpp"
@@ -107,6 +108,16 @@ MacroEdit::MacroEdit(QWidget *parent, QStringList helpMsg)
 	ui->conditionsList->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->conditionsList, &QWidget::customContextMenuRequested, this,
 		&MacroEdit::ShowMacroConditionsContextMenu);
+
+	connect(this, &MacroEdit::MacroAdded, MacroSignalManager::Instance(),
+		&MacroSignalManager::Add);
+	connect(this, &MacroEdit::MacroRemoved, MacroSignalManager::Instance(),
+		&MacroSignalManager::Remove);
+	connect(this, &MacroEdit::MacroRenamed, MacroSignalManager::Instance(),
+		&MacroSignalManager::Rename);
+	connect(this, &MacroEdit::MacroSegmentOrderChanged,
+		MacroSignalManager::Instance(),
+		&MacroSignalManager::SegmentOrderChanged);
 
 	// Set action and condition toolbars
 	const std::string pathPrefix =

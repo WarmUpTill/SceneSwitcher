@@ -4,6 +4,7 @@
 #include "macro-condition-factory.hpp"
 #include "macro-helpers.hpp"
 #include "macro-segment.hpp"
+#include "macro-signals.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
@@ -31,8 +32,8 @@ MacroSegmentSelection::MacroSegmentSelection(QWidget *parent, Type type,
 		_index,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(IndexChanged(const NumberVariable<int> &)));
-	QWidget::connect(GetSettingsWindow(),
-			 SIGNAL(MacroSegmentOrderChanged()), this,
+	QWidget::connect(MacroSignalManager::Instance(),
+			 SIGNAL(SegmentOrderChanged()), this,
 			 SLOT(MacroSegmentOrderChanged()));
 
 	auto layout = new QHBoxLayout;

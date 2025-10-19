@@ -154,6 +154,8 @@ target_sources(
           lib/macro/macro-selection.hpp
           lib/macro/macro-settings.cpp
           lib/macro/macro-settings.hpp
+          lib/macro/macro-signals.cpp
+          lib/macro/macro-signals.hpp
           lib/macro/macro-tab.cpp
           lib/macro/macro-tree.cpp
           lib/macro/macro-tree.hpp
