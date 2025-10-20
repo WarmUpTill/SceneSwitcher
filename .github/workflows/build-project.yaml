@@ -6,7 +6,7 @@ on:
         description: "Project name detected by parsing build spec file"
         value: ${{ jobs.check-event.outputs.pluginName }}
 env:
-  DEP_DIR: .deps/advss-build-dependencies-2
+  DEP_DIR: .deps/advss-build-dependencies-3
 jobs:
   check-event:
     name: Check GitHub Event Data 🔎
