@@ -240,7 +240,7 @@ bool MacroActionSwitchScene::Load(obs_data_t *obj)
 			GetWeakCanvasByName(obs_data_get_string(obj, "canvas"));
 	} else {
 		OBSCanvasAutoRelease main = obs_get_main_canvas();
-		_canvas = OBSGetWeakRef(main);
+		_canvas = obs_canvas_get_weak_canvas(main);
 	}
 
 	_index.Save(obj, "index");
