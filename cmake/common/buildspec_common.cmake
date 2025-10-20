@@ -65,16 +65,17 @@ function(_setup_obs_studio)
 
   if(OS_WINDOWS)
     set(_cmake_generator "${CMAKE_GENERATOR}")
-    set(_cmake_arch
-        "-A ${arch},version=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+    set(_cmake_arch "-A ${arch}")
     set(_cmake_extra
         "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION} -DCMAKE_ENABLE_SCRIPTING=OFF"
     )
+    set(_cmake_version "2.0.0")
   elseif(OS_MACOS)
     set(_cmake_generator "Xcode")
     set(_cmake_arch "-DCMAKE_OSX_ARCHITECTURES:STRING='arm64;x86_64'")
     set(_cmake_extra
         "-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    set(_cmake_version "3.0.0")
   endif()
 
   message(STATUS "Configure ${label} (${arch})")
@@ -82,42 +83,32 @@ function(_setup_obs_studio)
     COMMAND
       "${CMAKE_COMMAND}" -S "${dependencies_dir}/${_obs_destination}" -B
       "${dependencies_dir}/${_obs_destination}/build_${arch}" -G
-      ${_cmake_generator} "${_cmake_arch}" -DOBS_CMAKE_VERSION:STRING=3.0.0
-      -DENABLE_PLUGINS:BOOL=OFF -DENABLE_FRONTEND:BOOL=OFF
-      -DOBS_VERSION_OVERRIDE:STRING=${_obs_version}
+      ${_cmake_generator} "${_cmake_arch}"
+      -DOBS_CMAKE_VERSION:STRING=${_cmake_version} -DENABLE_PLUGINS:BOOL=OFF
+      -DENABLE_UI:BOOL=OFF -DOBS_VERSION_OVERRIDE:STRING=${_obs_version}
       "-DCMAKE_PREFIX_PATH='${CMAKE_PREFIX_PATH}'" ${_is_fresh} ${_cmake_extra}
     RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY
     OUTPUT_QUIET)
   message(STATUS "Configure ${label} (${arch}) - done")
 
-  message(STATUS "Build ${label} (Debug - ${arch})")
+  message(STATUS "Build ${label} (${arch})")
   execute_process(
     COMMAND "${CMAKE_COMMAND}" --build build_${arch} --target obs-frontend-api
             --config Debug --parallel
     WORKING_DIRECTORY "${dependencies_dir}/${_obs_destination}"
     RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY
     OUTPUT_QUIET)
-  message(STATUS "Build ${label} (Debug - ${arch}) - done")
-
-  message(STATUS "Build ${label} (Release - ${arch})")
-  execute_process(
-    COMMAND "${CMAKE_COMMAND}" --build build_${arch} --target obs-frontend-api
-            --config Release --parallel
-    WORKING_DIRECTORY "${dependencies_dir}/${_obs_destination}"
-    RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY
-    OUTPUT_QUIET)
-  message(STATUS "Build ${label} (Reelase - ${arch}) - done")
+  message(STATUS "Build ${label} (${arch}) - done")
 
   message(STATUS "Install ${label} (${arch})")
+  if(OS_WINDOWS)
+    set(_cmake_extra "--component obs_libraries")
+  else()
+    set(_cmake_extra "")
+  endif()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" --install build_${arch} --component Development
-            --config Debug --prefix "${dependencies_dir}"
-    WORKING_DIRECTORY "${dependencies_dir}/${_obs_destination}"
-    RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY
-    OUTPUT_QUIET)
-  execute_process(
-    COMMAND "${CMAKE_COMMAND}" --install build_${arch} --component Development
-            --config Release --prefix "${dependencies_dir}"
+            --config Debug --prefix "${dependencies_dir}" ${_cmake_extra}
     WORKING_DIRECTORY "${dependencies_dir}/${_obs_destination}"
     RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY
     OUTPUT_QUIET)
