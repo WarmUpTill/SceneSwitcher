@@ -19,10 +19,10 @@
 namespace advss {
 
 #ifdef USE_TWITCH_CLI_MOCK
-typedef websocketpp::client<websocketpp::config::asio_client> EventSubWSClient;
+using EventSubWSClient = websocketpp::client<websocketpp::config::asio_client>;
 #else
-typedef websocketpp::client<websocketpp::config::asio_tls_client>
-	EventSubWSClient;
+using EventSubWSClient =
+	websocketpp::client<websocketpp::config::asio_tls_client>;
 #endif
 
 struct Event;
@@ -61,12 +61,16 @@ public:
 	void EnableTimestampValidation(bool enable);
 
 private:
+	static void SetupClient(EventSubWSClient &);
+
 	void OnOpen(connection_hdl hdl);
 	void OnMessage(connection_hdl hdl,
 		       EventSubWSClient::message_ptr message);
 	void OnClose(connection_hdl hdl);
 	void OnFail(connection_hdl hdl);
+
 	void ConnectThread();
+	void WaitAndReconnect();
 
 	bool IsValidMessageID(const std::string &);
 	bool IsValidID(const std::string &);
@@ -74,20 +78,39 @@ private:
 	void HandleWelcome(obs_data_t *);
 	void HandleKeepAlive() const;
 	void HandleNotification(obs_data_t *);
-	void HandleReconnect(obs_data_t *);
+	void HandleServerMigration(obs_data_t *);
 	void HandleRevocation(obs_data_t *);
 
 	void RegisterInstance();
 	void UnregisterInstance();
 
-	EventSubWSClient _client;
+	void StartServerMigrationClient(const std::string &url);
+	void OnServerMigrationWelcome(connection_hdl,
+				      std::unique_ptr<EventSubWSClient> &);
+
+	struct ParsedMessage {
+		std::string type;
+		OBSDataAutoRelease payload;
+	};
+
+	std::optional<const ParsedMessage>
+	ParseWebSocketMessage(const EventSubWSClient::message_ptr &);
+
+	std::unique_ptr<EventSubWSClient> _client;
 	connection_hdl _connection;
+
+	std::unique_ptr<EventSubWSClient> _migrationClient;
+	connection_hdl _migrationConnection;
+	std::atomic_bool _migrating{false};
+	std::string _migrationSessionID;
+
 	std::thread _thread;
 	std::mutex _waitMtx;
 	std::mutex _connectMtx;
 	std::condition_variable _cv;
 	std::atomic_bool _connected{false};
 	std::atomic_bool _disconnect{false};
+
 	std::string _url;
 	std::string _sessionID;
 	bool _validateTimestamps = true;
