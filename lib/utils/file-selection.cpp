@@ -35,6 +35,11 @@ void FileSelection::SetPath(const QString &path)
 	_filePath->setText(path);
 }
 
+QString FileSelection::GetPath() const
+{
+	return _filePath->text();
+}
+
 QString FileSelection::ValidPathOrDesktop(const QString &path)
 {
 	QFileInfo fileInfo(path);
