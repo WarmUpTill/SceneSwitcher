@@ -234,6 +234,7 @@ function Build {
         "-DCMAKE_PREFIX_PATH:PATH=${OBSDepPath}"
         "-DCMAKE_INSTALL_PREFIX:PATH=${ADVSSDepPath}"
         "-DPAHO_WITH_MQTT_C=ON"
+        "-DPAHO_WITH_SSL=ON"
     )
 
     Log-Information "Configuring paho.mqtt.cpp..."

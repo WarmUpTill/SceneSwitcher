@@ -1,5 +1,6 @@
 #pragma once
 #include "message-dispatcher.hpp"
+#include "file-selection.hpp"
 #include "item-selection-helpers.hpp"
 #include "topic-selection.hpp"
 
@@ -27,6 +28,9 @@ public:
 	MqttConnection(const MqttConnection &other);
 	MqttConnection(const std::string &name, const std::string &uri,
 		       const std::string &username, const std::string &password,
+		       const std::string &trustStore,
+		       const std::string &keyStore,
+		       const std::string &privateKey, bool verifyServerCert,
 		       bool connectOnStart, bool reconnect, int reconnectDelay);
 	static std::shared_ptr<Item> Create()
 	{
@@ -51,8 +55,12 @@ private:
 	std::string _uri = "mqtt://localhost:1883";
 	std::string _username = "user";
 	std::string _password = "password";
+	std::string _trustStore = "";
+	std::string _keyStore = "";
+	std::string _privateKey = "";
+	bool _verifyServerCert = false;
 
-	std::vector<std::string> _topics = {"/#"};
+	std::vector<std::string> _topics = {"/example"};
 	std::vector<int> _qos = {1};
 
 	std::thread _thread;
@@ -91,6 +99,10 @@ private:
 	QLineEdit *_username;
 	QLineEdit *_password;
 	QPushButton *_showPassword;
+	FileSelection *_trustStore;
+	FileSelection *_keyStore;
+	FileSelection *_privateKey;
+	QCheckBox *_verifyServerCert;
 	MqttTopicListWidget *_topics;
 	QCheckBox *_connectOnStart;
 	QCheckBox *_reconnect;
