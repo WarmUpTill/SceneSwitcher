@@ -1,4 +1,5 @@
 #include "macro-action-variable.hpp"
+#include "help-icon.hpp"
 #include "json-helpers.hpp"
 #include "layout-helpers.hpp"
 #include "macro-condition-edit.hpp"
@@ -828,7 +829,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		  this)),
 	  _randomLayout(new QVBoxLayout()),
 	  _jsonQuery(new VariableLineEdit(this)),
-	  _jsonQueryHelp(new QLabel(this)),
+	  _jsonQueryHelp(new HelpIcon(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.variable.type.queryJson.info"),
+		  this)),
 	  _jsonIndex(new VariableSpinBox(this)),
 	  _entryLayout(new QHBoxLayout())
 {
@@ -859,14 +863,6 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_randomNumberStart->setMaximum(9999999999);
 	_randomNumberEnd->setMinimum(-9999999999);
 	_randomNumberEnd->setMaximum(9999999999);
-	const QString path = GetThemeTypeName() == "Light"
-				     ? ":/res/images/help.svg"
-				     : ":/res/images/help_light.svg";
-	const QIcon icon(path);
-	const QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	_jsonQueryHelp->setPixmap(pixmap);
-	_jsonQueryHelp->setToolTip(obs_module_text(
-		"AdvSceneSwitcher.action.variable.type.queryJson.info"));
 	_jsonIndex->setMaximum(999);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),

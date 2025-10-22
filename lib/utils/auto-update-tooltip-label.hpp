@@ -1,20 +1,19 @@
 #pragma once
 #include "export-symbol-helper.hpp"
+#include "help-icon.hpp"
 
 #include <functional>
-#include <QLabel>
 #include <QTimer>
 
 namespace advss {
 
-class ADVSS_EXPORT AutoUpdateTooltipLabel : public QLabel {
+class ADVSS_EXPORT AutoUpdateHelpIcon : public HelpIcon {
 	Q_OBJECT
 
 public:
-	AutoUpdateTooltipLabel(
-		QWidget *parent,
-		const std::function<QString()> &updateTooltipCallback,
-		int updateIntervalMs = 300);
+	AutoUpdateHelpIcon(QWidget *parent,
+			   const std::function<QString()> &updateTooltipCallback,
+			   int updateIntervalMs = 300);
 
 protected:
 	void enterEvent(QEnterEvent *event) override;

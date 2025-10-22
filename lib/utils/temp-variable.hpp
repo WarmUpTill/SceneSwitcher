@@ -105,7 +105,7 @@ private:
 	MacroSegment *GetSegment() const;
 
 	FilterComboBox *_selection;
-	AutoUpdateTooltipLabel *_info;
+	AutoUpdateHelpIcon *_info;
 	std::vector<MacroEdit *> _macroEdits;
 };
 
