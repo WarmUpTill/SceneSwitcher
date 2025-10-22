@@ -1,4 +1,5 @@
 #include "mqtt-helpers.hpp"
+#include "help-icon.hpp"
 #include "layout-helpers.hpp"
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
@@ -22,6 +23,10 @@ MqttConnection::MqttConnection(const MqttConnection &other)
 	  _uri(other._uri),
 	  _username(other._username),
 	  _password(other._password),
+	  _trustStore(other._trustStore),
+	  _keyStore(other._keyStore),
+	  _privateKey(other._privateKey),
+	  _verifyServerCert(other._verifyServerCert),
 	  _connectOnStart(other._connectOnStart),
 	  _reconnect(other._reconnect),
 	  _reconnectDelay(other._reconnectDelay)
@@ -30,12 +35,20 @@ MqttConnection::MqttConnection(const MqttConnection &other)
 
 MqttConnection::MqttConnection(const std::string &name, const std::string &uri,
 			       const std::string &username,
-			       const std::string &password, bool connectOnStart,
+			       const std::string &password,
+			       const std::string &trustStore,
+			       const std::string &keyStore,
+			       const std::string &privateKey,
+			       bool verifyServerCert, bool connectOnStart,
 			       bool reconnect, int reconnectDelay)
 	: Item(name),
 	  _uri(uri),
 	  _username(username),
 	  _password(password),
+	  _trustStore(trustStore),
+	  _keyStore(keyStore),
+	  _privateKey(privateKey),
+	  _verifyServerCert(verifyServerCert),
 	  _connectOnStart(connectOnStart),
 	  _reconnect(reconnect),
 	  _reconnectDelay(reconnectDelay)
@@ -99,26 +112,41 @@ void MqttConnection::ConnectThread()
 	};
 
 	do {
-		std::unique_lock<std::mutex> clientLock(_clientMtx);
-		_client = std::make_shared<mqtt::async_client>(
-			_uri, std::string("advss_") + _name);
-#ifdef ENABLE_MQTT5_SUPPORT
-		auto connOpts = mqtt::connect_options_builder::v5()
-#else
-		auto connOpts = mqtt::connect_options_builder()
-#endif
-					.clean_start(false)
-					.clean_session(true)
-					.connect_timeout(5s)
-					.user_name(_username)
-					.password(_password)
-					.finalize();
-
-		_client->set_connection_lost_handler(logConnectionLost);
-		_client->set_message_callback(dispatchMessage);
-		_client->start_consuming();
-
 		try {
+			std::unique_lock<std::mutex> clientLock(_clientMtx);
+			_client = std::make_shared<mqtt::async_client>(
+				_uri, std::string("advss_") + _name);
+
+			mqtt::ssl_options sslOptions;
+			if (!_trustStore.empty()) {
+				sslOptions.set_trust_store(_trustStore);
+			}
+			if (!_keyStore.empty()) {
+				sslOptions.set_key_store(_keyStore);
+			}
+			if (!_privateKey.empty()) {
+				sslOptions.set_private_key(_privateKey);
+			}
+			sslOptions.set_enable_server_cert_auth(
+				_verifyServerCert);
+
+#ifdef ENABLE_MQTT5_SUPPORT
+			auto connOpts = mqtt::connect_options_builder::v5()
+#else
+			auto connOpts = mqtt::connect_options_builder()
+#endif
+						.clean_start(false)
+						.clean_session(true)
+						.connect_timeout(5s)
+						.user_name(_username)
+						.password(_password)
+						.ssl(sslOptions)
+						.finalize();
+
+			_client->set_connection_lost_handler(logConnectionLost);
+			_client->set_message_callback(dispatchMessage);
+			_client->start_consuming();
+
 			vblog(LOG_INFO, "connecting to MQTT server \"%s\" ...",
 			      _name.c_str());
 			auto tok = _client->connect(connOpts);
@@ -220,6 +248,10 @@ void MqttConnection::Load(obs_data_t *data)
 	_uri = obs_data_get_string(data, "uri");
 	_username = obs_data_get_string(data, "username");
 	_password = obs_data_get_string(data, "password");
+	_trustStore = obs_data_get_string(data, "trustStore");
+	_keyStore = obs_data_get_string(data, "keyStore");
+	_privateKey = obs_data_get_string(data, "privateKey");
+	_verifyServerCert = obs_data_get_bool(data, "verifyServerCert");
 	_connectOnStart = obs_data_get_bool(data, "connectOnStart");
 	_reconnect = obs_data_get_bool(data, "reconnect");
 	_reconnectDelay = obs_data_get_int(data, "reconnectDelay");
@@ -251,6 +283,10 @@ void MqttConnection::Save(obs_data_t *data) const
 	obs_data_set_string(data, "uri", _uri.c_str());
 	obs_data_set_string(data, "username", _username.c_str());
 	obs_data_set_string(data, "password", _password.c_str());
+	obs_data_set_string(data, "trustStore", _trustStore.c_str());
+	obs_data_set_string(data, "keyStore", _keyStore.c_str());
+	obs_data_set_string(data, "privateKey", _privateKey.c_str());
+	obs_data_set_bool(data, "verifyServerCert", _verifyServerCert);
 	obs_data_set_bool(data, "connectOnStart", _connectOnStart);
 	obs_data_set_bool(data, "reconnect", _reconnect);
 	obs_data_set_int(data, "reconnectDelay", _reconnectDelay);
@@ -308,6 +344,10 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	  _username(new QLineEdit()),
 	  _password(new QLineEdit()),
 	  _showPassword(new QPushButton()),
+	  _trustStore(new FileSelection()),
+	  _keyStore(new FileSelection()),
+	  _privateKey(new FileSelection()),
+	  _verifyServerCert(new QCheckBox()),
 	  _topics(new MqttTopicListWidget(this)),
 	  _connectOnStart(new QCheckBox()),
 	  _reconnect(new QCheckBox()),
@@ -324,6 +364,10 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	_uri->setText(QString::fromStdString(connection._uri));
 	_username->setText(QString::fromStdString(connection._username));
 	_password->setText(QString::fromStdString(connection._password));
+	_trustStore->SetPath(QString::fromStdString(connection._trustStore));
+	_keyStore->SetPath(QString::fromStdString(connection._keyStore));
+	_privateKey->SetPath(QString::fromStdString(connection._privateKey));
+	_verifyServerCert->setChecked(connection._verifyServerCert);
 	_topics->SetValues(connection._topics, connection._qos);
 	_reconnectDelay->setMaximum(9999);
 	_reconnectDelay->setSuffix("s");
@@ -363,6 +407,41 @@ MqttConnectionSettingsDialog::MqttConnectionSettingsDialog(
 	passLayout->addWidget(_password);
 	passLayout->addWidget(_showPassword);
 	_layout->addLayout(passLayout, row, 1);
+	++row;
+	_layout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.trustStore")),
+		row, 0);
+	auto trustStoreLayout = new QHBoxLayout();
+	trustStoreLayout->addWidget(_trustStore);
+	trustStoreLayout->addWidget(new HelpIcon(obs_module_text(
+		"AdvSceneSwitcher.mqttConnection.trustStore.help")));
+	_layout->addLayout(trustStoreLayout, row, 1);
+	++row;
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.mqttConnection.keyStore")),
+			   row, 0);
+	auto keyStoreLayout = new QHBoxLayout();
+	keyStoreLayout->addWidget(_keyStore);
+	keyStoreLayout->addWidget(new HelpIcon(obs_module_text(
+		"AdvSceneSwitcher.mqttConnection.keyStore.help")));
+	_layout->addLayout(keyStoreLayout, row, 1);
+	++row;
+	_layout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.privateKey")),
+		row, 0);
+	auto privateKeyLayout = new QHBoxLayout();
+	privateKeyLayout->addWidget(_privateKey);
+	privateKeyLayout->addWidget(new HelpIcon(obs_module_text(
+		"AdvSceneSwitcher.mqttConnection.privateKey.help")));
+	_layout->addLayout(privateKeyLayout, row, 1);
+	++row;
+	_layout->addWidget(
+		new QLabel(obs_module_text(
+			"AdvSceneSwitcher.mqttConnection.verifyServerCert")),
+		row, 0);
+	_layout->addWidget(_verifyServerCert, row, 1);
 	++row;
 	_layout->addWidget(new QLabel(
 		obs_module_text("AdvSceneSwitcher.mqttConnection.topics")));
@@ -412,6 +491,10 @@ bool MqttConnectionSettingsDialog::AskForSettings(QWidget *parent,
 	connection._uri = dialog._uri->text().toStdString();
 	connection._username = dialog._username->text().toStdString();
 	connection._password = dialog._password->text().toStdString();
+	connection._trustStore = dialog._trustStore->GetPath().toStdString();
+	connection._keyStore = dialog._keyStore->GetPath().toStdString();
+	connection._privateKey = dialog._privateKey->GetPath().toStdString();
+	connection._verifyServerCert = dialog._verifyServerCert->isChecked();
 	connection._topics = dialog._topics->GetTopics();
 	connection._qos = dialog._topics->GetQoS();
 	connection._connectOnStart = dialog._connectOnStart->isChecked();
@@ -455,6 +538,10 @@ void MqttConnectionSettingsDialog::TestConnection()
 	connection->_uri = _uri->text().toStdString();
 	connection->_username = _username->text().toStdString();
 	connection->_password = _password->text().toStdString();
+	connection->_trustStore = _trustStore->GetPath().toStdString();
+	connection->_keyStore = _keyStore->GetPath().toStdString();
+	connection->_privateKey = _privateKey->GetPath().toStdString();
+	connection->_verifyServerCert = _verifyServerCert->isChecked();
 	connection->_topics = _topics->GetTopics();
 	connection->_qos = _topics->GetQoS();
 	connection->_connectOnStart = false;
