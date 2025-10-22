@@ -242,7 +242,7 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 	  _keyFrameInterval(new VariableSpinBox()),
 	  _streamKey(new VariableLineEdit(this)),
 	  _serviceName(new VariableLineEdit(this)),
-	  _currentService(new AutoUpdateTooltipLabel(
+	  _currentService(new AutoUpdateHelpIcon(
 		  this,
 		  []() {
 			  QString formatString = obs_module_text(
@@ -254,13 +254,6 @@ MacroConditionStreamEdit::MacroConditionStreamEdit(
 {
 	_keyFrameInterval->setMinimum(0);
 	_keyFrameInterval->setMaximum(25);
-
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	_currentService->setPixmap(pixmap);
 
 	_streamKey->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 

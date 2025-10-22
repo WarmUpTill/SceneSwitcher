@@ -404,9 +404,8 @@ TempVariableSelection::TempVariableSelection(QWidget *parent)
 	: QWidget(parent),
 	  _selection(new FilterComboBox(
 		  this, obs_module_text("AdvSceneSwitcher.tempVar.select"))),
-	  _info(new AutoUpdateTooltipLabel(this, [this]() {
-		  return SetupInfoLabel();
-	  }))
+	  _info(new AutoUpdateHelpIcon(this,
+				       [this]() { return SetupInfoLabel(); }))
 
 {
 	MacroEdit *edit = findMacroEditParent(parent);
@@ -416,12 +415,6 @@ TempVariableSelection::TempVariableSelection(QWidget *parent)
 		_macroEdits.push_back(edit);
 	}
 
-	QString path = GetThemeTypeName() == "Light"
-			       ? ":/res/images/help.svg"
-			       : ":/res/images/help_light.svg";
-	QIcon icon(path);
-	QPixmap pixmap = icon.pixmap(QSize(16, 16));
-	_info->setPixmap(pixmap);
 	_info->hide();
 
 	_selection->setSizeAdjustPolicy(QComboBox::AdjustToContents);
