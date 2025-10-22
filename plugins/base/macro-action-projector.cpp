@@ -250,6 +250,10 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	  _regex(new RegexConfigWidget(this)),
 	  _layout(new QHBoxLayout(this))
 {
+	// The obs_frontend_open_projector() function does not seem to support
+	// scenes of secondary canvases
+	_scenes->LockToMainCanvas();
+
 	populateActionSelection(_actions);
 	populateWindowTypes(_windowTypes);
 	populateSelectionTypes(_types);
@@ -396,26 +400,29 @@ void MacroActionProjectorEdit::SetWidgetVisibility()
 		return;
 	}
 
-	_projectorWindowName->setVisible(_entryData->_action ==
+	const auto &action = _entryData->_action;
+	const auto &type = _entryData->_type;
+
+	_projectorWindowName->setVisible(action ==
 					 MacroActionProjector::Action::CLOSE);
-	_regex->setVisible(_entryData->_action ==
-			   MacroActionProjector::Action::CLOSE);
-	_types->setVisible(_entryData->_action ==
-			   MacroActionProjector::Action::OPEN);
-	_windowTypes->setVisible(_entryData->_action ==
-				 MacroActionProjector::Action::OPEN);
-	_scenes->setVisible(
-		_entryData->_action == MacroActionProjector::Action::OPEN &&
-		_entryData->_type == MacroActionProjector::Type::SCENE);
-	_sources->setVisible(
-		_entryData->_action == MacroActionProjector::Action::OPEN &&
-		_entryData->_type == MacroActionProjector::Type::SOURCE);
-	_monitors->setVisible(_entryData->_action ==
-				      MacroActionProjector::Action::OPEN &&
+	_regex->setVisible(action == MacroActionProjector::Action::CLOSE);
+	_types->setVisible(action == MacroActionProjector::Action::OPEN);
+	_windowTypes->setVisible(action == MacroActionProjector::Action::OPEN);
+	_scenes->setVisible(action == MacroActionProjector::Action::OPEN &&
+			    type == MacroActionProjector::Type::SCENE);
+	_sources->setVisible(action == MacroActionProjector::Action::OPEN &&
+			     type == MacroActionProjector::Type::SOURCE);
+	_monitors->setVisible(action == MacroActionProjector::Action::OPEN &&
 			      _entryData->_fullscreen);
 
 	adjustSize();
 	updateGeometry();
+
+	if (action == MacroActionProjector::Action::CLOSE) {
+		RemoveStretchIfPresent(_layout);
+	} else {
+		AddStretchIfNecessary(_layout);
+	}
 }
 
 } // namespace advss

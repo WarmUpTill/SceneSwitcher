@@ -46,7 +46,7 @@ public:
 				    bool previous = false, bool current = false,
 				    bool preview = false);
 	EXPORT void SetScene(const SceneSelection &);
-	void LockToMainCanvas();
+	EXPORT void LockToMainCanvas();
 
 protected:
 	void showEvent(QShowEvent *event) override;
