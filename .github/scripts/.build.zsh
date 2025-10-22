@@ -253,12 +253,8 @@ ${_usage_host:-}"
       macos-*)
         if (( ${+CI} )) typeset -gx NSUnbufferedIO=YES
 
-        local openssl_lib_dir="${advss_deps_path}/openssl-combined/"
-        local openssl_include_dir="${advss_deps_path}/openssl/include"
-
         cmake_args+=(
-          -DOPENSSL_INCLUDE_DIR="${openssl_include_dir}"
-          -DOPENSSL_LIBRARIES="${openssl_lib_dir}/libcrypto.a;${openssl_lib_dir}/libssl.a"
+          -DCMAKE_PREFIX_PATH="${advss_deps_path}"
           --preset ${_preset}
         )
 

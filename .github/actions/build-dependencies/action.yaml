@@ -22,7 +22,7 @@ runs:
     - name: Setup cmake
       uses: jwlawson/actions-setup-cmake@v1.13
       with:
-        cmake-version: '3.28.x'
+        cmake-version: '3.x.x'
 
     - name: Restore cached dependencies
       id: restore-cache

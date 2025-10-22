@@ -15,13 +15,15 @@ if(NOT TARGET httplib)
                    EXCLUDE_FROM_ALL)
 endif()
 
-if(NOT OPENSSL_INCLUDE_DIR OR NOT OPENSSL_LIBRARIES)
-  find_package(OpenSSL)
-  if(NOT OPENSSL_FOUND)
-    message(WARNING "OpenSSL not found!\n"
-                    "Twitch support will be disabled!\n\n")
-    return()
-  endif()
+if(OS_MACOS)
+  set(OPENSSL_USE_STATIC_LIBS
+      ON
+      CACHE BOOL "Use static OpenSSL" FORCE)
+endif()
+find_package(OpenSSL)
+if(NOT OPENSSL_FOUND)
+  message(WARNING "OpenSSL not found!\n" "Twitch support will be disabled!\n\n")
+  return()
 endif()
 
 find_package(ZLIB)

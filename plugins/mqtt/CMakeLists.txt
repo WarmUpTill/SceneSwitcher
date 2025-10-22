@@ -3,6 +3,13 @@ project(advanced-scene-switcher-mqtt)
 
 # --- Check paho.mqtt.cpp requirements ---
 
+if(OS_MACOS)
+  set(OPENSSL_USE_STATIC_LIBS
+      ON
+      CACHE BOOL "Use static OpenSSL" FORCE)
+endif()
+find_package(OpenSSL)
+
 find_package(PahoMqttCpp)
 if(NOT PahoMqttCpp_FOUND)
   message(WARNING "PahoMqttCpp not found!\n"

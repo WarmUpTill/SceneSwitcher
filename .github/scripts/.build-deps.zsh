@@ -394,8 +394,11 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         popd
 
-        pushd ${advss_dep_path}
         log_info "Prepare openssl ..."
+        rm -rf ${advss_dep_path}/openssl ${advss_dep_path}/openssl_build
+        mkdir ${advss_dep_path}/openssl_build
+        pushd ${advss_dep_path}/openssl_build
+
         rm -rf openssl
         git clone https://github.com/openssl/openssl.git --branch openssl-3.1.2 --depth 1
         mv openssl openssl_x86
@@ -403,25 +406,27 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         log_info "Building openssl x86 ..."
         export MACOSX_DEPLOYMENT_TARGET=10.9
-        cd openssl_x86
-        ./Configure darwin64-x86_64-cc shared
-        make
+        pushd openssl_x86
+        ./Configure darwin64-x86_64-cc no-shared no-module no-zlib --prefix=${advss_dep_path}
+        make -j$(nproc)
+        popd
 
         log_info "Building openssl arm ..."
         export MACOSX_DEPLOYMENT_TARGET=10.15
-        cd ../openssl_arm
-        ./Configure enable-rc5 zlib darwin64-arm64-cc no-asm
-        make
+        pushd openssl_arm
+        ./Configure enable-rc5 darwin64-arm64-cc no-shared no-module no-asm no-zlib --prefix=${advss_dep_path}
+        make -j$(nproc)
+
+        log_info "Install openssl ..."
+        make install
+        popd
 
         log_info "Combine arm and x86 openssl binaries ..."
-        cd ..
-        mkdir openssl-combined
-        lipo -create openssl_x86/libcrypto.a openssl_arm/libcrypto.a -output openssl-combined/libcrypto.a
-        lipo -create openssl_x86/libssl.a openssl_arm/libssl.a -output openssl-combined/libssl.a
+        lipo -create openssl_x86/libcrypto.a openssl_arm/libcrypto.a -output ${advss_dep_path}/lib/libcrypto.a
+        lipo -create openssl_x86/libssl.a openssl_arm/libssl.a -output ${advss_dep_path}/lib/libssl.a
 
         log_info "Clean up openssl dir ..."
-        mv openssl_x86 openssl
-        rm -rf openssl_arm
+        rm -rf openssl_x86 openssl_arm
         popd
 
         pushd ${project_root}/deps/libusb
@@ -439,14 +444,16 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         mkdir ${project_root}/deps/libusb/out_x86
         ./autogen.sh
         ./configure --host=x86_64-apple-darwin --prefix=${advss_dep_path}
-        make && make install
+        make -j$(nproc)
+        make install
 
         log_info "Configure libusb arm ..."
         make clean
         rm -r ${project_root}/deps/libusb/out_x86
         mkdir ${project_root}/deps/libusb/out_x86
         ./configure --host=aarch64-apple-darwin --prefix=${project_root}/deps/libusb/out_x86
-        make && make install
+        make -j$(nproc)
+        make install
 
         log_info "Building libusb arm ..."
         make clean
@@ -459,7 +466,8 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         export MACOSX_DEPLOYMENT_TARGET=10.15
         mkdir ${project_root}/deps/libusb/out_arm
         ./configure --host=aarch64-apple-darwin --prefix=${project_root}/deps/libusb/out_arm
-        make && make install
+        make -j$(nproc)
+        make install
 
         log_info "Combine arm and x86 libusb binaries ..."
         lipo -create ${project_root}/deps/libusb/out_x86/lib/libusb-1.0.0.dylib \
@@ -491,8 +499,8 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DPAHO_BUILD_SHARED=OFF
           -DPAHO_BUILD_STATIC=ON
           -DPAHO_WITH_MQTT_C=ON
-          -DOPENSSL_ROOT_DIR="${advss_dep_path}"
-          -DPAHO_WITH_SSL=OFF # TODO: figure out linking issues with openssl
+          -DPAHO_WITH_SSL=ON
+          -DOPENSSL_USE_STATIC_LIBS=ON
         )
 
         pushd ${mqtt_dir}
