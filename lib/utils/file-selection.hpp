@@ -22,6 +22,7 @@ public:
 		      QWidget *parent = 0);
 	EXPORT void SetPath(const StringVariable &);
 	EXPORT void SetPath(const QString &);
+	EXPORT QString GetPath() const;
 	EXPORT QPushButton *Button() { return _browseButton; }
 	EXPORT static QString ValidPathOrDesktop(const QString &path);
 
