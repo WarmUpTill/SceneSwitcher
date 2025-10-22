@@ -18,5 +18,7 @@ if (( ! ${+commands[brew]} )) {
 }
 
 brew bundle --file ${SCRIPT_HOME}/.Brewfile
-rehash
+# Workaround to make sure locally built openssl is picked up by cmake
+brew uninstall --ignore-dependencies openssl@3 || true
+rehash || true
 log_group
