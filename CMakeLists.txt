@@ -34,6 +34,11 @@ include(cmake/common/get_git_revision_description.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 git_describe(GIT_TAG)
 
+# Helper for OpenSSL
+if(OS_WINDOWS)
+  include(cmake/windows/wingetssl.cmake)
+endif()
+
 if(${GIT_TAG} STREQUAL "GIT-NOTFOUND")
   set(GIT_TAG ${PROJECT_VERSION})
 endif()
