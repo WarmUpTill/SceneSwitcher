@@ -72,7 +72,7 @@ private:
 	enum class SegmentType { NONE, CONDITION, ACTION, ELSEACTION };
 	SegmentType GetType() const;
 	int GetIdx() const;
-	void PostLoad(int idx, SegmentType, Macro *);
+	void PostLoad(int idx, SegmentType, const std::weak_ptr<Macro> &);
 
 	std::string _id = "";
 	std::weak_ptr<MacroSegment> _segment;

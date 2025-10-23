@@ -299,9 +299,17 @@ void TempVariableRef::Save(obs_data_t *obj, Macro *macro,
 	obs_data_set_obj(obj, name, data);
 }
 
-void TempVariableRef::Load(obs_data_t *obj, Macro *macro, const char *name)
+void TempVariableRef::Load(obs_data_t *obj, Macro *macroPtr, const char *name)
 {
-	if (!macro) {
+	std::weak_ptr<Macro> macro;
+	for (const auto &macroShared : GetMacros()) {
+		if (macroShared.get() == macroPtr) {
+			macro = macroShared;
+			break;
+		}
+	}
+
+	if (macro.expired()) {
 		_segment.reset();
 		return;
 	}
@@ -324,10 +332,17 @@ void TempVariableRef::Load(obs_data_t *obj, Macro *macro, const char *name)
 	});
 }
 
-void TempVariableRef::PostLoad(int idx, SegmentType type, Macro *macro)
+void TempVariableRef::PostLoad(int idx, SegmentType type,
+			       const std::weak_ptr<Macro> &weakMacro)
 {
+	auto childMacro = weakMacro.lock();
+	if (!childMacro) {
+		return;
+	}
+
+	Macro *macro = nullptr;
 	for (int i = 0; i < _depth; i++) {
-		macro = getParentMacro(macro);
+		macro = getParentMacro(childMacro.get());
 	}
 
 	if (!macro) {
