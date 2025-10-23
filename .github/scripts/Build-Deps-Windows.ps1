@@ -237,6 +237,21 @@ function Build {
         "-DPAHO_WITH_SSL=ON"
     )
 
+    # Try to find OpenSSL installed via winget
+    $pf64 = Join-Path $Env:ProgramFiles "OpenSSL-Win64"
+    $pf = Join-Path $Env:ProgramFiles "OpenSSL"
+    $possibleDirs = @($pf64, $pf)
+    $opensslDir = $possibleDirs | Where-Object { Test-Path (Join-Path $_ "include\openssl\ssl.h") } | Select-Object -First 1
+
+    if ($opensslDir) {
+        Write-Host "Detected OpenSSL at: $opensslDir"
+        $MqttCmakeArgs += "-DOPENSSL_ROOT_DIR=$opensslDir"
+        $MqttCmakeArgs += "-DOPENSSL_CRYPTO_LIBRARY=$opensslDir\lib\VC\x64\MD\libcrypto.lib"
+        $MqttCmakeArgs += "-DOPENSSL_SSL_LIBRARY=$opensslDir\lib\VC\x64\MD\libssl.lib"
+    } else {
+        Write-Warning "OpenSSL not found - maybe cmake will find it ..."
+    }
+
     Log-Information "Configuring paho.mqtt.cpp..."
     Invoke-External cmake -S ${MqttPath} -B ${MqttBuildPath} @MqttCmakeArgs
 
