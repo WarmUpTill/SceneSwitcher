@@ -199,7 +199,17 @@ std::chrono::high_resolution_clock::time_point GetLastSceneChangeTime()
 
 OBSWeakSource GetCurrentScene()
 {
-	return switcher->currentScene;
+	if (switcher->currentScene) {
+		return switcher->currentScene;
+	}
+
+	// If there wasn't any scene switch yet switcher->currentScene will be
+	// null and we must use obs_frontend_get_current_scene() instead
+	OBSSourceAutoRelease currentSceneSource =
+		obs_frontend_get_current_scene();
+	OBSWeakSourceAutoRelease currentSceneWeakSource =
+		obs_source_get_weak_source(currentSceneSource);
+	return currentSceneWeakSource.Get();
 }
 
 OBSWeakSource GetPreviousScene()
