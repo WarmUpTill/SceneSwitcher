@@ -239,22 +239,26 @@ void SceneSelection::ResolveVariables()
 	_type = Type::SCENE;
 }
 
-SceneSelection SceneSelectionWidget::CurrentSelection()
+static obs_weak_canvas_t *getWeakRefToMainCanvas()
 {
-	SceneSelection s;
-
-	static auto mainCanvas = obs_get_main_canvas();
-	static auto mainCanvasWeak = obs_canvas_get_weak_canvas(mainCanvas);
+	static auto canvas = obs_get_main_canvas();
+	static auto weakCanvas = obs_canvas_get_weak_canvas(canvas);
 	[[maybe_unused]] static const bool _ = []() {
 		// Let's just hope we don't have to deal with selecting scenes
 		// when the OBS main canvas gets deleted and release the
 		// references here already to avoid reporting leaks on shutdown
-		obs_canvas_release(mainCanvas);
-		obs_weak_canvas_release(mainCanvasWeak);
+		obs_canvas_release(canvas);
+		obs_weak_canvas_release(weakCanvas);
 		return true;
 	}();
+	return weakCanvas;
+}
 
-	s._canvas = _forceMainCanvas ? OBSWeakCanvas(mainCanvasWeak)
+SceneSelection SceneSelectionWidget::CurrentSelection()
+{
+	SceneSelection s;
+
+	s._canvas = _forceMainCanvas ? OBSWeakCanvas(getWeakRefToMainCanvas())
 				     : _canvas->GetCanvas();
 
 	const int idx = _scenes->currentIndex();
@@ -342,6 +346,10 @@ void SceneSelectionWidget::Reset()
 
 void SceneSelectionWidget::PopulateSceneSelection(obs_weak_canvas_t *canvas)
 {
+	if (_forceMainCanvas) {
+		canvas = getWeakRefToMainCanvas();
+	}
+
 	_scenes->clear();
 	if ((_current || _previous)) {
 		const bool isMain = IsMainCanvas(canvas);
@@ -418,7 +426,7 @@ SceneSelectionWidget::SceneSelectionWidget(QWidget *parent, bool variables,
 	layout->setContentsMargins(0, 0, 0, 0);
 
 	if (GetCanvasCount() <= 1) {
-		_canvas->hide();
+		LockToMainCanvas();
 	}
 
 	Resize();
