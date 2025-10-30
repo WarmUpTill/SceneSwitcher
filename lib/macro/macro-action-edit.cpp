@@ -117,7 +117,7 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		*_entryData = MacroActionFactory::Create(id, macro);
 		(*_entryData)->SetIndex(idx);
 		(*_entryData)->PostLoad();
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 	}
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),

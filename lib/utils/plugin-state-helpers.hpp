@@ -14,7 +14,7 @@ EXPORT void AddPostLoadStep(std::function<void()>);
 EXPORT void AddIntervalResetStep(std::function<void()>);
 void RunSaveSteps(obs_data_t *);
 void RunLoadSteps(obs_data_t *);
-EXPORT void RunPostLoadSteps();
+EXPORT void RunAndClearPostLoadSteps();
 void ClearPostLoadSteps();
 
 EXPORT void AddPluginInitStep(std::function<void()>);

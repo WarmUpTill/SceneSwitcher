@@ -459,7 +459,7 @@ void SwitcherData::LoadSettings(obs_data_t *obj)
 	LoadHotkeys(obj);
 	LoadUISettings(obj);
 
-	RunPostLoadSteps();
+	RunAndClearPostLoadSteps();
 
 	// Reset on startup and scene collection change
 	ResetLastOpenedTab();

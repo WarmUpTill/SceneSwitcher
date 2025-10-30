@@ -239,7 +239,7 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		(*_entryData)->SetIndex(idx);
 		(*_entryData)->SetLogicType(logic);
 		(*_entryData)->PostLoad();
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 	}
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
