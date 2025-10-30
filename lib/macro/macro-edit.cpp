@@ -1080,7 +1080,7 @@ void MacroEdit::AddMacroAction(Macro *macro, int idx, const std::string &id,
 			macro->Actions().at(idx)->Load(data);
 		}
 		macro->Actions().at(idx)->PostLoad();
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 		macro->UpdateActionIndices();
 		ui->actionsList->Insert(
 			idx,
@@ -1383,7 +1383,7 @@ void MacroEdit::AddMacroElseAction(Macro *macro, int idx, const std::string &id,
 			macro->ElseActions().at(idx)->Load(data);
 		}
 		macro->ElseActions().at(idx)->PostLoad();
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 		macro->UpdateElseActionIndices();
 		ui->elseActionsList->Insert(
 			idx, new MacroActionEdit(
@@ -1583,7 +1583,7 @@ void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,
 			macro->Conditions().at(idx)->Load(data);
 		}
 		macro->Conditions().at(idx)->PostLoad();
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 		(*cond)->SetLogicType(logic);
 		macro->UpdateConditionIndices();
 		ui->conditionsList->Insert(

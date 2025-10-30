@@ -113,12 +113,13 @@ void RunLoadSteps(obs_data_t *obj)
 	}
 }
 
-void RunPostLoadSteps()
+void RunAndClearPostLoadSteps()
 {
 	std::lock_guard<std::mutex> lock(postLoadMutex);
 	for (const auto &func : getPostLoadSteps()) {
 		func();
 	}
+	getPostLoadSteps().clear();
 }
 
 void ClearPostLoadSteps()

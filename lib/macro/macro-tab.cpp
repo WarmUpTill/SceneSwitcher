@@ -416,7 +416,7 @@ void AdvSceneSwitcher::ImportMacros()
 		OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
 		auto macro = std::make_shared<Macro>();
 		macro->Load(array_obj);
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 
 		if (macroNameExists(macro->Name()) &&
 		    !ResolveMacroImportNameConflict(macro)) {
@@ -444,7 +444,7 @@ void AdvSceneSwitcher::ImportMacros()
 	for (const auto &macro : importedMacros) {
 		macro->PostLoad();
 	}
-	RunPostLoadSteps();
+	RunAndClearPostLoadSteps();
 
 	ui->macros->Reset(GetMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
@@ -752,7 +752,7 @@ void AdvSceneSwitcher::CopyMacro()
 	newMacro->Load(data);
 	newMacro->PostLoad();
 	newMacro->SetName(name);
-	RunPostLoadSteps();
+	RunAndClearPostLoadSteps();
 	Macro::PrepareMoveToGroup(macro->Parent(), newMacro);
 
 	ui->macros->Add(newMacro, macro);

@@ -113,7 +113,7 @@ void ActionQueue::Add(const std::shared_ptr<MacroAction> &action)
 		action->Save(data);
 		copy->Load(data);
 		copy->PostLoad();
-		RunPostLoadSteps();
+		RunAndClearPostLoadSteps();
 		copy->ResolveVariablesToFixedValues();
 		_actions.emplace_back(copy);
 	} else {
