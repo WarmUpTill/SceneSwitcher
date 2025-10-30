@@ -75,7 +75,7 @@ private:
 	void PostLoad(int idx, SegmentType, const std::weak_ptr<Macro> &);
 
 	std::string _id = "";
-	std::weak_ptr<MacroSegment> _segment;
+	std::weak_ptr<MacroSegment> _segment = {};
 	int _depth = 0;
 
 	friend TempVariable;

@@ -202,6 +202,8 @@ static void appendNestedMacros(std::deque<std::shared_ptr<Macro>> &macros,
 			dynamic_cast<MacroActionMacro *>(action.get());
 		if (nestedMacroAction) {
 			macros.push_back(nestedMacroAction->_nestedMacro);
+			appendNestedMacros(
+				macros, nestedMacroAction->_nestedMacro.get());
 		}
 	}
 	for (const auto &action : macro->ElseActions()) {
@@ -209,6 +211,8 @@ static void appendNestedMacros(std::deque<std::shared_ptr<Macro>> &macros,
 			dynamic_cast<MacroActionMacro *>(action.get());
 		if (nestedMacroAction) {
 			macros.push_back(nestedMacroAction->_nestedMacro);
+			appendNestedMacros(
+				macros, nestedMacroAction->_nestedMacro.get());
 		}
 	}
 }
@@ -301,8 +305,13 @@ void TempVariableRef::Save(obs_data_t *obj, Macro *macro,
 
 void TempVariableRef::Load(obs_data_t *obj, Macro *macroPtr, const char *name)
 {
+	std::deque<std::shared_ptr<Macro>> allMacros = GetMacros();
+	for (const auto &topLevelMacro : GetMacros()) {
+		appendNestedMacros(allMacros, topLevelMacro.get());
+	}
+
 	std::weak_ptr<Macro> macro;
-	for (const auto &macroShared : GetMacros()) {
+	for (const auto &macroShared : allMacros) {
 		if (macroShared.get() == macroPtr) {
 			macro = macroShared;
 			break;
@@ -340,7 +349,7 @@ void TempVariableRef::PostLoad(int idx, SegmentType type,
 		return;
 	}
 
-	Macro *macro = nullptr;
+	auto macro = childMacro.get();
 	for (int i = 0; i < _depth; i++) {
 		macro = getParentMacro(childMacro.get());
 	}
