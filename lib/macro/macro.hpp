@@ -217,7 +217,6 @@ private:
 
 void LoadMacros(obs_data_t *obj);
 void SaveMacros(obs_data_t *obj);
-std::deque<std::shared_ptr<Macro>> &GetMacros();
 bool CheckMacros();
 bool RunMacros();
 void StopAllMacros();
