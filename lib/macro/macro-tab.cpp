@@ -150,7 +150,7 @@ static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
 	subitems.reserve(group->GroupSize());
 
 	// Find all subitems
-	auto allMacros = GetMacros();
+	auto allMacros = GetTopLevelMacros();
 	for (auto it = allMacros.begin(); it < allMacros.end(); it++) {
 		if ((*it)->Name() != group->Name()) {
 			continue;
@@ -410,11 +410,15 @@ void AdvSceneSwitcher::ImportMacros()
 	int groupSize = 0;
 	std::shared_ptr<Macro> group;
 	std::vector<std::shared_ptr<Macro>> importedMacros;
+	auto &tempMacros = GetTemporaryMacros();
 
 	auto lock = LockContext();
 	for (size_t i = 0; i < count; i++) {
+		tempMacros.clear();
+
 		OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
 		auto macro = std::make_shared<Macro>();
+		tempMacros.emplace_back(macro);
 		macro->Load(array_obj);
 		RunAndClearPostLoadSteps();
 
@@ -425,7 +429,7 @@ void AdvSceneSwitcher::ImportMacros()
 		}
 
 		importedMacros.emplace_back(macro);
-		GetMacros().emplace_back(macro);
+		GetTopLevelMacros().emplace_back(macro);
 		if (groupSize > 0 && !macro->IsGroup()) {
 			Macro::PrepareMoveToGroup(group, macro);
 			groupSize--;
@@ -445,8 +449,9 @@ void AdvSceneSwitcher::ImportMacros()
 		macro->PostLoad();
 	}
 	RunAndClearPostLoadSteps();
+	tempMacros.clear();
 
-	ui->macros->Reset(GetMacros(),
+	ui->macros->Reset(GetTopLevelMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
 	disableAddButtonHighlight();
 }
@@ -633,7 +638,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 {
 	ui->macros->installEventFilter(this);
 
-	if (GetMacros().size() == 0 && !switcher->disableHints) {
+	if (GetTopLevelMacros().size() == 0 && !switcher->disableHints) {
 		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
 	}
 
@@ -641,7 +646,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 					   {ui->macroUp, ui->macroDown}});
 	ui->macroControlLayout->addWidget(macroControls);
 
-	ui->macros->Reset(GetMacros(),
+	ui->macros->Reset(GetTopLevelMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
 		SLOT(MacroSelectionChanged()));

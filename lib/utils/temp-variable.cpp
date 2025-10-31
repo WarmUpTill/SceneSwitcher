@@ -190,33 +190,6 @@ static bool isMatchingNestedMacroAction(MacroAction *action, const Macro *macro)
 	return nestedMacroAction->_nestedMacro.get() == macro;
 }
 
-static void appendNestedMacros(std::deque<std::shared_ptr<Macro>> &macros,
-			       Macro *macro)
-{
-	if (!macro) {
-		return;
-	}
-
-	for (const auto &action : macro->Actions()) {
-		const auto nestedMacroAction =
-			dynamic_cast<MacroActionMacro *>(action.get());
-		if (nestedMacroAction) {
-			macros.push_back(nestedMacroAction->_nestedMacro);
-			appendNestedMacros(
-				macros, nestedMacroAction->_nestedMacro.get());
-		}
-	}
-	for (const auto &action : macro->ElseActions()) {
-		const auto nestedMacroAction =
-			dynamic_cast<MacroActionMacro *>(action.get());
-		if (nestedMacroAction) {
-			macros.push_back(nestedMacroAction->_nestedMacro);
-			appendNestedMacros(
-				macros, nestedMacroAction->_nestedMacro.get());
-		}
-	}
-}
-
 static Macro *getParentMacro(const Macro *targetMacro,
 			     const std::vector<Macro *> &macros)
 {
@@ -268,7 +241,7 @@ static Macro *getParentMacro(const Macro *targetMacro,
 static Macro *getParentMacro(const Macro *macro)
 {
 	std::vector<Macro *> macros;
-	for (const auto &macro : GetMacros()) {
+	for (const auto &macro : GetTopLevelMacros()) {
 		macros.emplace_back(macro.get());
 	}
 	return getParentMacro(macro, macros);
@@ -305,13 +278,9 @@ void TempVariableRef::Save(obs_data_t *obj, Macro *macro,
 
 void TempVariableRef::Load(obs_data_t *obj, Macro *macroPtr, const char *name)
 {
-	std::deque<std::shared_ptr<Macro>> allMacros = GetMacros();
-	for (const auto &topLevelMacro : GetMacros()) {
-		appendNestedMacros(allMacros, topLevelMacro.get());
-	}
-
+	std::deque<std::shared_ptr<Macro>> macros = GetAllMacros();
 	std::weak_ptr<Macro> macro;
-	for (const auto &macroShared : allMacros) {
+	for (const auto &macroShared : macros) {
 		if (macroShared.get() == macroPtr) {
 			macro = macroShared;
 			break;
