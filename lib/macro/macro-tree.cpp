@@ -1184,7 +1184,7 @@ bool MacroTree::SelectionEmpty() const
 
 bool MacroTree::GroupsExist() const
 {
-	for (const auto &macro : GetMacros()) {
+	for (const auto &macro : GetTopLevelMacros()) {
 		if (macro->IsGroup()) {
 			return true;
 		}
@@ -1306,7 +1306,7 @@ void MacroTree::UngroupSelectedGroups()
 
 void MacroTree::ExpandAll()
 {
-	for (const auto &macro : GetMacros()) {
+	for (const auto &macro : GetTopLevelMacros()) {
 		if (!macro->IsGroup()) {
 			continue;
 		}
@@ -1316,7 +1316,7 @@ void MacroTree::ExpandAll()
 
 void MacroTree::CollapseAll()
 {
-	for (const auto &macro : GetMacros()) {
+	for (const auto &macro : GetTopLevelMacros()) {
 		if (!macro->IsGroup()) {
 			continue;
 		}

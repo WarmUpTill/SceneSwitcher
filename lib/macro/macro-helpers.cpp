@@ -1,5 +1,6 @@
 #include "macro-helpers.hpp"
 #include "macro.hpp"
+#include "macro-action-macro.hpp"
 #include "plugin-state-helpers.hpp"
 
 namespace advss {
@@ -7,6 +8,58 @@ namespace advss {
 static std::atomic_bool abortMacroWait = {false};
 static std::atomic_bool macroSceneSwitched = {false};
 static std::atomic_int shutdownConditionCount = {0};
+
+static void appendNestedMacros(std::deque<std::shared_ptr<Macro>> &macros,
+			       Macro *macro)
+{
+	if (!macro) {
+		return;
+	}
+
+	const auto iterate = [&macros](const std::deque<
+				       std::shared_ptr<MacroAction>> &actions) {
+		for (const auto &action : actions) {
+			const auto nestedMacroAction =
+				dynamic_cast<MacroActionMacro *>(action.get());
+			if (nestedMacroAction) {
+				macros.push_back(
+					nestedMacroAction->_nestedMacro);
+				appendNestedMacros(
+					macros,
+					nestedMacroAction->_nestedMacro.get());
+			}
+		}
+	};
+
+	iterate(macro->Actions());
+	iterate(macro->ElseActions());
+}
+
+std::deque<std::shared_ptr<Macro>> &GetTopLevelMacros()
+{
+	static std::deque<std::shared_ptr<Macro>> macros;
+	return macros;
+}
+
+std::deque<std::shared_ptr<Macro>> &GetTemporaryMacros()
+{
+	static std::deque<std::shared_ptr<Macro>> tempMacros;
+	return tempMacros;
+}
+
+std::deque<std::shared_ptr<Macro>> GetAllMacros()
+{
+	auto macros = GetTopLevelMacros();
+	for (const auto &topLevelMacro : macros) {
+		appendNestedMacros(macros, topLevelMacro.get());
+	}
+	const auto &tempMacros = GetTemporaryMacros();
+	macros.insert(macros.end(), tempMacros.begin(), tempMacros.end());
+	for (const auto &topLevelMacro : tempMacros) {
+		appendNestedMacros(macros, topLevelMacro.get());
+	}
+	return macros;
+}
 
 std::optional<std::deque<std::shared_ptr<MacroAction>>>
 GetMacroActions(Macro *macro)

@@ -190,33 +190,6 @@ static bool isMatchingNestedMacroAction(MacroAction *action, const Macro *macro)
 	return nestedMacroAction->_nestedMacro.get() == macro;
 }
 
-static void appendNestedMacros(std::deque<std::shared_ptr<Macro>> &macros,
-			       Macro *macro)
-{
-	if (!macro) {
-		return;
-	}
-
-	for (const auto &action : macro->Actions()) {
-		const auto nestedMacroAction =
-			dynamic_cast<MacroActionMacro *>(action.get());
-		if (nestedMacroAction) {
-			macros.push_back(nestedMacroAction->_nestedMacro);
-			appendNestedMacros(
-				macros, nestedMacroAction->_nestedMacro.get());
-		}
-	}
-	for (const auto &action : macro->ElseActions()) {
-		const auto nestedMacroAction =
-			dynamic_cast<MacroActionMacro *>(action.get());
-		if (nestedMacroAction) {
-			macros.push_back(nestedMacroAction->_nestedMacro);
-			appendNestedMacros(
-				macros, nestedMacroAction->_nestedMacro.get());
-		}
-	}
-}
-
 static Macro *getParentMacro(const Macro *targetMacro,
 			     const std::vector<Macro *> &macros)
 {
@@ -267,8 +240,10 @@ static Macro *getParentMacro(const Macro *targetMacro,
 
 static Macro *getParentMacro(const Macro *macro)
 {
+	const auto &topLevelMacros = GetTopLevelMacros();
 	std::vector<Macro *> macros;
-	for (const auto &macro : GetMacros()) {
+	macros.reserve(topLevelMacros.size());
+	for (const auto &macro : topLevelMacros) {
 		macros.emplace_back(macro.get());
 	}
 	return getParentMacro(macro, macros);
@@ -305,13 +280,9 @@ void TempVariableRef::Save(obs_data_t *obj, Macro *macro,
 
 void TempVariableRef::Load(obs_data_t *obj, Macro *macroPtr, const char *name)
 {
-	std::deque<std::shared_ptr<Macro>> allMacros = GetMacros();
-	for (const auto &topLevelMacro : GetMacros()) {
-		appendNestedMacros(allMacros, topLevelMacro.get());
-	}
-
+	const auto macros = GetAllMacros();
 	std::weak_ptr<Macro> macro;
-	for (const auto &macroShared : allMacros) {
+	for (const auto &macroShared : macros) {
 		if (macroShared.get() == macroPtr) {
 			macro = macroShared;
 			break;
@@ -351,7 +322,7 @@ void TempVariableRef::PostLoad(int idx, SegmentType type,
 
 	auto macro = childMacro.get();
 	for (int i = 0; i < _depth; i++) {
-		macro = getParentMacro(childMacro.get());
+		macro = getParentMacro(macro);
 	}
 
 	if (!macro) {
@@ -495,15 +466,9 @@ void TempVariableSelection::MacroSegmentsChanged()
 	SetVariable(currentSelection);
 }
 
-void TempVariableSelection::SegmentTempVarsChanged(MacroSegment *segment)
+void TempVariableSelection::SegmentTempVarsChanged(MacroSegment *)
 {
-	const auto currentSegment = GetSegment();
-	const auto currentMacro = currentSegment ? currentSegment->GetMacro()
-						 : nullptr;
-	const auto changeMacro = segment ? segment->GetMacro() : nullptr;
-	if (currentMacro == changeMacro) {
-		MacroSegmentsChanged();
-	}
+	MacroSegmentsChanged();
 }
 
 void TempVariableSelection::HighlightChanged(int idx)

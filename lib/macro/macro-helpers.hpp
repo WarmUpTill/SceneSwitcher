@@ -18,7 +18,9 @@ class Macro;
 class MacroAction;
 class MacroCondition;
 
-EXPORT std::deque<std::shared_ptr<Macro>> &GetMacros();
+EXPORT std::deque<std::shared_ptr<Macro>> &GetTopLevelMacros();
+std::deque<std::shared_ptr<Macro>> &GetTemporaryMacros();
+EXPORT std::deque<std::shared_ptr<Macro>> GetAllMacros();
 
 EXPORT std::optional<std::deque<std::shared_ptr<MacroAction>>>
 GetMacroActions(Macro *);
