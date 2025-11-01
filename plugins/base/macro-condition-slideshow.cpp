@@ -252,6 +252,7 @@ MacroConditionSlideshowEdit::MacroConditionSlideshowEdit(
 	setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.slideshow.updateInterval.tooltip"));
 	_index->setMinimum(1);
+	_index->setMaximum(9999);
 	populateConditionSelection(_conditions);
 
 	QWidget::connect(_conditions, SIGNAL(currentIndexChanged(int)), this,
