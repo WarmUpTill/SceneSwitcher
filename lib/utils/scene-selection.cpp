@@ -334,6 +334,7 @@ static QStringList getCanvasScenesList(obs_weak_canvas_t *weakCanvas)
 
 	QStringList list;
 	obs_canvas_enum_scenes(canvas, enumCanvasScenes, &list);
+	list.sort();
 	return list;
 }
 
