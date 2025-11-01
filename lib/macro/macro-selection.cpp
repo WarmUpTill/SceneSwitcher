@@ -14,7 +14,7 @@ MacroSelection::MacroSelection(QWidget *parent)
 	: FilterComboBox(parent,
 			 obs_module_text("AdvSceneSwitcher.selectMacro"))
 {
-	for (const auto &m : GetMacros()) {
+	for (const auto &m : GetTopLevelMacros()) {
 		if (m->IsGroup()) {
 			continue;
 		}

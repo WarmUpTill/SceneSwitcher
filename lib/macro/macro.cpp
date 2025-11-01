@@ -17,8 +17,6 @@
 
 namespace advss {
 
-static std::deque<std::shared_ptr<Macro>> macros;
-
 Macro::Macro(const std::string &name) : _dockSettings(this)
 {
 	SetName(name);
@@ -59,6 +57,7 @@ Macro::CreateGroup(const std::string &name,
 
 void Macro::RemoveGroup(std::shared_ptr<Macro> group)
 {
+	auto &macros = GetTopLevelMacros();
 	auto it = std::find(macros.begin(), macros.end(), group);
 	if (it == macros.end()) {
 		return;
@@ -75,6 +74,7 @@ void Macro::RemoveGroup(std::shared_ptr<Macro> group)
 
 void Macro::PrepareMoveToGroup(Macro *group, std::shared_ptr<Macro> item)
 {
+	auto &macros = GetTopLevelMacros();
 	for (const auto &m : macros) {
 		if (m.get() == group) {
 			PrepareMoveToGroup(m, item);
@@ -1114,7 +1114,7 @@ void Macro::SetHotkeysDesc() const
 void SaveMacros(obs_data_t *obj)
 {
 	obs_data_array_t *macroArray = obs_data_array_create();
-	for (const auto &m : macros) {
+	for (const auto &m : GetTopLevelMacros()) {
 		obs_data_t *array_obj = obs_data_create();
 
 		m->Save(array_obj);
@@ -1128,7 +1128,9 @@ void SaveMacros(obs_data_t *obj)
 
 void LoadMacros(obs_data_t *obj)
 {
+	auto &macros = GetTopLevelMacros();
 	macros.clear();
+
 	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
 	size_t count = obs_data_array_count(macroArray);
 
@@ -1178,15 +1180,10 @@ void LoadMacros(obs_data_t *obj)
 	}
 }
 
-std::deque<std::shared_ptr<Macro>> &GetMacros()
-{
-	return macros;
-}
-
 bool CheckMacros()
 {
 	bool matchFound = false;
-	for (const auto &m : macros) {
+	for (const auto &m : GetTopLevelMacros()) {
 		if (!m->ConditionsShouldBeChecked()) {
 			vblog(LOG_INFO,
 			      "skipping condition check for macro \"%s\" "
@@ -1213,7 +1210,7 @@ bool RunMacros()
 	// reordered while macros are currently being executed.
 	// For example, this can happen if a macro is performing a wait action,
 	// as the main lock will be unlocked during this time.
-	auto runPhaseMacros = macros;
+	auto runPhaseMacros = GetTopLevelMacros();
 
 	// Avoid deadlocks when opening settings window and calling frontend
 	// API functions at the same time.
@@ -1253,14 +1250,14 @@ bool RunMacros()
 
 void StopAllMacros()
 {
-	for (const auto &m : macros) {
+	for (const auto &m : GetAllMacros()) {
 		m->Stop();
 	}
 }
 
 Macro *GetMacroByName(const char *name)
 {
-	for (const auto &m : macros) {
+	for (const auto &m : GetTopLevelMacros()) {
 		if (m->Name() == name) {
 			return m.get();
 		}
@@ -1276,7 +1273,7 @@ Macro *GetMacroByQString(const QString &name)
 
 std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 {
-	for (const auto &m : macros) {
+	for (const auto &m : GetTopLevelMacros()) {
 		if (m->Name() == name) {
 			return m;
 		}
@@ -1287,7 +1284,7 @@ std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
 
 void InvalidateMacroTempVarValues()
 {
-	for (const auto &m : macros) {
+	for (const auto &m : GetTopLevelMacros()) {
 		// Do not invalidate the temp vars set during condition checks
 		// or action executions running in parallel to the "main" macro
 		// loop, as otherwise access to the information stored in those
@@ -1302,6 +1299,8 @@ void InvalidateMacroTempVarValues()
 
 std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval()
 {
+	auto &macros = GetTopLevelMacros();
+
 	if (macros.empty()) {
 		return {};
 	}
