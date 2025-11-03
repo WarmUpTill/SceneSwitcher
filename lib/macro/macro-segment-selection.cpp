@@ -73,35 +73,46 @@ void MacroSegmentSelection::MacroSegmentOrderChanged()
 }
 
 static QString GetMacroSegmentDescription(Macro *macro, int idx,
-					  bool isCondition)
+					  MacroSegmentSelection::Type type)
 {
 	if (!macro) {
 		return "";
 	}
-	if (!IsValidMacroSegmentIndex(macro, idx, isCondition)) {
+
+	MacroSegment *segment;
+
+	switch (type) {
+	case MacroSegmentSelection::Type::CONDITION:
+		if (!IsValidConditionIndex(macro, idx)) {
+			return "";
+		}
+		segment = GetMacroConditions(macro)->at(idx).get();
+		break;
+	case MacroSegmentSelection::Type::ACTION:
+		if (!IsValidActionIndex(macro, idx)) {
+			return "";
+		}
+		segment = GetMacroActions(macro)->at(idx).get();
+		break;
+	case MacroSegmentSelection::Type::ELSE_ACTION:
+		if (!IsValidElseActionIndex(macro, idx)) {
+			return "";
+		}
+		segment = GetMacroElseActions(macro)->at(idx).get();
+		break;
+	default:
 		return "";
 	}
 
-	MacroSegment *segment;
-	if (isCondition) {
-		segment = GetMacroConditions(macro)->at(idx).get();
-	} else {
-		segment = GetMacroActions(macro)->at(idx).get();
-	}
+	const auto idToName = type == MacroSegmentSelection::Type::CONDITION
+				      ? MacroConditionFactory::GetConditionName
+				      : MacroActionFactory::GetActionName;
+	const QString typeStr =
+		obs_module_text(idToName(segment->GetId()).c_str());
+	const QString description =
+		QString::fromStdString(segment->GetShortDesc());
 
-	QString description = QString::fromStdString(segment->GetShortDesc());
-	QString type;
-	if (isCondition) {
-		type = obs_module_text(MacroConditionFactory::GetConditionName(
-					       segment->GetId())
-					       .c_str());
-	} else {
-		type = obs_module_text(
-			MacroActionFactory::GetActionName(segment->GetId())
-				.c_str());
-	}
-
-	QString result = type;
+	QString result = typeStr;
 	if (!description.isEmpty()) {
 		result += ": " + description;
 	}
@@ -123,11 +134,25 @@ void MacroSegmentSelection::SetupDescription() const
 		return;
 	}
 
+	bool validIndex = false;
+	switch (_type) {
+	case Type::CONDITION:
+		validIndex = IsValidConditionIndex(_macro, index - 1);
+		break;
+	case Type::ACTION:
+		validIndex = IsValidActionIndex(_macro, index - 1);
+		break;
+	case Type::ELSE_ACTION:
+		validIndex = IsValidElseActionIndex(_macro, index - 1);
+		break;
+	default:
+		break;
+	}
+
 	QString description;
-	if (IsValidMacroSegmentIndex(_macro, index - 1,
-				     _type == Type::CONDITION)) {
-		description = GetMacroSegmentDescription(
-			_macro, index - 1, _type == Type::CONDITION);
+	if (validIndex) {
+		description =
+			GetMacroSegmentDescription(_macro, index - 1, _type);
 	} else {
 		description = obs_module_text(
 			"AdvSceneSwitcher.macroSegmentSelection.invalid");
@@ -165,8 +190,23 @@ void MacroSegmentSelection::MarkSelectedSegment()
 	if (index.GetType() == IntVariable::Type::VARIABLE) {
 		return;
 	}
-	if (!IsValidMacroSegmentIndex(_macro, index - 1,
-				      _type == Type::CONDITION)) {
+
+	bool validIndex = false;
+	switch (_type) {
+	case Type::CONDITION:
+		validIndex = IsValidConditionIndex(_macro, index - 1);
+		break;
+	case Type::ACTION:
+		validIndex = IsValidActionIndex(_macro, index - 1);
+		break;
+	case Type::ELSE_ACTION:
+		validIndex = IsValidElseActionIndex(_macro, index - 1);
+		break;
+	default:
+		break;
+	}
+
+	if (!validIndex) {
 		return;
 	}
 

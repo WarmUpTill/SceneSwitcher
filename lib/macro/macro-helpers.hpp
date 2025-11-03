@@ -24,6 +24,8 @@ EXPORT std::deque<std::shared_ptr<Macro>> GetAllMacros();
 
 EXPORT std::optional<std::deque<std::shared_ptr<MacroAction>>>
 GetMacroActions(Macro *);
+EXPORT std::optional<std::deque<std::shared_ptr<MacroAction>>>
+GetMacroElseActions(Macro *);
 EXPORT std::optional<std::deque<std::shared_ptr<MacroCondition>>>
 GetMacroConditions(Macro *);
 
@@ -70,6 +72,8 @@ EXPORT void InvalidateMacroTempVarValues();
 EXPORT void ResetMacroConditionTimers(Macro *);
 EXPORT void ResetMacroRunCount(Macro *);
 
-bool IsValidMacroSegmentIndex(const Macro *m, const int idx, bool isCondition);
+bool IsValidActionIndex(const Macro *m, const int idx);
+bool IsValidElseActionIndex(const Macro *m, const int idx);
+bool IsValidConditionIndex(const Macro *m, const int idx);
 
 } // namespace advss

@@ -8,7 +8,7 @@ class Macro;
 class MacroSegmentSelection : public QWidget {
 	Q_OBJECT
 public:
-	enum class Type { CONDITION, ACTION };
+	enum class Type { CONDITION, ACTION, ELSE_ACTION };
 
 	MacroSegmentSelection(QWidget *parent, Type type,
 			      bool allowVariables = true);

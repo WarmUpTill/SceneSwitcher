@@ -21,13 +21,13 @@ static void appendNestedMacros(std::deque<std::shared_ptr<Macro>> &macros,
 		for (const auto &action : actions) {
 			const auto nestedMacroAction =
 				dynamic_cast<MacroActionMacro *>(action.get());
-			if (nestedMacroAction) {
-				macros.push_back(
-					nestedMacroAction->_nestedMacro);
-				appendNestedMacros(
-					macros,
-					nestedMacroAction->_nestedMacro.get());
+			if (!nestedMacroAction) {
+				continue;
 			}
+
+			macros.push_back(nestedMacroAction->_nestedMacro);
+			appendNestedMacros(
+				macros, nestedMacroAction->_nestedMacro.get());
 		}
 	};
 
@@ -53,11 +53,13 @@ std::deque<std::shared_ptr<Macro>> GetAllMacros()
 	for (const auto &topLevelMacro : macros) {
 		appendNestedMacros(macros, topLevelMacro.get());
 	}
+
 	const auto &tempMacros = GetTemporaryMacros();
 	macros.insert(macros.end(), tempMacros.begin(), tempMacros.end());
-	for (const auto &topLevelMacro : tempMacros) {
-		appendNestedMacros(macros, topLevelMacro.get());
+	for (const auto &tempMacro : tempMacros) {
+		appendNestedMacros(macros, tempMacro.get());
 	}
+
 	return macros;
 }
 
@@ -68,6 +70,15 @@ GetMacroActions(Macro *macro)
 		return {};
 	}
 	return macro->Actions();
+}
+
+std::optional<std::deque<std::shared_ptr<MacroAction>>>
+GetMacroElseActions(Macro *macro)
+{
+	if (!macro) {
+		return {};
+	}
+	return macro->ElseActions();
 }
 
 std::optional<std::deque<std::shared_ptr<MacroCondition>>>
@@ -197,20 +208,42 @@ void ResetMacroRunCount(Macro *macro)
 	macro->ResetRunCount();
 }
 
-bool IsValidMacroSegmentIndex(const Macro *m, const int idx, bool isCondition)
+bool IsValidActionIndex(const Macro *m, const int idx)
 {
 	if (!m || idx < 0) {
 		return false;
 	}
-	if (isCondition) {
-		if (idx >= (int)m->Conditions().size()) {
-			return false;
-		}
-	} else {
-		if (idx >= (int)m->Actions().size()) {
-			return false;
-		}
+
+	if (idx >= (int)m->Actions().size()) {
+		return false;
 	}
+
+	return true;
+}
+
+bool IsValidElseActionIndex(const Macro *m, const int idx)
+{
+	if (!m || idx < 0) {
+		return false;
+	}
+
+	if (idx >= (int)m->ElseActions().size()) {
+		return false;
+	}
+
+	return true;
+}
+
+bool IsValidConditionIndex(const Macro *m, const int idx)
+{
+	if (!m || idx < 0) {
+		return false;
+	}
+
+	if (idx >= (int)m->Conditions().size()) {
+		return false;
+	}
+
 	return true;
 }
 
