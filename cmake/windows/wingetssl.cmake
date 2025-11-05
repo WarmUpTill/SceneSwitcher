@@ -4,7 +4,6 @@
 # ---------------------------------------------------------------------------
 
 if(WIN32 AND (NOT OpenSSL_FOUND))
-
   set(_openssl_roots
       "$ENV{ProgramFiles}/OpenSSL-Win64" "$ENV{ProgramFiles}/OpenSSL"
       "$ENV{ProgramW6432}/OpenSSL-Win64")
@@ -61,6 +60,19 @@ if(WIN32 AND (NOT OpenSSL_FOUND))
               TRUE
               CACHE BOOL "Whether OpenSSL was found")
           message(STATUS "Found OpenSSL at: ${_root}/${_suffix}")
+          # Recursively list all files under OPENSSL_ROOT_DIR
+          file(GLOB_RECURSE OPENSSL_FILES "${OPENSSL_ROOT_DIR}/*")
+
+          message(STATUS "Listing contents of OPENSSL_ROOT_DIR:")
+          foreach(file ${OPENSSL_FILES})
+            message(STATUS "  ${file}")
+          endforeach()
+
+          get_cmake_property(_variableNames VARIABLES)
+          list(SORT _variableNames)
+          foreach(_variableName ${_variableNames})
+            message(STATUS "${_variableName}=${${_variableName}}")
+          endforeach()
           return()
         endif()
       endforeach()
