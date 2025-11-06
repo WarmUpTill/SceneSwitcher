@@ -8,6 +8,7 @@
 #include "ui-helpers.hpp"
 #include "variable.hpp"
 
+#include <QLayout>
 #include <QTimer>
 
 namespace advss {
@@ -18,12 +19,26 @@ static bool registerTabDone = registerTab();
 
 static VariableTable *tabWidget = nullptr;
 
+static VariableTable::Settings tabSettings;
+
+static void save(obs_data_t *data)
+{
+	tabSettings.Save(data, "tabSettings");
+}
+
+static void load(obs_data_t *data)
+{
+	tabSettings.Load(data, "tabSettings");
+}
+
 static bool registerTab()
 {
 	AddPluginInitStep([]() {
-		AddSetupTabCallback("variableTab", VariableTable::Create,
-				    setupTab);
+		AddSetupTabCallback("variableTab",
+				    VariableTable::CreateTabTable, setupTab);
 	});
+	AddSaveStep(save);
+	AddLoadStep(load);
 	return true;
 }
 
@@ -34,9 +49,9 @@ static void setTabVisible(QTabWidget *tabWidget, bool visible)
 		obs_module_text("AdvSceneSwitcher.variableTab.title"));
 }
 
-VariableTable *VariableTable::Create()
+VariableTable *VariableTable::CreateTabTable()
 {
-	tabWidget = new VariableTable();
+	tabWidget = new VariableTable(tabSettings);
 	return tabWidget;
 }
 
@@ -235,7 +250,52 @@ void VariableTable::Remove()
 	}
 }
 
-VariableTable::VariableTable(QTabWidget *parent)
+void VariableTable::Filter()
+{
+	const auto itemMatches = [&](const QTableWidgetItem *item) {
+		if (!item) {
+			return false;
+		}
+
+		if (_settings.searchString.empty()) {
+			return true;
+		}
+
+		const auto text = item->text();
+
+		if (_settings.regex.Enabled()) {
+			return _settings.regex.Matches(text.toStdString(),
+						       _settings.searchString);
+		}
+
+		return text.contains(
+			QString::fromStdString(_settings.searchString),
+			Qt::CaseInsensitive);
+	};
+
+	for (int row = 0; row < Table()->rowCount(); ++row) {
+		bool match = false;
+
+		if (_settings.searchType == Settings::SearchType::ALL) {
+			for (int col = 0; col < Table()->columnCount(); ++col) {
+				if (itemMatches(Table()->item(row, col))) {
+					match = true;
+					break;
+				}
+			}
+		} else {
+			if (itemMatches(Table()->item(
+				    row,
+				    static_cast<int>(_settings.searchType)))) {
+				match = true;
+			}
+		}
+
+		Table()->setRowHidden(row, !match);
+	}
+}
+
+VariableTable::VariableTable(Settings &settings, QWidget *parent)
 	: ResourceTable(
 		  parent, obs_module_text("AdvSceneSwitcher.variableTab.help"),
 		  obs_module_text(
@@ -253,12 +313,55 @@ VariableTable::VariableTable(QTabWidget *parent)
 				     "AdvSceneSwitcher.variableTab.lastUsed.header")
 			  << obs_module_text(
 				     "AdvSceneSwitcher.variableTab.lastChanged.header"),
-		  openSettingsDialog)
+		  openSettingsDialog),
+	  _searchField(new QLineEdit(this)),
+	  _searchType(new QComboBox(this)),
+	  _regexWidget(new RegexConfigWidget(this)),
+	  _settings(settings)
 {
 	for (const auto &variable : GetVariables()) {
 		auto v = std::static_pointer_cast<Variable>(variable);
 		AddItemTableRow(Table(), getCellLabels(v.get()));
 	}
+
+	_searchField->setPlaceholderText(obs_module_text(
+		("AdvSceneSwitcher.variableTab.search.placeholder")));
+	_searchField->setText(QString::fromStdString(_settings.searchString));
+	connect(Table(), &QTableWidget::itemChanged, this, [this]() {
+		_settings.searchString = _searchField->text().toStdString();
+		Filter();
+	});
+
+	_searchType->addItem(
+		obs_module_text("AdvSceneSwitcher.variableTab.search.all"),
+		Settings::SearchType::ALL);
+	_searchType->addItem(
+		obs_module_text("AdvSceneSwitcher.variableTab.search.name"),
+		Settings::SearchType::NAME);
+	_searchType->addItem(
+		obs_module_text("AdvSceneSwitcher.variableTab.search.value"),
+		Settings::SearchType::VALUE);
+	_searchType->setCurrentIndex(
+		_searchType->findData(_settings.searchType));
+
+	connect(_searchType, &QComboBox::currentIndexChanged, this, [this]() {
+		_settings.searchType = static_cast<Settings::SearchType>(
+			_searchType->currentData().toInt());
+	});
+
+	_regexWidget->SetRegexConfig(_settings.regex);
+	connect(_regexWidget, &RegexConfigWidget::RegexConfigChanged, this,
+		[this](const RegexConfig &regex) {
+			_settings.regex = regex;
+			Filter();
+		});
+
+	auto searchLayout = new QHBoxLayout();
+	searchLayout->addWidget(_searchField);
+	searchLayout->addWidget(_searchType);
+	searchLayout->addWidget(_regexWidget);
+	searchLayout->addStretch();
+	qobject_cast<QVBoxLayout *>(layout())->insertLayout(0, searchLayout);
 
 	SetHelpVisible(GetVariables().empty());
 }
@@ -300,6 +403,24 @@ static void setupTab(QTabWidget *tab)
 	QWidget::connect(timer, &QTimer::timeout,
 			 []() { updateVariableStatus(tabWidget->Table()); });
 	timer->start();
+}
+
+void VariableTable::Settings::Save(obs_data_t *data, const char *name)
+{
+	OBSDataAutoRelease settings = obs_data_create();
+	obs_data_set_int(settings, "searchType", static_cast<int>(searchType));
+	obs_data_set_string(settings, "searchString", searchString.c_str());
+	regex.Save(settings);
+	obs_data_set_obj(data, name, settings);
+}
+
+void VariableTable::Settings::Load(obs_data_t *data, const char *name)
+{
+	OBSDataAutoRelease settings = obs_data_get_obj(data, name);
+	searchType = static_cast<SearchType>(
+		obs_data_get_int(settings, "searchType"));
+	searchString = obs_data_get_string(settings, "searchString");
+	regex.Load(settings);
 }
 
 } // namespace advss
