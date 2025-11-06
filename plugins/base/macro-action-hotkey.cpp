@@ -601,10 +601,10 @@ static void populateHotkeyNames(QComboBox *list,
 MacroActionHotkeyEdit::MacroActionHotkeyEdit(
 	QWidget *parent, std::shared_ptr<MacroActionHotkey> entryData)
 	: QWidget(parent),
-	  _actionType(new QComboBox()),
-	  _hotkeyType(new QComboBox()),
-	  _obsHotkeys(new QComboBox()),
-	  _keys(new QComboBox()),
+	  _actionType(new FilterComboBox()),
+	  _hotkeyType(new FilterComboBox()),
+	  _obsHotkeys(new FilterComboBox()),
+	  _keys(new FilterComboBox()),
 	  _leftShift(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.action.hotkey.leftShift"))),
 	  _rightShift(new QCheckBox(obs_module_text(

@@ -85,11 +85,14 @@ private slots:
 	void DurationChanged(const Duration &);
 	void OnlySendToOBSChanged(int state);
 
-protected:
-	QComboBox *_actionType;
-	QComboBox *_hotkeyType;
-	QComboBox *_obsHotkeys;
-	QComboBox *_keys;
+private:
+	void RepopulateOBSHotkeySelection();
+	void SetWidgetVisibility();
+
+	FilterComboBox *_actionType;
+	FilterComboBox *_hotkeyType;
+	FilterComboBox *_obsHotkeys;
+	FilterComboBox *_keys;
 	QCheckBox *_leftShift;
 	QCheckBox *_rightShift;
 	QCheckBox *_leftCtrl;
@@ -101,15 +104,10 @@ protected:
 	DurationSelection *_duration;
 	QCheckBox *_onlySendToOBS;
 	QLabel *_noKeyPressSimulationWarning;
-
-	std::shared_ptr<MacroActionHotkey> _entryData;
-
-private:
-	void RepopulateOBSHotkeySelection();
-	void SetWidgetVisibility();
-
 	QHBoxLayout *_entryLayout;
 	QHBoxLayout *_keyConfigLayout;
+
+	std::shared_ptr<MacroActionHotkey> _entryData;
 	bool _loading = true;
 };
 
