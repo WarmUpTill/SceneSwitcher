@@ -8,6 +8,8 @@
 #include "ui-helpers.hpp"
 #include "variable.hpp"
 
+#include <obs-frontend-api.h>
+
 #include <QLayout>
 #include <QTimer>
 
@@ -17,18 +19,52 @@ static bool registerTab();
 static void setupTab(QTabWidget *);
 static bool registerTabDone = registerTab();
 
-static VariableTable *tabWidget = nullptr;
+static VariableTable *dockWidget = nullptr;
+static bool addDock = false;
 
 static VariableTable::Settings tabSettings;
+static VariableTable::Settings dockSettings;
 
 static void save(obs_data_t *data)
 {
 	tabSettings.Save(data, "tabSettings");
+	dockSettings.Save(data, "dockSettings");
+	obs_data_set_bool(data, "addVariablesDock", addDock);
+}
+
+static void enableDock(bool enable)
+{
+	if (OBSIsShuttingDown()) {
+		return;
+	}
+
+	obs_frontend_remove_dock("advss-variable-dock");
+
+	addDock = enable;
+	if (!addDock) {
+		return;
+	}
+
+	dockWidget = new VariableTable(dockSettings);
+	dockWidget->HideDockOptions();
+	if (obs_frontend_add_dock_by_id(
+		    "advss-variable-dock",
+		    obs_module_text("AdvSceneSwitcher.variableTab.title"),
+		    dockWidget)) {
+		return;
+	}
+
+	blog(LOG_INFO, "failed to register variable dock!");
+	dockWidget->deleteLater();
+	dockWidget = nullptr;
 }
 
 static void load(obs_data_t *data)
 {
 	tabSettings.Load(data, "tabSettings");
+	dockSettings.Load(data, "dockSettings");
+
+	enableDock(obs_data_get_bool(data, "addVariablesDock"));
 }
 
 static bool registerTab()
@@ -51,8 +87,12 @@ static void setTabVisible(QTabWidget *tabWidget, bool visible)
 
 VariableTable *VariableTable::CreateTabTable()
 {
-	tabWidget = new VariableTable(tabSettings);
-	return tabWidget;
+	return new VariableTable(tabSettings);
+}
+
+void VariableTable::HideDockOptions() const
+{
+	_addDock->hide();
 }
 
 void VariableTable::Add()
@@ -178,15 +218,14 @@ static void updateVariableStatus(QTableWidget *table)
 	}
 }
 
-static void openSettingsDialog()
+static void openSettingsDialog(VariableTable *table)
 {
-	auto selectedRows =
-		tabWidget->Table()->selectionModel()->selectedRows();
+	auto selectedRows = table->Table()->selectionModel()->selectedRows();
 	if (selectedRows.empty()) {
 		return;
 	}
 
-	auto cell = tabWidget->Table()->item(selectedRows.last().row(), 0);
+	auto cell = table->Table()->item(selectedRows.last().row(), 0);
 	if (!cell) {
 		return;
 	}
@@ -209,15 +248,14 @@ static void openSettingsDialog()
 
 void VariableTable::Remove()
 {
-	auto selectedRows =
-		tabWidget->Table()->selectionModel()->selectedRows();
+	auto selectedRows = Table()->selectionModel()->selectedRows();
 	if (selectedRows.empty()) {
 		return;
 	}
 
 	QStringList varNames;
 	for (const auto &row : selectedRows) {
-		auto cell = tabWidget->Table()->item(row.row(), 0);
+		auto cell = Table()->item(row.row(), 0);
 		if (!cell) {
 			continue;
 		}
@@ -313,10 +351,12 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 				     "AdvSceneSwitcher.variableTab.lastUsed.header")
 			  << obs_module_text(
 				     "AdvSceneSwitcher.variableTab.lastChanged.header"),
-		  openSettingsDialog),
+		  [this]() { openSettingsDialog(this); }),
 	  _searchField(new QLineEdit(this)),
 	  _searchType(new QComboBox(this)),
 	  _regexWidget(new RegexConfigWidget(this)),
+	  _addDock(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.variableTab.addDock"))),
 	  _settings(settings)
 {
 	for (const auto &variable : GetVariables()) {
@@ -324,13 +364,17 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 		AddItemTableRow(Table(), getCellLabels(v.get()));
 	}
 
+	connect(Table(), &QTableWidget::itemChanged, this,
+		[this]() { Filter(); });
+
 	_searchField->setPlaceholderText(obs_module_text(
 		("AdvSceneSwitcher.variableTab.search.placeholder")));
 	_searchField->setText(QString::fromStdString(_settings.searchString));
-	connect(Table(), &QTableWidget::itemChanged, this, [this]() {
-		_settings.searchString = _searchField->text().toStdString();
-		Filter();
-	});
+	connect(_searchField, &QLineEdit::textEdited, this,
+		[this](const QString &text) {
+			_settings.searchString = text.toStdString();
+			Filter();
+		});
 
 	_searchType->addItem(
 		obs_module_text("AdvSceneSwitcher.variableTab.search.all"),
@@ -356,11 +400,46 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 			Filter();
 		});
 
+	_addDock->setChecked(addDock);
+	connect(_addDock, &QCheckBox::stateChanged, this,
+		[this](int checked) { enableDock(checked); });
+
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Rename, this,
+			 [this](const QString &oldName,
+				const QString &newName) {
+				 RenameItemTableRow(Table(), oldName, newName);
+			 });
+	QWidget::connect(
+		VariableSignalManager::Instance(), &VariableSignalManager::Add,
+		this, [this](const QString &name) {
+			AddItemTableRow(
+				Table(),
+				getCellLabels(GetVariableByQString(name)));
+			SetHelpVisible(false);
+			HighlightAddButton(false);
+		});
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Remove, this,
+			 [this](const QString &name) {
+				 RemoveItemTableRow(Table(), name);
+				 if (Table()->rowCount() == 0) {
+					 SetHelpVisible(true);
+					 HighlightAddButton(true);
+				 }
+			 });
+
+	auto timer = new QTimer(this);
+	timer->setInterval(1000);
+	QWidget::connect(timer, &QTimer::timeout,
+			 [this]() { updateVariableStatus(Table()); });
+	timer->start();
+
 	auto searchLayout = new QHBoxLayout();
 	searchLayout->addWidget(_searchField);
 	searchLayout->addWidget(_searchType);
 	searchLayout->addWidget(_regexWidget);
-	searchLayout->addStretch();
+	searchLayout->addWidget(_addDock);
 	qobject_cast<QVBoxLayout *>(layout())->insertLayout(0, searchLayout);
 
 	SetHelpVisible(GetVariables().empty());
@@ -372,37 +451,9 @@ static void setupTab(QTabWidget *tab)
 		setTabVisible(tab, false);
 	}
 
-	QWidget::connect(VariableSignalManager::Instance(),
-			 &VariableSignalManager::Rename, tab,
-			 [](const QString &oldName, const QString &newName) {
-				 RenameItemTableRow(tabWidget->Table(), oldName,
-						    newName);
-			 });
 	QWidget::connect(
 		VariableSignalManager::Instance(), &VariableSignalManager::Add,
-		tab, [tab](const QString &name) {
-			AddItemTableRow(
-				tabWidget->Table(),
-				getCellLabels(GetVariableByQString(name)));
-			tabWidget->SetHelpVisible(false);
-			tabWidget->HighlightAddButton(false);
-			setTabVisible(tab, true);
-		});
-	QWidget::connect(VariableSignalManager::Instance(),
-			 &VariableSignalManager::Remove, tab,
-			 [](const QString &name) {
-				 RemoveItemTableRow(tabWidget->Table(), name);
-				 if (tabWidget->Table()->rowCount() == 0) {
-					 tabWidget->SetHelpVisible(true);
-					 tabWidget->HighlightAddButton(true);
-				 }
-			 });
-
-	auto timer = new QTimer(tabWidget);
-	timer->setInterval(1000);
-	QWidget::connect(timer, &QTimer::timeout,
-			 []() { updateVariableStatus(tabWidget->Table()); });
-	timer->start();
+		tab, [tab](const QString &name) { setTabVisible(tab, true); });
 }
 
 void VariableTable::Settings::Save(obs_data_t *data, const char *name)
