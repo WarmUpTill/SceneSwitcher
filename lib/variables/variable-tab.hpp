@@ -23,6 +23,7 @@ public:
 
 	VariableTable(Settings &settings, QWidget *parent = nullptr);
 	static VariableTable *CreateTabTable();
+	void HideDockOptions() const;
 
 private slots:
 	void Add();
@@ -33,6 +34,7 @@ private:
 	QLineEdit *_searchField;
 	QComboBox *_searchType;
 	RegexConfigWidget *_regexWidget;
+	QCheckBox *_addDock;
 
 	Settings &_settings;
 };
