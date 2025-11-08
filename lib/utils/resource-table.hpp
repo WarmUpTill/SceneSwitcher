@@ -14,7 +14,7 @@ class ADVSS_EXPORT ResourceTable : public QWidget {
 	Q_OBJECT
 
 public:
-	ResourceTable(QTabWidget *parent, const QString &help,
+	ResourceTable(QWidget *parent, const QString &help,
 		      const QString &addToolTip, const QString &removeToolTip,
 		      const QStringList &headers,
 		      const std::function<void()> &openSettings);

@@ -8,7 +8,7 @@
 
 namespace advss {
 
-ResourceTable::ResourceTable(QTabWidget *parent, const QString &help,
+ResourceTable::ResourceTable(QWidget *parent, const QString &help,
 			     const QString &addToolTip,
 			     const QString &removeToolTip,
 			     const QStringList &headers,
