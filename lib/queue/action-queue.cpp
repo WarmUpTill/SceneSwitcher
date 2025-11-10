@@ -423,7 +423,7 @@ void ImportQueues(obs_data_t *data)
 		importedQueues->emplace_back(queue);
 	}
 
-	QeueUITask(signalImportedQueues, importedQueues);
+	QueueUITask(signalImportedQueues, importedQueues);
 }
 
 std::weak_ptr<ActionQueue> GetWeakActionQueueByName(const std::string &name)
