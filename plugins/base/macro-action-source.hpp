@@ -5,9 +5,10 @@
 #include "source-selection.hpp"
 #include "source-setting.hpp"
 
+#include <QCheckBox>
+#include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QComboBox>
 
 namespace advss {
 
@@ -33,6 +34,7 @@ public:
 		OBS_DEINTERLACE_FIELD_ORDER_TOP;
 	TempVariableRef _tempVar;
 	SourceSetting _setting;
+	bool _acceptDialog = false;
 
 	enum class Action {
 		ENABLE,
@@ -45,6 +47,9 @@ public:
 		OPEN_INTERACTION_DIALOG,
 		OPEN_FILTER_DIALOG,
 		OPEN_PROPERTIES_DIALOG,
+		CLOSE_INTERACTION_DIALOG,
+		CLOSE_FILTER_DIALOG,
+		CLOSE_PROPERTIES_DIALOG,
 	};
 	Action _action = Action::SETTINGS;
 
@@ -91,6 +96,7 @@ private slots:
 	void SelectionChanged(const SourceSetting &);
 	void ManualSettingsValueChanged();
 	void RefreshVariableSourceSelectionValue();
+	void AcceptDialogChanged(int);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -112,6 +118,7 @@ private:
 	QComboBox *_deinterlaceOrder;
 	QLabel *_warning;
 	QPushButton *_refreshSettingSelection;
+	QCheckBox *_acceptDialog;
 
 	std::shared_ptr<MacroActionSource> _entryData;
 	bool _loading = true;
