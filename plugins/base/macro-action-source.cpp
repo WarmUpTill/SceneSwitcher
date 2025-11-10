@@ -7,6 +7,8 @@
 
 #include <obs-frontend-api.h>
 
+#include <QMainWindow>
+
 namespace advss {
 
 const std::string MacroActionSource::id = "source";
@@ -37,6 +39,12 @@ const static std::map<MacroActionSource::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.openFilterDialog"},
 	{MacroActionSource::Action::OPEN_PROPERTIES_DIALOG,
 	 "AdvSceneSwitcher.action.source.type.openPropertiesDialog"},
+	{MacroActionSource::Action::CLOSE_INTERACTION_DIALOG,
+	 "AdvSceneSwitcher.action.source.type.closeInteractionDialog"},
+	{MacroActionSource::Action::CLOSE_FILTER_DIALOG,
+	 "AdvSceneSwitcher.action.source.type.closeFilterDialog"},
+	{MacroActionSource::Action::CLOSE_PROPERTIES_DIALOG,
+	 "AdvSceneSwitcher.action.source.type.closePropertiesDialog"},
 };
 
 const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
@@ -108,9 +116,81 @@ static bool isInteractable(obs_source_t *source)
 	return (flags & OBS_SOURCE_INTERACTION) != 0;
 }
 
+static void closeSourceDialog(obs_source_t *source, bool accept,
+			      const char *className)
+{
+	if (!source) {
+		return;
+	}
+
+	auto mainWindow =
+		reinterpret_cast<QMainWindow *>(obs_frontend_get_main_window());
+	if (!mainWindow) {
+		return;
+	}
+
+	for (const auto widget : mainWindow->children()) {
+		auto dialog = qobject_cast<QDialog *>(widget);
+		if (!dialog) {
+			continue;
+		}
+
+		if (dialog->metaObject()->className() != QString(className)) {
+			continue;
+		}
+
+		const char *name = obs_source_get_name(source);
+		if (!name) {
+			continue;
+		}
+
+		if (!dialog->windowTitle().contains(QString(name))) {
+			continue;
+		}
+
+		if (accept) {
+			dialog->accept();
+			return;
+		}
+
+		// dialog->reject() will ask for confirmation
+		// Try to avoid this by finding and pressing the cancel button
+		for (const auto widget : dialog->children()) {
+			auto buttons = qobject_cast<QDialogButtonBox *>(widget);
+			if (!buttons) {
+				continue;
+			}
+
+			for (auto *button : buttons->buttons()) {
+				if (buttons->buttonRole(button) ==
+				    QDialogButtonBox::RejectRole) {
+					button->click();
+					break;
+				}
+			}
+		}
+	}
+}
+
+template<typename F> void QueueUITaskLambda(F &&func)
+{
+	using FnType = std::decay_t<F>;
+	auto *heapFunc = new FnType(std::forward<F>(func));
+
+	QueueUITask(
+		[](void *param) {
+			std::unique_ptr<FnType> fn(
+				static_cast<FnType *>(param));
+			(*fn)();
+		},
+		heapFunc);
+}
+
 bool MacroActionSource::PerformAction()
 {
-	auto s = obs_weak_source_get_source(_source.GetSource());
+	OBSSource s = obs_weak_source_get_source(_source.GetSource());
+	obs_source_release(s);
+
 	switch (_action) {
 	case Action::ENABLE:
 		obs_source_set_enabled(s, true);
@@ -172,10 +252,31 @@ bool MacroActionSource::PerformAction()
 	case Action::OPEN_PROPERTIES_DIALOG:
 		obs_frontend_open_source_properties(s);
 		break;
+	case Action::CLOSE_INTERACTION_DIALOG:
+		if (!isInteractable(s)) {
+			// Nothing to do
+			break;
+		}
+
+		QueueUITaskLambda([&]() {
+			closeSourceDialog(s, true, "OBSBasicInteraction");
+		});
+		break;
+	case Action::CLOSE_FILTER_DIALOG:
+		QueueUITaskLambda([&]() {
+			closeSourceDialog(s, _acceptDialog, "OBSBasicFilters");
+		});
+		break;
+	case Action::CLOSE_PROPERTIES_DIALOG:
+		QueueUITaskLambda([&]() {
+			closeSourceDialog(s, _acceptDialog,
+					  "OBSBasicProperties");
+		});
+		break;
 	default:
 		break;
 	}
-	obs_source_release(s);
+
 	return true;
 }
 
@@ -207,6 +308,7 @@ bool MacroActionSource::Save(obs_data_t *obj) const
 			 static_cast<int>(_deinterlaceMode));
 	obs_data_set_int(obj, "deinterlaceOrder",
 			 static_cast<int>(_deinterlaceOrder));
+	obs_data_set_bool(obj, "acceptDialog", _acceptDialog);
 	return true;
 }
 
@@ -231,6 +333,7 @@ bool MacroActionSource::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "deinterlaceMode"));
 	_deinterlaceOrder = static_cast<obs_deinterlace_field_order>(
 		obs_data_get_int(obj, "deinterlaceOrder"));
+	_acceptDialog = obs_data_get_bool(obj, "acceptDialog");
 	return true;
 }
 
@@ -307,7 +410,9 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	  _warning(new QLabel(
 		  obs_module_text("AdvSceneSwitcher.action.source.warning"))),
 	  _refreshSettingSelection(new QPushButton(
-		  obs_module_text("AdvSceneSwitcher.action.source.refresh")))
+		  obs_module_text("AdvSceneSwitcher.action.source.refresh"))),
+	  _acceptDialog(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.action.source.dialog.accept")))
 {
 	populateActionSelection(_actions);
 
@@ -347,6 +452,8 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 			 SLOT(SelectionChanged(const SourceSetting &)));
 	QWidget::connect(_refreshSettingSelection, SIGNAL(clicked()), this,
 			 SLOT(RefreshVariableSourceSelectionValue()));
+	QWidget::connect(_acceptDialog, SIGNAL(stateChanged(int)), this,
+			 SLOT(AcceptDialogChanged(int)));
 
 	auto entryLayout = new QHBoxLayout;
 	entryLayout->setContentsMargins(0, 0, 0, 0);
@@ -374,6 +481,7 @@ MacroActionSourceEdit::MacroActionSourceEdit(
 	mainLayout->addLayout(_settingsLayout);
 	mainLayout->addWidget(_warning);
 	mainLayout->addWidget(_settingsString);
+	mainLayout->addWidget(_acceptDialog);
 	auto buttonLayout = new QHBoxLayout;
 	buttonLayout->setContentsMargins(0, 0, 0, 0);
 	buttonLayout->addWidget(_getSettings);
@@ -406,6 +514,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_settingsInputMethod)));
 	_tempVars->SetVariable(_entryData->_tempVar);
 	_manualSettingValue->setPlainText(_entryData->_manualSettingValue);
+	_acceptDialog->setChecked(_entryData->_acceptDialog);
 
 	SetWidgetVisibility();
 }
@@ -531,6 +640,12 @@ void MacroActionSourceEdit::RefreshVariableSourceSelectionValue()
 	_sourceSettings->SetSource(_entryData->_source.GetSource());
 }
 
+void MacroActionSourceEdit::AcceptDialogChanged(int state)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_acceptDialog = state;
+}
+
 static QString GetIndividualListEntryName()
 {
 	static const auto matchesInput =
@@ -612,6 +727,12 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 				 INDIVIDUAL_LIST_ENTRY) &&
 		_entryData->_source.GetType() ==
 			SourceSelection::Type::VARIABLE);
+
+	_acceptDialog->setVisible(
+		_entryData->_action ==
+			MacroActionSource::Action::CLOSE_FILTER_DIALOG ||
+		_entryData->_action ==
+			MacroActionSource::Action::CLOSE_PROPERTIES_DIALOG);
 
 	adjustSize();
 	updateGeometry();
