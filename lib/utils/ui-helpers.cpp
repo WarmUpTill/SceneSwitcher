@@ -178,7 +178,7 @@ std::string GetThemeTypeName()
 #endif
 }
 
-void QeueUITask(void (*task)(void *param), void *param)
+void QueueUITask(void (*task)(void *param), void *param)
 {
 	obs_queue_task(OBS_TASK_UI, task, param, false);
 }

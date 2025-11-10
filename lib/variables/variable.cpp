@@ -456,7 +456,7 @@ void ImportVariables(obs_data_t *data)
 
 	obs_data_array_release(array);
 
-	QeueUITask(signalImportedVariables, importedVars);
+	QueueUITask(signalImportedVariables, importedVars);
 }
 
 std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime()

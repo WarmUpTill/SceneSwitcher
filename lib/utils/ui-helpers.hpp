@@ -35,7 +35,7 @@ EXPORT void DisplayTrayMessage(const QString &title, const QString &msg,
 EXPORT std::string GetThemeTypeName();
 EXPORT QWidget *GetSettingsWindow();
 
-void QeueUITask(void (*task)(void *param), void *param);
+EXPORT void QueueUITask(void (*task)(void *param), void *param);
 
 bool IsCursorInWidgetArea(QWidget *widget);
 
