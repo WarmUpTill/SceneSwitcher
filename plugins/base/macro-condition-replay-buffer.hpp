@@ -6,7 +6,7 @@
 
 namespace advss {
 
-class MacroConditionReplayBuffer : public MacroCondition {
+class MacroConditionReplayBuffer final : public MacroCondition {
 public:
 	MacroConditionReplayBuffer(Macro *m) : MacroCondition(m) {}
 	bool CheckCondition();
@@ -27,6 +27,7 @@ public:
 	Condition _state = Condition::STOP;
 
 private:
+	void SetupTempVars();
 	bool ReplayBufferWasSaved();
 
 	bool _saveTimeInitialized = false;
@@ -35,7 +36,7 @@ private:
 	static const std::string id;
 };
 
-class MacroConditionReplayBufferEdit : public QWidget {
+class MacroConditionReplayBufferEdit final : public QWidget {
 	Q_OBJECT
 
 public:
@@ -55,11 +56,10 @@ public:
 private slots:
 	void StateChanged(int value);
 
-protected:
-	QComboBox *_state;
-	std::shared_ptr<MacroConditionReplayBuffer> _entryData;
-
 private:
+	QComboBox *_state;
+
+	std::shared_ptr<MacroConditionReplayBuffer> _entryData;
 	bool _loading = true;
 };
 

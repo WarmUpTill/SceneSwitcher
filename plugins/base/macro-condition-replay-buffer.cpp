@@ -58,6 +58,10 @@ bool MacroConditionReplayBuffer::ReplayBufferWasSaved()
 
 bool MacroConditionReplayBuffer::CheckCondition()
 {
+	char *lastSavePath = obs_frontend_get_last_replay();
+	SetTempVarValue("lastSavePath", lastSavePath ? lastSavePath : "");
+	bfree(lastSavePath);
+
 	switch (_state) {
 	case Condition::STOP:
 		return !obs_frontend_replay_buffer_active();
@@ -83,6 +87,16 @@ bool MacroConditionReplayBuffer::Load(obs_data_t *obj)
 	MacroCondition::Load(obj);
 	_state = static_cast<Condition>(obs_data_get_int(obj, "state"));
 	return true;
+}
+
+void MacroConditionReplayBuffer::SetupTempVars()
+{
+	MacroCondition::SetupTempVars();
+	AddTempvar(
+		"lastSavePath",
+		obs_module_text("AdvSceneSwitcher.tempVar.replay.lastSavePath"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.replay.lastSavePath.description"));
 }
 
 static inline void populateStateSelection(QComboBox *list)
