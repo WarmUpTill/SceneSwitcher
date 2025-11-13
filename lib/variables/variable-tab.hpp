@@ -32,6 +32,7 @@ private slots:
 
 private:
 	QLineEdit *_searchField;
+	QPushButton *_clear;
 	QComboBox *_searchType;
 	RegexConfigWidget *_regexWidget;
 	QCheckBox *_addDock;

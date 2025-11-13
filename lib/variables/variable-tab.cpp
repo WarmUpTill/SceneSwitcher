@@ -353,12 +353,26 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 				     "AdvSceneSwitcher.variableTab.lastChanged.header"),
 		  [this]() { openSettingsDialog(this); }),
 	  _searchField(new QLineEdit(this)),
+	  _clear(new QPushButton(this)),
 	  _searchType(new QComboBox(this)),
 	  _regexWidget(new RegexConfigWidget(this)),
 	  _addDock(new QCheckBox(
 		  obs_module_text("AdvSceneSwitcher.variableTab.addDock"))),
 	  _settings(settings)
 {
+	_clear->setMaximumWidth(22);
+	SetButtonIcon(_clear, GetThemeTypeName() == "Light"
+				      ? "theme:Light/close.svg"
+				      : "theme:Dark/close.svg");
+	_clear->setToolTip(
+		obs_module_text("AdvSceneSwitcher.variableTab.clear"));
+	_clear->setDisabled(_settings.searchString.empty());
+
+	connect(_clear, &QPushButton::clicked, this, [this]() {
+		_searchField->setText("");
+		_clear->setDisabled(true);
+	});
+
 	for (const auto &variable : GetVariables()) {
 		auto v = std::static_pointer_cast<Variable>(variable);
 		AddItemTableRow(Table(), getCellLabels(v.get()));
@@ -370,9 +384,10 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 	_searchField->setPlaceholderText(obs_module_text(
 		("AdvSceneSwitcher.variableTab.search.placeholder")));
 	_searchField->setText(QString::fromStdString(_settings.searchString));
-	connect(_searchField, &QLineEdit::textEdited, this,
+	connect(_searchField, &QLineEdit::textChanged, this,
 		[this](const QString &text) {
 			_settings.searchString = text.toStdString();
+			_clear->setDisabled(text.isEmpty());
 			Filter();
 		});
 
@@ -437,6 +452,7 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 
 	auto searchLayout = new QHBoxLayout();
 	searchLayout->addWidget(_searchField);
+	searchLayout->addWidget(_clear);
 	searchLayout->addWidget(_searchType);
 	searchLayout->addWidget(_regexWidget);
 	searchLayout->addWidget(_addDock);
