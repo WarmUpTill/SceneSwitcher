@@ -286,6 +286,14 @@ bool MacroActionVariable::PerformAction()
 	case Action::APPEND:
 		apppend(*var, _strValue);
 		break;
+	case Action::COPY_VAR: {
+		auto var2 = _variable2.lock();
+		if (!var2) {
+			return true;
+		}
+		var->SetValue(var2->Value());
+		break;
+	}
 	case Action::APPEND_VAR: {
 		auto var2 = _variable2.lock();
 		if (!var2) {
@@ -670,6 +678,8 @@ static inline void populateActionSelection(QComboBox *list)
 		actions = {
 			{MacroActionVariable::Action::SET_VALUE,
 			 "AdvSceneSwitcher.action.variable.type.set"},
+			{MacroActionVariable::Action::COPY_VAR,
+			 "AdvSceneSwitcher.action.variable.type.copy"},
 			{MacroActionVariable::Action::APPEND,
 			 "AdvSceneSwitcher.action.variable.type.append"},
 			{MacroActionVariable::Action::PAD,
@@ -1521,6 +1531,7 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	}
 
 	_variables2->setVisible(
+		_entryData->_action == MacroActionVariable::Action::COPY_VAR ||
 		_entryData->_action ==
 			MacroActionVariable::Action::APPEND_VAR ||
 		_entryData->_action ==
