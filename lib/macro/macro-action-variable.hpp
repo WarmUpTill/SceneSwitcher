@@ -55,6 +55,7 @@ public:
 		RANDOM_NUMBER,
 		QUERY_JSON,
 		ARRAY_JSON,
+		COPY_VAR,
 	};
 
 	Action _action = Action::SET_VALUE;
