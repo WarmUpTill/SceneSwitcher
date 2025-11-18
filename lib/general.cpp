@@ -3,6 +3,7 @@
 #include "filter-combo-box.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
+#include "macro-search.hpp"
 #include "macro-settings.hpp"
 #include "path-helpers.hpp"
 #include "selection-helpers.hpp"
@@ -1011,6 +1012,19 @@ void AdvSceneSwitcher::SetupGeneralTab()
 			switcher->autoStartSceneRegex = regex;
 			setupAutoStartSceneLayoutVisibility(regex.Enabled());
 			switcher->CheckAutoStart();
+		});
+
+	ui->alwaysShowMacroSearch->setChecked(
+		GetMacroSearchSettings().showAlways);
+
+	connect(ui->alwaysShowMacroSearch, &QCheckBox::stateChanged, this,
+		[this](int enabled) {
+			GetMacroSearchSettings().showAlways = enabled;
+
+			if (loading) {
+				return;
+			}
+			CheckMacroSearchVisibility();
 		});
 
 	// Set up status control

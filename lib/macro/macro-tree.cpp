@@ -1,5 +1,6 @@
 #include "macro-tree.hpp"
 #include "macro.hpp"
+#include "macro-search.hpp"
 #include "macro-signals.hpp"
 #include "path-helpers.hpp"
 #include "sync-helpers.hpp"
@@ -783,7 +784,8 @@ void MacroTree::Reset(std::deque<std::shared_ptr<Macro>> &macros,
 		      bool highlight)
 {
 	_highlight = highlight;
-	MacroTreeModel *mtm = new MacroTreeModel(this, macros);
+
+	auto mtm = new MacroTreeModel(this, macros);
 	setModel(mtm);
 	GetModel()->Reset(macros);
 	connect(selectionModel(),
@@ -869,7 +871,7 @@ void MacroTree::UpdateWidgets(bool force)
 
 	for (int i = 0; i < (int)mtm->_macros.size(); i++) {
 		std::shared_ptr<Macro> item = mtm->_macros[i];
-		MacroTreeItem *widget = GetItemWidget(i);
+		auto widget = GetItemWidget(i);
 
 		if (!widget) {
 			UpdateWidget(mtm->createIndex(i, 0, nullptr), item);
@@ -1204,6 +1206,12 @@ void MacroTree::CollapseGroup(std::shared_ptr<Macro> item) const
 	mtm->CollapseGroup(item);
 }
 
+void MacroTree::RefreshFilter()
+{
+	UpdateWidgets();
+	doItemsLayout();
+}
+
 void MacroTree::MoveItemBefore(const std::shared_ptr<Macro> &item,
 			       const std::shared_ptr<Macro> &after) const
 {
@@ -1218,7 +1226,7 @@ void MacroTree::MoveItemAfter(const std::shared_ptr<Macro> &item,
 
 MacroTreeModel *MacroTree::GetModel() const
 {
-	return reinterpret_cast<MacroTreeModel *>(model());
+	return qobject_cast<MacroTreeModel *>(model());
 }
 
 void MacroTree::Remove(std::shared_ptr<Macro> item) const
@@ -1333,8 +1341,8 @@ void MacroTree::SelectionChangedHelper(const QItemSelection &,
 
 inline MacroTreeItem *MacroTree::GetItemWidget(int idx) const
 {
-	QWidget *widget = indexWidget(GetModel()->createIndex(idx, 0, nullptr));
-	return reinterpret_cast<MacroTreeItem *>(widget);
+	auto widget = indexWidget(GetModel()->createIndex(idx, 0, nullptr));
+	return qobject_cast<MacroTreeItem *>(widget);
 }
 
 void MacroTree::paintEvent(QPaintEvent *event)
@@ -1361,14 +1369,25 @@ MacroTreeDelegate::MacroTreeDelegate(QObject *parent)
 QSize MacroTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
 				  const QModelIndex &index) const
 {
-	MacroTree *tree = qobject_cast<MacroTree *>(parent());
-	QWidget *item = tree->indexWidget(index);
+	auto tree = qobject_cast<MacroTree *>(parent());
+	auto widget = tree->indexWidget(index);
 
-	if (!item) {
+	if (!widget) {
 		return QStyledItemDelegate::sizeHint(option, index);
 	}
 
-	return QSize(item->sizeHint());
+	auto name = index.data(Qt::AccessibleTextRole).toString();
+	auto macro = GetMacroByQString(name);
+
+	if (!macro) {
+		return QStyledItemDelegate::sizeHint(option, index);
+	}
+
+	if (MacroMatchesSearchFilter(macro)) {
+		return QSize(widget->sizeHint());
+	}
+
+	return QSize(0, 0);
 }
 
 } // namespace advss
