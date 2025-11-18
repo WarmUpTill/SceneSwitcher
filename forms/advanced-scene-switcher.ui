@@ -68,7 +68,7 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1057</height>
+            <height>1145</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -315,6 +315,13 @@
                    </layout>
                   </item>
                   <item>
+                   <widget class="QCheckBox" name="alwaysShowMacroSearch">
+                    <property name="text">
+                     <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowMacroSearch</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_12">
                     <item>
                      <widget class="QCheckBox" name="disableMacroWidgetCache">
@@ -489,8 +496,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="advss::SceneSelectionWidget" name="noMatchSwitchScene">
-                   </widget>
+                   <widget class="advss::SceneSelectionWidget" name="noMatchSwitchScene" native="true"/>
                   </item>
                  </layout>
                 </item>
@@ -720,6 +726,55 @@
               <bool>true</bool>
              </property>
             </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="macroSearchLayout">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLineEdit" name="macroSearchText">
+               <property name="placeholderText">
+                <string>AdvSceneSwitcher.macroTab.search.placeholder</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="macroSearchClear">
+               <property name="toolTip">
+                <string>AdvSceneSwitcher.variableTab.clear</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="macroSearchType"/>
+             </item>
+             <item>
+              <widget class="advss::RegexConfigWidget" name="macroSearchRegex" native="true"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="macroSearchShowSettings">
+               <property name="toolTip">
+                <string>AdvSceneSwitcher.macroTab.search.showSettings</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="advss::MacroTree" name="macros">

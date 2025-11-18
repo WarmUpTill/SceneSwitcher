@@ -4,6 +4,7 @@
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
 #include "macro-settings.hpp"
+#include "macro-search.hpp"
 #include "macro-signals.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
@@ -641,7 +642,9 @@ void AdvSceneSwitcher::SetupMacroTab()
 {
 	ui->macros->installEventFilter(this);
 
-	if (GetTopLevelMacros().size() == 0 && !switcher->disableHints) {
+	auto &macros = GetTopLevelMacros();
+
+	if (macros.size() == 0 && !switcher->disableHints) {
 		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
 	}
 
@@ -649,8 +652,7 @@ void AdvSceneSwitcher::SetupMacroTab()
 					   {ui->macroUp, ui->macroDown}});
 	ui->macroControlLayout->addWidget(macroControls);
 
-	ui->macros->Reset(GetTopLevelMacros(),
-			  GetGlobalMacroSettings()._highlightExecuted);
+	ui->macros->Reset(macros, GetGlobalMacroSettings()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
 		SLOT(MacroSelectionChanged()));
 	ui->runMacro->SetMacroTree(ui->macros);
@@ -679,6 +681,12 @@ void AdvSceneSwitcher::SetupMacroTab()
 				switcher->macroListMacroEditSplitterPosition);
 		}
 	}
+
+	SetupMacroSearchWidgets(ui->macroSearchLayout, ui->macroSearchText,
+				ui->macroSearchClear, ui->macroSearchType,
+				ui->macroSearchRegex,
+				ui->macroSearchShowSettings,
+				[this]() { ui->macros->RefreshFilter(); });
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)

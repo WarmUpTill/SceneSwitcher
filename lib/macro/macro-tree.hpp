@@ -142,6 +142,7 @@ public:
 	bool GroupsExist() const;
 	void ExpandGroup(std::shared_ptr<Macro> item) const;
 	void CollapseGroup(std::shared_ptr<Macro> item) const;
+	void RefreshFilter();
 
 public slots:
 	void GroupSelectedItems();
