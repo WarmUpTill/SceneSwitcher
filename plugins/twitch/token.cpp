@@ -163,7 +163,8 @@ TwitchToken::TwitchToken(const TwitchToken &other)
 	  _userID(other._userID),
 	  _tokenOptions(other._tokenOptions),
 	  _eventSub(),
-	  _validateEventSubTimestamps(other._validateEventSubTimestamps)
+	  _validateEventSubTimestamps(other._validateEventSubTimestamps),
+	  _warnIfInvalid(other._warnIfInvalid)
 {
 }
 
@@ -174,6 +175,7 @@ TwitchToken &TwitchToken::operator=(const TwitchToken &other)
 	_userID = other._userID;
 	_tokenOptions = other._tokenOptions;
 	_validateEventSubTimestamps = other._validateEventSubTimestamps;
+	_warnIfInvalid = other._warnIfInvalid;
 	return *this;
 }
 
@@ -185,6 +187,9 @@ void TwitchToken::Load(obs_data_t *obj)
 	obs_data_set_default_bool(obj, "validateEventSubTimestamps", true);
 	_validateEventSubTimestamps =
 		obs_data_get_bool(obj, "validateEventSubTimestamps");
+	_warnIfInvalid = obs_data_has_user_value(obj, "warnIfInvalid")
+				 ? obs_data_get_bool(obj, "warnIfInvalid")
+				 : true;
 	_tokenOptions.clear();
 	OBSDataArrayAutoRelease options = obs_data_get_array(obj, "options");
 	size_t count = obs_data_array_count(options);
@@ -203,6 +208,7 @@ void TwitchToken::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "userID", _userID.c_str());
 	obs_data_set_bool(obj, "validateEventSubTimestamps",
 			  _validateEventSubTimestamps);
+	obs_data_set_bool(obj, "warnIfInvalid", _warnIfInvalid);
 	OBSDataArrayAutoRelease options = obs_data_array_create();
 	for (auto &option : _tokenOptions) {
 		OBSDataAutoRelease arrayObj = obs_data_create();
@@ -477,7 +483,9 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	  _tokenStatus(new QLabel()),
 	  _generalSettingsGrid(new QGridLayout()),
 	  _validateTimestamps(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.twitchToken.validateTimestamps")))
+		  "AdvSceneSwitcher.twitchToken.validateTimestamps"))),
+	  _warnIfInvalid(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.twitchToken.warnIfInvalid")))
 {
 	_showToken->setMaximumWidth(22);
 	_showToken->setFlat(true);
@@ -544,6 +552,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	layout->addLayout(_generalSettingsGrid);
 	layout->addWidget(optionsBox);
 	layout->addWidget(_validateTimestamps);
+	layout->addWidget(_warnIfInvalid);
 	layout->setContentsMargins(0, 0, 0, 0);
 	scrollArea->setWidget(contentWidget);
 
@@ -569,6 +578,7 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 #ifndef VERIFY_TIMESTAMPS
 	_validateTimestamps->hide();
 #endif
+	_warnIfInvalid->setChecked(settings._warnIfInvalid);
 
 	_currentToken = settings;
 
@@ -777,6 +787,8 @@ bool TwitchTokenSettingsDialog::AskForSettings(QWidget *parent,
 	settings._tokenOptions = dialog.GetEnabledOptions();
 	settings._validateEventSubTimestamps =
 		dialog._validateTimestamps->isChecked();
+	settings._warnIfInvalid = dialog._warnIfInvalid->isChecked();
+
 	if (settings._eventSub) {
 		settings._eventSub->EnableTimestampValidation(
 			settings._validateEventSubTimestamps);

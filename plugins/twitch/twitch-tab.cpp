@@ -1,24 +1,47 @@
 #include "twitch-tab.hpp"
 #include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "tab-helpers.hpp"
 #include "token.hpp"
 #include "ui-helpers.hpp"
 
+#include <QDialogButtonBox>
 #include <QTabWidget>
 
 namespace advss {
 
-static bool registerTab();
+static bool setup();
 static void setupTab(QTabWidget *);
-static bool registerTabDone = registerTab();
+static bool setupDone = setup();
 
 static TwitchConnectionsTable *tabWidget = nullptr;
 
-static bool registerTab()
+static QStringList getInvalidTokens();
+
+static bool setup()
 {
 	AddSetupTabCallback("twitchConnectionTab",
 			    TwitchConnectionsTable::Create, setupTab);
+
+	static const auto showInvalidWarnings = []() {
+		const auto invalidTokens = getInvalidTokens();
+		for (const auto &token : invalidTokens) {
+			QueueUITask(
+				[](void *tokenPtr) {
+					auto tokenName = static_cast<QString *>(
+						tokenPtr);
+					InvalidTokenDialog::ShowWarning(
+						*tokenName);
+				},
+				(void *)&token);
+		}
+	};
+
+	AddLoadStep([](obs_data_t *) {
+		AddPostLoadStep([]() { showInvalidWarnings(); });
+	});
+
 	return true;
 }
 
@@ -188,6 +211,25 @@ static void updateConnectionStatus(QTableWidget *table)
 	}
 }
 
+static QStringList getInvalidTokens()
+{
+	QStringList tokens;
+	for (const auto &t : GetTwitchTokens()) {
+		if (!t) {
+			continue;
+		}
+
+		auto token = std::static_pointer_cast<TwitchToken>(t);
+		if (!token->WarnIfInvalid() || token->IsValid(true)) {
+			continue;
+		}
+
+		tokens << QString::fromStdString(token->GetName());
+	}
+
+	return tokens;
+}
+
 static void setupTab(QTabWidget *tab)
 {
 	if (GetTwitchTokens().empty()) {
@@ -222,6 +264,63 @@ static void setupTab(QTabWidget *tab)
 			updateConnectionStatus(tabWidget->Table());
 		}
 	});
+
+	const auto invalidTokens = getInvalidTokens();
+	for (const auto &token : invalidTokens) {
+		// Constructing the warning dialog in the constructor of the settings
+		// window might lead to a crash, so wait for the settings window
+		// constructor to complete
+		QTimer::singleShot(0, tab, [token]() {
+			InvalidTokenDialog::ShowWarning(token);
+		});
+	}
+}
+
+void InvalidTokenDialog::ShowWarning(const QString &tokenName)
+{
+	auto weakToken = GetWeakTwitchTokenByQString(tokenName);
+	auto token = weakToken.lock();
+	if (!token) {
+		return;
+	}
+
+	auto dialog = new InvalidTokenDialog(tokenName);
+	dialog->setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+	const bool ignore = dialog->exec() != DialogCode::Accepted;
+	token->SetWarnIfInvalid(!dialog->_doNotShowAgain->isChecked());
+	dialog->deleteLater();
+
+	if (ignore) {
+		return;
+	}
+
+	TwitchTokenSettingsDialog::AskForSettings(GetSettingsWindow(),
+						  *token.get());
+}
+
+InvalidTokenDialog::InvalidTokenDialog(const QString &name)
+	: QDialog(GetSettingsWindow()),
+	  _doNotShowAgain(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.twitchToken.warnIfInvalid.doNotShowAgain")))
+{
+	auto buttons = new QDialogButtonBox(QDialogButtonBox::Ignore |
+					    QDialogButtonBox::Open);
+
+	connect(buttons->button(QDialogButtonBox::Ignore),
+		&QPushButton::clicked, this, &QDialog::reject);
+	connect(buttons->button(QDialogButtonBox::Open), &QPushButton::clicked,
+		this, &QDialog::accept);
+	buttons->setCenterButtons(true);
+
+	const QString format(obs_module_text(
+		"AdvSceneSwitcher.twitchToken.warnIfInvalid.message"));
+	const QString message = format.arg(name);
+
+	auto layout = new QVBoxLayout;
+	layout->addWidget(new QLabel(message));
+	layout->addWidget(_doNotShowAgain);
+	layout->addWidget(buttons);
+	setLayout(layout);
 }
 
 } // namespace advss
