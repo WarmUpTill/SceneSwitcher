@@ -55,6 +55,8 @@ public:
 	std::shared_ptr<EventSub> GetEventSub();
 	bool ValidateTimestamps() const { return _validateEventSubTimestamps; }
 	bool IsValid(bool forceUpdate = false) const;
+	bool WarnIfInvalid() const { return _warnIfInvalid; }
+	void SetWarnIfInvalid(bool value) { _warnIfInvalid = value; }
 	size_t PermissionCount() const { return _tokenOptions.size(); }
 
 private:
@@ -67,6 +69,7 @@ private:
 	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
 	bool _validateEventSubTimestamps = false;
+	bool _warnIfInvalid = true;
 
 	static bool _setup;
 
@@ -131,6 +134,7 @@ private:
 	TwitchToken _currentToken;
 	std::unordered_map<std::string, QCheckBox *> _optionWidgets;
 	QCheckBox *_validateTimestamps;
+	QCheckBox *_warnIfInvalid;
 	QTimer _validationTimer;
 };
 
