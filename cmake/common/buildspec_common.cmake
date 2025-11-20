@@ -180,24 +180,46 @@ function(_check_dependencies)
       set(url ${url}/${version}/${file})
     endif()
 
+    set(MAX_DOWNLOAD_RETRIES 3)
+    set(RETRY_DELAY 60) # seconds
+
     if(NOT EXISTS "${dependencies_dir}/${file}")
       message(STATUS "Downloading ${url}")
-      file(
-        DOWNLOAD "${url}" "${dependencies_dir}/${file}"
-        STATUS download_status
-        EXPECTED_HASH SHA256=${hash})
 
-      list(GET download_status 0 error_code)
-      list(GET download_status 1 error_message)
-      if(error_code GREATER 0)
-        message(STATUS "Downloading ${url} - Failure")
+      set(download_success FALSE)
+
+      foreach(i RANGE 1 ${MAX_DOWNLOAD_RETRIES})
+        message(STATUS "Attempt ${i}/${MAX_DOWNLOAD_RETRIES} for ${url}")
+
+        file(
+          DOWNLOAD "${url}" "${dependencies_dir}/${file}"
+          STATUS download_status
+          EXPECTED_HASH SHA256=${hash})
+
+        list(GET download_status 0 error_code)
+        list(GET download_status 1 error_message)
+
+        if(error_code EQUAL 0)
+          message(STATUS "Downloading ${url} - success on attempt ${i}")
+          set(download_success TRUE)
+          break()
+        else()
+          message(WARNING "Download failed (attempt ${i}): ${error_message}")
+          file(REMOVE "${dependencies_dir}/${file}")
+
+          if(NOT i EQUAL MAX_DOWNLOAD_RETRIES)
+            message(STATUS "Retrying in ${RETRY_DELAY} seconds...")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E sleep ${RETRY_DELAY})
+          endif()
+        endif()
+      endforeach()
+
+      if(NOT download_success)
         message(
           FATAL_ERROR
-            "Unable to download ${url}, failed with error: ${error_message}")
-        file(REMOVE "${dependencies_dir}/${file}")
-      else()
-        message(STATUS "Downloading ${url} - done")
+            "Unable to download ${url} after ${MAX_DOWNLOAD_RETRIES} attempts")
       endif()
+      message(STATUS "Downloading ${url} - done")
     endif()
 
     if(NOT EXISTS "${dependencies_dir}/${destination}")
