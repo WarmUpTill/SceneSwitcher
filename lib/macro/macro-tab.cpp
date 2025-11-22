@@ -615,17 +615,20 @@ setupToolBar(const std::initializer_list<std::initializer_list<QWidget *>>
 	auto toolbar = new QToolBar();
 	toolbar->setIconSize({16, 16});
 
-	QAction *lastSeperator = nullptr;
+	QAction *lastSeparator = nullptr;
 
 	for (const auto &widgetGroup : widgetGroups) {
 		for (const auto &widget : widgetGroup) {
+			if (!widget) {
+				continue;
+			}
 			toolbar->addWidget(widget);
 		}
-		lastSeperator = toolbar->addSeparator();
+		lastSeparator = toolbar->addSeparator();
 	}
 
-	if (lastSeperator) {
-		toolbar->removeAction(lastSeperator);
+	if (lastSeparator) {
+		toolbar->removeAction(lastSeparator);
 	}
 
 	// Prevent "extension" button from showing up
