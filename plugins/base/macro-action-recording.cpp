@@ -22,12 +22,18 @@ const static std::map<MacroActionRecord::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.recording.type.pause"},
 	{MacroActionRecord::Action::UNPAUSE,
 	 "AdvSceneSwitcher.action.recording.type.unpause"},
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(28, 0, 0)
 	{MacroActionRecord::Action::SPLIT,
 	 "AdvSceneSwitcher.action.recording.type.split"},
+#endif
 	{MacroActionRecord::Action::FOLDER,
 	 "AdvSceneSwitcher.action.recording.type.changeOutputFolder"},
 	{MacroActionRecord::Action::FILE_FORMAT,
 	 "AdvSceneSwitcher.action.recording.type.changeOutputFileFormat"},
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 2, 0)
+	{MacroActionRecord::Action::ADD_CHAPTER,
+	 "AdvSceneSwitcher.action.recording.type.addChapter"},
+#endif
 };
 
 bool MacroActionRecord::PerformAction()
@@ -87,6 +93,13 @@ bool MacroActionRecord::PerformAction()
 		}
 		break;
 	}
+#if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 2, 0)
+	case Action::ADD_CHAPTER:
+		if (!obs_frontend_recording_add_chapter(_chapterName.c_str())) {
+			blog(LOG_WARNING, "failed to add recoding chapter!");
+		}
+		break;
+#endif
 	default:
 		break;
 	}
@@ -110,6 +123,7 @@ bool MacroActionRecord::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
 	_folder.Save(obj, "folder");
 	_fileFormat.Save(obj, "format");
+	_chapterName.Save(obj, "chapterName");
 	return true;
 }
 
@@ -119,6 +133,7 @@ bool MacroActionRecord::Load(obs_data_t *obj)
 	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
 	_folder.Load(obj, "folder");
 	_fileFormat.Load(obj, "format");
+	_chapterName.Load(obj, "chapterName");
 	return true;
 }
 
@@ -136,6 +151,7 @@ void MacroActionRecord::ResolveVariablesToFixedValues()
 {
 	_folder.ResolveVariables();
 	_fileFormat.ResolveVariables();
+	_chapterName.ResolveVariables();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -154,7 +170,8 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 	  _splitHint(new QLabel(obs_module_text(
 		  "AdvSceneSwitcher.action.recording.split.hint"))),
 	  _recordFolder(new FileSelection(FileSelection::Type::FOLDER, this)),
-	  _recordFileFormat(new VariableLineEdit(this))
+	  _recordFileFormat(new VariableLineEdit(this)),
+	  _chapterName(new VariableLineEdit(this))
 {
 	populateActionSelection(_actions);
 
@@ -164,6 +181,8 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 			 this, SLOT(FolderChanged(const QString &)));
 	QWidget::connect(_recordFileFormat, SIGNAL(editingFinished()), this,
 			 SLOT(FormatStringChanged()));
+	QWidget::connect(_chapterName, SIGNAL(editingFinished()), this,
+			 SLOT(ChapterNameChanged()));
 
 	auto mainLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.recording.entry"),
@@ -172,7 +191,8 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 		      {"{{pauseHint}}", _pauseHint},
 		      {"{{splitHint}}", _splitHint},
 		      {"{{recordFolder}}", _recordFolder},
-		      {"{{recordFileFormat}}", _recordFileFormat}});
+		      {"{{recordFileFormat}}", _recordFileFormat},
+		      {"{{chapterName}}", _chapterName}});
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -188,6 +208,7 @@ void MacroActionRecordEdit::UpdateEntryData()
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
 	_recordFolder->SetPath(_entryData->_folder);
 	_recordFileFormat->setText(_entryData->_fileFormat);
+	_chapterName->setText(_entryData->_chapterName);
 	SetWidgetVisibility();
 }
 
@@ -209,6 +230,12 @@ void MacroActionRecordEdit::FormatStringChanged()
 	_entryData->_fileFormat = _recordFileFormat->text().toStdString();
 }
 
+void MacroActionRecordEdit::ChapterNameChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_chapterName = _chapterName->text().toStdString();
+}
+
 void MacroActionRecordEdit::SetWidgetVisibility()
 {
 	_pauseHint->setVisible(isPauseAction(_entryData->_action));
@@ -218,6 +245,8 @@ void MacroActionRecordEdit::SetWidgetVisibility()
 				  MacroActionRecord::Action::FOLDER);
 	_recordFileFormat->setVisible(_entryData->_action ==
 				      MacroActionRecord::Action::FILE_FORMAT);
+	_chapterName->setVisible(_entryData->_action ==
+				 MacroActionRecord::Action::ADD_CHAPTER);
 }
 
 void MacroActionRecordEdit::ActionChanged(int value)
