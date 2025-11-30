@@ -144,9 +144,14 @@ static void handleThrottling(const httplib::Result &response)
 		return;
 	}
 
-	blog(LOG_WARNING, "Twitch API access is throttled for %lld seconds!",
+	if (sleepDuration < std::chrono::seconds(1)) {
+		sleepDuration = std::chrono::seconds(1);
+	}
+
+	blog(LOG_WARNING,
+	     "Twitch API access is throttled for %lld milliseconds!",
 	     static_cast<long long int>(
-		     std::chrono::duration_cast<std::chrono::seconds>(
+		     std::chrono::duration_cast<std::chrono::milliseconds>(
 			     sleepDuration)
 			     .count()));
 	apiIsThrottling = true;
