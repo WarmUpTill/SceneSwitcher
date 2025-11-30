@@ -9,8 +9,6 @@
 #include "temp-variable.hpp"
 
 #include <future>
-#include <QString>
-#include <QByteArray>
 #include <string>
 #include <deque>
 #include <memory>
@@ -220,9 +218,6 @@ void SaveMacros(obs_data_t *obj);
 bool CheckMacros();
 bool RunMacros();
 void StopAllMacros();
-Macro *GetMacroByName(const char *name);
-Macro *GetMacroByQString(const QString &name);
-std::weak_ptr<Macro> GetWeakMacroByName(const char *name);
 void InvalidateMacroTempVarValues();
 std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval();
 

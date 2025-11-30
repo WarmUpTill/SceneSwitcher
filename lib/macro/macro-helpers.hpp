@@ -1,6 +1,8 @@
 #pragma once
 #include "export-symbol-helper.hpp"
 
+#include <QString>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -21,6 +23,10 @@ class MacroCondition;
 EXPORT std::deque<std::shared_ptr<Macro>> &GetTopLevelMacros();
 std::deque<std::shared_ptr<Macro>> &GetTemporaryMacros();
 EXPORT std::deque<std::shared_ptr<Macro>> GetAllMacros();
+
+Macro *GetMacroByName(const char *name);
+Macro *GetMacroByQString(const QString &name);
+std::weak_ptr<Macro> GetWeakMacroByName(const char *name);
 
 EXPORT std::optional<std::deque<std::shared_ptr<MacroAction>>>
 GetMacroActions(Macro *);
