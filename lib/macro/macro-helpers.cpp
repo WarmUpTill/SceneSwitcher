@@ -63,6 +63,33 @@ std::deque<std::shared_ptr<Macro>> GetAllMacros()
 	return macros;
 }
 
+Macro *GetMacroByName(const char *name)
+{
+	for (const auto &m : GetTopLevelMacros()) {
+		if (m->Name() == name) {
+			return m.get();
+		}
+	}
+
+	return nullptr;
+}
+
+Macro *GetMacroByQString(const QString &name)
+{
+	return GetMacroByName(name.toUtf8().constData());
+}
+
+std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
+{
+	for (const auto &m : GetTopLevelMacros()) {
+		if (m->Name() == name) {
+			return m;
+		}
+	}
+
+	return {};
+}
+
 std::optional<std::deque<std::shared_ptr<MacroAction>>>
 GetMacroActions(Macro *macro)
 {

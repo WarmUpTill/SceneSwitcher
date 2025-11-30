@@ -1255,33 +1255,6 @@ void StopAllMacros()
 	}
 }
 
-Macro *GetMacroByName(const char *name)
-{
-	for (const auto &m : GetTopLevelMacros()) {
-		if (m->Name() == name) {
-			return m.get();
-		}
-	}
-
-	return nullptr;
-}
-
-Macro *GetMacroByQString(const QString &name)
-{
-	return GetMacroByName(name.toUtf8().constData());
-}
-
-std::weak_ptr<Macro> GetWeakMacroByName(const char *name)
-{
-	for (const auto &m : GetTopLevelMacros()) {
-		if (m->Name() == name) {
-			return m;
-		}
-	}
-
-	return {};
-}
-
 void InvalidateMacroTempVarValues()
 {
 	for (const auto &m : GetTopLevelMacros()) {
