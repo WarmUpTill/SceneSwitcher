@@ -103,10 +103,11 @@ void SceneSelection::Load(obs_data_t *obj, const char *name,
 	OBSDataAutoRelease data =
 		obs_data_get_obj(obj, selectionSaveName.data());
 
-	if (obs_data_has_user_value(data, canvasSaveName.data())) {
-		_canvas = GetWeakCanvasByName(
-			obs_data_get_string(data, canvasSaveName.data()));
-	} else {
+	const char *canvasName =
+		obs_data_get_string(data, canvasSaveName.data());
+	_canvas = GetWeakCanvasByName(
+		obs_data_get_string(data, canvasSaveName.data()));
+	if (strcmp(canvasName, "") == 0) {
 		OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
 		_canvas = obs_canvas_get_weak_canvas(mainCanvas);
 		obs_weak_canvas_release(_canvas);
