@@ -137,31 +137,51 @@ bool MacroActionSwitchScene::WaitForTransition(OBSWeakSource &scene,
 bool MacroActionSwitchScene::PerformAction()
 {
 	OBSWeakSource sceneToSwitchTo;
-	OBSWeakCanvas canvas;
+	OBSWeakCanvas canvasToSwitchFor;
+
+	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+	OBSWeakCanvas mainCanvasWeak = OBSGetWeakRef(mainCanvas);
+
+	const auto getActiveSceneHelper = [this](const OBSWeakCanvas &canvas) {
+		OBSWeakSource activeScene;
+		if (IsMainCanvas(canvas) && _sceneType == SceneType::PREVIEW) {
+			OBSSourceAutoRelease previewSource =
+				obs_frontend_get_current_preview_scene();
+			return OBSGetWeakRef(previewSource);
+		} else {
+			return GetActiveCanvasScene(canvas);
+		}
+	};
 
 	switch (_action) {
 	case Action::SCENE_NAME:
 		sceneToSwitchTo = _scene.GetScene();
-		canvas = _scene.GetCanvas();
+		canvasToSwitchFor = _scene.GetCanvas();
 		break;
 	case Action::SCENE_LIST_NEXT: {
-		const auto activeScene = GetActiveCanvasScene(_canvas);
-		const int currentIndex = GetIndexOfScene(_canvas, activeScene);
-		sceneToSwitchTo = GetSceneAtIndex(_canvas, currentIndex + 1);
-		canvas = _canvas;
+		canvasToSwitchFor = _canvas ? _canvas : mainCanvasWeak;
+		const auto activeScene =
+			getActiveSceneHelper(canvasToSwitchFor);
+		const int currentIndex =
+			GetIndexOfScene(canvasToSwitchFor, activeScene);
+		sceneToSwitchTo =
+			GetSceneAtIndex(canvasToSwitchFor, currentIndex + 1);
 		break;
 	}
 	case Action::SCENE_LIST_PREVIOUS: {
-		const auto activeScene = GetActiveCanvasScene(_canvas);
-		const int currentIndex = GetIndexOfScene(_canvas, activeScene);
-		sceneToSwitchTo = GetSceneAtIndex(_canvas, currentIndex - 1);
-		canvas = _canvas;
+		canvasToSwitchFor = _canvas ? _canvas : mainCanvasWeak;
+		const auto activeScene =
+			getActiveSceneHelper(canvasToSwitchFor);
+		const int currentIndex =
+			GetIndexOfScene(canvasToSwitchFor, activeScene);
+		sceneToSwitchTo =
+			GetSceneAtIndex(canvasToSwitchFor, currentIndex - 1);
 		break;
 	}
 	case Action::SCENE_LIST_INDEX: {
-		sceneToSwitchTo =
-			GetSceneAtIndex(_canvas, _index.GetValue() - 1);
-		canvas = _canvas;
+		canvasToSwitchFor = _canvas ? _canvas : mainCanvasWeak;
+		sceneToSwitchTo = GetSceneAtIndex(canvasToSwitchFor,
+						  _index.GetValue() - 1);
 		break;
 	}
 	default:
@@ -176,11 +196,12 @@ bool MacroActionSwitchScene::PerformAction()
 	}
 
 	auto transition = _transition.GetTransition();
-	SwitchScene({sceneToSwitchTo, transition,
-		     (int)(_duration.Milliseconds())},
-		    obs_frontend_preview_program_mode_active(), canvas);
+	SwitchScene(
+		{sceneToSwitchTo, transition, (int)(_duration.Milliseconds())},
+		obs_frontend_preview_program_mode_active(), canvasToSwitchFor);
 	if (_blockUntilTransitionDone && sceneToSwitchTo &&
-	    sceneToSwitchTo != GetCurrentScene() && IsMainCanvas(canvas)) {
+	    sceneToSwitchTo != GetCurrentScene() &&
+	    IsMainCanvas(canvasToSwitchFor)) {
 		return WaitForTransition(sceneToSwitchTo, transition);
 	}
 	return true;
@@ -392,6 +413,7 @@ void MacroActionSwitchSceneEdit::SetWidgetData() const
 	_sceneTypes->setCurrentIndex(_sceneTypes->findData(
 		static_cast<int>(_entryData->_sceneType)));
 	_scenes->SetScene(_entryData->_scene);
+	_canvas->SetCanvas(_entryData->_canvas);
 	_transitions->SetTransition(_entryData->_transition);
 	_duration->SetDuration(_entryData->_duration);
 	_blockUntilTransitionDone->setChecked(
@@ -561,9 +583,17 @@ void MacroActionSwitchSceneEdit::SetWidgetVisibility()
 		     {{"{{transitions}}", _transitions},
 		      {"{{duration}}", _duration}});
 
-	const auto canvas = action == MacroActionSwitchScene::Action::SCENE_NAME
-				    ? _entryData->_scene.GetCanvas()
-				    : _entryData->_canvas;
+	OBSWeakCanvas canvas;
+	if (action == MacroActionSwitchScene::Action::SCENE_NAME) {
+		canvas = _entryData->_scene.GetCanvas();
+	} else {
+		if (_entryData->_canvas) {
+			canvas = _entryData->_canvas;
+		} else {
+			OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+			canvas = OBSGetWeakRef(mainCanvas);
+		}
+	}
 	const bool isMainCanvas = IsMainCanvas(canvas);
 	SetLayoutVisible(_transitionLayout, isMainCanvas);
 	_blockUntilTransitionDone->setVisible(isMainCanvas);
@@ -580,7 +610,7 @@ void MacroActionSwitchSceneEdit::SetWidgetVisibility()
 	_notSupportedWarning->setText(
 		fmt.arg(QString::fromStdString(GetWeakCanvasName(canvas))));
 	_notSupportedWarning->setVisible(
-		!IsMainCanvas(canvas) &&
+		!isMainCanvas &&
 		_entryData->_sceneType ==
 			MacroActionSwitchScene::SceneType::PREVIEW);
 
