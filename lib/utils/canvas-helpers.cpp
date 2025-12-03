@@ -297,6 +297,12 @@ int GetIndexOfScene(const OBSWeakCanvas &weakCanvas, const OBSWeakSource &scene)
 	return data.idx;
 }
 
+OBSWeakCanvas GetMainCanvas()
+{
+	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+	return OBSGetWeakRef(mainCanvas);
+}
+
 #if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(31, 1, 0)
 
 obs_canvas_t *obs_canvas_get_ref(obs_canvas_t *)

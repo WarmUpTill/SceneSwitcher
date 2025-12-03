@@ -30,7 +30,7 @@ public:
 
 private:
 	OBSWeakSource _scene;
-	OBSWeakCanvas _canvas;
+	OBSWeakCanvas _canvas = GetMainCanvas();
 	SceneGroup *_group = nullptr;
 	std::weak_ptr<Variable> _variable;
 	Type _type = Type::SCENE;

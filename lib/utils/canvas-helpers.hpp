@@ -42,6 +42,7 @@ EXPORT OBSWeakSource GetActiveCanvasScene(const OBSWeakCanvas &canvas);
 EXPORT OBSWeakSource GetSceneAtIndex(const OBSWeakCanvas &weakCanvas, int idx);
 EXPORT int GetIndexOfScene(const OBSWeakCanvas &weakCanvas,
 			   const OBSWeakSource &scene);
+EXPORT OBSWeakCanvas GetMainCanvas();
 
 class CanvasSelection : public FilterComboBox {
 	Q_OBJECT
