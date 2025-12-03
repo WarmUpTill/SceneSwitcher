@@ -1,6 +1,7 @@
 #include "token.hpp"
 #include "twitch-helpers.hpp"
 
+#include <help-icon.hpp>
 #include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
@@ -547,11 +548,17 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setFrameShape(QFrame::NoFrame);
 
+	auto timestampsLayout = new QHBoxLayout();
+	timestampsLayout->addWidget(_validateTimestamps);
+	auto timestampHelp = new HelpIcon(obs_module_text(
+		"AdvSceneSwitcher.twitchToken.validateTimestamps.tooltip"));
+	timestampsLayout->addWidget(timestampHelp);
+
 	auto contentWidget = new QWidget(scrollArea);
 	auto layout = new QVBoxLayout(contentWidget);
 	layout->addLayout(_generalSettingsGrid);
 	layout->addWidget(optionsBox);
-	layout->addWidget(_validateTimestamps);
+	layout->addLayout(timestampsLayout);
 	layout->addWidget(_warnIfInvalid);
 	layout->setContentsMargins(0, 0, 0, 0);
 	scrollArea->setWidget(contentWidget);
