@@ -67,7 +67,7 @@ int GetCanvasCount()
 	return 1;
 #else
 	static const auto enumCanvases = [](void *countPtr,
-					    obs_canvas_t *canvas) -> bool {
+					    obs_canvas_t *) -> bool {
 		auto count = static_cast<int *>(countPtr);
 		(*count)++;
 		return true;
@@ -145,6 +145,15 @@ OBSWeakSource GetActiveCanvasScene(const OBSWeakCanvas &weakCanvas)
 	}
 #endif
 
+	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+
+	// The frontend scene order does not necessarily match the order of the
+	// scenes in the canvas.
+	if (canvas == mainCanvas) {
+		OBSSourceAutoRelease scene = obs_frontend_get_current_scene();
+		return OBSGetWeakRef(scene);
+	}
+
 	static const auto enumCanvasScenes = [](void *scenePtr,
 						obs_source_t *source) -> bool {
 		auto scene = static_cast<OBSWeakSource *>(scenePtr);
@@ -180,6 +189,25 @@ OBSWeakSource GetSceneAtIndex(const OBSWeakCanvas &weakCanvas, int idx)
 		return nullptr;
 	}
 #endif
+
+	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+
+	// The frontend scene order does not necessarily match the order of the
+	// scenes in the canvas.
+	// So, rely on obs_frontend_get_scenes() in case of the main canvas
+	// instead.
+	if (canvas == mainCanvas) {
+		struct obs_frontend_source_list scenes = {0};
+		obs_frontend_get_scenes(&scenes);
+		if (idx >= (int)scenes.sources.num) {
+			obs_frontend_source_list_free(&scenes);
+			return nullptr;
+		}
+
+		auto scene = OBSGetWeakRef(scenes.sources.array[idx]);
+		obs_frontend_source_list_free(&scenes);
+		return scene;
+	}
 
 	struct Data {
 		const int idx;
@@ -223,6 +251,29 @@ int GetIndexOfScene(const OBSWeakCanvas &weakCanvas, const OBSWeakSource &scene)
 		return 0;
 	}
 #endif
+	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+
+	// The frontend scene order does not necessarily match the order of the
+	// scenes in the canvas.
+	// So, rely on obs_frontend_get_scenes() in case of the main canvas
+	// instead.
+	if (canvas == mainCanvas) {
+		struct obs_frontend_source_list scenes = {0};
+		obs_frontend_get_scenes(&scenes);
+
+		OBSSourceAutoRelease sceneSource = OBSGetStrongRef(scene);
+		int idx = 0;
+
+		for (size_t i = 0; i < scenes.sources.num; i++) {
+			if (scenes.sources.array[i] == sceneSource) {
+				idx = i;
+				break;
+			}
+		}
+
+		obs_frontend_source_list_free(&scenes);
+		return idx;
+	}
 
 	struct Data {
 		int idx;
