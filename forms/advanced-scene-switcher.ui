@@ -68,351 +68,233 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1145</height>
+            <height>1117</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_31">
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_2">
-               <item>
-                <widget class="QGroupBox" name="statusBox">
-                 <property name="title">
-                  <string>AdvSceneSwitcher.generalTab.status</string>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_4">
-                  <item row="0" column="0">
-                   <layout class="QGridLayout" name="statusLayout">
-                    <item row="4" column="1">
-                     <widget class="QComboBox" name="autoStartEvent"/>
-                    </item>
-                    <item row="4" column="0">
-                     <widget class="QLabel" name="label_10">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.status.autoStart.startup</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="0">
-                     <layout class="QVBoxLayout" name="verticalLayout_33">
-                      <item>
-                       <widget class="QLabel" name="label_4">
-                        <property name="text">
-                         <string>AdvSceneSwitcher.generalTab.status.checkInterval</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLabel" name="checkIntervalTooLowWarning">
-                        <property name="text">
-                         <string/>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
-                    </item>
-                    <item row="3" column="1">
-                     <widget class="QComboBox" name="startupBehavior"/>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QWidget" name="placeholder3" native="true"/>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QWidget" name="placeholder" native="true"/>
-                    </item>
-                    <item row="3" column="0">
-                     <widget class="QLabel" name="label_64">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.status.onStartup</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QWidget" name="placeholder2" native="true"/>
-                    </item>
-                    <item row="6" column="0">
-                     <widget class="QLabel" name="label_13">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QSpinBox" name="checkInterval">
-                      <property name="minimumSize">
-                       <size>
-                        <width>100</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="suffix">
-                       <string notr="true">ms</string>
-                      </property>
-                      <property name="minimum">
-                       <number>10</number>
-                      </property>
-                      <property name="maximum">
-                       <number>20000</number>
-                      </property>
-                      <property name="value">
-                       <number>300</number>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="5" column="0">
-                     <widget class="QCheckBox" name="autoStartSceneEnable">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.status.autoStart.scene</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="5" column="1">
-                     <layout class="QHBoxLayout" name="autoStartSceneLayout">
-                      <item>
-                       <widget class="advss::SceneSelectionWidget" name="autoStartScene" native="true"/>
-                      </item>
-                      <item>
-                       <widget class="advss::VariableLineEdit" name="autoStartSceneName"/>
-                      </item>
-                      <item>
-                       <widget class="advss::RegexConfigWidget" name="autoStartSceneNameRegex" native="true"/>
-                      </item>
-                     </layout>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QGroupBox" name="generalSettingsBox">
-                 <property name="title">
-                  <string>AdvSceneSwitcher.generalTab.generalBehavior</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_32">
+            <widget class="QGroupBox" name="statusBox">
+             <property name="title">
+              <string>AdvSceneSwitcher.generalTab.status</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="0" column="0">
+               <layout class="QGridLayout" name="statusLayout">
+                <item row="4" column="1">
+                 <widget class="QComboBox" name="autoStartEvent"/>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_10">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.autoStart.startup</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <layout class="QVBoxLayout" name="verticalLayout_33">
                   <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_52">
-                    <item>
-                     <widget class="QLabel" name="label_21">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QComboBox" name="logLevel"/>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_49">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_50">
-                    <item>
-                     <widget class="QCheckBox" name="saveWindowGeo">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.saveWindowGeo</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_55">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_2">
-                    <item>
-                     <widget class="QCheckBox" name="showTrayNotifications">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.showTrayNotifications</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_2">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_48">
-                    <item>
-                     <widget class="QCheckBox" name="uiHintsDisable">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.disableUIHints</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_52">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_11">
-                    <item>
-                     <widget class="QCheckBox" name="disableComboBoxFilter">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.comboBoxFilterDisable</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_13">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <widget class="QCheckBox" name="alwaysShowMacroSearch">
+                   <widget class="QLabel" name="label_4">
                     <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowMacroSearch</string>
+                     <string>AdvSceneSwitcher.generalTab.status.checkInterval</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_12">
-                    <item>
-                     <widget class="QCheckBox" name="disableMacroWidgetCache">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.disableMacroWidgetCache</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_26">
-                    <item>
-                     <widget class="QCheckBox" name="warnPluginLoadFailure">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailure</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_19">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_24">
-                    <item>
-                     <widget class="QCheckBox" name="hideLegacyTabs">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.generalBehavior.hideLegacyTabs</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_16">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
+                   <widget class="QLabel" name="checkIntervalTooLowWarning">
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
-                </widget>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="verticalLayout_18">
-                 <item>
-                  <widget class="QGroupBox" name="saveLoadBox">
-                   <property name="title">
-                    <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings</string>
-                   </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_17">
-                    <item>
-                     <widget class="QPushButton" name="exportSettings">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.export</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QPushButton" name="importSettings">
-                      <property name="text">
-                       <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.import</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </item>
-            </layout>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QComboBox" name="startupBehavior"/>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QWidget" name="placeholder3" native="true"/>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QWidget" name="placeholder" native="true"/>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_64">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.onStartup</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QWidget" name="placeholder2" native="true"/>
+                </item>
+                <item row="6" column="0">
+                 <widget class="QLabel" name="label_13">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.hotkeytips</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QSpinBox" name="checkInterval">
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="suffix">
+                   <string notr="true">ms</string>
+                  </property>
+                  <property name="minimum">
+                   <number>10</number>
+                  </property>
+                  <property name="maximum">
+                   <number>20000</number>
+                  </property>
+                  <property name="value">
+                   <number>300</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QCheckBox" name="autoStartSceneEnable">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.status.autoStart.scene</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1">
+                 <layout class="QHBoxLayout" name="autoStartSceneLayout">
+                  <item>
+                   <widget class="advss::SceneSelectionWidget" name="autoStartScene" native="true"/>
+                  </item>
+                  <item>
+                   <widget class="advss::VariableLineEdit" name="autoStartSceneName"/>
+                  </item>
+                  <item>
+                   <widget class="advss::RegexConfigWidget" name="autoStartSceneNameRegex" native="true"/>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="generalSettingsBox">
+             <property name="title">
+              <string>AdvSceneSwitcher.generalTab.generalBehavior</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_32">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_52">
+                <item>
+                 <widget class="QLabel" name="label_21">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.logLevel</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="logLevel"/>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_49">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="saveWindowGeo">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.saveWindowGeo</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="showTrayNotifications">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.showTrayNotifications</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="uiHintsDisable">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableUIHints</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="disableComboBoxFilter">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.comboBoxFilterDisable</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="alwaysShowMacroSearch">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowMacroSearch</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="disableMacroWidgetCache">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableMacroWidgetCache</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="warnPluginLoadFailure">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailure</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="hideLegacyTabs">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.hideLegacyTabs</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="saveLoadBox">
+             <property name="title">
+              <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_17">
+              <item>
+               <widget class="QPushButton" name="exportSettings">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.export</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="importSettings">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.import</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="groupBox_6">
@@ -450,29 +332,21 @@
               <item>
                <layout class="QGridLayout" name="gridLayout">
                 <item row="0" column="2">
-                 <layout class="QHBoxLayout" name="horizontalLayout_43">
-                  <item>
-                   <widget class="QRadioButton" name="noMatchDontSwitch">
-                    <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.dontSwitch</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                 <widget class="QRadioButton" name="noMatchDontSwitch">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.dontSwitch</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
                 </item>
                 <item row="2" column="2">
-                 <layout class="QHBoxLayout" name="horizontalLayout_45">
-                  <item>
-                   <widget class="QRadioButton" name="noMatchRandomSwitch">
-                    <property name="text">
-                     <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.switchToRandom</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                 <widget class="QRadioButton" name="noMatchRandomSwitch">
+                  <property name="text">
+                   <string>AdvSceneSwitcher.generalTab.generalBehavior.onNoMatch.switchToRandom</string>
+                  </property>
+                 </widget>
                 </item>
                 <item row="1" column="2">
                  <layout class="QHBoxLayout" name="horizontalLayout">
@@ -582,15 +456,7 @@
                </widget>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_10">
-                <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_41">
-                  <item>
-                   <widget class="QListWidget" name="priorityList"/>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
+               <widget class="QListWidget" name="priorityList"/>
               </item>
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_32">
