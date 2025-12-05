@@ -208,7 +208,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 	// Don't cache widgets for about to be deleted macros
 	MacroSegmentList::SetCachingEnabled(false);
 	ui->macros->Remove(macro);
-	MacroSegmentList::SetCachingEnabled(!switcher->disableMacroWidgetCache);
+	MacroSegmentList::SetCachingEnabled(true);
 
 	MacroSignalManager::Instance()->Remove(name);
 }

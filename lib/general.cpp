@@ -186,16 +186,6 @@ void AdvSceneSwitcher::on_disableComboBoxFilter_stateChanged(int state)
 	FilterComboBox::SetFilterBehaviourEnabled(!state);
 }
 
-void AdvSceneSwitcher::on_disableMacroWidgetCache_stateChanged(int state)
-{
-	if (loading) {
-		return;
-	}
-
-	switcher->disableMacroWidgetCache = state;
-	MacroSegmentList::SetCachingEnabled(!state);
-}
-
 void AdvSceneSwitcher::on_warnPluginLoadFailure_stateChanged(int state)
 {
 	if (loading) {
@@ -532,8 +522,6 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "disableHints", disableHints);
 	obs_data_set_bool(obj, "disableFilterComboboxFilter",
 			  disableFilterComboboxFilter);
-	obs_data_set_bool(obj, "disableMacroWidgetCache",
-			  disableMacroWidgetCache);
 	obs_data_set_bool(obj, "warnPluginLoadFailure", warnPluginLoadFailure);
 	obs_data_set_bool(obj, "hideLegacyTabs", hideLegacyTabs);
 
@@ -603,8 +591,6 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	disableHints = obs_data_get_bool(obj, "disableHints");
 	disableFilterComboboxFilter =
 		obs_data_get_bool(obj, "disableFilterComboboxFilter");
-	disableMacroWidgetCache =
-		obs_data_get_bool(obj, "disableMacroWidgetCache");
 	obs_data_set_default_bool(obj, "warnPluginLoadFailure", true);
 	warnPluginLoadFailure = obs_data_get_bool(obj, "warnPluginLoadFailure");
 	obs_data_set_default_bool(obj, "hideLegacyTabs", true);
@@ -928,9 +914,6 @@ void AdvSceneSwitcher::SetupGeneralTab()
 		switcher->disableFilterComboboxFilter);
 	FilterComboBox::SetFilterBehaviourEnabled(
 		!switcher->disableFilterComboboxFilter);
-	ui->disableMacroWidgetCache->setChecked(
-		switcher->disableMacroWidgetCache);
-	MacroSegmentList::SetCachingEnabled(!switcher->disableMacroWidgetCache);
 	ui->warnPluginLoadFailure->setChecked(switcher->warnPluginLoadFailure);
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 
