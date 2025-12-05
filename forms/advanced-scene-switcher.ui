@@ -68,7 +68,7 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1117</height>
+            <height>1132</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -182,6 +182,29 @@
             </widget>
            </item>
            <item>
+            <widget class="QGroupBox" name="saveLoadBox">
+             <property name="title">
+              <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_17">
+              <item>
+               <widget class="QPushButton" name="exportSettings">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.export</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="importSettings">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.import</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <widget class="QGroupBox" name="generalSettingsBox">
              <property name="title">
               <string>AdvSceneSwitcher.generalTab.generalBehavior</string>
@@ -215,16 +238,32 @@
                </layout>
               </item>
               <item>
-               <widget class="QCheckBox" name="saveWindowGeo">
+               <widget class="QCheckBox" name="showTrayNotifications">
                 <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.generalBehavior.saveWindowGeo</string>
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.showTrayNotifications</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="showTrayNotifications">
+               <widget class="QCheckBox" name="warnPluginLoadFailure">
                 <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.generalBehavior.showTrayNotifications</string>
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailure</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_6">
+             <property name="title">
+              <string>AdvSceneSwitcher.generalTab.uiBehavior</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2">
+              <item>
+               <widget class="QCheckBox" name="saveWindowGeo">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.saveWindowGeo</string>
                 </property>
                </widget>
               </item>
@@ -250,20 +289,6 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="disableMacroWidgetCache">
-                <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableMacroWidgetCache</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="warnPluginLoadFailure">
-                <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.generalBehavior.warnPluginLoadFailure</string>
-                </property>
-               </widget>
-              </item>
-              <item>
                <widget class="QCheckBox" name="hideLegacyTabs">
                 <property name="text">
                  <string>AdvSceneSwitcher.generalTab.generalBehavior.hideLegacyTabs</string>
@@ -274,30 +299,50 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="saveLoadBox">
+            <widget class="QGroupBox" name="transitionBox">
              <property name="title">
-              <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings</string>
+              <string>AdvSceneSwitcher.generalTab.transition</string>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_17">
-              <item>
-               <widget class="QPushButton" name="exportSettings">
+             <layout class="QGridLayout" name="transitionLayout">
+              <item row="1" column="1">
+               <widget class="QCheckBox" name="adjustActiveTransitionType">
                 <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.export</string>
+                 <string>AdvSceneSwitcher.generalTab.adjustActiveTransitionType</string>
                 </property>
                </widget>
               </item>
-              <item>
-               <widget class="QPushButton" name="importSettings">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_12">
                 <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.saveOrLoadsettings.import</string>
+                 <string>AdvSceneSwitcher.generalTab.setTransitionBy</string>
                 </property>
                </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="transitionOverridecheckBox">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.transitionOverride</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <spacer name="horizontalSpacer_9">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
              </layout>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="groupBox_6">
+            <widget class="QGroupBox" name="matchBehaviorBox">
              <property name="title">
               <string>AdvSceneSwitcher.generalTab.matchBehavior</string>
              </property>
@@ -395,49 +440,6 @@
                  </layout>
                 </item>
                </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QGroupBox" name="transitionBox">
-             <property name="title">
-              <string>AdvSceneSwitcher.generalTab.transition</string>
-             </property>
-             <layout class="QGridLayout" name="transitionLayout">
-              <item row="1" column="1">
-               <widget class="QCheckBox" name="adjustActiveTransitionType">
-                <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.adjustActiveTransitionType</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_12">
-                <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.setTransitionBy</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QCheckBox" name="transitionOverridecheckBox">
-                <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.transitionOverride</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <spacer name="horizontalSpacer_9">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
               </item>
              </layout>
             </widget>
@@ -4085,12 +4087,7 @@
   <tabstop>autoStartSceneName</tabstop>
   <tabstop>autoStartSceneNameRegex</tabstop>
   <tabstop>logLevel</tabstop>
-  <tabstop>saveWindowGeo</tabstop>
-  <tabstop>showTrayNotifications</tabstop>
-  <tabstop>uiHintsDisable</tabstop>
-  <tabstop>disableComboBoxFilter</tabstop>
   <tabstop>warnPluginLoadFailure</tabstop>
-  <tabstop>hideLegacyTabs</tabstop>
   <tabstop>exportSettings</tabstop>
   <tabstop>importSettings</tabstop>
   <tabstop>noMatchDontSwitch</tabstop>
