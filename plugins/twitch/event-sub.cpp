@@ -72,7 +72,6 @@ void EventSub::UnregisterInstance()
 void EventSub::ConnectThread()
 {
 	_client->reset();
-	_connected = true;
 	websocketpp::lib::error_code ec;
 	EventSubWSClient::connection_ptr con =
 		_client->get_connection(_url, ec);
@@ -113,6 +112,7 @@ void EventSub::Connect()
 		_thread.join();
 	}
 	_disconnect = false;
+	_connected = true;
 	_thread = std::thread(&EventSub::ConnectThread, this);
 }
 
