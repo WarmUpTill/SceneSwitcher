@@ -194,6 +194,7 @@ MacroActionSequenceEdit::MacroActionSequenceEdit(
 	  _resetIndex(new VariableSpinBox()),
 	  _layout(new QHBoxLayout())
 {
+	_macros->HideGroups();
 	populateActionSelection(_actions);
 
 	_resetIndex->setMinimum(1);
