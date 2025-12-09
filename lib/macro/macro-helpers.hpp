@@ -37,6 +37,9 @@ GetMacroElseActions(Macro *);
 EXPORT std::optional<std::deque<std::shared_ptr<MacroCondition>>>
 GetMacroConditions(Macro *);
 
+EXPORT bool IsGroupMacro(Macro *);
+EXPORT std::vector<std::shared_ptr<Macro>> GetGroupMacroEntries(Macro *);
+
 EXPORT std::condition_variable &GetMacroWaitCV();
 EXPORT std::condition_variable &GetMacroTransitionCV();
 
