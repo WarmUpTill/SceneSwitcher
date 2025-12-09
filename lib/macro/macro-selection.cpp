@@ -15,9 +15,6 @@ MacroSelection::MacroSelection(QWidget *parent)
 			 obs_module_text("AdvSceneSwitcher.selectMacro"))
 {
 	for (const auto &m : GetTopLevelMacros()) {
-		if (m->IsGroup()) {
-			continue;
-		}
 		addItem(QString::fromStdString(m->Name()));
 	}
 
@@ -64,6 +61,22 @@ void MacroSelection::HideSelectedMacro()
 	}
 
 	qobject_cast<QListView *>(view())->setRowHidden(idx, true);
+}
+
+void MacroSelection::HideGroups()
+{
+	for (const auto &macro : GetTopLevelMacros()) {
+		if (!macro->IsGroup()) {
+			continue;
+		}
+
+		int idx = findText(QString::fromStdString(macro->Name()));
+		if (idx == -1) {
+			continue;
+		}
+
+		qobject_cast<QListView *>(view())->setRowHidden(idx, true);
+	}
 }
 
 void MacroSelection::ShowAllMacros()
