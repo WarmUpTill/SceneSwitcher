@@ -117,11 +117,6 @@ GetMacroConditions(Macro *macro)
 	return macro->Conditions();
 }
 
-std::string_view GetSceneSwitchActionId()
-{
-	return MacroAction::GetDefaultID();
-}
-
 std::condition_variable &GetMacroWaitCV()
 {
 	static std::condition_variable cv;
