@@ -15,6 +15,7 @@ public:
 	MacroSelection(QWidget *parent);
 	void SetCurrentMacro(const MacroRef &);
 	void HideSelectedMacro(); // Macro currently being edited
+	void HideGroups();
 	void ShowAllMacros();
 
 private slots:

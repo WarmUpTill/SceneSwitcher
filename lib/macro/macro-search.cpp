@@ -244,22 +244,9 @@ bool MacroMatchesSearchFilter(Macro *macro)
 	}
 
 	if (macro->IsGroup()) {
-		std::vector<std::shared_ptr<Macro>> subItems;
-		subItems.reserve(macro->GroupSize());
-
-		const auto &macros = GetTopLevelMacros();
-		for (auto it = macros.begin(); it < macros.end(); it++) {
-			if ((*it)->Name() != macro->Name()) {
-				continue;
-			}
-			for (uint32_t i = 1; i <= macro->GroupSize(); i++) {
-				subItems.emplace_back(*std::next(it, i));
-			}
-			break;
-		}
-
-		for (const auto &item : subItems) {
-			if (MacroMatchesSearchFilter(item.get())) {
+		const auto groupEntries = GetGroupMacroEntries(macro);
+		for (const auto &entry : groupEntries) {
+			if (MacroMatchesSearchFilter(entry.get())) {
 				return true;
 			}
 		}

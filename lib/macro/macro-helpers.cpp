@@ -117,9 +117,32 @@ GetMacroConditions(Macro *macro)
 	return macro->Conditions();
 }
 
-std::string_view GetSceneSwitchActionId()
+bool IsGroupMacro(Macro *macro)
 {
-	return MacroAction::GetDefaultID();
+	return macro && macro->IsGroup();
+}
+
+std::vector<std::shared_ptr<Macro>> GetGroupMacroEntries(Macro *macro)
+{
+	if (!macro || !macro->IsGroup()) {
+		return {};
+	}
+
+	std::vector<std::shared_ptr<Macro>> entries;
+	entries.reserve(macro->GroupSize());
+
+	const auto &macros = GetTopLevelMacros();
+	for (auto it = macros.begin(); it < macros.end(); it++) {
+		if ((*it)->Name() != macro->Name()) {
+			continue;
+		}
+		for (uint32_t i = 1; i <= macro->GroupSize(); i++) {
+			entries.emplace_back(*std::next(it, i));
+		}
+		break;
+	}
+
+	return entries;
 }
 
 std::condition_variable &GetMacroWaitCV()

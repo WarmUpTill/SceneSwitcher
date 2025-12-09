@@ -31,15 +31,16 @@ bool MacroActionTimer::PerformAction()
 	if (!macro) {
 		return true;
 	}
-	auto conditions = *GetMacroConditions(macro.get());
-	for (auto condition : conditions) {
+
+	const auto updateCondition = [this](MacroCondition *condition) {
 		if (condition->GetId() != id) {
-			continue;
+			return;
 		}
+
 		auto timerCondition =
-			dynamic_cast<MacroConditionTimer *>(condition.get());
+			dynamic_cast<MacroConditionTimer *>(condition);
 		if (!timerCondition) {
-			continue;
+			return;
 		}
 
 		switch (_actionType) {
@@ -59,6 +60,23 @@ bool MacroActionTimer::PerformAction()
 		default:
 			break;
 		}
+	};
+
+	const auto updateMacro = [&](Macro *macro) {
+		auto conditions = *GetMacroConditions(macro);
+		for (auto condition : conditions) {
+			updateCondition(condition.get());
+		}
+	};
+
+	if (!IsGroupMacro(macro.get())) {
+		updateMacro(macro.get());
+		return true;
+	}
+
+	auto macros = GetGroupMacroEntries(macro.get());
+	for (const auto &macro : macros) {
+		updateMacro(macro.get());
 	}
 	return true;
 }
@@ -131,7 +149,7 @@ void MacroActionTimer::ResolveVariablesToFixedValues()
 	_duration.ResolveVariables();
 }
 
-static inline void populateTypeSelection(QComboBox *list)
+static void populateTypeSelection(QComboBox *list)
 {
 	for (const auto &[_, name] : timerActions) {
 		list->addItem(obs_module_text(name.c_str()));
@@ -140,12 +158,11 @@ static inline void populateTypeSelection(QComboBox *list)
 
 MacroActionTimerEdit::MacroActionTimerEdit(
 	QWidget *parent, std::shared_ptr<MacroActionTimer> entryData)
-	: QWidget(parent)
+	: QWidget(parent),
+	  _macros(new MacroSelection(parent)),
+	  _duration(new DurationSelection(this)),
+	  _timerAction(new QComboBox(this))
 {
-	_macros = new MacroSelection(parent);
-	_duration = new DurationSelection();
-	_timerAction = new QComboBox();
-
 	populateTypeSelection(_timerAction);
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
@@ -155,15 +172,13 @@ MacroActionTimerEdit::MacroActionTimerEdit(
 	QWidget::connect(_timerAction, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ActionTypeChanged(int)));
 
-	_mainLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{macros}}", _macros},
-		{"{{duration}}", _duration},
-		{"{{timerAction}}", _timerAction},
-	};
+	auto layout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.timer.entry"),
-		     _mainLayout, widgetPlaceholders);
-	setLayout(_mainLayout);
+		     layout,
+		     {{"{{macros}}", _macros},
+		      {"{{duration}}", _duration},
+		      {"{{timerAction}}", _timerAction}});
+	setLayout(layout);
 
 	_entryData = entryData;
 	UpdateEntryData();

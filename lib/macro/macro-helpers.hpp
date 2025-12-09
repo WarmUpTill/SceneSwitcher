@@ -20,6 +20,8 @@ class Macro;
 class MacroAction;
 class MacroCondition;
 
+static const int macro_func = 10;
+
 EXPORT std::deque<std::shared_ptr<Macro>> &GetTopLevelMacros();
 std::deque<std::shared_ptr<Macro>> &GetTemporaryMacros();
 EXPORT std::deque<std::shared_ptr<Macro>> GetAllMacros();
@@ -35,9 +37,8 @@ GetMacroElseActions(Macro *);
 EXPORT std::optional<std::deque<std::shared_ptr<MacroCondition>>>
 GetMacroConditions(Macro *);
 
-std::string_view GetSceneSwitchActionId();
-
-constexpr auto macro_func = 10;
+EXPORT bool IsGroupMacro(Macro *);
+EXPORT std::vector<std::shared_ptr<Macro>> GetGroupMacroEntries(Macro *);
 
 EXPORT std::condition_variable &GetMacroWaitCV();
 EXPORT std::condition_variable &GetMacroTransitionCV();

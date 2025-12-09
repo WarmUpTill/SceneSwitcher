@@ -948,12 +948,12 @@ bool Macro::PostLoad()
 bool Macro::SwitchesScene() const
 {
 	for (const auto &a : _actions) {
-		if (a->GetId() == GetSceneSwitchActionId()) {
+		if (a->GetId() == MacroAction::GetDefaultID()) {
 			return true;
 		}
 	}
 	for (const auto &a : _elseActions) {
-		if (a->GetId() == GetSceneSwitchActionId()) {
+		if (a->GetId() == MacroAction::GetDefaultID()) {
 			return true;
 		}
 	}

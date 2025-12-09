@@ -93,33 +93,46 @@ bool MacroActionMacro::PerformAction()
 		return true;
 	}
 
-	switch (_action) {
-	case Action::PAUSE:
-		macro->SetPaused();
-		break;
-	case Action::UNPAUSE:
-		macro->SetPaused(false);
-		break;
-	case Action::TOGGLE_PAUSE:
-		macro->SetPaused(!macro->Paused());
-		break;
-	case Action::RESET_COUNTER:
-		macro->ResetRunCount();
-		break;
-	case Action::RUN_ACTIONS:
-		RunActions(macro.get());
-		break;
-	case Action::STOP:
-		macro->Stop();
-		break;
-	case Action::DISABLE_ACTION:
-	case Action::ENABLE_ACTION:
-	case Action::TOGGLE_ACTION:
-		AdjustActionState(macro.get());
-		break;
-	default:
-		break;
+	const auto performActionForMacro = [this](Macro *macro) {
+		switch (_action) {
+		case Action::PAUSE:
+			macro->SetPaused();
+			break;
+		case Action::UNPAUSE:
+			macro->SetPaused(false);
+			break;
+		case Action::TOGGLE_PAUSE:
+			macro->SetPaused(!macro->Paused());
+			break;
+		case Action::RESET_COUNTER:
+			macro->ResetRunCount();
+			break;
+		case Action::RUN_ACTIONS:
+			RunActions(macro);
+			break;
+		case Action::STOP:
+			macro->Stop();
+			break;
+		case Action::DISABLE_ACTION:
+		case Action::ENABLE_ACTION:
+		case Action::TOGGLE_ACTION:
+			AdjustActionState(macro);
+			break;
+		default:
+			break;
+		}
+	};
+
+	if (!IsGroupMacro(macro.get())) {
+		performActionForMacro(macro.get());
+		return true;
 	}
+
+	auto macros = GetGroupMacroEntries(macro.get());
+	for (const auto &macro : macros) {
+		performActionForMacro(macro.get());
+	}
+
 	return true;
 }
 
@@ -404,6 +417,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	populateActionTypes(_actionTypes);
 
 	_conditionMacros->HideSelectedMacro();
+	_conditionMacros->HideGroups();
 
 	QWidget::connect(_macros, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(MacroChanged(const QString &)));

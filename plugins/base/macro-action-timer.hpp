@@ -58,16 +58,14 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
 	void SetWidgetVisibility();
 
 	MacroSelection *_macros;
 	DurationSelection *_duration;
 	QComboBox *_timerAction;
-	std::shared_ptr<MacroActionTimer> _entryData;
 
-private:
-	QHBoxLayout *_mainLayout;
+	std::shared_ptr<MacroActionTimer> _entryData;
 	bool _loading = true;
 };
 
