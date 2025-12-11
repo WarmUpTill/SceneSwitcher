@@ -418,8 +418,7 @@ void MacroEdit::PopulateMacroActions(Macro &m, uint32_t afterIdx)
 	ui->actionsList->SetVisibilityCheckEnable(false);
 
 	for (; afterIdx < actions.size(); afterIdx++) {
-		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
-						    actions[afterIdx]->GetId());
+		auto newEntry = new MacroActionEdit(this, &actions[afterIdx]);
 		ui->actionsList->Add(newEntry);
 	}
 
@@ -444,8 +443,7 @@ void MacroEdit::PopulateMacroElseActions(Macro &m, uint32_t afterIdx)
 	ui->elseActionsList->SetVisibilityCheckEnable(false);
 
 	for (; afterIdx < actions.size(); afterIdx++) {
-		auto newEntry = new MacroActionEdit(this, &actions[afterIdx],
-						    actions[afterIdx]->GetId());
+		auto newEntry = new MacroActionEdit(this, &actions[afterIdx]);
 		ui->elseActionsList->Add(newEntry);
 	}
 
@@ -472,8 +470,7 @@ void MacroEdit::PopulateMacroConditions(Macro &m, uint32_t afterIdx)
 
 	for (; afterIdx < conditions.size(); afterIdx++) {
 		auto newEntry = new MacroConditionEdit(
-			this, &conditions[afterIdx],
-			conditions[afterIdx]->GetId(), root);
+			this, &conditions[afterIdx], root);
 		ui->conditionsList->Add(newEntry);
 		root = false;
 	}
@@ -1083,8 +1080,7 @@ void MacroEdit::AddMacroAction(Macro *macro, int idx, const std::string &id,
 		RunAndClearPostLoadSteps();
 		macro->UpdateActionIndices();
 		ui->actionsList->Insert(
-			idx,
-			new MacroActionEdit(this, &macro->Actions()[idx], id));
+			idx, new MacroActionEdit(this, &macro->Actions()[idx]));
 		SetActionData(*macro);
 	}
 	HighlightAction(idx);
@@ -1386,8 +1382,8 @@ void MacroEdit::AddMacroElseAction(Macro *macro, int idx, const std::string &id,
 		RunAndClearPostLoadSteps();
 		macro->UpdateElseActionIndices();
 		ui->elseActionsList->Insert(
-			idx, new MacroActionEdit(
-				     this, &macro->ElseActions()[idx], id));
+			idx,
+			new MacroActionEdit(this, &macro->ElseActions()[idx]));
 		SetElseActionData(*macro);
 	}
 	HighlightElseAction(idx);
@@ -1589,7 +1585,7 @@ void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,
 		ui->conditionsList->Insert(
 			idx,
 			new MacroConditionEdit(this, &macro->Conditions()[idx],
-					       id, idx == 0));
+					       idx == 0));
 		SetConditionData(*macro);
 	}
 	HighlightCondition(idx);

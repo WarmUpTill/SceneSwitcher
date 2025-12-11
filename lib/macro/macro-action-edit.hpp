@@ -13,10 +13,8 @@ class MacroActionEdit : public MacroSegmentEdit {
 	Q_OBJECT
 
 public:
-	MacroActionEdit(
-		QWidget *parent = nullptr,
-		std::shared_ptr<MacroAction> * = nullptr,
-		const std::string &id = MacroAction::GetDefaultID().data());
+	MacroActionEdit(QWidget *parent = nullptr,
+			std::shared_ptr<MacroAction> * = nullptr);
 	void SetupWidgets(bool basicSetup = false);
 	void SetEntryData(std::shared_ptr<MacroAction> *);
 

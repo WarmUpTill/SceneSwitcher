@@ -56,7 +56,7 @@ std::optional<double> GetDouble(const std::string &str)
 std::optional<int> GetInt(const std::string &str)
 {
 	char *end = nullptr;
-	int value = std::strtol(str.c_str(), &end, 10);
+	int value = (int)std::strtol(str.c_str(), &end, 10);
 
 	if (end != str.c_str() && *end == '\0' && value != INT_MAX &&
 	    value != INT_MIN) {

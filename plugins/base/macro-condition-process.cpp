@@ -154,7 +154,7 @@ void MacroConditionProcessEdit::ProcessChanged(const QString &text)
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
-void MacroConditionProcessEdit::showEvent(QShowEvent *event)
+void MacroConditionProcessEdit::showEvent(QShowEvent *)
 {
 	const QSignalBlocker b(_processSelection);
 	const auto text = _processSelection->currentText();
