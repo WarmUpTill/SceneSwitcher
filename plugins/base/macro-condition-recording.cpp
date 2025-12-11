@@ -31,6 +31,10 @@ static int currentRecordingDurationInSeconds = 0;
 
 bool MacroConditionRecord::CheckCondition()
 {
+	char *lastSavePath = obs_frontend_get_last_recording();
+	SetTempVarValue("lastSavePath", lastSavePath ? lastSavePath : "");
+	bfree(lastSavePath);
+
 	switch (_condition) {
 	case Condition::STOP:
 		return !obs_frontend_recording_active();
@@ -74,6 +78,14 @@ void MacroConditionRecord::SetCondition(Condition condition)
 void MacroConditionRecord::SetupTempVars()
 {
 	MacroCondition::SetupTempVars();
+
+	AddTempvar(
+		"lastSavePath",
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.recording.lastSavePath"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.recording.lastSavePath.description"));
+
 	switch (_condition) {
 	case Condition::DURATION:
 		AddTempvar(

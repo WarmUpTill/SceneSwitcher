@@ -28,8 +28,7 @@ static inline void populateActionSelection(QComboBox *list)
 }
 
 MacroActionEdit::MacroActionEdit(QWidget *parent,
-				 std::shared_ptr<MacroAction> *entryData,
-				 const std::string &id)
+				 std::shared_ptr<MacroAction> *entryData)
 	: MacroSegmentEdit(parent),
 	  _actionSelection(new FilterComboBox()),
 	  _enable(new SwitchButton()),

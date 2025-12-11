@@ -453,7 +453,7 @@ void MacroActionSwitchSceneEdit::SceneSelectionCanvasChanged(
 	SetWidgetVisibility();
 }
 
-void MacroActionSwitchSceneEdit::ActionChanged(int value)
+void MacroActionSwitchSceneEdit::ActionChanged(int)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_action = static_cast<MacroActionSwitchScene::Action>(

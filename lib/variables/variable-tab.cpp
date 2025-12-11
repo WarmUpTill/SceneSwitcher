@@ -467,9 +467,9 @@ static void setupTab(QTabWidget *tab)
 		setTabVisible(tab, false);
 	}
 
-	QWidget::connect(
-		VariableSignalManager::Instance(), &VariableSignalManager::Add,
-		tab, [tab](const QString &name) { setTabVisible(tab, true); });
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Add, tab,
+			 [tab](const QString &) { setTabVisible(tab, true); });
 }
 
 void VariableTable::Settings::Save(obs_data_t *data, const char *name)

@@ -106,8 +106,11 @@ target_sources(
 
 # --- variable --- #
 
-if(NOT OS_WINDOWS)
-  target_compile_options(${PROJECT_NAME} PUBLIC -Wno-error=shadow)
+if(OS_WINDOWS)
+  target_compile_options(${PROJECT_NAME} PRIVATE /wd4100)
+else()
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wno-error=shadow
+                                                 -Wno-unused-parameter)
 endif()
 
 target_sources(

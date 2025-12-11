@@ -100,7 +100,7 @@ void DurationModifierEdit::Collapse(bool collapse)
 
 MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
-	const std::string &id, bool isRootCondition)
+	bool isRootCondition)
 	: MacroSegmentEdit(parent),
 	  _logicSelection(new QComboBox()),
 	  _conditionSelection(new FilterComboBox()),
