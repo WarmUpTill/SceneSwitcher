@@ -258,7 +258,7 @@ bool IsFullscreen(const std::string &title)
 	return false;
 }
 
-std::optional<std::string> GetTextInWindow(const std::string &window)
+std::optional<std::string> GetTextInWindow(const std::string &)
 {
 	// Not implemented
 	return {};

@@ -34,11 +34,9 @@ class MacroConditionEdit : public MacroSegmentEdit {
 	Q_OBJECT
 
 public:
-	MacroConditionEdit(
-		QWidget *parent = nullptr,
-		std::shared_ptr<MacroCondition> * = nullptr,
-		const std::string &id = MacroCondition::GetDefaultID().data(),
-		bool root = true);
+	MacroConditionEdit(QWidget *parent = nullptr,
+			   std::shared_ptr<MacroCondition> * = nullptr,
+			   bool root = true);
 	bool IsRootNode() const;
 	void SetRootNode(bool);
 	void SetupWidgets(bool basicSetup = false);
