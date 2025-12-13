@@ -629,7 +629,7 @@ void MacroConditionTwitch::SetTempVarValues(const ChannelInfo &info)
 	if (!classificationLabels.empty()) {
 		classificationLabels.pop_back();
 	}
-	SetTempVarValue("content_classification_labels", tags);
+	SetTempVarValue("content_classification_labels", classificationLabels);
 	SetTempVarValue("is_branded_content",
 			info.is_branded_content ? "true" : "false");
 }
