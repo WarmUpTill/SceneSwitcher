@@ -68,7 +68,7 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1132</height>
+            <height>1160</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -268,9 +268,19 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="uiHintsDisable">
+               <widget class="QCheckBox" name="alwaysShowMacroSearch">
                 <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableUIHints</string>
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowMacroSearch</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="alwaysShowFeatureTabs">
+                <property name="toolTip">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowFeatureTabs.tooltip</string>
+                </property>
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowFeatureTabs</string>
                 </property>
                </widget>
               </item>
@@ -282,9 +292,9 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="alwaysShowMacroSearch">
+               <widget class="QCheckBox" name="uiHintsDisable">
                 <property name="text">
-                 <string>AdvSceneSwitcher.generalTab.generalBehavior.alwaysShowMacroSearch</string>
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableUIHints</string>
                 </property>
                </widget>
               </item>

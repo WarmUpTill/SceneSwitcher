@@ -1029,6 +1029,8 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	setTabOrder(ui->importSettings, ui->cooldownTime);
 	setTabOrder(ui->cooldownTime, ui->noMatchDontSwitch);
 
+	SetupShowAllTabsCheckBox(ui->alwaysShowFeatureTabs, ui->tabWidget);
+
 	MinimizeSizeOfColumn(ui->statusLayout, 0);
 	setWindowTitle(windowTitle() + " - " + g_GIT_TAG);
 }
