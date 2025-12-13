@@ -83,6 +83,8 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.user.getInfo"},
 	{MacroActionTwitch::Action::POINTS_REWARD_GET_INFO,
 	 "AdvSceneSwitcher.action.twitch.type.reward.getInfo"},
+	{MacroActionTwitch::Action::CHANNEL_GET_INFO,
+	 "AdvSceneSwitcher.action.twitch.type.channel.getInfo"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -322,6 +324,41 @@ void MacroActionTwitch::GetUserInfo(const std::shared_ptr<TwitchToken> &token)
 	});
 }
 
+void MacroActionTwitch::GetChannelInfo(const std::shared_ptr<TwitchToken> &token)
+{
+	auto info = _channel.GetInfo(*token);
+	if (!info) {
+		return;
+	}
+
+	SetTempVarValue("broadcaster_user_id", info->broadcaster_id);
+	SetTempVarValue("broadcaster_user_login", info->broadcaster_login);
+	SetTempVarValue("broadcaster_user_name", info->broadcaster_name);
+	SetTempVarValue("language", info->broadcaster_language);
+	SetTempVarValue("game_id", info->game_id);
+	SetTempVarValue("game_name", info->game_name);
+	SetTempVarValue("title", info->title);
+	SetTempVarValue("delay", std::to_string(info->delay));
+	std::string tags;
+	for (const auto &tag : info->tags) {
+		tags += tag + " ";
+	}
+	if (!tags.empty()) {
+		tags.pop_back();
+	}
+	SetTempVarValue("tags", tags);
+	std::string classificationLabels;
+	for (const auto &label : info->content_classification_labels) {
+		classificationLabels += label + " ";
+	}
+	if (!classificationLabels.empty()) {
+		classificationLabels.pop_back();
+	}
+	SetTempVarValue("content_classification_labels", classificationLabels);
+	SetTempVarValue("is_branded_content",
+			info->is_branded_content ? "true" : "false");
+}
+
 bool MacroActionTwitch::ResolveVariableSelectionToRewardId(
 	const std::shared_ptr<TwitchToken> &token)
 {
@@ -505,6 +542,16 @@ void MacroActionTwitch::SetupTempVars()
 		setupTempVarHelper("offline_image_url", ".user.getInfo");
 		setupTempVarHelper("created_at", ".user.getInfo");
 		break;
+	case Action::CHANNEL_GET_INFO:
+		setupTempVarHelper("language");
+		setupTempVarHelper("game_id");
+		setupTempVarHelper("game_name");
+		setupTempVarHelper("title");
+		setupTempVarHelper("delay");
+		setupTempVarHelper("tags");
+		setupTempVarHelper("content_classification_labels");
+		setupTempVarHelper("is_branded_content");
+		break;
 	default:
 		break;
 	}
@@ -562,6 +609,9 @@ bool MacroActionTwitch::PerformAction()
 		break;
 	case MacroActionTwitch::Action::POINTS_REWARD_GET_INFO:
 		GetRewardInfo(token);
+		break;
+	case MacroActionTwitch::Action::CHANNEL_GET_INFO:
+		GetChannelInfo(token);
 		break;
 	default:
 		break;
@@ -772,6 +822,7 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 			{Action::WHISPER_SEND, {{"user:manage:whispers"}}},
 			{Action::SEND_CHAT_MESSAGE, {{"chat:edit"}}},
 			{Action::USER_GET_INFO, {}},
+			{Action::CHANNEL_GET_INFO, {}},
 			{Action::POINTS_REWARD_GET_INFO,
 			 {{"channel:read:redemptions"},
 			  {"channel:manage:redemptions"}}}};
@@ -1128,6 +1179,8 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		MacroActionTwitch::Action::CHANNEL_INFO_CONTENT_LABELS_SET);
 	_channel->setVisible(
 		_entryData->GetAction() ==
+			MacroActionTwitch::Action::CHANNEL_GET_INFO ||
+		_entryData->GetAction() ==
 			MacroActionTwitch::Action::RAID_START ||
 		_entryData->GetAction() ==
 			MacroActionTwitch::Action::RAID_END ||
@@ -1273,19 +1326,23 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 	switch (_entryData->GetAction()) {
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		layoutText = obs_module_text(
-			"AdvSceneSwitcher.action.twitch.entry.chat");
+			"AdvSceneSwitcher.action.twitch.layout.chat");
 		break;
 	case MacroActionTwitch::Action::USER_GET_INFO:
 		layoutText = obs_module_text(
-			"AdvSceneSwitcher.action.twitch.entry.user.getInfo");
+			"AdvSceneSwitcher.action.twitch.layout.user.getInfo");
 		break;
 	case MacroActionTwitch::Action::POINTS_REWARD_GET_INFO:
 		layoutText = obs_module_text(
-			"AdvSceneSwitcher.action.twitch.entry.reward.getInfo");
+			"AdvSceneSwitcher.action.twitch.layout.reward.getInfo");
+		break;
+	case MacroActionTwitch::Action::CHANNEL_GET_INFO:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.channel.getInfo");
 		break;
 	default:
 		layoutText = obs_module_text(
-			"AdvSceneSwitcher.action.twitch.entry.default");
+			"AdvSceneSwitcher.action.twitch.layout.default");
 		break;
 	}
 

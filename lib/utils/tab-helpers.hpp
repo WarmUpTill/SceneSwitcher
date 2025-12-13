@@ -2,6 +2,8 @@
 #include "export-symbol-helper.hpp"
 
 #include <obs-data.h>
+
+#include <QCheckBox>
 #include <QTabWidget>
 
 namespace advss {
@@ -19,5 +21,6 @@ void SetupOtherTabs(QTabWidget *tabWidget);
 void SaveTabOrder(obs_data_t *obj);
 void LoadTabOrder(obs_data_t *obj);
 bool MacroTabIsInFocus();
+void SetupShowAllTabsCheckBox(QCheckBox *checkBox, QTabWidget *tabWidget);
 
 } // namespace advss

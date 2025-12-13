@@ -1,6 +1,7 @@
 #include "tab-helpers.hpp"
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <obs.hpp>
 #include <QTabBar>
@@ -33,6 +34,21 @@ struct TabCallbacks {
 static std::unordered_map<const char *, TabCallbacks> createTabCallbacks;
 
 static int lastOpenedTab = -1;
+static bool alwaysShowTabs = false;
+
+[[maybe_unused]] static bool _ = []() {
+	AddPluginInitStep([]() {
+		AddSaveStep([](obs_data_t *data) {
+			obs_data_set_bool(data, "alwaysShowTabs",
+					  alwaysShowTabs);
+		});
+		AddLoadStep([](obs_data_t *data) {
+			alwaysShowTabs =
+				obs_data_get_bool(data, "alwaysShowTabs");
+		});
+	});
+	return true;
+}();
 
 void SetTabVisibleByName(QTabWidget *tabWidget, bool visible,
 			 const QString &name)
@@ -197,7 +213,41 @@ void SetupOtherTabs(QTabWidget *tabWidget)
 				.c_str());
 		tabWidget->insertTab(0, widget, tabText);
 		callbacks.setupTab(tabWidget);
+
+		if (alwaysShowTabs) {
+			tabWidget->setTabVisible(0, true);
+		}
 	}
+}
+
+void SetupShowAllTabsCheckBox(QCheckBox *checkBox, QTabWidget *tabWidget)
+{
+	const auto stateChanged = [tabWidget](int state) {
+		const bool newState = (state != 0);
+		if (newState == alwaysShowTabs) {
+			return;
+		}
+
+		alwaysShowTabs = newState;
+
+		// Only show currently hidden tabs, but don't hide tabs which
+		// are already visible
+		if (!alwaysShowTabs) {
+			return;
+		}
+
+		for (const auto &[name, _] : createTabCallbacks) {
+			const auto localeKey =
+				std::string("AdvSceneSwitcher.") + name +
+				".title";
+			auto tabText = obs_module_text(localeKey.c_str());
+			SetTabVisibleByName(tabWidget, true, tabText);
+		}
+	};
+
+	checkBox->setChecked(alwaysShowTabs);
+	QWidget::connect(checkBox, &QCheckBox::stateChanged, checkBox,
+			 stateChanged);
 }
 
 } // namespace advss
