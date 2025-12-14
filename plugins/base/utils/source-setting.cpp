@@ -210,7 +210,7 @@ findListPropertyById(const obs_source_t *source, const std::string &id)
 	}
 	auto property = obs_properties_first(properties);
 	return {findListPropertyByIdHelper(property, id),
-		properties_t(nullptr, obs_properties_destroy)};
+		properties_t(properties, obs_properties_destroy)};
 }
 
 static std::pair<obs_property_t *, properties_t>
