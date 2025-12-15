@@ -1,4 +1,5 @@
 #include "source-helpers.hpp"
+#include "canvas-helpers.hpp"
 
 #include <obs-frontend-api.h>
 
@@ -28,15 +29,43 @@ std::string GetWeakSourceName(obs_weak_source_t *weak_source)
 
 OBSWeakSource GetWeakSourceByName(const char *name)
 {
-	OBSWeakSource weak;
-	obs_source_t *source = obs_get_source_by_name(name);
+	OBSSourceAutoRelease source = obs_get_source_by_name(name);
 	if (source) {
-		weak = obs_source_get_weak_source(source);
-		obs_weak_source_release(weak);
-		obs_source_release(source);
+		return OBSGetWeakRef(source);
 	}
 
-	return weak;
+#if LIBOBS_API_VER > MAKE_SEMANTIC_VERSION(31, 1, 0)
+	struct SearchData {
+		const char *name;
+		OBSWeakSource &scene;
+	};
+
+	static const auto enumCanvasScenes = [](void *dataPtr,
+						obs_source_t *source) -> bool {
+		auto data = static_cast<SearchData *>(dataPtr);
+		if (strcmp(data->name, obs_source_get_name(source)) == 0) {
+			data->scene = OBSGetWeakRef(source);
+			return false;
+		}
+
+		return true;
+	};
+
+	static const auto enumCanvases = [](void *dataPtr,
+					    obs_canvas_t *canvas) -> bool {
+		obs_canvas_enum_scenes(canvas, enumCanvasScenes, dataPtr);
+
+		auto data = static_cast<SearchData *>(dataPtr);
+		return data->scene == nullptr;
+	};
+
+	OBSWeakSource weakScene;
+	SearchData searchData{name, weakScene};
+	obs_enum_canvases(enumCanvases, &searchData);
+	return weakScene;
+#else
+	return nullptr;
+#endif
 }
 
 OBSWeakSource GetWeakSourceByQString(const QString &name)
