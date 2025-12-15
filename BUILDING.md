@@ -6,18 +6,18 @@ You have the option to ...
 
 Both methods require [CMake](https://cmake.org/download/).
 
-The plugin can be compiled for OBS 27 and above, although using the latest version of OBS is recommended to support all features.
+The plugin can be compiled for OBS 31 and above, although using the latest version of OBS is recommended to support all features.
 
 ## Compiling in tree (recommended for development)
 This section assumes that you have a working [OBS Studio development environment](https://obsproject.com/wiki/Building-OBS-Studio).  
 
-Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/UI/frontend-plugins/:
+Add the "SceneSwitcher" source directory to your obs-studio source directory under obs-studio/plugins:
 ```
-cd obs-studio/UI/frontend-plugins/
+cd obs-studio/plugins
 git clone --recursive https://github.com/WarmUpTill/SceneSwitcher.git
 ```
 
-Then modify the obs-studio/UI/frontend-plugins/CMakeLists.txt Example and add an entry for the scene switcher:
+Then modify the obs-studio/plugins/CMakeLists.txt and add an entry for the scene switcher:
 ```
 add_subdirectory(SceneSwitcher)
 ```
