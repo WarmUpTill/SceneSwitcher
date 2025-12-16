@@ -513,7 +513,7 @@ void ScriptHandler::SetVariableValue(void *, calldata_t *data)
 	RETURN_SUCCESS();
 }
 
-void ScriptHandler::GetRunningStatus(void *ctx, calldata_t *data)
+void ScriptHandler::GetRunningStatus(void *, calldata_t *data)
 {
 	calldata_set_bool(data, "is_running", PluginIsRunning());
 }

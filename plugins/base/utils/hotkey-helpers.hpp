@@ -10,7 +10,7 @@ namespace advss {
 enum class HotkeyType;
 
 bool CanSimulateKeyPresses();
-void PressKeys(const std::vector<HotkeyType> keys, int duration);
+void PressKeys(const std::vector<HotkeyType> &keys, int duration);
 
 class Hotkey {
 public:

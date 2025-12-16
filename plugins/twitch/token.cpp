@@ -829,7 +829,7 @@ void TokenGrabberThread::run()
 	if (_serverThread.joinable()) {
 		_serverThread.join();
 	}
-	_stopWaiting = {false};
+	_stopWaiting = false;
 
 	// Generate URI to request token
 	auto state = generateStateString();
