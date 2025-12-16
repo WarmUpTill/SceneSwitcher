@@ -448,7 +448,7 @@ void EventSub::StartServerMigrationClient(const std::string &url)
 	auto client = std::make_unique<EventSubWSClient>();
 	SetupClient(*client);
 
-	client->set_open_handler([this](connection_hdl hdl) {
+	client->set_open_handler([this](connection_hdl) {
 		vblog(LOG_INFO, "Twitch EventSub migration client opened");
 	});
 

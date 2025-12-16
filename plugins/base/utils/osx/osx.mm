@@ -9,7 +9,7 @@ bool CanSimulateKeyPresses()
 	return canSimulateKeyPresses;
 }
 
-void PressKeys(const std::vector<HotkeyType> keys, int duration)
+void PressKeys(const std::vector<HotkeyType> &, int)
 {
 	// Not supported on MacOS
 	return;

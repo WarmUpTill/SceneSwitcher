@@ -58,14 +58,16 @@ std::string TwitchChannel::GetUserID(const TwitchToken &token) const
 	}
 	OBSDataArrayAutoRelease array = obs_data_get_array(res.data, "data");
 	size_t count = obs_data_array_count(array);
-	for (size_t i = 0; i < count; i++) {
-		OBSDataAutoRelease arrayObj = obs_data_array_item(array, i);
-		std::string id = obs_data_get_string(arrayObj, "id");
-		userIDCache[_name] = id;
-		return id;
+
+	if (count == 0) {
+		userIDCache[_name] = "invalid";
+		return "invalid";
 	}
-	userIDCache[_name] = "invalid";
-	return "invalid";
+
+	OBSDataAutoRelease arrayObj = obs_data_array_item(array, 0);
+	const std::string id = obs_data_get_string(arrayObj, "id");
+	userIDCache[_name] = id;
+	return id;
 }
 
 static QDate parseRFC3339Date(const std::string &rfc3339Date)

@@ -188,7 +188,7 @@ static const std::unordered_map<HotkeyType, long> keyTable = {
 	{HotkeyType::Key_NumpadEnter, XK_KP_Enter},
 };
 
-void PressKeys(const std::vector<HotkeyType> keys, int duration)
+void PressKeys(const std::vector<HotkeyType> &keys, int duration)
 {
 	if (!canSimulateKeyPresses) {
 		return;
