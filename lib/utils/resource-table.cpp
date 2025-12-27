@@ -65,13 +65,16 @@ ResourceTable::ResourceTable(QWidget *parent, const QString &help,
 			 [openSettings]() { openSettings(); });
 
 	auto settingsShortcut = new QShortcut(QKeySequence("F2"), this);
+	settingsShortcut->setContext(Qt::WidgetWithChildrenShortcut);
 	QWidget::connect(settingsShortcut, &QShortcut::activated, this,
 			 openSettings);
 	auto removeShortcut = new QShortcut(QKeySequence("Del"), this);
+	removeShortcut->setContext(Qt::WidgetWithChildrenShortcut);
 	QWidget::connect(removeShortcut, &QShortcut::activated, this,
 			 [this]() { Remove(); });
 
 	auto newShortcut = new QShortcut(QKeySequence("Ctrl+N"), this);
+	newShortcut->setContext(Qt::WidgetWithChildrenShortcut);
 	QWidget::connect(newShortcut, &QShortcut::activated, this,
 			 [this]() { Add(); });
 }
