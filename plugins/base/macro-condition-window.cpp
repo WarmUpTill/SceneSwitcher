@@ -29,6 +29,22 @@ static bool windowContainsText(const std::string &window,
 	return text == matchText;
 }
 
+void MacroConditionWindow::SetCheckText(bool value)
+{
+#ifdef _WIN32
+	_checkText = value;
+#else
+	(void)value;
+	_checkText = false;
+#endif
+	SetupTempVars();
+}
+
+bool MacroConditionWindow::GetCheckText()
+{
+	return _checkText;
+}
+
 bool MacroConditionWindow::WindowMatchesRequirements(
 	const std::string &window) const
 {
@@ -94,12 +110,18 @@ void MacroConditionWindow::SetVariableValueBasedOnMatch(
 #ifdef _WIN32
 	SetTempVarValue("windowClass",
 			GetWindowClassByWindowTitle(matchWindow));
+	if (_checkText) {
+		const auto text = GetTextInWindow(matchWindow);
+		if (text) {
+			SetTempVarValue("windowText", *text);
+		}
+	}
 #endif
 	if (!IsReferencedInVars()) {
 		return;
 	}
 	if (_checkText) {
-		auto text = GetTextInWindow(matchWindow);
+		const auto text = GetTextInWindow(matchWindow);
 		SetVariableValue(text.value_or(""));
 	} else {
 		SetVariableValue(ForegroundWindowTitle());
@@ -186,6 +208,16 @@ void MacroConditionWindow::SetupTempVars()
 		obs_module_text("AdvSceneSwitcher.tempVar.window.windowClass"),
 		obs_module_text(
 			"AdvSceneSwitcher.tempVar.window.windowClass.description"));
+
+	if (!_checkText) {
+		return;
+	}
+
+	AddTempvar(
+		"windowText",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.windowText"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.windowText.description"));
 #endif
 }
 
@@ -349,7 +381,7 @@ void MacroConditionWindowEdit::CheckTitleChanged(int state)
 void MacroConditionWindowEdit::CheckTextChanged(int state)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_checkText = state;
+	_entryData->SetCheckText(state);
 	SetWidgetVisibility();
 }
 
@@ -409,8 +441,8 @@ void MacroConditionWindowEdit::SetWidgetVisibility()
 			 _entryData->_focus || _entryData->_windowFocusChanged);
 	_windowSelection->setVisible(_entryData->_checkTitle);
 	_windowRegex->setVisible(_entryData->_checkTitle);
-	_textRegex->setVisible(_entryData->_checkText);
-	_text->setVisible(_entryData->_checkText);
+	_textRegex->setVisible(_entryData->GetCheckText());
+	_text->setVisible(_entryData->GetCheckText());
 	adjustSize();
 	updateGeometry();
 }
@@ -429,7 +461,7 @@ void MacroConditionWindowEdit::UpdateEntryData()
 	_maximized->setChecked(_entryData->_maximized);
 	_focused->setChecked(_entryData->_focus);
 	_windowFocusChanged->setChecked(_entryData->_windowFocusChanged);
-	_checkText->setChecked(_entryData->_checkText);
+	_checkText->setChecked(_entryData->GetCheckText());
 	_text->setPlainText(_entryData->_text);
 	_textRegex->SetRegexConfig(_entryData->_textRegex);
 	SetWidgetVisibility();
