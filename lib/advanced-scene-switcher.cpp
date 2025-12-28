@@ -1,5 +1,6 @@
 #include "advanced-scene-switcher.hpp"
 #include "backup.hpp"
+#include "crash-handler.hpp"
 #include "log-helper.hpp"
 #include "macro-helpers.hpp"
 #include "obs-module-helper.hpp"
@@ -207,9 +208,15 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->LoadSettings(data);
 		switcher->m.unlock();
 
-		if (!switcher->stop) {
-			switcher->Start();
+		if (switcher->stop) {
+			return;
 		}
+
+		if (ShouldSkipPluginStartOnUncleanShutdown()) {
+			return;
+		}
+
+		switcher->Start();
 	}
 }
 
