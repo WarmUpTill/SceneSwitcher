@@ -184,6 +184,8 @@ target_sources(
           lib/utils/canvas-helpers.hpp
           lib/utils/condition-logic.cpp
           lib/utils/condition-logic.hpp
+          lib/utils/crash-handler.cpp
+          lib/utils/crash-handler.hpp
           lib/utils/curl-helper.cpp
           lib/utils/curl-helper.hpp
           lib/utils/cursor-shape-changer.cpp
