@@ -261,6 +261,14 @@ std::optional<std::string> GetTextInWindow(const std::string &window)
 		return {};
 	}
 
+	DWORD pid = 0;
+	DWORD thid = 0;
+	thid = GetWindowThreadProcessId(hwnd, &pid);
+	// Calling CoCreateInstance() on the OBS windows might cause a deadlock
+	if (GetCurrentProcessId() == pid) {
+		return {};
+	}
+
 	IUIAutomation *automation = nullptr;
 	auto hr = CoCreateInstance(__uuidof(CUIAutomation), nullptr,
 				   CLSCTX_INPROC_SERVER,
