@@ -62,12 +62,11 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 
 	_boxLayout = new QHBoxLayout();
 	_boxLayout->setContentsMargins(0, 0, 0, 0);
-	_boxLayout->addWidget(_running);
 	if (isGroup) {
 		_boxLayout->addWidget(_iconLabel);
 		_boxLayout->addSpacing(2);
-		_running->hide();
 	}
+	_boxLayout->addWidget(_running);
 	_boxLayout->addWidget(_label);
 #ifdef __APPLE__
 	/* Hack: Fixes a bug where scrollbars would be above the lock icon */
@@ -77,17 +76,17 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	Update(true);
 	setLayout(_boxLayout);
 
-	auto setRunning = [this](bool val) {
-		_macro->SetPaused(!val);
-	};
-	connect(_running, &QAbstractButton::clicked, setRunning);
+	connect(_running, SIGNAL(clicked(bool)), this,
+		SLOT(RunningClicked(bool)));
 	connect(MacroSignalManager::Instance(), SIGNAL(HighlightChanged(bool)),
 		this, SLOT(EnableHighlight(bool)));
 	connect(MacroSignalManager::Instance(),
 		SIGNAL(Rename(const QString &, const QString &)), this,
 		SLOT(MacroRenamed(const QString &, const QString &)));
 	connect(&_timer, SIGNAL(timeout()), this, SLOT(HighlightIfExecuted()));
-	connect(&_timer, SIGNAL(timeout()), this, SLOT(UpdatePaused()));
+	connect(&_timer, SIGNAL(timeout()), this, SLOT(UpdateRunning()));
+
+	UpdateRunning();
 	_timer.start(1500);
 }
 
@@ -96,10 +95,90 @@ void MacroTreeItem::EnableHighlight(bool enable)
 	_highlight = enable;
 }
 
-void MacroTreeItem::UpdatePaused()
+void MacroTreeItem::RunningClicked(bool running)
+{
+	const auto updateWidget = [this](Macro *macro) {
+		if (!macro) {
+			return;
+		}
+
+		const auto &macros = GetTopLevelMacros();
+
+		bool found = false;
+		int idx = 0;
+		for (const auto &m : macros) {
+			if (m.get() == macro) {
+				found = true;
+				break;
+			}
+			idx++;
+		}
+
+		if (!found) {
+			return;
+		}
+
+		const auto widget = _tree->GetItemWidget(idx);
+		if (widget) {
+			widget->UpdateRunning();
+		}
+	};
+
+	if (!_macro->IsGroup()) {
+		_macro->SetPaused(!running);
+		if (!_macro->IsSubitem()) {
+			return;
+		}
+
+		const auto group = _macro->Parent();
+		updateWidget(group.get());
+		return;
+	}
+
+	const auto macros = GetGroupMacroEntries(_macro.get());
+	for (const auto &macro : macros) {
+		macro->SetPaused(!running);
+	}
+
+	// Update backend values before updating UI to prevent flickering in
+	// running state of the group
+	for (const auto &macro : macros) {
+		updateWidget(macro.get());
+	}
+	UpdateRunning();
+}
+
+void MacroTreeItem::UpdateRunning()
 {
 	const QSignalBlocker blocker(_running);
-	_running->setChecked(!_macro->Paused());
+
+	if (!_macro->IsGroup()) {
+		_running->setChecked(!_macro->Paused());
+		return;
+	}
+
+	const auto macros = GetGroupMacroEntries(_macro.get());
+	bool allRunning = true;
+	bool allPaused = true;
+	for (const auto &macro : macros) {
+		if (macro->Paused()) {
+			allRunning = false;
+		} else {
+			allPaused = false;
+		}
+	}
+
+	if (allRunning) {
+		_running->setCheckState(Qt::Checked);
+		return;
+	}
+
+	if (allPaused) {
+		_running->setCheckState(Qt::Unchecked);
+		return;
+	}
+
+	_running->setCheckState(Qt::PartiallyChecked);
 }
 
 void MacroTreeItem::HighlightIfExecuted()
@@ -214,7 +293,6 @@ void MacroTreeModel::Reset(std::deque<std::shared_ptr<Macro>> &newItems)
 	_macros = newItems;
 	endResetModel();
 
-	UpdateGroupState(false);
 	_mt->ResetWidgets();
 }
 
@@ -459,9 +537,6 @@ void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
 
 	_mt->selectionModel()->clear();
 
-	if (isGroup) {
-		UpdateGroupState(true);
-	}
 	assert(IsInValidState());
 }
 
@@ -550,7 +625,6 @@ MacroTreeModel::MacroTreeModel(MacroTree *st_,
 	  _mt(st_),
 	  _macros(macros)
 {
-	UpdateGroupState(false);
 }
 
 int MacroTreeModel::rowCount(const QModelIndex &parent) const
@@ -704,7 +778,6 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 		offset++;
 	}
 
-	_hasGroups = true;
 	_mt->selectionModel()->clear();
 
 	Reset(_macros);
@@ -760,24 +833,6 @@ void MacroTreeModel::CollapseGroup(std::shared_ptr<Macro> item)
 
 	_mt->selectionModel()->clear();
 	assert(IsInValidState());
-}
-
-void MacroTreeModel::UpdateGroupState(bool update)
-{
-	bool nowHasGroups = false;
-	for (auto &item : _macros) {
-		if (item->IsGroup()) {
-			nowHasGroups = true;
-			break;
-		}
-	}
-
-	if (nowHasGroups != _hasGroups) {
-		_hasGroups = nowHasGroups;
-		if (update) {
-			_mt->UpdateWidgets(true);
-		}
-	}
 }
 
 void MacroTree::Reset(std::deque<std::shared_ptr<Macro>> &macros,
@@ -842,7 +897,6 @@ MacroTree::MacroTree(QWidget *parent_) : QListView(parent_)
 void MacroTree::ResetWidgets()
 {
 	MacroTreeModel *mtm = GetModel();
-	mtm->UpdateGroupState(false);
 	int modelIdx = 0;
 	for (int i = 0; i < (int)mtm->_macros.size(); i++) {
 		QModelIndex index = mtm->createIndex(modelIdx, 0, nullptr);
