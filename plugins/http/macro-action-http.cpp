@@ -70,7 +70,7 @@ struct URLInfo {
 	std::string path;
 };
 
-static URLInfo getURLInfo(const std::string &input)
+static URLInfo getURLInfo(const std::string &input, bool keepParams)
 {
 	if (input.empty()) {
 		return {};
@@ -84,13 +84,27 @@ static URLInfo getURLInfo(const std::string &input)
 	const QUrl url(urlInput);
 	auto host =
 		url.scheme().toStdString() + "://" + url.host().toStdString();
-	int port = url.port();
+
+	const int port = url.port();
 	if (port != -1) {
 		host += ":" + std::to_string(port);
 	}
+
 	auto path = url.path().toStdString();
 	if (path.empty()) {
 		path = "/";
+	}
+
+	const auto query = url.query().toStdString();
+	if (!query.empty()) {
+		if (keepParams) {
+			path += "?" + query;
+		} else {
+			blog(LOG_WARNING,
+			     "ignoring query parameters \"%s\" in URL field. "
+			     "Using parameter field values instead.",
+			     query.c_str());
+		}
 	}
 
 	return {host, path};
@@ -98,7 +112,7 @@ static URLInfo getURLInfo(const std::string &input)
 
 bool MacroActionHttp::PerformAction()
 {
-	const auto [host, path] = getURLInfo(_url);
+	const auto [host, path] = getURLInfo(_url, !_setParams);
 
 	httplib::Client cli(host);
 	setTimeout(cli, _timeout);
