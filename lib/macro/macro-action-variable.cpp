@@ -801,11 +801,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _segmentValueStatus(new QLabel()),
 	  _segmentValue(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _substringLayout(new QVBoxLayout()),
-	  _subStringIndexEntryLayout(new QHBoxLayout()),
-	  _subStringRegexEntryLayout(new QHBoxLayout()),
+	  _subStringControlsLayout(new QHBoxLayout()),
 	  _subStringStart(new VariableSpinBox(this)),
 	  _subStringSize(new VariableSpinBox(this)),
-	  _substringRegex(new RegexConfigWidget(parent)),
+	  _subStringRegex(new RegexConfigWidget(parent)),
 	  _regexPattern(new ResizingPlainTextEdit(this, 10, 1, 1)),
 	  _regexMatchIdx(new VariableSpinBox(this)),
 	  _findReplaceLayout(new QHBoxLayout()),
@@ -901,7 +900,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		_subStringSize,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(SubStringSizeChanged(const NumberVariable<int> &)));
-	QWidget::connect(_substringRegex,
+	QWidget::connect(_subStringRegex,
 			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
 			 SLOT(SubStringRegexChanged(const RegexConfig &)));
 	QWidget::connect(_regexPattern, SIGNAL(textChanged()), this,
@@ -975,9 +974,6 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{strValue}}", _strValue},
 		{"{{numValue}}", _numValue},
 		{"{{segmentIndex}}", _segmentIdx},
-		{"{{subStringStart}}", _subStringStart},
-		{"{{subStringSize}}", _subStringSize},
-		{"{{regexMatchIdx}}", _regexMatchIdx},
 		{"{{findRegex}}", _findRegex},
 		{"{{findStr}}", _findStr},
 		{"{{replaceStr}}", _replaceStr},
@@ -1009,12 +1005,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.action.variable.layout.substringIndex"),
-		_subStringIndexEntryLayout, widgetPlaceholders);
-
-	PlaceWidgets(
-		obs_module_text(
-			"AdvSceneSwitcher.action.variable.layout.substringRegex"),
-		_subStringRegexEntryLayout, widgetPlaceholders);
+		_subStringControlsLayout, widgetPlaceholders);
 
 	PlaceWidgets(
 		obs_module_text(
@@ -1039,11 +1030,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_randomLayout->addWidget(_generateInteger);
 
 	auto regexConfigLayout = new QHBoxLayout;
-	regexConfigLayout->addWidget(_substringRegex);
+	regexConfigLayout->addWidget(_subStringRegex);
 	regexConfigLayout->addStretch();
 
-	_substringLayout->addLayout(_subStringIndexEntryLayout);
-	_substringLayout->addLayout(_subStringRegexEntryLayout);
+	_substringLayout->addLayout(_subStringControlsLayout);
 	_substringLayout->addWidget(_regexPattern);
 	_substringLayout->addLayout(regexConfigLayout);
 
@@ -1090,7 +1080,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 			: MacroSegmentSelection::Type::ACTION);
 	_subStringStart->SetValue(_entryData->_subStringStart);
 	_subStringSize->SetValue(_entryData->_subStringSize);
-	_substringRegex->SetRegexConfig(_entryData->_subStringRegex);
+	_subStringRegex->SetRegexConfig(_entryData->_subStringRegex);
 	_findRegex->SetRegexConfig(_entryData->_findRegex);
 	_regexPattern->setPlainText(
 		QString::fromStdString(_entryData->_regexPattern));
@@ -1495,7 +1485,19 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		{"{{jsonQuery}}", _jsonQuery},
 		{"{{jsonQueryHelp}}", _jsonQueryHelp},
 		{"{{jsonIndex}}", _jsonIndex},
+		{"{{subStringRegex}}", _subStringRegex},
+		{"{{subStringStart}}", _subStringStart},
+		{"{{subStringSize}}", _subStringSize},
+		{"{{regexMatchIdx}}", _regexMatchIdx},
 	};
+
+	for (const auto &[_, widget] : widgetPlaceholders) {
+		_entryLayout->removeWidget(widget);
+		_subStringControlsLayout->removeWidget(widget);
+	}
+
+	ClearLayout(_entryLayout);
+	ClearLayout(_subStringControlsLayout);
 
 	const char *layoutString = "";
 	if (_entryData->_action == MacroActionVariable::Action::PAD) {
@@ -1510,11 +1512,6 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			"AdvSceneSwitcher.action.variable.layout.other");
 	}
 
-	for (const auto &[_, widget] : widgetPlaceholders) {
-		_entryLayout->removeWidget(widget);
-	}
-
-	ClearLayout(_entryLayout);
 	PlaceWidgets(layoutString, _entryLayout, widgetPlaceholders);
 
 	if (_entryData->_action == MacroActionVariable::Action::SET_VALUE ||
@@ -1561,15 +1558,25 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 			MacroActionVariable::Action::SET_ACTION_VALUE ||
 		_entryData->_action ==
 			MacroActionVariable::Action::SET_CONDITION_VALUE);
+
+	bool showRegex = _entryData->_subStringRegex.Enabled();
+	layoutString =
+		showRegex
+			? "AdvSceneSwitcher.action.variable.layout.substringRegex"
+			: "AdvSceneSwitcher.action.variable.layout.substringIndex";
+	PlaceWidgets(obs_module_text(layoutString), _subStringControlsLayout,
+		     widgetPlaceholders);
+	_subStringStart->setVisible(!showRegex);
+	_subStringSize->setVisible(!showRegex);
+	_regexMatchIdx->setVisible(showRegex);
+
 	SetLayoutVisible(_substringLayout,
 			 _entryData->_action ==
 				 MacroActionVariable::Action::SUBSTRING);
-	if (_entryData->_action == MacroActionVariable::Action::SUBSTRING) {
-		bool showRegex = _entryData->_subStringRegex.Enabled();
-		SetLayoutVisible(_subStringIndexEntryLayout, !showRegex);
-		SetLayoutVisible(_subStringRegexEntryLayout, showRegex);
-		_regexPattern->setVisible(showRegex);
-	}
+	_regexPattern->setVisible(
+		showRegex &&
+		_entryData->_action == MacroActionVariable::Action::SUBSTRING);
+
 	SetLayoutVisible(_findReplaceLayout,
 			 _entryData->_action ==
 				 MacroActionVariable::Action::FIND_AND_REPLACE);

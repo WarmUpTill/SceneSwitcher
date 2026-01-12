@@ -194,11 +194,10 @@ private:
 	QLabel *_segmentValueStatus;
 	ResizingPlainTextEdit *_segmentValue;
 	QVBoxLayout *_substringLayout;
-	QHBoxLayout *_subStringIndexEntryLayout;
-	QHBoxLayout *_subStringRegexEntryLayout;
+	QHBoxLayout *_subStringControlsLayout;
 	VariableSpinBox *_subStringStart;
 	VariableSpinBox *_subStringSize;
-	RegexConfigWidget *_substringRegex;
+	RegexConfigWidget *_subStringRegex;
 	ResizingPlainTextEdit *_regexPattern;
 	VariableSpinBox *_regexMatchIdx;
 	QHBoxLayout *_findReplaceLayout;
