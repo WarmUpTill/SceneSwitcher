@@ -68,10 +68,22 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1160</height>
+            <height>1142</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="QGroupBox" name="statusBox">
              <property name="title">
@@ -592,7 +604,10 @@
          </property>
          <widget class="QGroupBox" name="groupBox_5">
           <property name="title">
-           <string>AdvSceneSwitcher.macroTab.macros</string>
+           <string/>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_36">
            <item>
@@ -736,7 +751,7 @@
          </widget>
          <widget class="QGroupBox" name="macroEditGroup">
           <property name="title">
-           <string>AdvSceneSwitcher.macroTab.edit</string>
+           <string>AdvSceneSwitcher.macroTab.title</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_38">
            <item>
