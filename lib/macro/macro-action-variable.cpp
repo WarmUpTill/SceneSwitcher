@@ -219,6 +219,43 @@ void MacroActionVariable::GenerateRandomNumber(Variable *var)
 	}
 }
 
+void MacroActionVariable::PickRandomValue(Variable *var)
+{
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	static const uint8_t maxIter = 255;
+
+	if (_randomValues.isEmpty()) {
+		return;
+	}
+
+	if (_randomValues.size() == 1) {
+		const auto &value = _randomValues.at(0);
+		var->SetValue(value);
+		_lastRandomValue = value;
+	}
+
+	std::uniform_int_distribution<int> dis(0, _randomValues.size() - 1);
+	StringVariable value = _randomValues.at(dis(gen));
+
+	uint8_t iter = 0;
+	for (; !_allowRepeatValues && iter < maxIter &&
+	       _lastRandomValue.has_value() &&
+	       std::string(value) == _lastRandomValue.value();
+	     iter++) {
+		value = _randomValues.at(dis(gen));
+	}
+
+	if (iter == maxIter) {
+		blog(LOG_INFO,
+		     "giving up picking non-repeat random value after %d tries",
+		     maxIter);
+	}
+
+	var->SetValue(value);
+	_lastRandomValue = value;
+}
+
 struct AskForInputParams {
 	AskForInputParams(const QString &prompt_, const QString &placeholder_)
 		: prompt(prompt_),
@@ -458,6 +495,9 @@ bool MacroActionVariable::PerformAction()
 	case Action::RANDOM_NUMBER:
 		GenerateRandomNumber(var.get());
 		return true;
+	case Action::RANDOM_LIST_VALUE:
+		PickRandomValue(var.get());
+		return true;
 	}
 
 	return true;
@@ -498,6 +538,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_randomNumberStart.Save(obj, "randomNumberStart");
 	_randomNumberEnd.Save(obj, "randomNumberEnd");
 	obs_data_set_bool(obj, "generateInteger", _generateInteger);
+	_randomValues.Save(obj, "randomValues", "value");
+	obs_data_set_bool(obj, "allowRepeatValues", _allowRepeatValues);
 	_jsonQuery.Save(obj, "jsonQuery");
 	_jsonIndex.Save(obj, "jsonIndex");
 
@@ -556,6 +598,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_randomNumberStart.Load(obj, "randomNumberStart");
 	_randomNumberEnd.Load(obj, "randomNumberEnd");
 	_generateInteger = obs_data_get_bool(obj, "generateInteger");
+	_randomValues.Load(obj, "randomValues", "value");
+	_allowRepeatValues = obs_data_get_bool(obj, "allowRepeatValues");
 	_jsonQuery.Load(obj, "jsonQuery");
 	_jsonIndex.Load(obj, "jsonIndex");
 
@@ -724,6 +768,8 @@ static inline void populateActionSelection(QComboBox *list)
 			 "AdvSceneSwitcher.action.variable.type.roundToInt"},
 			{MacroActionVariable::Action::RANDOM_NUMBER,
 			 "AdvSceneSwitcher.action.variable.type.randomNumber"},
+			{MacroActionVariable::Action::RANDOM_LIST_VALUE,
+			 "AdvSceneSwitcher.action.variable.type.randomListValue"},
 			{true, ""}, // Separator
 
 			{MacroActionVariable::Action::USER_INPUT,
@@ -836,7 +882,13 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.variable.generateInteger"),
 		  this)),
-	  _randomLayout(new QVBoxLayout()),
+	  _randomNumberLayout(new QVBoxLayout()),
+	  _randomValues(new StringListEdit(this)),
+	  _allowRepeatValues(new QCheckBox(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.variable.type.allowRepeat"),
+		  this)),
+	  _randomValueLayout(new QVBoxLayout()),
 	  _jsonQuery(new VariableLineEdit(this)),
 	  _jsonQueryHelp(new HelpIcon(
 		  obs_module_text(
@@ -872,6 +924,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_randomNumberStart->setMaximum(9999999999);
 	_randomNumberEnd->setMinimum(-9999999999);
 	_randomNumberEnd->setMaximum(9999999999);
+	_randomValues->SetMaxStringSize(99999999);
 	_jsonIndex->setMaximum(999);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
@@ -960,6 +1013,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		SLOT(RandomNumberEndChanged(const NumberVariable<double> &)));
 	QWidget::connect(_generateInteger, SIGNAL(stateChanged(int)), this,
 			 SLOT(GenerateIntegerChanged(int)));
+	QWidget::connect(_randomValues,
+			 SIGNAL(StringListChanged(const StringList &)), this,
+			 SLOT(RandomValueListChanged(const StringList &)));
+	QWidget::connect(_allowRepeatValues, SIGNAL(stateChanged(int)), this,
+			 SLOT(AllowRepeatValuesChanged(int)));
 	QWidget::connect(_jsonQuery, SIGNAL(editingFinished()), this,
 			 SLOT(JsonQueryChanged()));
 	QWidget::connect(
@@ -1026,8 +1084,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		obs_module_text(
 			"AdvSceneSwitcher.action.variable.layout.randomNumber"),
 		randomLayout, widgetPlaceholders);
-	_randomLayout->addLayout(randomLayout);
-	_randomLayout->addWidget(_generateInteger);
+	_randomNumberLayout->addLayout(randomLayout);
+	_randomNumberLayout->addWidget(_generateInteger);
+
+	_randomValueLayout->addWidget(_randomValues);
+	_randomValueLayout->addWidget(_allowRepeatValues);
 
 	auto regexConfigLayout = new QHBoxLayout;
 	regexConfigLayout->addWidget(_subStringRegex);
@@ -1046,7 +1107,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addWidget(_mathExpressionResult);
 	layout->addLayout(_promptLayout);
 	layout->addLayout(_placeholderLayout);
-	layout->addLayout(_randomLayout);
+	layout->addLayout(_randomNumberLayout);
+	layout->addLayout(_randomValueLayout);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -1105,6 +1167,8 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_randomNumberStart->SetValue(_entryData->_randomNumberStart);
 	_randomNumberEnd->SetValue(_entryData->_randomNumberEnd);
 	_generateInteger->setChecked(_entryData->_generateInteger);
+	_allowRepeatValues->setChecked(_entryData->_allowRepeatValues);
+	_randomValues->SetStringList(_entryData->_randomValues);
 	_jsonQuery->setText(_entryData->_jsonQuery);
 	_jsonIndex->SetValue(_entryData->_jsonIndex);
 
@@ -1447,6 +1511,18 @@ void MacroActionVariableEdit::GenerateIntegerChanged(int value)
 	_entryData->_generateInteger = value;
 }
 
+void MacroActionVariableEdit::RandomValueListChanged(const StringList &values)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_randomValues = values;
+}
+
+void MacroActionVariableEdit::AllowRepeatValuesChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_allowRepeatValues = value;
+}
+
 void MacroActionVariableEdit::JsonQueryChanged()
 {
 	GUARD_LOADING_AND_LOCK();
@@ -1641,9 +1717,13 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 					  MacroActionVariable::Action::PAD);
 	_caseType->setVisible(_entryData->_action ==
 			      MacroActionVariable::Action::CHANGE_CASE);
-	SetLayoutVisible(_randomLayout,
+	SetLayoutVisible(_randomNumberLayout,
 			 _entryData->_action ==
 				 MacroActionVariable::Action::RANDOM_NUMBER);
+	SetLayoutVisible(
+		_randomValueLayout,
+		_entryData->_action ==
+			MacroActionVariable::Action::RANDOM_LIST_VALUE);
 	_jsonQuery->setVisible(_entryData->_action ==
 			       MacroActionVariable::Action::QUERY_JSON);
 	_jsonQueryHelp->setVisible(_entryData->_action ==
