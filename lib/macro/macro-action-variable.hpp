@@ -6,6 +6,7 @@
 #include "resizing-text-edit.hpp"
 #include "scene-selection.hpp"
 #include "single-char-selection.hpp"
+#include "string-list.hpp"
 #include "variable-line-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "variable-spinbox.hpp"
@@ -56,6 +57,7 @@ public:
 		QUERY_JSON,
 		ARRAY_JSON,
 		COPY_VAR,
+		RANDOM_LIST_VALUE,
 	};
 
 	Action _action = Action::SET_VALUE;
@@ -107,6 +109,10 @@ public:
 	DoubleVariable _randomNumberEnd = 100;
 	bool _generateInteger = true;
 
+	StringList _randomValues = {"value1", "value2", "value3"};
+	bool _allowRepeatValues = true;
+	std::optional<std::string> _lastRandomValue;
+
 	StringVariable _jsonQuery = "$.some.nested.value";
 	IntVariable _jsonIndex = 0;
 
@@ -119,6 +125,7 @@ private:
 	void HandleCaseChange(Variable *);
 	void SetToSceneItemName(Variable *);
 	void GenerateRandomNumber(Variable *);
+	void PickRandomValue(Variable *);
 
 	std::weak_ptr<MacroSegment> _macroSegment;
 	int _segmentIdxLoadValue = -1;
@@ -175,6 +182,8 @@ private slots:
 	void RandomNumberStartChanged(const NumberVariable<double> &);
 	void RandomNumberEndChanged(const NumberVariable<double> &);
 	void GenerateIntegerChanged(int);
+	void RandomValueListChanged(const StringList &);
+	void AllowRepeatValuesChanged(int);
 	void JsonQueryChanged();
 	void JsonIndexChanged(const NumberVariable<int> &);
 
@@ -224,7 +233,10 @@ private:
 	VariableDoubleSpinBox *_randomNumberStart;
 	VariableDoubleSpinBox *_randomNumberEnd;
 	QCheckBox *_generateInteger;
-	QVBoxLayout *_randomLayout;
+	QVBoxLayout *_randomNumberLayout;
+	StringListEdit *_randomValues;
+	QCheckBox *_allowRepeatValues;
+	QVBoxLayout *_randomValueLayout;
 	VariableLineEdit *_jsonQuery;
 	QLabel *_jsonQueryHelp;
 	VariableSpinBox *_jsonIndex;
