@@ -602,14 +602,8 @@
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QGroupBox" name="groupBox_5">
-          <property name="title">
-           <string/>
-          </property>
-          <property name="flat">
-           <bool>false</bool>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_36">
+         <widget class="QWidget" name="wrapper">
+          <layout class="QVBoxLayout" name="verticalLayout_10">
            <item>
             <widget class="QLabel" name="macroPriorityWarning">
              <property name="text">
@@ -4125,7 +4119,6 @@
   <tabstop>priorityUp</tabstop>
   <tabstop>priorityDown</tabstop>
   <tabstop>threadPriority</tabstop>
-  <tabstop>macros</tabstop>
   <tabstop>macroAdd</tabstop>
   <tabstop>macroRemove</tabstop>
   <tabstop>macroUp</tabstop>
