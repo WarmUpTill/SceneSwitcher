@@ -58,6 +58,9 @@ StringListEdit::StringListEdit(
 	  _filterCallback(filter),
 	  _preprocessCallback(preprocess)
 {
+	if (_addString.isEmpty()) {
+		_addString = obs_module_text("AdvSceneSwitcher.windowTitle");
+	}
 }
 
 void StringListEdit::SetStringList(const StringList &list)

@@ -10,6 +10,8 @@ namespace advss {
 
 class StringList : public QList<StringVariable> {
 public:
+	using QList<StringVariable>::QList;
+
 	EXPORT bool Save(obs_data_t *obj, const char *name,
 			 const char *elementName = "string") const;
 	EXPORT bool Load(obs_data_t *obj, const char *name,
