@@ -97,7 +97,7 @@ bool AdvSceneSwitcher::AddNewMacro(std::shared_ptr<Macro> &res,
 	return true;
 }
 
-void AdvSceneSwitcher::on_macroAdd_clicked()
+void AdvSceneSwitcher::on_macroAdd_triggered()
 {
 	// Hotkey to add new macro will also use this function.
 	// Since we don't want the hotkey to have an effect if the macro tab is
@@ -247,12 +247,12 @@ void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
 	MacroSignalManager::Instance()->Rename(oldName, name);
 }
 
-void AdvSceneSwitcher::on_macroRemove_clicked()
+void AdvSceneSwitcher::on_macroRemove_triggered()
 {
 	RemoveSelectedMacros();
 }
 
-void AdvSceneSwitcher::on_macroUp_clicked() const
+void AdvSceneSwitcher::on_macroUp_triggered() const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -261,7 +261,7 @@ void AdvSceneSwitcher::on_macroUp_clicked() const
 	ui->macros->Up(macro);
 }
 
-void AdvSceneSwitcher::on_macroDown_clicked() const
+void AdvSceneSwitcher::on_macroDown_triggered() const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
@@ -632,12 +632,10 @@ void AdvSceneSwitcher::SetupMacroTab()
 	auto &macros = GetTopLevelMacros();
 
 	if (macros.size() == 0 && !switcher->disableHints) {
-		addPulse = HighlightWidget(ui->macroAdd, QColor(Qt::green));
+		addPulse = HighlightWidget(
+			ui->macrosToolbar->widgetForAction(ui->macroAdd),
+			QColor(Qt::green));
 	}
-
-	auto macroControls = setupToolBar({{ui->macroAdd, ui->macroRemove},
-					   {ui->macroUp, ui->macroDown}});
-	ui->macroControlLayout->addWidget(macroControls);
 
 	ui->macros->Reset(macros, GetGlobalMacroSettings()._highlightExecuted);
 	connect(ui->macros, SIGNAL(MacroSelectionChanged()), this,
@@ -683,7 +681,7 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 
 	menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.contextMenuAdd"),
-		this, &AdvSceneSwitcher::on_macroAdd_clicked);
+		this, &AdvSceneSwitcher::on_macroAdd_triggered);
 
 	auto copy = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.copy"), this,
@@ -699,7 +697,7 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 
 	auto remove = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.remove"), this,
-		&AdvSceneSwitcher::on_macroRemove_clicked);
+		&AdvSceneSwitcher::on_macroRemove_triggered);
 	remove->setDisabled(ui->macros->SelectionEmpty());
 	menu.addSeparator();
 
