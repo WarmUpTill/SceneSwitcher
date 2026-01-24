@@ -1,7 +1,9 @@
 #pragma once
+#include "duration-control.hpp"
 #include "macro-action-edit.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
+#include "transition-selection.hpp"
 
 namespace advss {
 
@@ -20,6 +22,10 @@ public:
 
 	SceneSelection _scene;
 	SceneItemSelection _source;
+	bool _updateTransition = false;
+	TransitionSelection _transition;
+	bool _updateDuration = false;
+	Duration _duration;
 
 	enum class Action {
 		SHOW,
@@ -53,17 +59,27 @@ public:
 private slots:
 	void SceneChanged(const SceneSelection &);
 	void SourceChanged(const SceneItemSelection &);
+	void UpdateTransitionChanged(int);
+	void TransitionChanged(const TransitionSelection &);
+	void UpdateDurationChanged(int);
+	void DurationChanged(const Duration &seconds);
 	void ActionChanged(int value);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	SceneSelectionWidget *_scenes;
 	SceneItemSelectionWidget *_sources;
+	QCheckBox *_updateTransition;
+	TransitionSelectionWidget *_transitions;
+	QCheckBox *_updateDuration;
+	DurationSelection *_duration;
+	QHBoxLayout *_durationLayout;
 	QComboBox *_actions;
-	std::shared_ptr<MacroActionSceneVisibility> _entryData;
 
-private:
+	std::shared_ptr<MacroActionSceneVisibility> _entryData;
 	bool _loading = true;
 };
 
