@@ -4,6 +4,7 @@
 #include "plugin-state-helpers.hpp"
 #include "scene-switch-helpers.hpp"
 #include "source-helpers.hpp"
+#include "transition-helpers.hpp"
 
 #include <obs-frontend-api.h>
 
@@ -68,14 +69,6 @@ static int getTransitionOverrideDuration(OBSWeakSource &scene)
 	return duration;
 }
 
-static bool isUsingFixedLengthTransition(const OBSWeakSource &transition)
-{
-	obs_source_t *source = obs_weak_source_get_source(transition);
-	bool ret = obs_transition_fixed(source);
-	obs_source_release(source);
-	return ret;
-}
-
 static OBSWeakSource getOverrideTransition(OBSWeakSource &scene)
 {
 	OBSWeakSource transition;
@@ -101,13 +94,13 @@ static int getExpectedTransitionDuration(OBSWeakSource &scene,
 		auto overrideTransition = getOverrideTransition(scene);
 		if (overrideTransition) {
 			transition = overrideTransition;
-			if (!isUsingFixedLengthTransition(transition)) {
+			if (!IsFixedLengthTransition(transition)) {
 				return getTransitionOverrideDuration(scene);
 			}
 		}
 	}
 
-	if (isUsingFixedLengthTransition(transition)) {
+	if (IsFixedLengthTransition(transition)) {
 		return -1; // no API is available to access the fixed duration
 	}
 	if (duration != 0) {
@@ -503,7 +496,7 @@ shouldShowDurationInTransitionLayout(MacroActionSwitchScene::SceneType type,
 		return true;
 	}
 
-	if (isUsingFixedLengthTransition(transition.GetTransition())) {
+	if (IsFixedLengthTransition(transition.GetTransition())) {
 		return false;
 	}
 

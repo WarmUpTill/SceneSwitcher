@@ -166,6 +166,8 @@ target_sources(
           utils/scene-item-selection.hpp
           utils/scene-item-transform-helpers.cpp
           utils/scene-item-transform-helpers.hpp
+          utils/transition-helpers.cpp
+          utils/transition-helpers.hpp
           utils/source-properties-button.cpp
           utils/source-properties-button.hpp
           utils/source-settings-helpers.cpp
