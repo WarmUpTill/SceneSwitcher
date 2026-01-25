@@ -68,10 +68,22 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1160</height>
+            <height>1142</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="QGroupBox" name="statusBox">
              <property name="title">
@@ -590,11 +602,8 @@
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QGroupBox" name="groupBox_5">
-          <property name="title">
-           <string>AdvSceneSwitcher.macroTab.macros</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_36">
+         <widget class="QWidget" name="wrapper">
+          <layout class="QVBoxLayout" name="verticalLayout_10">
            <item>
             <widget class="QLabel" name="macroPriorityWarning">
              <property name="text">
@@ -677,66 +686,34 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="macroControlLayout">
-             <item>
-              <widget class="QToolButton" name="macroAdd">
-               <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.tooltip.macroAddButton</string>
-               </property>
-               <property name="themeID" stdset="0">
-                <string notr="true">addIconSmall</string>
-               </property>
-               <property name="class" stdset="0">
-                <string notr="true">icon-plus</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="macroRemove">
-               <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.tooltip.macroRemoveButton</string>
-               </property>
-               <property name="themeID" stdset="0">
-                <string notr="true">removeIconSmall</string>
-               </property>
-               <property name="class" stdset="0">
-                <string notr="true">icon-trash</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="macroUp">
-               <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.tooltip.macroUpButton</string>
-               </property>
-               <property name="themeID" stdset="0">
-                <string notr="true">upArrowIconSmall</string>
-               </property>
-               <property name="class" stdset="0">
-                <string notr="true">icon-up</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="macroDown">
-               <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.tooltip.macroDownButton</string>
-               </property>
-               <property name="themeID" stdset="0">
-                <string notr="true">downArrowIconSmall</string>
-               </property>
-               <property name="class" stdset="0">
-                <string notr="true">icon-down</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+            <widget class="QToolBar" name="macrosToolbar">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>16</width>
+               <height>16</height>
+              </size>
+             </property>
+             <property name="floatable">
+              <bool>false</bool>
+             </property>
+             <addaction name="macroAdd"/>
+             <addaction name="macroRemove"/>
+             <addaction name="separator"/>
+             <addaction name="macroUp"/>
+             <addaction name="macroDown"/>
+            </widget>
            </item>
           </layout>
          </widget>
          <widget class="QGroupBox" name="macroEditGroup">
           <property name="title">
-           <string>AdvSceneSwitcher.macroTab.edit</string>
+           <string>AdvSceneSwitcher.macroTab.title</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_38">
            <item>
@@ -4045,6 +4022,78 @@
     </widget>
    </item>
   </layout>
+  <action name="macroAdd">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Add</string>
+   </property>
+   <property name="toolTip">
+    <string>AdvSceneSwitcher.macroTab.tooltip.macroAddButton</string>
+   </property>
+   <property name="class" stdset="0">
+    <string notr="true">icon-plus</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">addIconSmall</string>
+   </property>
+  </action>
+  <action name="macroRemove">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Remove</string>
+   </property>
+   <property name="toolTip">
+    <string>AdvSceneSwitcher.macroTab.tooltip.macroRemoveButton</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WidgetWithChildrenShortcut</enum>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
+   <property name="class" stdset="0">
+    <string notr="true">icon-trash</string>
+   </property>
+  </action>
+  <action name="macroUp">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
+   </property>
+   <property name="text">
+    <string>MoveUp</string>
+   </property>
+   <property name="toolTip">
+    <string>AdvSceneSwitcher.macroTab.tooltip.macroUpButton</string>
+   </property>
+   <property name="class" stdset="0">
+    <string notr="true">icon-up</string>
+   </property>
+  </action>
+  <action name="macroDown">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
+   </property>
+   <property name="text">
+    <string>MoveDown</string>
+   </property>
+   <property name="toolTip">
+    <string>AdvSceneSwitcher.macroTab.tooltip.macroDownButton</string>
+   </property>
+   <property name="class" stdset="0">
+    <string notr="true">icon-down</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -4110,11 +4159,6 @@
   <tabstop>priorityUp</tabstop>
   <tabstop>priorityDown</tabstop>
   <tabstop>threadPriority</tabstop>
-  <tabstop>macros</tabstop>
-  <tabstop>macroAdd</tabstop>
-  <tabstop>macroRemove</tabstop>
-  <tabstop>macroUp</tabstop>
-  <tabstop>macroDown</tabstop>
   <tabstop>macroName</tabstop>
   <tabstop>runMacro</tabstop>
   <tabstop>runMacroInParallel</tabstop>
