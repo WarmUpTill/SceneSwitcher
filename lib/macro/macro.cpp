@@ -242,8 +242,12 @@ bool Macro::CheckConditions(bool ignorePause)
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
 	_conditionSateChanged = _lastMatched != _matched;
-	if (!_conditionSateChanged && _performActionsOnChange) {
-		_onPreventedActionExecution = true;
+	const bool hasActionsToExecute = _matched ? (_actions.size() > 0)
+						  : (_elseActions.size() > 0);
+	if (!_conditionSateChanged && _performActionsOnChange &&
+	    hasActionsToExecute) {
+		_lastOnChangeActionsPreventedTime =
+			std::chrono::high_resolution_clock::now();
 	}
 
 	_lastMatched = _matched;
@@ -300,6 +304,11 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 bool Macro::WasExecutedSince(const TimePoint &time) const
 {
 	return _lastExecutionTime > time;
+}
+
+bool Macro::OnChangePreventedActionsSince(const TimePoint &time) const
+{
+	return _lastOnChangeActionsPreventedTime > time;
 }
 
 bool Macro::ConditionsShouldBeChecked() const
@@ -986,18 +995,8 @@ bool Macro::HasValidSplitterPositions() const
 	       !_elseActionSplitterPosition.empty();
 }
 
-bool Macro::OnChangePreventedActionsRecently()
-{
-	if (_onPreventedActionExecution) {
-		_onPreventedActionExecution = false;
-		return _matched ? _actions.size() > 0 : _elseActions.size() > 0;
-	}
-	return false;
-}
-
 void Macro::ResetUIHelpers()
 {
-	_onPreventedActionExecution = false;
 	for (auto c : _conditions) {
 		c->GetHighlightAndReset();
 	}

@@ -187,10 +187,19 @@ void MacroTreeItem::HighlightIfExecuted()
 		return;
 	}
 
+	bool wasHighlighted = false;
 	if (_lastHighlightCheckTime.time_since_epoch().count() != 0 &&
 	    _macro->WasExecutedSince(_lastHighlightCheckTime)) {
 		HighlightWidget(this, Qt::green, QColor(0, 0, 0, 0), true);
+		wasHighlighted = true;
 	}
+
+	if (!wasHighlighted &&
+	    _lastHighlightCheckTime.time_since_epoch().count() != 0 &&
+	    _macro->OnChangePreventedActionsSince(_lastHighlightCheckTime)) {
+		HighlightWidget(this, Qt::yellow, QColor(0, 0, 0, 0), true);
+	}
+
 	_lastHighlightCheckTime = std::chrono::high_resolution_clock::now();
 }
 
