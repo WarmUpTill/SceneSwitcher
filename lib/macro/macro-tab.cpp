@@ -25,6 +25,8 @@ namespace advss {
 
 static QObject *addPulse = nullptr;
 static QTimer onChangeHighlightTimer;
+static std::chrono::high_resolution_clock::time_point
+	lastOnChangeHighlightCheckTime{};
 
 static void disableAddButtonHighlight()
 {
@@ -550,10 +552,14 @@ void AdvSceneSwitcher::HighlightOnChange() const
 		return;
 	}
 
-	if (macro->OnChangePreventedActionsRecently()) {
+	if (macro->OnChangePreventedActionsSince(
+		    lastOnChangeHighlightCheckTime)) {
 		HighlightWidget(ui->runMacroOnChange, Qt::yellow,
 				Qt::transparent, true);
 	}
+
+	lastOnChangeHighlightCheckTime =
+		std::chrono::high_resolution_clock::now();
 }
 
 void AdvSceneSwitcher::on_macroSettings_clicked()
@@ -652,6 +658,8 @@ void AdvSceneSwitcher::SetupMacroTab()
 	ui->macroPriorityWarning->setVisible(
 		switcher->functionNamesByPriority[0] != macro_func);
 
+	lastOnChangeHighlightCheckTime =
+		std::chrono::high_resolution_clock::now();
 	onChangeHighlightTimer.setInterval(1500);
 	connect(&onChangeHighlightTimer, SIGNAL(timeout()), this,
 		SLOT(HighlightOnChange()));

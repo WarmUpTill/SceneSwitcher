@@ -137,7 +137,7 @@ public:
 	const QList<int> &GetElseActionSplitterPosition() const;
 	bool HasValidSplitterPositions() const;
 	bool WasExecutedSince(const TimePoint &) const;
-	bool OnChangePreventedActionsRecently();
+	bool OnChangePreventedActionsSince(const TimePoint &) const;
 	void ResetUIHelpers();
 
 	// Hotkeys
@@ -168,6 +168,7 @@ private:
 	TimePoint _lastCheckTime{};
 	TimePoint _lastUnpauseTime{};
 	TimePoint _lastExecutionTime{};
+	TimePoint _lastOnChangeActionsPreventedTime{};
 	std::vector<std::thread> _helperThreads;
 
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
@@ -203,9 +204,6 @@ private:
 		PauseStateSaveBehavior::PERSIST;
 
 	MacroInputVariables _inputVariables;
-
-	// UI helpers
-	bool _onPreventedActionExecution = false;
 
 	QList<int> _actionConditionSplitterPosition;
 	QList<int> _elseActionSplitterPosition;
