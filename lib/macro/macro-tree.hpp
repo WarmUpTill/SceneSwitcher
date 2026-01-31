@@ -34,6 +34,9 @@ public:
 	explicit MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macro,
 			       bool highlight);
 
+protected:
+	bool event(QEvent *) override;
+
 private slots:
 	void ExpandClicked(bool checked);
 	void EnableHighlight(bool enable);

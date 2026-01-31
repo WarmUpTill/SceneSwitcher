@@ -311,6 +311,11 @@ bool Macro::OnChangePreventedActionsSince(const TimePoint &time) const
 	return _lastOnChangeActionsPreventedTime > time;
 }
 
+Macro::TimePoint Macro::GetLastExecutionTime() const
+{
+	return _lastExecutionTime;
+}
+
 bool Macro::ConditionsShouldBeChecked() const
 {
 	if (!_useCustomConditionCheckInterval) {
