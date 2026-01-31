@@ -1,5 +1,7 @@
 #include "auto-update-tooltip-label.hpp"
 
+#include <QToolTip>
+
 namespace advss {
 
 AutoUpdateHelpIcon::AutoUpdateHelpIcon(
@@ -16,6 +18,7 @@ AutoUpdateHelpIcon::AutoUpdateHelpIcon(
 
 void AutoUpdateHelpIcon::enterEvent(QEnterEvent *event)
 {
+	UpdateTooltip();
 	_timer->start(_updateIntervalMs);
 	QLabel::enterEvent(event);
 }
@@ -28,7 +31,12 @@ void AutoUpdateHelpIcon::leaveEvent(QEvent *event)
 
 void AutoUpdateHelpIcon::UpdateTooltip()
 {
-	setToolTip(_callback());
+	if (!underMouse()) {
+		return;
+	}
+
+	const QString text = _callback();
+	QToolTip::showText(QCursor::pos(), text, this);
 }
 
 } // namespace advss
