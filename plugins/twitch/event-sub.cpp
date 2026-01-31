@@ -89,12 +89,24 @@ void EventSub::ConnectThread()
 
 void EventSub::WaitAndReconnect()
 {
+	if (_reconnecting) {
+		return;
+	}
+
+	_reconnecting = true;
+
 	auto thread = std::thread([this]() {
 		std::unique_lock<std::mutex> lock(_waitMtx);
 		blog(LOG_INFO,
 		     "Twitch EventSub trying to reconnect to in %d seconds.",
 		     reconnectDelay);
 		_cv.wait_for(lock, std::chrono::seconds(reconnectDelay));
+		_reconnecting = false;
+
+		if (_disconnect) {
+			return;
+		}
+
 		Connect();
 	});
 	thread.detach();
@@ -102,6 +114,10 @@ void EventSub::WaitAndReconnect()
 
 void EventSub::Connect()
 {
+	if (_reconnecting) {
+		return;
+	}
+
 	std::lock_guard<std::mutex> lock(_connectMtx);
 	if (_connected) {
 		vblog(LOG_INFO, "Twitch EventSub connect already in progress");
@@ -465,8 +481,8 @@ void EventSub::StartServerMigrationClient(const std::string &url)
 		const auto &data = msg->payload;
 
 		if (type == "session_welcome") {
-			vblog(LOG_INFO,
-			      "Twitch EventSub migration successful - switching to new connection");
+			blog(LOG_INFO,
+			     "Twitch EventSub migration successful - switching to new connection");
 			OBSDataAutoRelease session =
 				obs_data_get_obj(data, "session");
 			_migrationSessionID =
@@ -565,7 +581,7 @@ void EventSub::OnClose(connection_hdl hdl)
 	blog(LOG_INFO, "Twitch EventSub connection closed: %s / %s (%d)",
 	     msg.c_str(), reason.c_str(), code);
 
-	if (_migrating) {
+	if (!_migrating) {
 		ClearActiveSubscriptions();
 	}
 	_connected = false;
