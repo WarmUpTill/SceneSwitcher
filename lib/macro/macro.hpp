@@ -138,6 +138,7 @@ public:
 	bool HasValidSplitterPositions() const;
 	bool WasExecutedSince(const TimePoint &) const;
 	bool OnChangePreventedActionsSince(const TimePoint &) const;
+	TimePoint GetLastExecutionTime() const;
 	void ResetUIHelpers();
 
 	// Hotkeys

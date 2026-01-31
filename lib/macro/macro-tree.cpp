@@ -5,18 +5,17 @@
 #include "path-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "ui-helpers.hpp"
-#include "utility.hpp"
 
 #include <obs.h>
 #include <string>
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpacerItem>
-#include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QStylePainter>
+#include <QToolTip>
 
 Q_DECLARE_METATYPE(std::shared_ptr<advss::Macro>);
 
@@ -88,6 +87,35 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 
 	UpdateRunning();
 	_timer.start(1500);
+}
+
+bool MacroTreeItem::event(QEvent *event)
+{
+	if (event->type() != QEvent::ToolTip) {
+		return QFrame::event(event);
+	}
+
+	if (_macro->IsGroup()) {
+		return true;
+	}
+
+	QString text;
+	if (!_macro->WasExecutedSince({})) {
+		text = obs_module_text(
+			"AdvSceneSwitcher.macroTab.macroNotYetExecutedTooltip");
+	} else {
+		const QString formatStr = obs_module_text(
+			"AdvSceneSwitcher.macroTab.macroLastExecutedTooltip");
+		const auto secondsSinceLastRun =
+			std::chrono::duration_cast<std::chrono::seconds>(
+				std::chrono::high_resolution_clock::now() -
+				_macro->GetLastExecutionTime());
+		text = formatStr.arg(secondsSinceLastRun.count());
+	}
+
+	auto helpEvent = static_cast<QHelpEvent *>(event);
+	QToolTip::showText(helpEvent->globalPos(), text, this);
+	return true;
 }
 
 void MacroTreeItem::EnableHighlight(bool enable)
@@ -276,7 +304,7 @@ void MacroTreeItem::Update(bool force)
 		_expand->blockSignals(true);
 		_expand->setChecked(_macro->IsCollapsed());
 		_expand->blockSignals(false);
-		connect(_expand, &QPushButton::toggled, this,
+		connect(_expand, &QCheckBox::toggled, this,
 			&MacroTreeItem::ExpandClicked);
 	} else {
 		_spacer = new QSpacerItem(3, 1);
