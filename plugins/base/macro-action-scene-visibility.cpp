@@ -364,6 +364,7 @@ void MacroActionSceneVisibilityEdit::UpdateDurationChanged(int state)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_updateDuration = state;
+	SetWidgetVisibility();
 }
 
 void MacroActionSceneVisibilityEdit::DurationChanged(const Duration &dur)
