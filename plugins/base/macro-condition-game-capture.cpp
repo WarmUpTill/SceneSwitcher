@@ -55,17 +55,17 @@ void MacroConditionGameCapture::GetCalldataInfo(calldata_t *cd)
 	if (!calldata_get_string(cd, "title", &title)) {
 		blog(LOG_WARNING, "%s failed to get title", __func__);
 	}
-	_title = title;
+	_title = title ? title : "";
 	const char *className = "";
 	if (!calldata_get_string(cd, "class", &className)) {
 		blog(LOG_WARNING, "%s failed to get class", __func__);
 	}
-	_class = className;
+	_class = className ? className : "";
 	const char *executable = "";
 	if (!calldata_get_string(cd, "executable", &executable)) {
 		blog(LOG_WARNING, "%s failed to get executable", __func__);
 	}
-	_executable = executable;
+	_executable = executable ? executable : "";
 }
 
 void MacroConditionGameCapture::HookedSignalReceived(void *data, calldata_t *cd)
