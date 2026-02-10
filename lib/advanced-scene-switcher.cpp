@@ -192,17 +192,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 		switcher->m.lock();
 		if (switcher->VersionChanged(data, g_GIT_SHA1)) {
-			auto json = obs_data_get_json(data);
-			static QString jsonQString = json ? json : "";
-			std::thread t([]() {
-				obs_queue_task(
-					OBS_TASK_UI,
-					[](void *) {
-						AskForBackup(jsonQString);
-					},
-					nullptr, false);
-			});
-			t.detach();
+			AskForBackup(data);
 		}
 
 		switcher->LoadSettings(data);
