@@ -93,7 +93,7 @@ bool MacroConditionStreamdeck::MessageMatches(const StreamDeckMessage &message)
 {
 	const bool keyStateMatches = !_pattern.checkKeyState ||
 				     ((message.keyDown && _pattern.keyDown) ||
-				      (!message.keyDown && !message.keyDown));
+				      (!message.keyDown && !_pattern.keyDown));
 	const bool positionMatches = !_pattern.checkPosition ||
 				     (message.row == _pattern.row &&
 				      message.column == _pattern.column);
