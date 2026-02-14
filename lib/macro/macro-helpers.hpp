@@ -8,7 +8,6 @@
 #include <condition_variable>
 #include <deque>
 #include <optional>
-#include <string_view>
 #include <thread>
 
 struct obs_data;
@@ -69,6 +68,7 @@ EXPORT void AddMacroHelperThread(Macro *, std::thread &&);
 EXPORT bool CheckMacros();
 
 EXPORT bool RunMacroActions(Macro *);
+bool RunMacroElseActions(Macro *);
 EXPORT bool RunMacros();
 void StopAllMacros();
 

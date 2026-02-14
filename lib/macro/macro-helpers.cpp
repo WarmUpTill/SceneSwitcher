@@ -242,6 +242,11 @@ bool RunMacroActions(Macro *macro)
 	return macro && macro->PerformActions(true);
 }
 
+bool RunMacroElseActions(Macro *macro)
+{
+	return macro && macro->PerformActions(false);
+}
+
 void ResetMacroConditionTimers(Macro *macro)
 {
 	if (!macro) {
