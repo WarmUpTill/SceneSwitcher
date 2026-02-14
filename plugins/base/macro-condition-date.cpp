@@ -38,32 +38,13 @@ const static std::map<MacroConditionDate::Condition, std::string>
 		 "AdvSceneSwitcher.condition.date.state.before"},
 };
 
-const static std::map<MacroConditionDate::Day, std::string> dayOfWeekNames = {
-	{MacroConditionDate::Day::ANY,
-	 "AdvSceneSwitcher.condition.date.anyDay"},
-	{MacroConditionDate::Day::MONDAY,
-	 "AdvSceneSwitcher.condition.date.monday"},
-	{MacroConditionDate::Day::TUESDAY,
-	 "AdvSceneSwitcher.condition.date.tuesday"},
-	{MacroConditionDate::Day::WEDNESDAY,
-	 "AdvSceneSwitcher.condition.date.wednesday"},
-	{MacroConditionDate::Day::THURSDAY,
-	 "AdvSceneSwitcher.condition.date.thursday"},
-	{MacroConditionDate::Day::FRIDAY,
-	 "AdvSceneSwitcher.condition.date.friday"},
-	{MacroConditionDate::Day::SATURDAY,
-	 "AdvSceneSwitcher.condition.date.saturday"},
-	{MacroConditionDate::Day::SUNDAY,
-	 "AdvSceneSwitcher.condition.date.sunday"},
-};
-
 bool MacroConditionDate::CheckDayOfWeek(int64_t msSinceLastCheck)
 {
 	QDateTime cur = QDateTime::currentDateTime();
 	SetVariables(cur);
 
-	if (_dayOfWeek != Day::ANY &&
-	    cur.date().dayOfWeek() != static_cast<int>(_dayOfWeek)) {
+	if (!_days.contains(static_cast<DayOfWeekSelector::Day>(
+		    cur.date().dayOfWeek()))) {
 		return false;
 	}
 	if (_ignoreTime) {
@@ -201,7 +182,7 @@ bool MacroConditionDate::CheckCondition()
 bool MacroConditionDate::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_int(obj, "dayOfWeek", static_cast<int>(_dayOfWeek));
+	SaveSelectedDays(obj, _days);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	const auto &dateToSave = _updateOnRepeat ? _dateTime : _origDateTime;
 	const auto &dateToSave2 = _updateOnRepeat ? _dateTime2 : _origDateTime2;
@@ -216,13 +197,14 @@ bool MacroConditionDate::Save(obs_data_t *obj) const
 	_duration.Save(obj);
 	obs_data_set_bool(obj, "dayOfWeekCheck", _dayOfWeekCheck);
 	obs_data_set_string(obj, "pattern", _pattern.c_str());
+	obs_data_set_int(obj, "version", 1);
 	return true;
 }
 
 bool MacroConditionDate::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_dayOfWeek = static_cast<Day>(obs_data_get_int(obj, "dayOfWeek"));
+	_days = LoadSelectedDays(obj);
 	_condition = static_cast<MacroConditionDate::Condition>(
 		obs_data_get_int(obj, "condition"));
 	_dateTime = QDateTime::fromString(
@@ -245,17 +227,64 @@ bool MacroConditionDate::Load(obs_data_t *obj)
 	    _condition == MacroConditionDate::Condition::BETWEEN) {
 		_condition = MacroConditionDate::Condition::AT;
 	}
+
+	if (!obs_data_has_user_value(obj, "version")) {
+		enum class Day {
+			ANY = 0,
+			MONDAY,
+			TUESDAY,
+			WEDNESDAY,
+			THURSDAY,
+			FRIDAY,
+			SATURDAY,
+			SUNDAY,
+		};
+		auto oldDay =
+			static_cast<Day>(obs_data_get_int(obj, "dayOfWeek"));
+		switch (oldDay) {
+		case Day::ANY:
+			_days = {DayOfWeekSelector::Monday,
+				 DayOfWeekSelector::Tuesday,
+				 DayOfWeekSelector::Wednesday,
+				 DayOfWeekSelector::Thursday,
+				 DayOfWeekSelector::Friday,
+				 DayOfWeekSelector::Saturday,
+				 DayOfWeekSelector::Sunday};
+			break;
+		case Day::MONDAY:
+			_days = {DayOfWeekSelector::Monday};
+			break;
+		case Day::TUESDAY:
+			_days = {DayOfWeekSelector::Tuesday};
+			break;
+		case Day::WEDNESDAY:
+			_days = {DayOfWeekSelector::Wednesday};
+			break;
+		case Day::THURSDAY:
+			_days = {DayOfWeekSelector::Thursday};
+			break;
+		case Day::FRIDAY:
+			_days = {DayOfWeekSelector::Friday};
+			break;
+		case Day::SATURDAY:
+			_days = {DayOfWeekSelector::Saturday};
+			break;
+		case Day::SUNDAY:
+			_days = {DayOfWeekSelector::Sunday};
+			break;
+		default:
+			break;
+		}
+	}
+
 	return true;
 }
 
 std::string MacroConditionDate::GetShortDesc() const
 {
 	if (_dayOfWeekCheck) {
-		auto it = dayOfWeekNames.find(_dayOfWeek);
-		if (it == dayOfWeekNames.end()) {
-			return "";
-		}
-		std::string dayName = obs_module_text(it->second.c_str());
+		const auto dayName =
+			DayOfWeekSelector::ToString(_days).toStdString();
 		if (_ignoreTime) {
 			return dayName;
 		}
@@ -347,13 +376,6 @@ void MacroConditionDate::SetupTempVars()
 		   obs_module_text("AdvSceneSwitcher.tempVar.date.dayOfWeek"));
 }
 
-static inline void populateDaySelection(QComboBox *list)
-{
-	for (auto entry : dayOfWeekNames) {
-		list->addItem(obs_module_text(entry.second.c_str()));
-	}
-}
-
 static inline void populateConditionSelection(QComboBox *list)
 {
 	for (auto entry : dateConditionTypes) {
@@ -372,7 +394,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionDate> entryData)
 	: QWidget(parent),
 	  _weekCondition(new QComboBox()),
-	  _dayOfWeek(new QComboBox()),
+	  _days(new DayOfWeekSelector(this)),
 	  _ignoreWeekTime(new QCheckBox()),
 	  _weekTime(new QTimeEdit()),
 	  _condition(new QComboBox()),
@@ -392,7 +414,7 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	  _currentDate(new QLabel()),
 	  _advancedSettingsTooggle(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.condition.date.showAdvancedSettings"))),
-	  _simpleLayout(new QHBoxLayout()),
+	  _simpleLayout(new QVBoxLayout()),
 	  _advancedLayout(new QHBoxLayout()),
 	  _repeatLayout(new QVBoxLayout()),
 	  _repeatUpdateLayout(new QHBoxLayout()),
@@ -418,8 +440,8 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 
 	QWidget::connect(_weekCondition, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(ConditionChanged(int)));
-	QWidget::connect(_dayOfWeek, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(DayOfWeekChanged(int)));
+	QWidget::connect(_days, &DayOfWeekSelector::SelectionChanged, this,
+			 &MacroConditionDateEdit::DaysChanged);
 	QWidget::connect(_ignoreWeekTime, SIGNAL(stateChanged(int)), this,
 			 SLOT(IgnoreTimeChanged(int)));
 	QWidget::connect(_weekTime, SIGNAL(timeChanged(const QTime &)), this,
@@ -449,13 +471,12 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	QWidget::connect(_pattern, SIGNAL(editingFinished()), this,
 			 SLOT(PatternChanged()));
 
-	populateDaySelection(_dayOfWeek);
 	populateConditionSelection(_condition);
 	populateWeekConditionSelection(_weekCondition);
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{weekCondition}}", _weekCondition},
-		{"{{dayOfWeek}}", _dayOfWeek},
+		{"{{dayOfWeek}}", _days},
 		{"{{ignoreWeekTime}}", _ignoreWeekTime},
 		{"{{weekTime}}", _weekTime},
 		{"{{condition}}", _condition},
@@ -472,28 +493,39 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 		{"{{pattern}}", _pattern},
 		{"{{currentDate}}", _currentDate},
 	};
+
+	auto dayLayout = new QHBoxLayout;
 	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.date.entry.simple"),
-		_simpleLayout, widgetPlaceholders);
+		obs_module_text(
+			"AdvSceneSwitcher.condition.date.layout.simple.day"),
+		dayLayout, widgetPlaceholders);
+	auto timeLayout = new QHBoxLayout;
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.date.layout.simple.time"),
+		timeLayout, widgetPlaceholders);
+	_simpleLayout->addLayout(dayLayout);
+	_simpleLayout->addLayout(timeLayout);
+
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.date.entry.advanced"),
+			     "AdvSceneSwitcher.condition.date.layout.advanced"),
 		     _advancedLayout, widgetPlaceholders);
 	PlaceWidgets(
 		obs_module_text(
-			"AdvSceneSwitcher.condition.date.entry.updateOnRepeat"),
+			"AdvSceneSwitcher.condition.date.layout.updateOnRepeat"),
 		_repeatUpdateLayout, widgetPlaceholders);
 	auto repeatLayout = new QHBoxLayout;
-	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.date.entry.repeat"),
-		repeatLayout, widgetPlaceholders);
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.date.entry.pattern"),
+			     "AdvSceneSwitcher.condition.date.layout.repeat"),
+		     repeatLayout, widgetPlaceholders);
+	PlaceWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.date.layout.pattern"),
 		     _patternLayout, widgetPlaceholders);
 	_repeatLayout->addLayout(repeatLayout);
 	_repeatLayout->addWidget(_nextMatchDate);
 	_repeatLayout->addLayout(_repeatUpdateLayout);
 
-	auto *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(_simpleLayout);
 	mainLayout->addLayout(_advancedLayout);
 	mainLayout->addLayout(_patternLayout);
@@ -515,10 +547,11 @@ MacroConditionDateEdit::MacroConditionDateEdit(
 	_loading = false;
 }
 
-void MacroConditionDateEdit::DayOfWeekChanged(int day)
+void MacroConditionDateEdit::DaysChanged(
+	const QSet<DayOfWeekSelector::Day> &days)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_dayOfWeek = static_cast<MacroConditionDate::Day>(day);
+	_entryData->_days = days;
 	emit HeaderInfoChanged(
 		QString::fromStdString(_entryData->GetShortDesc()));
 }
@@ -632,7 +665,7 @@ void MacroConditionDateEdit::ShowNextMatch()
 		return;
 	}
 	QString format(obs_module_text(
-		"AdvSceneSwitcher.condition.date.entry.nextMatchDate"));
+		"AdvSceneSwitcher.condition.date.layout.nextMatchDate"));
 	_nextMatchDate->setText(
 		format.arg(_entryData->GetNextMatchDateTime().toString()));
 }
@@ -658,8 +691,7 @@ void MacroConditionDateEdit::UpdateEntryData()
 	}
 	_weekCondition->setCurrentIndex(
 		static_cast<int>(_entryData->_condition));
-	_dayOfWeek->setCurrentIndex(
-		static_cast<int>(static_cast<int>(_entryData->_dayOfWeek)));
+	_days->SetSelectedDays(_entryData->_days);
 	_ignoreWeekTime->setChecked(!_entryData->_ignoreTime);
 	_weekTime->setTime(_entryData->GetDateTime1().time());
 	_condition->setCurrentIndex(static_cast<int>(_entryData->_condition));
