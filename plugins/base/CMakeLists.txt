@@ -150,6 +150,8 @@ target_sources(
           utils/connection-manager.hpp
           utils/cursor-helpers.cpp
           utils/cursor-helpers.hpp
+          utils/day-of-week-selector.cpp
+          utils/day-of-week-selector.hpp
           utils/filter-selection.cpp
           utils/filter-selection.hpp
           utils/hotkey-helpers.cpp
