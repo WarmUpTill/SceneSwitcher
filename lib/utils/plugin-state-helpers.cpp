@@ -136,7 +136,7 @@ void AddPluginInitStep(std::function<void()> step)
 
 void AddPluginPostLoadStep(std::function<void()> step)
 {
-	std::lock_guard<std::mutex> lock(initMutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	getPluginPostLoadSteps().emplace_back(step);
 }
 
