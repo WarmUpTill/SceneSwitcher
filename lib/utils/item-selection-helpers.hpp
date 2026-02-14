@@ -52,6 +52,7 @@ private slots:
 	void NameChanged(const QString &);
 
 protected:
+	virtual void showEvent(QShowEvent *) override;
 	void SetNameWarning(const QString);
 
 	QLineEdit *_name;

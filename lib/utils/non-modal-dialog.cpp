@@ -1,14 +1,12 @@
 #include "non-modal-dialog.hpp"
 #include "obs-module-helper.hpp"
 
-#include <atomic>
 #include <mutex>
 #include <obs-frontend-api.h>
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QLayout>
 #include <QMainWindow>
-#include <QCoreApplication>
 
 namespace advss {
 

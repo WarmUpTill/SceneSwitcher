@@ -1,9 +1,9 @@
 #pragma once
-#include <QString>
+#include <obs-data.h>
 
 namespace advss {
 
-void AskForBackup(const QString &json);
+void AskForBackup(obs_data_t *settings);
 void BackupSettingsOfCurrentVersion();
 
 } // namespace advss

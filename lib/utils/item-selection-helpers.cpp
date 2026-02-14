@@ -4,9 +4,11 @@
 #include "ui-helpers.hpp"
 
 #include <algorithm>
+
 #include <QAction>
-#include <QMenu>
 #include <QLayout>
+#include <QMenu>
+#include <QTimer>
 
 Q_DECLARE_METATYPE(advss::Item *);
 
@@ -328,6 +330,13 @@ void ItemSettingsDialog::NameChanged(const QString &text)
 		return;
 	}
 	SetNameWarning("");
+}
+
+void ItemSettingsDialog::showEvent(QShowEvent *)
+{
+	if (_showNameEmptyWarning && _name->text().isEmpty()) {
+		_name->setFocus(Qt::OtherFocusReason);
+	}
 }
 
 void ItemSettingsDialog::SetNameWarning(const QString warn)

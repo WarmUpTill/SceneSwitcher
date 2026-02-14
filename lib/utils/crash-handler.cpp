@@ -9,6 +9,8 @@
 
 #include <QDir>
 #include <QFile>
+#include <QMainWindow>
+#include <QTimer>
 
 #include <thread>
 
@@ -104,10 +106,13 @@ static bool wasUncleanShutdown()
 	return true;
 }
 
-static bool askForStartupSkip()
+static void askForStartupSkip()
 {
-	return DisplayMessage(obs_module_text("AdvSceneSwitcher.crashDetected"),
-			      true, false);
+	bool skipStart = DisplayMessage(
+		obs_module_text("AdvSceneSwitcher.crashDetected"), true, false);
+	if (!skipStart) {
+		StartPlugin();
+	}
 }
 
 bool ShouldSkipPluginStartOnUncleanShutdown()
@@ -116,16 +121,29 @@ bool ShouldSkipPluginStartOnUncleanShutdown()
 		return false;
 	}
 
+	// This function is called while the plugin settings are being loaded.
+	// Blocking at this stage can cause issues such as OBS failing to start
+	// or crashing.
+	// Therefore, we ask the user whether they want to start the plugin
+	// asynchronously.
+	//
+	// On macOS, an additional QTimer::singleShot wrapper is required for
+	// this to work correctly.
+	static const auto showDialogWrapper = [](void *) {
+#ifdef __APPLE__
+		QTimer::singleShot(0,
+				   static_cast<QMainWindow *>(
+					   obs_frontend_get_main_window()),
+				   []() {
+#endif
+					   askForStartupSkip();
+#ifdef __APPLE__
+				   });
+#endif
+	};
+
 	std::thread t([]() {
-		obs_queue_task(
-			OBS_TASK_UI,
-			[](void *) {
-				const bool skipStart = askForStartupSkip();
-				if (!skipStart) {
-					StartPlugin();
-				}
-			},
-			nullptr, false);
+		obs_queue_task(OBS_TASK_UI, showDialogWrapper, nullptr, false);
 	});
 	t.detach();
 

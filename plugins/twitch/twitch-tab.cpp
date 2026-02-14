@@ -7,7 +7,11 @@
 #include "ui-helpers.hpp"
 
 #include <QDialogButtonBox>
+#include <QMainWindow>
 #include <QTabWidget>
+#include <QTimer>
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 
@@ -38,8 +42,29 @@ static bool setup()
 		}
 	};
 
+	// This function is called while the plugin settings are being loaded.
+	// Blocking at this stage can cause issues such as OBS failing to start
+	// or crashing.
+	// Therefore, we ask the user whether they want to update their Twitch
+	// connections asynchronously.
+	//
+	// On macOS, an additional QTimer::singleShot wrapper is required for
+	// this to work correctly.
 	AddLoadStep([](obs_data_t *) {
-		AddPostLoadStep([]() { showInvalidWarnings(); });
+		AddPostLoadStep([]() {
+#ifdef __APPLE__
+			QTimer::singleShot(
+				0,
+				static_cast<QMainWindow *>(
+					obs_frontend_get_main_window()),
+				[]() {
+#endif
+					showInvalidWarnings();
+
+#ifdef __APPLE__
+				});
+#endif
+		});
 	});
 
 	return true;
