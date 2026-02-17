@@ -1,6 +1,9 @@
 #include "macro-action-scene-visibility.hpp"
 #include "layout-helpers.hpp"
+#include "plugin-state-helpers.hpp"
 #include "transition-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 
@@ -24,42 +27,136 @@ const static std::map<MacroActionSceneVisibility::Action, std::string>
 
 namespace {
 
+struct TransitionRestoreContext;
+static std::unordered_map<obs_sceneitem_t *, TransitionRestoreContext *>
+	restoreContexts;
+static std::mutex restoreMutex;
+
 struct TransitionRestoreContext {
+public:
 	obs_sceneitem_t *item;
 	bool wasVisible;
 
-	bool restoreTransition;
-	OBSSource originalTransition;
-	bool restoreDuration;
+	OBSSource originalTransition = nullptr;
 	uint32_t originalDuration;
 
+	obs_source_t *transition = nullptr;
 	signal_handler_t *sh = nullptr;
-
-	~TransitionRestoreContext()
-	{
-		if (!sh) {
-			return;
-		}
-
-		signal_handler_disconnect(
-			sh, "transition_stop",
-			&TransitionRestoreContext::ResetSceneItemTransition,
-			this);
-	}
-
-	static void ResetSceneItemTransition(void *param, calldata_t *)
-	{
-		auto *ctx = static_cast<TransitionRestoreContext *>(param);
-		SetSceneItemTransition(ctx->item, ctx->originalTransition,
-				       !ctx->wasVisible);
-
-		obs_sceneitem_set_transition_duration(
-			ctx->item, !ctx->wasVisible, ctx->originalDuration);
-		delete ctx;
-	}
 };
 
 } // namespace
+
+static void handleShutdown(enum obs_frontend_event event, void *private_data)
+{
+	if (event != OBS_FRONTEND_EVENT_EXIT) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(restoreMutex);
+	for (const auto &[_, ctx] : restoreContexts) {
+		obs_source_release(ctx->transition);
+	}
+	restoreContexts.clear();
+}
+
+static bool setup()
+{
+	obs_frontend_add_event_callback(handleShutdown, nullptr);
+	return true;
+}
+
+static bool setupDone = setup();
+
+static void handleSourceDestroyed(void *param, calldata_t *)
+{
+	if (OBSIsShuttingDown()) {
+		return;
+	}
+
+	auto ctx = static_cast<TransitionRestoreContext *>(param);
+	ctx->sh = nullptr;
+	ctx->originalTransition = nullptr;
+	delete ctx;
+}
+
+static void resetSceneItemTransition(void *param, calldata_t *)
+{
+	if (OBSIsShuttingDown()) {
+		return;
+	}
+
+	auto ctx = static_cast<TransitionRestoreContext *>(param);
+
+	if (!ctx) {
+		return;
+	}
+
+	SetSceneItemTransition(ctx->item, ctx->originalTransition,
+			       !ctx->wasVisible);
+
+	obs_sceneitem_set_transition_duration(ctx->item, !ctx->wasVisible,
+					      ctx->originalDuration);
+
+	signal_handler_disconnect(ctx->sh, "transition_stop",
+				  resetSceneItemTransition, ctx);
+	signal_handler_disconnect(ctx->sh, "destroy", handleSourceDestroyed,
+				  ctx);
+
+	{
+		std::lock_guard<std::mutex> lock(restoreMutex);
+		restoreContexts.erase(ctx->item);
+	}
+
+	obs_source_release(ctx->transition);
+	delete ctx;
+}
+
+static void attachRestoreContext(obs_sceneitem_t *item,
+				 obs_source_t *transition, bool itemWasVisible,
+				 OBSSource originalTransition,
+				 uint32_t originalDuration)
+{
+	signal_handler_t *sh = obs_source_get_signal_handler(transition);
+	if (!sh) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(restoreMutex);
+
+	auto ctx = new TransitionRestoreContext{
+		item,
+		itemWasVisible,
+		originalTransition,
+		originalDuration,
+		obs_source_get_ref(transition),
+		sh,
+	};
+
+	auto it = restoreContexts.find(item);
+	if (it != restoreContexts.end()) {
+		auto *oldCtx = it->second;
+
+		signal_handler_disconnect(oldCtx->sh, "transition_stop",
+					  resetSceneItemTransition, oldCtx);
+
+		signal_handler_disconnect(oldCtx->sh, "destroy",
+					  handleSourceDestroyed, oldCtx);
+
+		ctx->originalTransition = oldCtx->originalTransition;
+		ctx->originalDuration = oldCtx->originalDuration;
+
+		obs_source_release(oldCtx->transition);
+		delete oldCtx;
+
+		restoreContexts.erase(it);
+	}
+
+	restoreContexts[item] = ctx;
+
+	signal_handler_connect(sh, "transition_stop", resetSceneItemTransition,
+			       ctx);
+	signal_handler_connect(sh, "destroy", handleSourceDestroyed, ctx);
+}
 
 static void setSceneItemVisibility(obs_sceneitem_t *item,
 				   const bool setTransition,
@@ -76,7 +173,7 @@ static void setSceneItemVisibility(obs_sceneitem_t *item,
 	const uint32_t currentTransitionDuration =
 		obs_sceneitem_get_transition_duration(item, !itemIsVisible);
 
-	obs_source_t *privateTransitionSource = nullptr;
+	OBSSource privateTransitionSource = nullptr;
 	if (setTransition) {
 		privateTransitionSource = SetSceneItemTransition(
 			item, transition, !itemIsVisible);
@@ -102,6 +199,10 @@ static void setSceneItemVisibility(obs_sceneitem_t *item,
 		break;
 	}
 
+	if (!setTransition && !setDuration) {
+		return;
+	}
+
 	if (!privateTransitionSource) {
 		if (setTransition) {
 			SetSceneItemTransition(item, currentTransition,
@@ -120,17 +221,8 @@ static void setSceneItemVisibility(obs_sceneitem_t *item,
 		return;
 	}
 
-	auto ctx = new TransitionRestoreContext{item,
-						itemIsVisible,
-						setTransition,
-						currentTransition,
-						setDuration,
-						currentTransitionDuration,
-						sh};
-
-	signal_handler_connect(
-		sh, "transition_stop",
-		&TransitionRestoreContext::ResetSceneItemTransition, ctx);
+	attachRestoreContext(item, privateTransitionSource, itemIsVisible,
+			     currentTransition, currentTransitionDuration);
 }
 
 bool MacroActionSceneVisibility::PerformAction()
