@@ -101,10 +101,10 @@ public:
 	void HighlightMacroSettingsButton(bool enable = true);
 
 public slots:
-	void on_macroAdd_clicked();
-	void on_macroRemove_clicked();
-	void on_macroUp_clicked() const;
-	void on_macroDown_clicked() const;
+	void on_macroAdd_triggered();
+	void on_macroRemove_triggered();
+	void on_macroUp_triggered() const;
+	void on_macroDown_triggered() const;
 	void on_macroName_editingFinished();
 	void on_runMacroInParallel_stateChanged(int value) const;
 	void on_runMacroOnChange_stateChanged(int value) const;

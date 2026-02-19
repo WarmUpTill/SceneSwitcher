@@ -57,6 +57,7 @@ ResourceTable::ResourceTable(QWidget *parent, const QString &help,
 	auto layout = new QVBoxLayout();
 	layout->addLayout(helpAndTableLayout);
 	layout->addLayout(controlLayout);
+	layout->setContentsMargins(0, 0, 0, 0);
 	setLayout(layout);
 
 	QWidget::connect(_add, SIGNAL(clicked()), this, SLOT(Add()));
