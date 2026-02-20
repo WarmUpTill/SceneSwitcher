@@ -10,6 +10,12 @@ if(OS_MACOS)
 endif()
 find_package(OpenSSL)
 
+get_cmake_property(_variableNames VARIABLES)
+list(SORT _variableNames)
+foreach(_variableName ${_variableNames})
+  message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
+
 find_package(PahoMqttCpp)
 if(NOT PahoMqttCpp_FOUND)
   message(WARNING "PahoMqttCpp not found!\n"
