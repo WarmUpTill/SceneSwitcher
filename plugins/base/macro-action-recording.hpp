@@ -29,11 +29,13 @@ public:
 		SPLIT,
 		FOLDER,
 		FILE_FORMAT,
+		ADD_CHAPTER,
 	};
 	Action _action = Action::STOP;
 
 	StringVariable _folder = QDir::homePath().toStdString() + "/Videos";
 	StringVariable _fileFormat = "%CCYY-%MM-%DD %hh-%mm-%ss";
+	StringVariable _chapterName = "";
 
 private:
 	static bool _registered;
@@ -60,6 +62,7 @@ private slots:
 	void ActionChanged(int value);
 	void FolderChanged(const QString &);
 	void FormatStringChanged();
+	void ChapterNameChanged();
 
 protected:
 	QComboBox *_actions;
@@ -67,6 +70,7 @@ protected:
 	QLabel *_splitHint;
 	FileSelection *_recordFolder;
 	VariableLineEdit *_recordFileFormat;
+	VariableLineEdit *_chapterName;
 	std::shared_ptr<MacroActionRecord> _entryData;
 
 private:
