@@ -8,9 +8,13 @@ namespace advss {
 
 static void populateUnits(QComboBox *list)
 {
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.seconds"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
+	list->addItems({obs_module_text("AdvSceneSwitcher.unit.seconds"),
+			obs_module_text("AdvSceneSwitcher.unit.minutes"),
+			obs_module_text("AdvSceneSwitcher.unit.hours"),
+			obs_module_text("AdvSceneSwitcher.unit.days"),
+			obs_module_text("AdvSceneSwitcher.unit.weeks"),
+			obs_module_text("AdvSceneSwitcher.unit.months"),
+			obs_module_text("AdvSceneSwitcher.unit.years")});
 }
 
 DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection,
@@ -57,27 +61,12 @@ void DurationSelection::_DurationChanged(const NumberVariable<double> &value)
 	emit DurationChanged(_current);
 }
 
-static int durationUnitToMultiplier(Duration::Unit u)
-{
-	switch (u) {
-	case Duration::Unit::SECONDS:
-		return 1;
-	case Duration::Unit::MINUTES:
-		return 60;
-	case Duration::Unit::HOURS:
-		return 3600;
-	default:
-		break;
-	}
-
-	return 0;
-}
-
 void DurationSelection::_UnitChanged(int idx)
 {
 	Duration::Unit unit = static_cast<Duration::Unit>(idx);
-	double prevMultiplier = durationUnitToMultiplier(_current._unit);
-	double newMultiplier = durationUnitToMultiplier(unit);
+	double prevMultiplier =
+		Duration::ConvertUnitToMultiplier(_current._unit);
+	double newMultiplier = Duration::ConvertUnitToMultiplier(unit);
 	_current._unit = unit;
 	_duration->SetFixedValue(_duration->Value() *
 				 (prevMultiplier / newMultiplier));
