@@ -64,7 +64,7 @@ function(_git_find_closest_git_dir _start_dir _git_dir_var)
   while(NOT EXISTS "${git_dir}")
     # .git dir not found, search parent directories
     set(git_previous_parent "${cur_dir}")
-    get_filename_component(cur_dir ${cur_dir} DIRECTORY)
+    get_filename_component(cur_dir "${cur_dir}" DIRECTORY)
     if(cur_dir STREQUAL git_previous_parent)
       # We have reached the root directory, we are not in git
       set(${_git_dir_var}
