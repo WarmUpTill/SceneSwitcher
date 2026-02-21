@@ -50,6 +50,7 @@ public:
 
 	void SetCondition(VideoCondition);
 	VideoCondition GetCondition() const { return _condition; }
+	void SetupTempVars();
 
 	VideoInput _video;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
@@ -88,8 +89,6 @@ private:
 	bool CheckColor();
 	bool Compare();
 	bool CheckShouldBeSkipped();
-
-	void SetupTempVars();
 
 	VideoCondition _condition = VideoCondition::MATCH;
 

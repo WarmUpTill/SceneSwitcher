@@ -273,15 +273,18 @@ void MacroConditionVideo::SetCondition(VideoCondition condition)
 bool MacroConditionVideo::ScreenshotContainsPattern()
 {
 	cv::Mat result;
-	MatchPattern(_screenshotData.GetImage(), _patternImageData,
-		     _patternMatchParameters.threshold, result, nullptr,
-		     _patternMatchParameters.useAlphaAsMask,
-		     _patternMatchParameters.matchMode);
+	double bestMatchValue =
+		MatchPattern(_screenshotData.GetImage(), _patternImageData,
+			     _patternMatchParameters.threshold, result,
+			     _patternMatchParameters.useAlphaAsMask,
+			     _patternMatchParameters.matchMode);
 	if (result.total() == 0) {
+		SetTempVarValue("similarity", std::to_string(bestMatchValue));
 		SetTempVarValue("patternCount", "0");
 		return false;
 	}
 	const auto count = countNonZero(result);
+	SetTempVarValue("similarity", std::to_string(bestMatchValue));
 	SetTempVarValue("patternCount", std::to_string(count));
 	return count > 0;
 }
@@ -304,10 +307,12 @@ bool MacroConditionVideo::OutputChanged()
 
 	cv::Mat result;
 	_patternImageData = CreatePatternData(_matchImage);
-	MatchPattern(_screenshotData.GetImage(), _patternImageData,
-		     _patternMatchParameters.threshold, result, nullptr,
-		     _patternMatchParameters.useAlphaAsMask,
-		     _patternMatchParameters.matchMode);
+	double bestMatchValue =
+		MatchPattern(_screenshotData.GetImage(), _patternImageData,
+			     _patternMatchParameters.threshold, result,
+			     _patternMatchParameters.useAlphaAsMask,
+			     _patternMatchParameters.matchMode);
+	SetTempVarValue("similarity", std::to_string(bestMatchValue));
 	if (result.total() == 0) {
 		return false;
 	}
@@ -411,7 +416,25 @@ void MacroConditionVideo::SetupTempVars()
 {
 	MacroCondition::SetupTempVars();
 	switch (_condition) {
+	case VideoCondition::HAS_CHANGED:
+	case VideoCondition::HAS_NOT_CHANGED:
+		if (!_patternMatchParameters.useForChangedCheck) {
+			break;
+		}
+		AddTempvar(
+			"similarity",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.similarity"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.similarity.description"));
+		break;
 	case VideoCondition::PATTERN:
+		AddTempvar(
+			"similarity",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.similarity"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.similarity.description"));
 		AddTempvar(
 			"patternCount",
 			obs_module_text(
@@ -451,8 +474,6 @@ void MacroConditionVideo::SetupTempVars()
 		break;
 	case VideoCondition::MATCH:
 	case VideoCondition::DIFFER:
-	case VideoCondition::HAS_NOT_CHANGED:
-	case VideoCondition::HAS_CHANGED:
 	case VideoCondition::NO_IMAGE:
 	default:
 		break;
@@ -1477,6 +1498,7 @@ void MacroConditionVideoEdit::UsePatternForChangedCheckChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_patternMatchParameters.useForChangedCheck = value;
+	_entryData->SetupTempVars();
 	SetWidgetVisibility();
 }
 

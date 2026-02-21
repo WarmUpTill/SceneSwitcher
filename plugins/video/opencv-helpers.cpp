@@ -48,20 +48,18 @@ static void preprocessPatternMatchResult(cv::Mat &mat, bool invert)
 	}
 }
 
-void MatchPattern(QImage &img, const PatternImageData &patternData,
-		  double threshold, cv::Mat &result, double *pBestFitValue,
-		  bool useAlphaAsMask, cv::TemplateMatchModes matchMode)
+double MatchPattern(QImage &img, const PatternImageData &patternData,
+		    double threshold, cv::Mat &result, bool useAlphaAsMask,
+		    cv::TemplateMatchModes matchMode)
 {
+	double bestFitValue = std::numeric_limits<double>::signaling_NaN();
 	result = cv::Mat(0, 0, CV_32F);
-	if (pBestFitValue) {
-		*pBestFitValue = std::numeric_limits<double>::signaling_NaN();
-	}
 	if (img.isNull() || patternData.rgbaPattern.empty()) {
-		return;
+		return bestFitValue;
 	}
 	if (img.height() < patternData.rgbaPattern.rows ||
 	    img.width() < patternData.rgbaPattern.cols) {
-		return;
+		return bestFitValue;
 	}
 
 	auto input = QImageToMat(img);
@@ -94,20 +92,18 @@ void MatchPattern(QImage &img, const PatternImageData &patternData,
 	// -> Invert TM_SQDIFF_NORMED in the preprocess step
 	preprocessPatternMatchResult(result, matchMode == cv::TM_SQDIFF_NORMED);
 
-	if (pBestFitValue) {
-		cv::minMaxLoc(result, nullptr, pBestFitValue);
-	}
-
+	cv::minMaxLoc(result, nullptr, &bestFitValue);
 	cv::threshold(result, result, threshold, 0.0, cv::THRESH_TOZERO);
+	return bestFitValue;
 }
 
-void MatchPattern(QImage &img, QImage &pattern, double threshold,
-		  cv::Mat &result, double *pBestFitValue, bool useAlphaAsMask,
-		  cv::TemplateMatchModes matchColor)
+double MatchPattern(QImage &img, QImage &pattern, double threshold,
+		    cv::Mat &result, bool useAlphaAsMask,
+		    cv::TemplateMatchModes matchColor)
 {
 	auto data = CreatePatternData(pattern);
-	MatchPattern(img, data, threshold, result, pBestFitValue,
-		     useAlphaAsMask, matchColor);
+	return MatchPattern(img, data, threshold, result, useAlphaAsMask,
+			    matchColor);
 }
 
 std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
