@@ -3,11 +3,41 @@
 #include "macro-signals.hpp"
 #include "switcher-data.hpp"
 
+#include "obs-frontend-api.h"
+
 namespace advss {
 
 static std::mutex initMutex;
 static std::mutex postLoadMutex;
+static std::mutex finishLoadMutex;
 static std::mutex mutex;
+
+static bool setup();
+static bool setupDonw = setup();
+bool loadingFinished = false;
+
+static std::vector<std::function<void()>> &getFinishLoadSteps();
+
+static bool setup()
+{
+	static auto handleEvent = [](enum obs_frontend_event event, void *) {
+		switch (event) {
+		case OBS_FRONTEND_EVENT_FINISHED_LOADING: {
+			std::lock_guard<std::mutex> lock(finishLoadMutex);
+			for (const auto &step : getFinishLoadSteps()) {
+				step();
+			}
+			getFinishLoadSteps().clear();
+			loadingFinished = true;
+			break;
+		}
+		default:
+			break;
+		};
+	};
+	obs_frontend_add_event_callback(handleEvent, nullptr);
+	return true;
+}
 
 static std::vector<std::function<void()>> &getPluginInitSteps()
 {
@@ -58,6 +88,12 @@ static std::vector<std::function<void(obs_data_t *)>> &getLoadSteps()
 }
 
 static std::vector<std::function<void()>> &getPostLoadSteps()
+{
+	static std::vector<std::function<void()>> steps;
+	return steps;
+}
+
+static std::vector<std::function<void()>> &getFinishLoadSteps()
 {
 	static std::vector<std::function<void()>> steps;
 	return steps;
@@ -176,6 +212,16 @@ void RunIntervalResetSteps()
 	for (const auto &step : getResetIntervalSteps()) {
 		step();
 	}
+}
+
+void AddFinishedLoadingStep(std::function<void()> step)
+{
+	std::lock_guard<std::mutex> lock(finishLoadMutex);
+	if (loadingFinished) {
+		return;
+	}
+
+	getFinishLoadSteps().emplace_back(step);
 }
 
 void AddStartStep(std::function<void()> step)

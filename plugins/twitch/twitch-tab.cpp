@@ -28,7 +28,7 @@ static bool setup()
 	AddSetupTabCallback("twitchConnectionTab",
 			    TwitchConnectionsTable::Create, setupTab);
 
-	static const auto showInvalidWarnings = []() {
+	static const auto showInvalidWarnings = [](void *) {
 		const auto invalidTokens = getInvalidTokens();
 		for (const auto &token : invalidTokens) {
 			QueueUITask(
@@ -47,24 +47,9 @@ static bool setup()
 	// or crashing.
 	// Therefore, we ask the user whether they want to update their Twitch
 	// connections asynchronously.
-	//
-	// On macOS, an additional QTimer::singleShot wrapper is required for
-	// this to work correctly.
-	AddLoadStep([](obs_data_t *) {
-		AddPostLoadStep([]() {
-#ifdef __APPLE__
-			QTimer::singleShot(
-				0,
-				static_cast<QMainWindow *>(
-					obs_frontend_get_main_window()),
-				[]() {
-#endif
-					showInvalidWarnings();
-
-#ifdef __APPLE__
-				});
-#endif
-		});
+	AddFinishedLoadingStep([]() {
+		obs_queue_task(OBS_TASK_UI, showInvalidWarnings, nullptr,
+			       false);
 	});
 
 	return true;
