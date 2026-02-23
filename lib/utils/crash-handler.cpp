@@ -126,26 +126,13 @@ bool ShouldSkipPluginStartOnUncleanShutdown()
 	// or crashing.
 	// Therefore, we ask the user whether they want to start the plugin
 	// asynchronously.
-	//
-	// On macOS, an additional QTimer::singleShot wrapper is required for
-	// this to work correctly.
 	static const auto showDialogWrapper = [](void *) {
-#ifdef __APPLE__
-		QTimer::singleShot(0,
-				   static_cast<QMainWindow *>(
-					   obs_frontend_get_main_window()),
-				   []() {
-#endif
-					   askForStartupSkip();
-#ifdef __APPLE__
-				   });
-#endif
+		askForStartupSkip();
 	};
 
-	std::thread t([]() {
+	AddFinishedLoadingStep([]() {
 		obs_queue_task(OBS_TASK_UI, showDialogWrapper, nullptr, false);
 	});
-	t.detach();
 
 	return true;
 }

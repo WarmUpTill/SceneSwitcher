@@ -54,31 +54,18 @@ void AskForBackup(obs_data_t *settings)
 	// or crashing.
 	// Therefore, we ask the user whether they want to back up the settings
 	// asynchronously.
-	//
-	// On macOS, an additional QTimer::singleShot wrapper is required for
-	// this to work correctly.
 
 	auto json = obs_data_get_json(settings);
 	static QString jsonQString = json ? json : "";
 
 	static const auto askForBackupWrapper = [](void *) {
-#ifdef __APPLE__
-		QTimer::singleShot(0,
-				   static_cast<QMainWindow *>(
-					   obs_frontend_get_main_window()),
-				   []() {
-#endif
-					   showBackupDialogs(jsonQString);
-#ifdef __APPLE__
-				   });
-#endif
+		showBackupDialogs(jsonQString);
 	};
 
-	std::thread t([]() {
+	AddFinishedLoadingStep([]() {
 		obs_queue_task(OBS_TASK_UI, askForBackupWrapper, nullptr,
 			       false);
 	});
-	t.detach();
 }
 
 void BackupSettingsOfCurrentVersion()

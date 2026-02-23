@@ -34,6 +34,9 @@ void RunStartSteps();
 void RunStopSteps();
 void RunIntervalResetSteps();
 
+// Steps are executed after OBS_FRONTEND_EVENT_FINISHED_LOADING is fired
+EXPORT void AddFinishedLoadingStep(std::function<void()>);
+
 enum class NoMatchBehavior { NO_SWITCH = 0, SWITCH = 1, RANDOM_SWITCH = 2 };
 EXPORT void SetPluginNoMatchBehavior(NoMatchBehavior);
 EXPORT NoMatchBehavior GetPluginNoMatchBehavior();
