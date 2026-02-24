@@ -380,6 +380,10 @@ bool Macro::RunActionsHelper(
 	const std::deque<std::shared_ptr<MacroAction>> &actionsToRun,
 	bool ignorePause)
 {
+	if (_paused && !ignorePause) {
+		return true;
+	}
+
 	// Create copy of action list as elements might be removed, inserted, or
 	// reordered while actions are currently being executed.
 	auto actions = actionsToRun;
