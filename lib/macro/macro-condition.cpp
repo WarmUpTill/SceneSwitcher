@@ -7,6 +7,17 @@ MacroCondition::MacroCondition(Macro *m, bool supportsVariableValue)
 {
 }
 
+bool MacroCondition::EvaluateCondition()
+{
+	bool newValue = CheckCondition();
+	_changed = _previousValue.has_value() && (*_previousValue != newValue);
+	const bool negate = _logic.IsNegationType(GetLogicType());
+	_risingEdge = _changed &&
+		      ((!negate && newValue) || (negate && !newValue));
+	_previousValue = newValue;
+	return newValue;
+}
+
 bool MacroCondition::Save(obs_data_t *obj) const
 {
 	MacroSegment::Save(obj);

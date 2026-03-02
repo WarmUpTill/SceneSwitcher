@@ -474,14 +474,17 @@ void AdvSceneSwitcher::on_runMacroInParallel_stateChanged(int value) const
 	macro->SetRunInParallel(value);
 }
 
-void AdvSceneSwitcher::on_runMacroOnChange_stateChanged(int value) const
+void AdvSceneSwitcher::on_actionTriggerMode_currentIndexChanged(int index) const
 {
 	auto macro = GetSelectedMacro();
 	if (!macro) {
 		return;
 	}
+
 	auto lock = LockContext();
-	macro->SetMatchOnChange(value);
+	const auto mode = static_cast<Macro::ActionTriggerMode>(
+		ui->actionTriggerMode->itemData(index).toInt());
+	macro->SetActionTriggerMode(mode);
 }
 
 void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable) const
@@ -489,7 +492,7 @@ void AdvSceneSwitcher::SetMacroEditAreaDisabled(bool disable) const
 	ui->macroName->setDisabled(disable);
 	ui->runMacro->setDisabled(disable);
 	ui->runMacroInParallel->setDisabled(disable);
-	ui->runMacroOnChange->setDisabled(disable);
+	ui->actionTriggerMode->setDisabled(disable);
 	ui->macroEdit->SetControlsDisabled(disable);
 }
 
@@ -519,10 +522,12 @@ void AdvSceneSwitcher::MacroSelectionChanged()
 	{
 		const QSignalBlocker b1(ui->macroName);
 		const QSignalBlocker b2(ui->runMacroInParallel);
-		const QSignalBlocker b3(ui->runMacroOnChange);
+		const QSignalBlocker b3(ui->actionTriggerMode);
 		ui->macroName->setText(macro->Name().c_str());
 		ui->runMacroInParallel->setChecked(macro->RunInParallel());
-		ui->runMacroOnChange->setChecked(macro->MatchOnChange());
+		ui->actionTriggerMode->setCurrentIndex(
+			ui->actionTriggerMode->findData(static_cast<int>(
+				macro->GetActionTriggerMode())));
 	}
 
 	macro->ResetUIHelpers();
@@ -552,9 +557,9 @@ void AdvSceneSwitcher::HighlightOnChange() const
 		return;
 	}
 
-	if (macro->OnChangePreventedActionsSince(
+	if (macro->ActionTriggerModePreventedActionsSince(
 		    lastOnChangeHighlightCheckTime)) {
-		HighlightWidget(ui->runMacroOnChange, Qt::yellow,
+		HighlightWidget(ui->actionTriggerMode, Qt::yellow,
 				Qt::transparent, true);
 	}
 
@@ -682,6 +687,24 @@ void AdvSceneSwitcher::SetupMacroTab()
 				ui->macroSearchRegex,
 				ui->macroSearchShowSettings,
 				[this]() { ui->macros->RefreshFilter(); });
+
+	static const std::vector<
+		std::pair<Macro::ActionTriggerMode, const char *>>
+		actionTriggerModes = {
+			{Macro::ActionTriggerMode::ALWAYS,
+			 "AdvSceneSwitcher.macroTab.actionTriggerMode.always"},
+			{Macro::ActionTriggerMode::MACRO_RESULT_CHANGED,
+			 "AdvSceneSwitcher.macroTab.actionTriggerMode.onOverallChange"},
+			{Macro::ActionTriggerMode::ANY_CONDITION_CHANGED,
+			 "AdvSceneSwitcher.macroTab.actionTriggerMode.onAnyConditionChange"},
+			{Macro::ActionTriggerMode::ANY_CONDITION_TRIGGERED,
+			 "AdvSceneSwitcher.macroTab.actionTriggerMode.onAnyConditionTriggered"},
+		};
+
+	for (const auto &[mode, name] : actionTriggerModes) {
+		ui->actionTriggerMode->addItem(obs_module_text(name),
+					       static_cast<int>(mode));
+	}
 }
 
 void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
