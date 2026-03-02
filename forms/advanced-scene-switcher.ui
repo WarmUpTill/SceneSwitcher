@@ -793,25 +793,19 @@
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="runMacroOnChange">
-               <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.onChange</string>
-               </property>
+              <widget class="QLabel" name="label_18">
                <property name="text">
-                <string/>
+                <string>AdvSceneSwitcher.macroTab.actionTriggerMode.label</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label_18">
+              <widget class="QComboBox" name="actionTriggerMode">
                <property name="toolTip">
-                <string>AdvSceneSwitcher.macroTab.onChange</string>
-               </property>
-               <property name="text">
-                <string>AdvSceneSwitcher.macroTab.onChange</string>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
+                <string>AdvSceneSwitcher.macroTab.actionTriggerMode.tooltip</string>
                </property>
               </widget>
              </item>
@@ -4125,7 +4119,7 @@
   <tabstop>macroName</tabstop>
   <tabstop>runMacro</tabstop>
   <tabstop>runMacroInParallel</tabstop>
-  <tabstop>runMacroOnChange</tabstop>
+  <tabstop>actionTriggerMode</tabstop>
   <tabstop>macroSettings</tabstop>
   <tabstop>macroEdit</tabstop>
   <tabstop>sceneGroups</tabstop>

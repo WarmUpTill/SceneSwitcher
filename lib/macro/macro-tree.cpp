@@ -224,7 +224,8 @@ void MacroTreeItem::HighlightIfExecuted()
 
 	if (!wasHighlighted &&
 	    _lastHighlightCheckTime.time_since_epoch().count() != 0 &&
-	    _macro->OnChangePreventedActionsSince(_lastHighlightCheckTime)) {
+	    _macro->ActionTriggerModePreventedActionsSince(
+		    _lastHighlightCheckTime)) {
 		HighlightWidget(this, Qt::yellow, QColor(0, 0, 0, 0), true);
 	}
 

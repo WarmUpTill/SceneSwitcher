@@ -108,7 +108,7 @@ public slots:
 	void on_macroDown_clicked() const;
 	void on_macroName_editingFinished();
 	void on_runMacroInParallel_stateChanged(int value) const;
-	void on_runMacroOnChange_stateChanged(int value) const;
+	void on_actionTriggerMode_currentIndexChanged(int index) const;
 	void MacroSelectionChanged();
 	void ShowMacroContextMenu(const QPoint &);
 	void CopyMacro();

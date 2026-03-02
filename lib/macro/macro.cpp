@@ -111,7 +111,7 @@ static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	bool conditionMatched = false;
 	condition->WithLock([&condition, &conditionMatched]() {
-		conditionMatched = condition->CheckCondition();
+		conditionMatched = condition->EvaluateCondition();
 	});
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const auto timeSpent = endTime - startTime;
@@ -241,12 +241,36 @@ bool Macro::CheckConditions(bool ignorePause)
 
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
-	_conditionSateChanged = _lastMatched != _matched;
+	_actionModeMatch = false;
+	switch (_actionTriggerMode) {
+	case Macro::ActionTriggerMode::ALWAYS:
+		_actionModeMatch = true;
+		break;
+	case Macro::ActionTriggerMode::MACRO_RESULT_CHANGED:
+		_actionModeMatch = _lastMatched != _matched;
+		break;
+	case Macro::ActionTriggerMode::ANY_CONDITION_CHANGED:
+		for (const auto &condition : _conditions) {
+			if (condition->HasChanged()) {
+				_actionModeMatch = true;
+			}
+		}
+		break;
+	case Macro::ActionTriggerMode::ANY_CONDITION_TRIGGERED:
+		for (const auto &condition : _conditions) {
+			if (condition->IsRisingEdge()) {
+				_actionModeMatch = true;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
 	const bool hasActionsToExecute = _matched ? (_actions.size() > 0)
 						  : (_elseActions.size() > 0);
-	if (!_conditionSateChanged && _performActionsOnChange &&
-	    hasActionsToExecute) {
-		_lastOnChangeActionsPreventedTime =
+	if (!_actionModeMatch && hasActionsToExecute) {
+		_lastActionRunModePreventTime =
 			std::chrono::high_resolution_clock::now();
 	}
 
@@ -306,9 +330,9 @@ bool Macro::WasExecutedSince(const TimePoint &time) const
 	return _lastExecutionTime > time;
 }
 
-bool Macro::OnChangePreventedActionsSince(const TimePoint &time) const
+bool Macro::ActionTriggerModePreventedActionsSince(const TimePoint &time) const
 {
-	return _lastOnChangeActionsPreventedTime > time;
+	return _lastActionRunModePreventTime > time;
 }
 
 Macro::TimePoint Macro::GetLastExecutionTime() const
@@ -342,10 +366,9 @@ bool Macro::ShouldRunActions() const
 
 	const bool hasActionsToExecute =
 		!_paused && (_matched || _elseActions.size() > 0) &&
-		(!_performActionsOnChange || _conditionSateChanged);
+		_actionModeMatch;
 
-	if (VerboseLoggingEnabled() && _performActionsOnChange &&
-	    !_conditionSateChanged) {
+	if (VerboseLoggingEnabled() && !_actionModeMatch) {
 		if (_matched && _actions.size() > 0) {
 			blog(LOG_INFO, "skip actions for Macro %s (on change)",
 			     _name.c_str());
@@ -374,6 +397,16 @@ void Macro::ResetTimers()
 	}
 	_lastCheckTime = {};
 	_lastExecutionTime = {};
+}
+
+void Macro::SetActionTriggerMode(ActionTriggerMode mode)
+{
+	_actionTriggerMode = mode;
+}
+
+Macro::ActionTriggerMode Macro::GetActionTriggerMode() const
+{
+	return _actionTriggerMode;
 }
 
 bool Macro::RunActionsHelper(
@@ -431,11 +464,6 @@ bool Macro::RunElseActions(bool ignorePause)
 bool Macro::WasPausedSince(const TimePoint &time) const
 {
 	return _lastUnpauseTime > time;
-}
-
-void Macro::SetMatchOnChange(bool onChange)
-{
-	_performActionsOnChange = onChange;
 }
 
 void Macro::SetStopActionsIfNotDone(bool stopActionsIfNotDone)
@@ -758,7 +786,8 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 	obs_data_set_bool(obj, "pause", _paused);
 	obs_data_set_bool(obj, "parallel", _runInParallel);
 	obs_data_set_bool(obj, "checkConditionsInParallel", _checkInParallel);
-	obs_data_set_bool(obj, "onChange", _performActionsOnChange);
+	obs_data_set_int(obj, "actionTriggerMode",
+			 static_cast<int>(_actionTriggerMode));
 	obs_data_set_bool(obj, "skipExecOnStart", _skipExecOnStart);
 	obs_data_set_bool(obj, "stopActionsIfNotDone", _stopActionsIfNotDone);
 	obs_data_set_bool(obj, "useShortCircuitEvaluation",
@@ -844,7 +873,15 @@ bool Macro::Load(obs_data_t *obj)
 	}
 	_runInParallel = obs_data_get_bool(obj, "parallel");
 	_checkInParallel = obs_data_get_bool(obj, "checkConditionsInParallel");
-	_performActionsOnChange = obs_data_get_bool(obj, "onChange");
+	if (obs_data_has_user_value(obj, "onChange")) {
+		const bool onChange = obs_data_get_bool(obj, "onChange");
+		_actionTriggerMode =
+			onChange ? ActionTriggerMode::MACRO_RESULT_CHANGED
+				 : ActionTriggerMode::ALWAYS;
+	} else {
+		_actionTriggerMode = static_cast<ActionTriggerMode>(
+			obs_data_get_int(obj, "actionTriggerMode"));
+	}
 	_skipExecOnStart = obs_data_get_bool(obj, "skipExecOnStart");
 	_stopActionsIfNotDone = obs_data_get_bool(obj, "stopActionsIfNotDone");
 	_useShortCircuitEvaluation =
