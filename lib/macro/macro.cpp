@@ -111,7 +111,7 @@ static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	bool conditionMatched = false;
 	condition->WithLock([&condition, &conditionMatched]() {
-		conditionMatched = condition->CheckCondition();
+		conditionMatched = condition->EvaluateCondition();
 	});
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const auto timeSpent = endTime - startTime;
@@ -241,7 +241,14 @@ bool Macro::CheckConditions(bool ignorePause)
 
 	vblog(LOG_INFO, "Macro %s returned %d", _name.c_str(), _matched);
 
-	_conditionSateChanged = _lastMatched != _matched;
+	// TODO: add both behaviors as options
+	//_conditionSateChanged = _lastMatched != _matched;
+	_conditionSateChanged = false;
+	for (const auto &condition : _conditions) {
+		if (condition->HasChanged()) {
+			_conditionSateChanged = true;
+		}
+	}
 	const bool hasActionsToExecute = _matched ? (_actions.size() > 0)
 						  : (_elseActions.size() > 0);
 	if (!_conditionSateChanged && _performActionsOnChange &&
