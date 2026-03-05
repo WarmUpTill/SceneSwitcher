@@ -68,7 +68,7 @@
             <x>0</x>
             <y>0</y>
             <width>962</width>
-            <height>1160</height>
+            <height>1190</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -563,6 +563,13 @@
                </widget>
               </item>
              </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="openSetupWizard">
+             <property name="text">
+              <string>FirstRunWizard.openButton</string>
+             </property>
             </widget>
            </item>
           </layout>
