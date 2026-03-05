@@ -204,6 +204,8 @@ target_sources(
           lib/utils/file-selection.hpp
           lib/utils/filter-combo-box.cpp
           lib/utils/filter-combo-box.hpp
+          lib/utils/first-run-wizard.cpp
+          lib/utils/first-run-wizard.hpp
           lib/utils/help-icon.hpp
           lib/utils/help-icon.cpp
           lib/utils/item-selection-helpers.cpp

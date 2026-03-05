@@ -70,6 +70,7 @@ public slots:
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 	void on_threadPriority_currentTextChanged(const QString &text);
+	void on_openSetupWizard_clicked();
 
 	/* --- End of legacy tab section --- */
 
