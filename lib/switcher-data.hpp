@@ -94,7 +94,6 @@ public:
 	bool stop = false;
 	std::condition_variable cv;
 
-	bool firstBoot = true;
 	bool transitionActive = false;
 	bool sceneCollectionStop = false;
 	bool obsIsShuttingDown = false;
