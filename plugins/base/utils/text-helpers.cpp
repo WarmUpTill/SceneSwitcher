@@ -1,15 +1,12 @@
 #include "text-helpers.hpp"
 
-#include <regex>
+#include <QRegularExpression>
 
 namespace advss {
 
-QString EscapeForRegex(const QString &s)
+QString EscapeForRegex(const QString &input)
 {
-	static std::regex specialChars{R"([-[\]{}()*+?.,\^$|#\s])"};
-	std::string input = s.toStdString();
-	return QString::fromStdString(
-		std::regex_replace(input, specialChars, R"(\$&)"));
+	return QRegularExpression::escape(input);
 }
 
 } // namespace advss

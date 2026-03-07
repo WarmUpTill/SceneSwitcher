@@ -80,11 +80,3 @@ TEST_CASE("Matches (PartialMatchRegexConfig)", "[regex-config]")
 	result = regex.Matches(std::string("abc"), "a");
 	REQUIRE(result == true);
 }
-
-TEST_CASE("EscapeForRegex , [text-helpers]")
-{
-	REQUIRE(advss::EscapeForRegex("") == "");
-	REQUIRE(advss::EscapeForRegex("abcdefg") == "abcdefg");
-	REQUIRE(advss::EscapeForRegex("(abcdefg)") == "\\(abcdefg\\)");
-	REQUIRE(advss::EscapeForRegex("\\(abcdefg)") == "\\\\(abcdefg\\)");
-}

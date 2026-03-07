@@ -1,19 +1,18 @@
 #include "advanced-scene-switcher.hpp"
 #include "file-selection.hpp"
 #include "filter-combo-box.hpp"
+#include "first-run-wizard.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
 #include "macro-search.hpp"
 #include "macro-settings.hpp"
 #include "path-helpers.hpp"
-#include "selection-helpers.hpp"
 #include "source-helpers.hpp"
 #include "splitter-helpers.hpp"
 #include "status-control.hpp"
 #include "switcher-data.hpp"
 #include "tab-helpers.hpp"
 #include "ui-helpers.hpp"
-#include "utility.hpp"
 #include "variable.hpp"
 #include "version.h"
 
@@ -361,14 +360,46 @@ void AdvSceneSwitcher::RestoreWindowGeo()
 	}
 }
 
+static void renameMacroIfNecessary(const std::shared_ptr<Macro> &macro)
+{
+	if (!GetMacroByName(macro->Name().c_str())) {
+		return;
+	}
+
+	auto name = macro->Name();
+	int i = 2;
+	while (GetMacroByName((name + " " + std::to_string(i)).c_str())) {
+		i++;
+	}
+
+	macro->SetName(name + " " + std::to_string(i));
+}
+
 void AdvSceneSwitcher::CheckFirstTimeSetup()
 {
-	if (switcher->firstBoot && !switcher->disableHints) {
-		switcher->firstBoot = false;
-		DisplayMessage(
-			obs_module_text("AdvSceneSwitcher.firstBootMessage"));
-		switcher->Start();
+	if (!IsFirstRun() || !GetTopLevelMacros().empty()) {
+		return;
 	}
+
+	auto macro = FirstRunWizard::ShowWizard(this);
+	if (macro) {
+		renameMacroIfNecessary(macro);
+		QTimer::singleShot(0, this,
+				   [this, macro]() { ui->macros->Add(macro); });
+	}
+	switcher->Start();
+}
+
+void AdvSceneSwitcher::on_openSetupWizard_clicked()
+{
+	auto macro = FirstRunWizard::ShowWizard(this);
+	if (!macro) {
+		return;
+	}
+
+	renameMacroIfNecessary(macro);
+	ui->macros->Add(macro);
+	ui->tabWidget->setCurrentWidget(ui->macroTab);
 }
 
 void AdvSceneSwitcher::on_tabWidget_currentChanged(int)

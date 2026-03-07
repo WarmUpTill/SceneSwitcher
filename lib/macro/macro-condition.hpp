@@ -4,13 +4,18 @@
 #include "duration-modifier.hpp"
 #include "macro-ref.hpp"
 
+#include <optional>
+
 namespace advss {
 
 class EXPORT MacroCondition : public MacroSegment {
 public:
 	MacroCondition(Macro *m, bool supportsVariableValue = false);
 	virtual ~MacroCondition() = default;
-	virtual bool CheckCondition() = 0;
+
+	bool EvaluateCondition();
+	bool HasChanged() const { return _changed; }
+
 	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
 
@@ -28,9 +33,14 @@ public:
 
 	static std::string_view GetDefaultID();
 
+protected:
+	virtual bool CheckCondition() = 0;
+
 private:
 	Logic _logic = Logic(Logic::Type::ROOT_NONE);
 	DurationModifier _durationModifier;
+	std::optional<bool> _previousValue;
+	bool _changed = false;
 };
 
 class EXPORT MacroRefCondition : virtual public MacroCondition {
