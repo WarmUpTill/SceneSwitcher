@@ -2,7 +2,6 @@
 #include "export-symbol-helper.hpp"
 
 #include <functional>
-#include <memory>
 #include <mutex>
 
 namespace advss {

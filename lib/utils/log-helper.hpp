@@ -1,7 +1,5 @@
 #pragma once
-#ifndef UNIT_TEST
 #include <util/base.h>
-#endif
 
 namespace advss {
 
@@ -9,6 +7,7 @@ namespace advss {
 #define blog(level, msg, ...)
 #define vblog(level, msg, ...)
 #define ablog(level, msg, ...)
+#define mblog(level, msg, ...)
 #else
 
 // Print log with "[adv-ss] " prefix

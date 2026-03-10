@@ -47,4 +47,9 @@ QWidget *GetSettingsWindow()
 	return nullptr;
 }
 
+bool IsCursorInWidgetArea(QWidget *widget)
+{
+	return false;
+}
+
 } // namespace advss

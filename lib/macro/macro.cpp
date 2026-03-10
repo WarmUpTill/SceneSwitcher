@@ -1141,9 +1141,11 @@ void Macro::ClearHotkeys() const
 void setHotkeyDescriptionHelper(const char *formatModuleText,
 				const std::string name, const obs_hotkey_id id)
 {
+#ifndef UNIT_TEST
 	QString format{obs_module_text(formatModuleText)};
 	QString hotkeyDesc = format.arg(QString::fromStdString(name));
 	obs_hotkey_set_description(id, hotkeyDesc.toStdString().c_str());
+#endif // !UNIT_TEST
 }
 
 void Macro::SetHotkeysDesc() const

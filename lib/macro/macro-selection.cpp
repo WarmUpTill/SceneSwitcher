@@ -51,6 +51,7 @@ void MacroSelection::HideSelectedMacro()
 		return;
 	}
 
+#ifndef UNIT_TEST
 	const auto m = ssWindow->ui->macros->GetCurrentMacro();
 	if (!m) {
 		return;
@@ -61,6 +62,7 @@ void MacroSelection::HideSelectedMacro()
 	}
 
 	qobject_cast<QListView *>(view())->setRowHidden(idx, true);
+#endif // !UNIT_TEST
 }
 
 void MacroSelection::HideGroups()

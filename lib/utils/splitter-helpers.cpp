@@ -37,8 +37,8 @@ void CenterSplitterPosition(QSplitter *splitter)
 
 void SetSplitterPositionByFraction(QSplitter *splitter, double fraction)
 {
-	int value1 = (double)QWIDGETSIZE_MAX * fraction;
-	int value2 = (double)QWIDGETSIZE_MAX * (1.0 - fraction);
+	int value1 = (int)((double)QWIDGETSIZE_MAX * fraction);
+	int value2 = (int)((double)QWIDGETSIZE_MAX * (1.0 - fraction));
 	splitter->setSizes(QList<int>() << value1 << value2);
 }
 
