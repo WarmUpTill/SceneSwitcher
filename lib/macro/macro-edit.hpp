@@ -8,9 +8,6 @@ namespace advss {
 class Macro;
 class MacroSegment;
 
-/*******************************************************************************
- * Advanced Scene Switcher window
- *******************************************************************************/
 class MacroEdit : public QWidget {
 	Q_OBJECT
 

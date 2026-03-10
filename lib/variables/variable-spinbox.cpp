@@ -81,13 +81,13 @@ void GenericVariableSpinbox::DisableVariableSelection()
 
 void GenericVariableSpinbox::setMinimum(double value)
 {
-	_fixedValueInt->setMinimum(value);
+	_fixedValueInt->setMinimum((int)value);
 	_fixedValueDouble->setMinimum(value);
 }
 
 void GenericVariableSpinbox::setMaximum(double value)
 {
-	_fixedValueInt->setMaximum(value);
+	_fixedValueInt->setMaximum((int)value);
 	_fixedValueDouble->setMaximum(value);
 }
 

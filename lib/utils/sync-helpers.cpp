@@ -2,8 +2,22 @@
 
 namespace advss {
 
+#ifdef UNIT_TEST
+std::mutex *GetSwitcherMutex()
+{
+	static std::mutex m;
+	return &m;
+}
+std::unique_lock<std::mutex> *GetSwitcherLoopLock()
+{
+	static std::mutex m;
+	static std::unique_lock<std::mutex> lock(m);
+	return &lock;
+}
+#else
 std::mutex *GetSwitcherMutex();
 std::unique_lock<std::mutex> *GetSwitcherLoopLock();
+#endif
 
 std::mutex *GetMutex()
 {
