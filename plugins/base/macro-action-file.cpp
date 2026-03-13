@@ -144,7 +144,7 @@ void MacroActionFileEdit::UpdateEntryData()
 	}
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
-	_filePath->SetPath(QString::fromStdString(_entryData->_file));
+	_filePath->SetPath(_entryData->_file);
 	_text->setPlainText(_entryData->_text);
 
 	adjustSize();
