@@ -81,6 +81,8 @@ private:
 	void HandleServerMigration(obs_data_t *);
 	void HandleRevocation(obs_data_t *);
 
+	void LogActiveSubscriptions() const;
+
 	void RegisterInstance();
 	void UnregisterInstance();
 
