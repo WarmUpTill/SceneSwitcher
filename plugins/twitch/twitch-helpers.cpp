@@ -185,6 +185,11 @@ static RequestResult processResult(const httplib::Result &response,
 		return result;
 	}
 
+	if (response->status < 200 || response->status >= 300) {
+		vblog(LOG_INFO, "Twitch API error response: %s",
+		      response->body.c_str());
+	}
+
 	OBSDataAutoRelease replyData =
 		obs_data_create_from_json(response->body.c_str());
 	result.data = replyData;
