@@ -456,14 +456,29 @@ else()
   endif()
   if(PROCPS2_INCLUDE_DIR)
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(libproc2 IMPORTED_TARGET libproc2<4.0.5 QUIET)
-    if(libproc2_FOUND)
-      target_compile_definitions(${LIB_NAME} PRIVATE PROCPS2_USE_INFO)
-    endif()
     pkg_check_modules(libproc2 REQUIRED IMPORTED_TARGET libproc2)
     set(PROC_INCLUDE_DIR "${PROCPS2_INCLUDE_DIR}")
     target_compile_definitions(${LIB_NAME} PRIVATE PROCPS2_AVAILABLE)
     set(PROCESS_CONDITION_SUPPORTED 1)
+
+    # Check if PIDS_VAL takes 4 arguments (old API, pre-4.0.5) or 3 (new API)
+    include(CheckCSourceCompiles)
+    set(CMAKE_REQUIRED_INCLUDES "${PROCPS2_INCLUDE_DIR}")
+    set(CMAKE_REQUIRED_LIBRARIES proc2)
+    check_c_source_compiles(
+      "
+      #include <libproc2/pids.h>
+      int main(void) {
+        struct pids_stack *s = 0;
+        struct pids_info *i = 0;
+        (void)PIDS_VAL(0, str, s, i);
+        return 0;
+      }
+    "
+      PROCPS2_PIDS_VAL_TAKES_INFO)
+    if(PROCPS2_PIDS_VAL_TAKES_INFO)
+      target_compile_definitions(${LIB_NAME} PRIVATE PROCPS2_USE_INFO)
+    endif()
   endif()
   if(NOT DEFINED PROCESS_CONDITION_SUPPORTED)
     message(
