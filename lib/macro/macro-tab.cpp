@@ -670,18 +670,6 @@ void AdvSceneSwitcher::SetupMacroTab()
 		SLOT(HighlightOnChange()));
 	onChangeHighlightTimer.start();
 
-	// Reserve more space for macro edit area than for the macro list
-	ui->macroListMacroEditSplitter->setStretchFactor(0, 1);
-	ui->macroListMacroEditSplitter->setStretchFactor(1, 4);
-
-	if (switcher->saveWindowGeo) {
-		if (shouldRestoreSplitter(
-			    switcher->macroListMacroEditSplitterPosition)) {
-			ui->macroListMacroEditSplitter->setSizes(
-				switcher->macroListMacroEditSplitterPosition);
-		}
-	}
-
 	SetupMacroSearchWidgets(ui->macroSearchLayout, ui->macroSearchText,
 				ui->macroSearchClear, ui->macroSearchType,
 				ui->macroSearchRegex,
@@ -704,6 +692,26 @@ void AdvSceneSwitcher::SetupMacroTab()
 	for (const auto &[mode, name] : actionTriggerModes) {
 		ui->actionTriggerMode->addItem(obs_module_text(name),
 					       static_cast<int>(mode));
+	}
+
+	ui->macroListBox->setSizePolicy(QSizePolicy::Ignored,
+					QSizePolicy::Preferred);
+	ui->macroListBox->setMinimumWidth(0);
+	ui->macroEditGroup->setSizePolicy(QSizePolicy::Ignored,
+					  QSizePolicy::Preferred);
+	ui->macroEditGroup->setMinimumWidth(0);
+
+	if (shouldRestoreSplitter(
+		    switcher->macroListMacroEditSplitterPosition)) {
+		ui->macroListMacroEditSplitter->setSizes(
+			switcher->macroListMacroEditSplitterPosition);
+	} else {
+		QTimer::singleShot(0, this, [this]() {
+			const auto totalWidth =
+				ui->macroListMacroEditSplitter->width();
+			ui->macroListMacroEditSplitter->setSizes(
+				{totalWidth / 5, totalWidth * 4 / 5});
+		});
 	}
 }
 

@@ -597,7 +597,7 @@
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QGroupBox" name="groupBox_5">
+         <widget class="QGroupBox" name="macroListBox">
           <property name="title">
            <string>AdvSceneSwitcher.macroTab.macros</string>
           </property>
