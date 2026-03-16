@@ -1086,6 +1086,11 @@ void MacroEdit::AddMacroAction(Macro *macro, int idx, const std::string &id,
 	HighlightAction(idx);
 	ui->actionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
+
+	QTimer::singleShot(0, this, [this]() {
+		ui->actionsList->ensureWidgetVisible(
+			ui->actionsList->WidgetAt(currentActionIdx));
+	});
 }
 
 void MacroEdit::AddMacroAction(int idx)
@@ -1389,6 +1394,11 @@ void MacroEdit::AddMacroElseAction(Macro *macro, int idx, const std::string &id,
 	HighlightElseAction(idx);
 	ui->elseActionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
+
+	QTimer::singleShot(0, this, [this]() {
+		ui->elseActionsList->ensureWidgetVisible(
+			ui->elseActionsList->WidgetAt(currentElseActionIdx));
+	});
 }
 
 void MacroEdit::AddMacroElseAction(int idx)
@@ -1591,6 +1601,11 @@ void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,
 	HighlightCondition(idx);
 	ui->conditionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
+
+	QTimer::singleShot(0, this, [this]() {
+		ui->conditionsList->ensureWidgetVisible(
+			ui->conditionsList->WidgetAt(currentConditionIdx));
+	});
 }
 
 void MacroEdit::on_conditionAdd_clicked()
