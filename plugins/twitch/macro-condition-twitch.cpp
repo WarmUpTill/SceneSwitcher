@@ -1096,6 +1096,12 @@ void MacroConditionTwitch::AddChannelGenericEventSubscription(
 		return;
 	}
 
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	const auto channelID = _channel.GetUserID(*token);
 	if (!TwitchChannel::IsValid(channelID)) {
 		vblog(LOG_INFO, "skip %s because of invalid channel selection",
@@ -1114,7 +1120,7 @@ void MacroConditionTwitch::AddChannelGenericEventSubscription(
 
 	if (includeModeratorId) {
 		obs_data_set_string(condition, "moderator_user_id",
-				    token->GetUserID().c_str());
+				    id->c_str());
 	}
 
 	obs_data_apply(condition, extraConditions);

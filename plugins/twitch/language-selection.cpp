@@ -189,12 +189,17 @@ void LanguageSelection::Save(obs_data_t *obj) const
 
 void LanguageSelection::SetStreamLanguage(const TwitchToken &token) const
 {
+	const auto id = token.GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "broadcaster_language", _language.c_str());
 	auto result = SendPatchRequest(token, "https://api.twitch.tv",
 				       "/helix/channels",
-				       {{"broadcaster_id", token.GetUserID()}},
-				       data.Get());
+				       {{"broadcaster_id", *id}}, data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to set stream language! (%d)",

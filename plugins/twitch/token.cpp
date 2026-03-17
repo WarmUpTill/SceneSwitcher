@@ -206,7 +206,9 @@ void TwitchToken::Save(obs_data_t *obj) const
 {
 	Item::Save(obj);
 	obs_data_set_string(obj, "token", _token.c_str());
-	obs_data_set_string(obj, "userID", _userID.c_str());
+	if (_userID) {
+		obs_data_set_string(obj, "userID", _userID->c_str());
+	}
 	obs_data_set_bool(obj, "validateEventSubTimestamps",
 			  _validateEventSubTimestamps);
 	obs_data_set_bool(obj, "warnIfInvalid", _warnIfInvalid);
@@ -266,7 +268,7 @@ void TwitchToken::SetToken(const std::string &value)
 		SendGetRequest(*this, "https://api.twitch.tv", "/helix/users");
 	if (res.status != 200) {
 		blog(LOG_WARNING, "failed to get Twitch user id from token!");
-		_userID = -1;
+		_userID = {};
 		return;
 	}
 
@@ -318,12 +320,35 @@ bool TwitchToken::IsValid(bool forceUpdate) const
 			cli.Get("/oauth2/validate", httplib::Params{}, headers);
 		_lastValidityCheckTime = std::chrono::system_clock::now();
 		_lastValidityCheckValue = _token;
-		_lastValidityCheckResult = response && response->status == 200;
-		if (!_lastValidityCheckResult) {
+
+		if (!response || response->status != 200) {
 			blog(LOG_INFO, "Twitch token %s is not valid!",
 			     _name.c_str());
+			_lastValidityCheckResult = false;
+			return false;
 		}
-		return _lastValidityCheckResult;
+
+		OBSDataAutoRelease replyData =
+			obs_data_create_from_json(response->body.c_str());
+		const char *id = obs_data_get_string(replyData, "user_id");
+		if (!id) {
+			blog(LOG_INFO,
+			     "Twitch token %s does validity check did not report user_id! Assume invalid!",
+			     _name.c_str());
+			_lastValidityCheckResult = false;
+			return false;
+		}
+
+		if (_userID && _userID != id) {
+			blog(LOG_INFO,
+			     "Twitch token %s does not match expected user (got %s, expected %s)!",
+			     _name.c_str(), id, _userID->c_str());
+			_lastValidityCheckResult = false;
+			return false;
+		}
+
+		_lastValidityCheckResult = true;
+		return true;
 	};
 
 	const bool tokenChanged = _lastValidityCheckValue != _token;
@@ -729,6 +754,7 @@ void TwitchTokenSettingsDialog::RequestToken()
 
 	auto scope = QString::fromStdString(
 		generateScopeString(GetEnabledOptions()));
+	_validationTimer.stop();
 	_tokenGrabber.SetTokenScope(scope);
 	_tokenGrabber.start();
 	_tokenStatus->setText(obs_module_text(
@@ -766,6 +792,7 @@ void TwitchTokenSettingsDialog::GotToken(const std::optional<QString> &value)
 				  Q_ARG(const QString &, name));
 	SetTokenInfoVisible(true);
 	_requestToken->setEnabled(true);
+	_validationTimer.start();
 }
 
 std::set<TokenOption> TwitchTokenSettingsDialog::GetEnabledOptions()

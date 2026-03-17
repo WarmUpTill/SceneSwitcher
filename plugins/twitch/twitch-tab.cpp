@@ -153,6 +153,25 @@ static QStringList getCellLabels(TwitchToken *token, bool addName = true)
 	return result;
 }
 
+static void updateConnectionStatus(QTableWidget *table)
+{
+	for (int row = 0; row < table->rowCount(); row++) {
+		auto item = table->item(row, 0);
+		if (!item) {
+			continue;
+		}
+
+		auto weakToken = GetWeakTwitchTokenByQString(item->text());
+		auto token = weakToken.lock();
+		if (!token) {
+			continue;
+		}
+
+		UpdateItemTableRow(table, row,
+				   getCellLabels(token.get(), false));
+	}
+}
+
 static void openSettingsDialog()
 {
 	auto selectedRows =
@@ -174,6 +193,7 @@ static void openSettingsDialog()
 
 	TwitchTokenSettingsDialog::AskForSettings(GetSettingsWindow(),
 						  *token.get());
+	updateConnectionStatus(tabWidget->Table());
 }
 
 static const QStringList headers =
@@ -200,25 +220,6 @@ TwitchConnectionsTable::TwitchConnectionsTable(QTabWidget *parent)
 	}
 
 	SetHelpVisible(GetTwitchTokens().empty());
-}
-
-static void updateConnectionStatus(QTableWidget *table)
-{
-	for (int row = 0; row < table->rowCount(); row++) {
-		auto item = table->item(row, 0);
-		if (!item) {
-			continue;
-		}
-
-		auto weakToken = GetWeakTwitchTokenByQString(item->text());
-		auto token = weakToken.lock();
-		if (!token) {
-			continue;
-		}
-
-		UpdateItemTableRow(table, row,
-				   getCellLabels(token.get(), false));
-	}
 }
 
 static QStringList getInvalidTokens()
