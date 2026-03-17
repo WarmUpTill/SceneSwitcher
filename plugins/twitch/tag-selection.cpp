@@ -26,6 +26,12 @@ void TwitchTagList::Save(obs_data_t *obj) const
 
 void TwitchTagList::SetStreamTags(const TwitchToken &token) const
 {
+	const auto id = token.GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	nlohmann::json j;
 	j["tags"] = toVector();
 
@@ -47,8 +53,7 @@ void TwitchTagList::SetStreamTags(const TwitchToken &token) const
 
 	auto result = SendPatchRequest(token, "https://api.twitch.tv",
 				       "/helix/channels",
-				       {{"broadcaster_id", token.GetUserID()}},
-				       j.dump());
+				       {{"broadcaster_id", *id}}, j.dump());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to set stream tags! (%d)",

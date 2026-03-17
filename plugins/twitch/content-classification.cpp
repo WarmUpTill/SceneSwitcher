@@ -68,10 +68,15 @@ void ContentClassification::SetContentClassification(
 	data = obs_data_create();
 	obs_data_set_array(data, "content_classification_labels", ccls);
 
+	const auto id = token.GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	auto result = SendPatchRequest(token, "https://api.twitch.tv",
 				       "/helix/channels",
-				       {{"broadcaster_id", token.GetUserID()}},
-				       data.Get());
+				       {{"broadcaster_id", *id}}, data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO,

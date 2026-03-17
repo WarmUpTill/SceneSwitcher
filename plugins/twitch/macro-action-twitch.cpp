@@ -123,12 +123,17 @@ void MacroActionTwitch::SetStreamTitle(
 		return;
 	}
 
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "title", _streamTitle.c_str());
 	auto result = SendPatchRequest(*token, "https://api.twitch.tv",
 				       "/helix/channels",
-				       {{"broadcaster_id", token->GetUserID()}},
-				       data.Get());
+				       {{"broadcaster_id", *id}}, data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to set stream title! (%d)",
@@ -143,13 +148,18 @@ void MacroActionTwitch::SetStreamCategory(
 		return;
 	}
 
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "game_id",
 			    std::to_string(_category.id).c_str());
 	auto result = SendPatchRequest(*token, "https://api.twitch.tv",
 				       "/helix/channels",
-				       {{"broadcaster_id", token->GetUserID()}},
-				       data.Get());
+				       {{"broadcaster_id", *id}}, data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to set stream category! (%d)",
@@ -160,8 +170,14 @@ void MacroActionTwitch::SetStreamCategory(
 void MacroActionTwitch::CreateStreamMarker(
 	const std::shared_ptr<TwitchToken> &token) const
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_string(data, "user_id", token->GetUserID().c_str());
+	obs_data_set_string(data, "user_id", id->c_str());
 
 	if (!std::string(_markerDescription).empty()) {
 		obs_data_set_string(data, "description",
@@ -179,12 +195,17 @@ void MacroActionTwitch::CreateStreamMarker(
 void MacroActionTwitch::CreateStreamClip(
 	const std::shared_ptr<TwitchToken> &token) const
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	auto hasDelay = _clipHasDelay ? "true" : "false";
 
-	auto result = SendPostRequest(*token, "https://api.twitch.tv",
-				      "/helix/clips",
-				      {{"broadcaster_id", token->GetUserID()},
-				       {"has_delay", hasDelay}});
+	auto result = SendPostRequest(
+		*token, "https://api.twitch.tv", "/helix/clips",
+		{{"broadcaster_id", *id}, {"has_delay", hasDelay}});
 
 	if (result.status != 202) {
 		blog(LOG_INFO, "Failed to create clip! (%d)", result.status);
@@ -194,8 +215,14 @@ void MacroActionTwitch::CreateStreamClip(
 void MacroActionTwitch::StartCommercial(
 	const std::shared_ptr<TwitchToken> &token) const
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_string(data, "broadcaster_id", token->GetUserID().c_str());
+	obs_data_set_string(data, "broadcaster_id", id->c_str());
 	obs_data_set_int(data, "length", _duration.Seconds());
 	auto result = SendPostRequest(*token, "https://api.twitch.tv",
 				      "/helix/channels/commercial", {},
@@ -227,17 +254,21 @@ void MacroActionTwitch::StartCommercial(
 void MacroActionTwitch::SendChatAnnouncement(
 	const std::shared_ptr<TwitchToken> &token) const
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "message", _announcementMessage.c_str());
 	obs_data_set_string(
 		data, "color",
 		announcementColorsTwitch.at(_announcementColor).c_str());
-	auto userId = token->GetUserID();
 
 	auto result = SendPostRequest(
 		*token, "https://api.twitch.tv", "/helix/chat/announcements",
-		{{"broadcaster_id", userId}, {"moderator_id", userId}},
-		data.Get());
+		{{"broadcaster_id", *id}, {"moderator_id", *id}}, data.Get());
 
 	if (result.status != 204) {
 		blog(LOG_INFO, "Failed to send chat announcement! (%d)",
@@ -248,14 +279,18 @@ void MacroActionTwitch::SendChatAnnouncement(
 void MacroActionTwitch::SetChatEmoteOnlyMode(
 	const std::shared_ptr<TwitchToken> &token, bool enable) const
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_bool(data, "emote_mode", enable);
-	auto userId = token->GetUserID();
 
 	auto result = SendPatchRequest(
 		*token, "https://api.twitch.tv", "/helix/chat/settings",
-		{{"broadcaster_id", userId}, {"moderator_id", userId}},
-		data.Get());
+		{{"broadcaster_id", *id}, {"moderator_id", *id}}, data.Get());
 
 	if (result.status != 200) {
 		blog(LOG_INFO, "Failed to %s chat's emote-only mode! (%d)",
@@ -265,9 +300,14 @@ void MacroActionTwitch::SetChatEmoteOnlyMode(
 
 void MacroActionTwitch::StartRaid(const std::shared_ptr<TwitchToken> &token)
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_string(data, "from_broadcaster_id",
-			    token->GetUserID().c_str());
+	obs_data_set_string(data, "from_broadcaster_id", id->c_str());
 	obs_data_set_string(data, "to_broadcaster_id",
 			    _channel.GetUserID(*token).c_str());
 	auto result = SendPostRequest(*token, "https://api.twitch.tv",
@@ -398,6 +438,12 @@ bool MacroActionTwitch::ResolveVariableSelectionToRewardId(
 
 void MacroActionTwitch::GetRewardInfo(const std::shared_ptr<TwitchToken> &token)
 {
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
 	if (_useVariableForRewardSelection &&
 	    !ResolveVariableSelectionToRewardId(token)) {
 		if (VerboseLoggingEnabled()) {
@@ -416,7 +462,7 @@ void MacroActionTwitch::GetRewardInfo(const std::shared_ptr<TwitchToken> &token)
 	}
 
 	httplib::Params params = {
-		{"broadcaster_id", token->GetUserID()},
+		{"broadcaster_id", *id},
 		{"id", _useVariableForRewardSelection ? _lastResolvedRewardId
 						      : _pointsReward.id},
 	};

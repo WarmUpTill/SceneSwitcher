@@ -51,7 +51,7 @@ public:
 	void SetToken(const std::string &);
 	bool IsEmpty() const { return _token.empty(); }
 	std::optional<std::string> GetToken() const;
-	std::string GetUserID() const { return _userID; }
+	std::optional<std::string> GetUserID() const { return _userID; }
 	std::shared_ptr<EventSub> GetEventSub();
 	bool ValidateTimestamps() const { return _validateEventSubTimestamps; }
 	bool IsValid(bool forceUpdate = false) const;
@@ -65,7 +65,7 @@ private:
 	mutable std::string _lastValidityCheckValue;
 	mutable bool _lastValidityCheckResult = false;
 	mutable std::chrono::system_clock::time_point _lastValidityCheckTime;
-	std::string _userID;
+	std::optional<std::string> _userID;
 	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
 	bool _validateEventSubTimestamps = false;
