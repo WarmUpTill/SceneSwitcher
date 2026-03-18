@@ -48,6 +48,9 @@ RequestResult SendPatchRequest(const TwitchToken &token, const std::string &uri,
 			       const httplib::Params &params = {},
 			       const std::string &data = "",
 			       bool useCache = false);
+RequestResult SendDeleteRequest(const TwitchToken &token,
+				const std::string &uri, const std::string &path,
+				const httplib::Params &params = {});
 
 // Helper functions to set temp var values
 

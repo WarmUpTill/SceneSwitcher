@@ -12,6 +12,7 @@
 #include <variable-line-edit.hpp>
 #include <variable-text-edit.hpp>
 #include <duration-control.hpp>
+#include <duration.hpp>
 
 namespace advss {
 
@@ -187,6 +188,7 @@ public:
 	UserInfoQueryType _userInfoQueryType = UserInfoQueryType::LOGIN;
 	StringVariable _userLogin = "user login";
 	DoubleVariable _userId = 0;
+	StringVariable _banReason = "";
 	TwitchPointsReward _pointsReward;
 	std::weak_ptr<Variable> _rewardVariable;
 	bool _useVariableForRewardSelection = false;
@@ -206,6 +208,8 @@ private:
 	void GetRewardInfo(const std::shared_ptr<TwitchToken> &);
 	void GetChannelInfo(const std::shared_ptr<TwitchToken> &token);
 
+	std::optional<std::string>
+	GetTargetUserID(const std::shared_ptr<TwitchToken> &) const;
 	bool ResolveVariableSelectionToRewardId(
 		const std::shared_ptr<TwitchToken> &);
 
@@ -256,6 +260,7 @@ private slots:
 	void UserInfoQueryTypeChanged(int);
 	void UserLoginChanged();
 	void UserIdChanged(const NumberVariable<double> &);
+	void BanReasonChanged();
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void RewardVariableChanged(const QString &);
 	void ToggleRewardSelection(bool);
@@ -274,6 +279,8 @@ private:
 	void SetTokenWarning(bool visible, const QString &text = "");
 
 	QHBoxLayout *_layout;
+	QWidget *_userModerationRow;
+	QHBoxLayout *_layout2;
 	FilterComboBox *_actions;
 	TwitchConnectionSelection *_tokens;
 	QLabel *_tokenWarning;
@@ -295,6 +302,7 @@ private:
 	// QSpinBox uses int internally, which is too small for Twitch IDs, so
 	// we use QDoubleSpinBox instead
 	VariableDoubleSpinBox *_userId;
+	VariableLineEdit *_banReason;
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableSelection *_rewardVariable;
 	QPushButton *_toggleRewardSelection;

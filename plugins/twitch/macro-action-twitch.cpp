@@ -25,6 +25,7 @@ void MacroActionTwitch::ResolveVariablesToFixedValues()
 	_chatMessage.ResolveVariables();
 	_userLogin.ResolveVariables();
 	_userId.ResolveVariables();
+	_banReason.ResolveVariables();
 	_useVariableForRewardSelection = false;
 	auto token = _token.lock();
 	if (token) {
@@ -81,6 +82,22 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.chat.sendMessage"},
 	{MacroActionTwitch::Action::USER_GET_INFO,
 	 "AdvSceneSwitcher.action.twitch.type.user.getInfo"},
+	{MacroActionTwitch::Action::USER_BAN,
+	 "AdvSceneSwitcher.action.twitch.type.user.ban"},
+	{MacroActionTwitch::Action::USER_UNBAN,
+	 "AdvSceneSwitcher.action.twitch.type.user.unban"},
+	{MacroActionTwitch::Action::USER_BLOCK,
+	 "AdvSceneSwitcher.action.twitch.type.user.block"},
+	{MacroActionTwitch::Action::USER_UNBLOCK,
+	 "AdvSceneSwitcher.action.twitch.type.user.unblock"},
+	{MacroActionTwitch::Action::USER_MODERATOR_ADD,
+	 "AdvSceneSwitcher.action.twitch.type.user.moderator.add"},
+	{MacroActionTwitch::Action::USER_MODERATOR_DELETE,
+	 "AdvSceneSwitcher.action.twitch.type.user.moderator.delete"},
+	{MacroActionTwitch::Action::USER_VIP_ADD,
+	 "AdvSceneSwitcher.action.twitch.type.user.vip.add"},
+	{MacroActionTwitch::Action::USER_VIP_DELETE,
+	 "AdvSceneSwitcher.action.twitch.type.user.vip.delete"},
 	{MacroActionTwitch::Action::POINTS_REWARD_GET_INFO,
 	 "AdvSceneSwitcher.action.twitch.type.reward.getInfo"},
 	{MacroActionTwitch::Action::CHANNEL_GET_INFO,
@@ -399,6 +416,45 @@ void MacroActionTwitch::GetChannelInfo(const std::shared_ptr<TwitchToken> &token
 			info->is_branded_content ? "true" : "false");
 }
 
+std::optional<std::string> MacroActionTwitch::GetTargetUserID(
+	const std::shared_ptr<TwitchToken> &token) const
+{
+	switch (_userInfoQueryType) {
+	case UserInfoQueryType::ID: {
+		const auto id = (uint64_t)_userId;
+		if (id == 0) {
+			blog(LOG_INFO, "Target user ID is not set!");
+			return std::nullopt;
+		}
+		vblog(LOG_INFO, "Resolved target user ID: %llu",
+		      (long long unsigned int)id);
+		return std::to_string(id);
+	}
+	case UserInfoQueryType::LOGIN: {
+		auto result = SendGetRequest(*token, "https://api.twitch.tv",
+					     "/helix/users",
+					     {{"login", _userLogin}}, true);
+		if (result.status != 200) {
+			blog(LOG_INFO,
+			     "Failed to get user id for login '%s'! (%d)",
+			     std::string(_userLogin).c_str(), result.status);
+			return std::nullopt;
+		}
+		OBSDataArrayAutoRelease array =
+			obs_data_get_array(result.data, "data");
+		if (obs_data_array_count(array) == 0) {
+			blog(LOG_WARNING, "No user found for login '%s'",
+			     std::string(_userLogin).c_str());
+			return std::nullopt;
+		}
+		OBSDataAutoRelease userData = obs_data_array_item(array, 0);
+		return obs_data_get_string(userData, "id");
+	}
+	default:
+		return std::nullopt;
+	}
+}
+
 bool MacroActionTwitch::ResolveVariableSelectionToRewardId(
 	const std::shared_ptr<TwitchToken> &token)
 {
@@ -653,6 +709,162 @@ bool MacroActionTwitch::PerformAction()
 	case MacroActionTwitch::Action::USER_GET_INFO:
 		GetUserInfo(token);
 		break;
+	case Action::USER_BAN: {
+		const auto id = token->GetUserID();
+		const auto targetId = GetTargetUserID(token);
+		if (!id || !targetId) {
+			break;
+		}
+		const auto channelId = _channel.GetUserID(*token);
+		const auto &broadcasterId = channelId.empty() ? *id : channelId;
+		OBSDataAutoRelease innerData = obs_data_create();
+		obs_data_set_string(innerData, "user_id", targetId->c_str());
+		const auto duration = (uint64_t)_duration.Seconds();
+		if (duration > 0) {
+			obs_data_set_int(innerData, "duration",
+					 (long long)duration);
+		}
+		const auto reason = std::string(_banReason);
+		if (!reason.empty()) {
+			obs_data_set_string(innerData, "reason",
+					    reason.c_str());
+		}
+		OBSDataAutoRelease body = obs_data_create();
+		obs_data_set_obj(body, "data", innerData);
+		auto result =
+			SendPostRequest(*token, "https://api.twitch.tv",
+					"/helix/moderation/bans",
+					{{"broadcaster_id", broadcasterId},
+					 {"moderator_id", *id}},
+					body.Get());
+		if (result.status != 200) {
+			blog(LOG_INFO, "Failed to ban user! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_UNBAN: {
+		const auto id = token->GetUserID();
+		const auto targetId = GetTargetUserID(token);
+		if (!id || !targetId) {
+			break;
+		}
+		const auto channelId = _channel.GetUserID(*token);
+		const auto &broadcasterId = channelId.empty() ? *id : channelId;
+		auto result =
+			SendDeleteRequest(*token, "https://api.twitch.tv",
+					  "/helix/moderation/bans",
+					  {{"broadcaster_id", broadcasterId},
+					   {"moderator_id", *id},
+					   {"user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to unban user! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_BLOCK: {
+		const auto targetId = GetTargetUserID(token);
+		if (!targetId) {
+			break;
+		}
+		auto result = SendPutRequest(*token, "https://api.twitch.tv",
+					     "/helix/users/blocks",
+					     {{"target_user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to block user! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_UNBLOCK: {
+		const auto targetId = GetTargetUserID(token);
+		if (!targetId) {
+			break;
+		}
+		auto result = SendDeleteRequest(
+			*token, "https://api.twitch.tv", "/helix/users/blocks",
+			{{"target_user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to unblock user! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_MODERATOR_ADD: {
+		const auto id = token->GetUserID();
+		const auto targetId = GetTargetUserID(token);
+		if (!id || !targetId) {
+			break;
+		}
+		const auto channelId = _channel.GetUserID(*token);
+		const auto &broadcasterId = channelId.empty() ? *id : channelId;
+		auto result =
+			SendPostRequest(*token, "https://api.twitch.tv",
+					"/helix/moderation/moderators",
+					{{"broadcaster_id", broadcasterId},
+					 {"user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to add moderator! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_MODERATOR_DELETE: {
+		const auto id = token->GetUserID();
+		const auto targetId = GetTargetUserID(token);
+		if (!id || !targetId) {
+			break;
+		}
+		const auto channelId = _channel.GetUserID(*token);
+		const auto &broadcasterId = channelId.empty() ? *id : channelId;
+		auto result =
+			SendDeleteRequest(*token, "https://api.twitch.tv",
+					  "/helix/moderation/moderators",
+					  {{"broadcaster_id", broadcasterId},
+					   {"user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to remove moderator! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_VIP_ADD: {
+		const auto id = token->GetUserID();
+		const auto targetId = GetTargetUserID(token);
+		if (!id || !targetId) {
+			break;
+		}
+		const auto channelId = _channel.GetUserID(*token);
+		const auto &broadcasterId = channelId.empty() ? *id : channelId;
+		auto result = SendPostRequest(
+			*token, "https://api.twitch.tv", "/helix/channels/vips",
+			{{"broadcaster_id", broadcasterId},
+			 {"user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to add VIP! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::USER_VIP_DELETE: {
+		const auto id = token->GetUserID();
+		const auto targetId = GetTargetUserID(token);
+		if (!id || !targetId) {
+			break;
+		}
+		const auto channelId = _channel.GetUserID(*token);
+		const auto &broadcasterId = channelId.empty() ? *id : channelId;
+		auto result = SendDeleteRequest(
+			*token, "https://api.twitch.tv", "/helix/channels/vips",
+			{{"broadcaster_id", broadcasterId},
+			 {"user_id", *targetId}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to remove VIP! (%d)",
+			     result.status);
+		}
+		break;
+	}
 	case MacroActionTwitch::Action::POINTS_REWARD_GET_INFO:
 		GetRewardInfo(token);
 		break;
@@ -703,6 +915,7 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 			 static_cast<int>(_userInfoQueryType));
 	_userLogin.Save(obj, "userLogin");
 	_userId.Save(obj, "userId");
+	_banReason.Save(obj, "banReason");
 	_pointsReward.Save(obj);
 	obs_data_set_string(obj, "rewardVariable",
 			    GetWeakVariableName(_rewardVariable).c_str());
@@ -734,6 +947,7 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 		obs_data_get_int(obj, "userInfoQueryType"));
 	_userLogin.Load(obj, "userLogin");
 	_userId.Load(obj, "userId");
+	_banReason.Load(obj, "banReason");
 	_pointsReward.Load(obj);
 	_rewardVariable = GetWeakVariableByName(
 		obs_data_get_string(obj, "rewardVariable"));
@@ -952,10 +1166,16 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _userInfoQueryType(new QComboBox(this)),
 	  _userLogin(new VariableLineEdit(this)),
 	  _userId(new VariableDoubleSpinBox(this)),
+	  _banReason(new VariableLineEdit(this)),
+	  _userModerationRow(new QWidget()),
+	  _layout2(new QHBoxLayout()),
 	  _pointsReward(new TwitchPointsRewardWidget(this, false)),
 	  _rewardVariable(new VariableSelection(this)),
 	  _toggleRewardSelection(new QPushButton())
 {
+	_layout2->setContentsMargins(0, 0, 0, 0);
+	_userModerationRow->setLayout(_layout2);
+
 	SetWidgetProperties();
 	SetWidgetSignalConnections();
 
@@ -964,6 +1184,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 
 	auto mainLayout = new QVBoxLayout();
 	mainLayout->addLayout(_layout);
+	mainLayout->addWidget(_userModerationRow);
 	mainLayout->addWidget(_announcementMessage);
 	mainLayout->addWidget(_chatMessage);
 	mainLayout->addWidget(_tags);
@@ -1196,6 +1417,8 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 		_userId,
 		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
 		this, SLOT(UserIdChanged(const NumberVariable<double> &)));
+	QWidget::connect(_banReason, SIGNAL(editingFinished()), this,
+			 SLOT(BanReasonChanged()));
 	QWidget::connect(
 		_pointsReward,
 		SIGNAL(PointsRewardChanged(const TwitchPointsReward &)), this,
@@ -1223,19 +1446,27 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 	_contentClassification->setVisible(
 		_entryData->GetAction() ==
 		MacroActionTwitch::Action::CHANNEL_INFO_CONTENT_LABELS_SET);
+	const auto action = _entryData->GetAction();
+	const bool isChannelModAction =
+		action == MacroActionTwitch::Action::USER_BAN ||
+		action == MacroActionTwitch::Action::USER_UNBAN ||
+		action == MacroActionTwitch::Action::USER_MODERATOR_ADD ||
+		action == MacroActionTwitch::Action::USER_MODERATOR_DELETE ||
+		action == MacroActionTwitch::Action::USER_VIP_ADD ||
+		action == MacroActionTwitch::Action::USER_VIP_DELETE;
 	_channel->setVisible(
-		_entryData->GetAction() ==
-			MacroActionTwitch::Action::CHANNEL_GET_INFO ||
-		_entryData->GetAction() ==
-			MacroActionTwitch::Action::RAID_START ||
-		_entryData->GetAction() ==
-			MacroActionTwitch::Action::RAID_END ||
-		_entryData->GetAction() ==
-			MacroActionTwitch::Action::SEND_CHAT_MESSAGE ||
-		_entryData->GetAction() ==
-			MacroActionTwitch::Action::POINTS_REWARD_GET_INFO);
-	_duration->setVisible(_entryData->GetAction() ==
-			      MacroActionTwitch::Action::COMMERCIAL_START);
+		action == MacroActionTwitch::Action::CHANNEL_GET_INFO ||
+		action == MacroActionTwitch::Action::RAID_START ||
+		action == MacroActionTwitch::Action::RAID_END ||
+		action == MacroActionTwitch::Action::SHOUTOUT_SEND ||
+		action == MacroActionTwitch::Action::SEND_CHAT_MESSAGE ||
+		action == MacroActionTwitch::Action::POINTS_REWARD_GET_INFO ||
+		isChannelModAction);
+	_duration->setVisible(
+		action == MacroActionTwitch::Action::COMMERCIAL_START ||
+		action == MacroActionTwitch::Action::USER_BAN);
+	_banReason->setVisible(action == MacroActionTwitch::Action::USER_BAN);
+	_userModerationRow->setVisible(isChannelModAction);
 	_markerDescription->setVisible(
 		_entryData->GetAction() ==
 		MacroActionTwitch::Action::MARKER_CREATE);
@@ -1249,16 +1480,31 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
 	_chatMessage->setVisible(_entryData->GetAction() ==
 				 MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
-	_userInfoQueryType->setVisible(
+	const bool isUserTargetAction =
 		_entryData->GetAction() ==
-		MacroActionTwitch::Action::USER_GET_INFO);
+			MacroActionTwitch::Action::USER_GET_INFO ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_BAN ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_UNBAN ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_BLOCK ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_UNBLOCK ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_MODERATOR_ADD ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_MODERATOR_DELETE ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_VIP_ADD ||
+		_entryData->GetAction() ==
+			MacroActionTwitch::Action::USER_VIP_DELETE;
+	_userInfoQueryType->setVisible(isUserTargetAction);
 	_userLogin->setVisible(
-		_entryData->GetAction() ==
-			MacroActionTwitch::Action::USER_GET_INFO &&
+		isUserTargetAction &&
 		_entryData->_userInfoQueryType ==
 			MacroActionTwitch::UserInfoQueryType::LOGIN);
-	_userId->setVisible(_entryData->GetAction() ==
-				    MacroActionTwitch::Action::USER_GET_INFO &&
+	_userId->setVisible(isUserTargetAction &&
 			    _entryData->_userInfoQueryType ==
 				    MacroActionTwitch::UserInfoQueryType::ID);
 	_pointsReward->setVisible(
@@ -1340,6 +1586,12 @@ void MacroActionTwitchEdit::UserIdChanged(const NumberVariable<double> &value)
 	_entryData->_userId = value;
 }
 
+void MacroActionTwitchEdit::BanReasonChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_banReason = _banReason->text().toStdString();
+}
+
 void MacroActionTwitchEdit::PointsRewardChanged(const TwitchPointsReward &reward)
 {
 	GUARD_LOADING_AND_LOCK();
@@ -1360,23 +1612,63 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 					     _userInfoQueryType,
 					     _userLogin,
 					     _userId,
+					     _banReason,
 					     _pointsReward,
 					     _rewardVariable,
 					     _toggleRewardSelection};
 	for (auto widget : widgets) {
 		_layout->removeWidget(widget);
+		_layout2->removeWidget(widget);
 	}
 	ClearLayout(_layout);
+	ClearLayout(_layout2);
+
+	const std::unordered_map<std::string, QWidget *> widgetsMap{
+		{"{{account}}", _tokens},
+		{"{{actions}}", _actions},
+		{"{{streamTitle}}", _streamTitle},
+		{"{{category}}", _category},
+		{"{{markerDescription}}", _markerDescription},
+		{"{{clipHasDelay}}", _clipHasDelay},
+		{"{{duration}}", _duration},
+		{"{{announcementColor}}", _announcementColor},
+		{"{{channel}}", _channel},
+		{"{{userInfoQueryType}}", _userInfoQueryType},
+		{"{{userLogin}}", _userLogin},
+		{"{{userId}}", _userId},
+		{"{{banReason}}", _banReason},
+		{"{{pointsReward}}", _pointsReward},
+		{"{{rewardVariable}}", _rewardVariable},
+		{"{{toggleRewardSelection}}", _toggleRewardSelection}};
 
 	const char *layoutText;
+	const char *layout2Text = nullptr;
 	switch (_entryData->GetAction()) {
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		layoutText = obs_module_text(
 			"AdvSceneSwitcher.action.twitch.layout.chat");
 		break;
 	case MacroActionTwitch::Action::USER_GET_INFO:
+	case MacroActionTwitch::Action::USER_BLOCK:
+	case MacroActionTwitch::Action::USER_UNBLOCK:
 		layoutText = obs_module_text(
 			"AdvSceneSwitcher.action.twitch.layout.user.getInfo");
+		break;
+	case MacroActionTwitch::Action::USER_BAN:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.user.ban.row1");
+		layout2Text = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.user.ban.row2");
+		break;
+	case MacroActionTwitch::Action::USER_UNBAN:
+	case MacroActionTwitch::Action::USER_MODERATOR_ADD:
+	case MacroActionTwitch::Action::USER_MODERATOR_DELETE:
+	case MacroActionTwitch::Action::USER_VIP_ADD:
+	case MacroActionTwitch::Action::USER_VIP_DELETE:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.user.moderation.row1");
+		layout2Text = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.user.moderation.row2");
 		break;
 	case MacroActionTwitch::Action::POINTS_REWARD_GET_INFO:
 		layoutText = obs_module_text(
@@ -1392,24 +1684,13 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 		break;
 	}
 
-	PlaceWidgets(layoutText, _layout,
-		     {{"{{account}}", _tokens},
-		      {"{{actions}}", _actions},
-		      {"{{streamTitle}}", _streamTitle},
-		      {"{{category}}", _category},
-		      {"{{markerDescription}}", _markerDescription},
-		      {"{{clipHasDelay}}", _clipHasDelay},
-		      {"{{duration}}", _duration},
-		      {"{{announcementColor}}", _announcementColor},
-		      {"{{channel}}", _channel},
-		      {"{{userInfoQueryType}}", _userInfoQueryType},
-		      {"{{userLogin}}", _userLogin},
-		      {"{{userId}}", _userId},
-		      {"{{pointsReward}}", _pointsReward},
-		      {"{{rewardVariable}}", _rewardVariable},
-		      {"{{toggleRewardSelection}}", _toggleRewardSelection}});
+	PlaceWidgets(layoutText, _layout, widgetsMap);
+	if (layout2Text) {
+		PlaceWidgets(layout2Text, _layout2, widgetsMap);
+	}
 
 	_layout->setContentsMargins(0, 0, 0, 0);
+	_layout2->setContentsMargins(0, 0, 0, 0);
 }
 
 void MacroActionTwitchEdit::UpdateEntryData()
@@ -1444,6 +1725,7 @@ void MacroActionTwitchEdit::UpdateEntryData()
 		static_cast<int>(_entryData->_userInfoQueryType)));
 	_userLogin->setText(_entryData->_userLogin);
 	_userId->SetValue(_entryData->_userId);
+	_banReason->setText(_entryData->_banReason);
 	_pointsReward->SetToken(_entryData->_token);
 	_pointsReward->SetChannel(_entryData->_channel);
 	_pointsReward->SetPointsReward(_entryData->_pointsReward);
