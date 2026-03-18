@@ -136,21 +136,21 @@ void MacroActionTransition::LogAction() const
 	std::string msgBegin;
 	switch (_type) {
 	case Type::SCENE:
-		msgBegin += "set scene transition";
+		msgBegin = "set scene transition";
 		break;
 	case Type::SCENE_OVERRIDE:
-		msgBegin += "set scene override transition of " +
-			    _scene.ToString(true);
+		msgBegin = "set scene override transition of " +
+			   _scene.ToString(true);
 		break;
 	case Type::SOURCE_SHOW:
-		msgBegin += "set source show transition of " +
-			    _source.ToString(true) + " on scene " +
-			    _scene.ToString(true);
+		msgBegin = "set source show transition of " +
+			   _source.ToString(true) + " on scene " +
+			   _scene.ToString(true);
 		break;
 	case Type::SOURCE_HIDE:
-		msgBegin += "set source hide transition of " +
-			    _source.ToString(true) + " on scene " +
-			    _scene.ToString(true);
+		msgBegin = "set source hide transition of " +
+			   _source.ToString(true) + " on scene " +
+			   _scene.ToString(true);
 		break;
 	case Type::TBAR:
 		ablog(LOG_INFO, "set T-Bar position to %.2f%%",
@@ -197,15 +197,12 @@ bool MacroActionTransition::Load(obs_data_t *obj)
 
 std::string MacroActionTransition::GetShortDesc() const
 {
-	std::string msgBegin;
 	switch (_type) {
 	case Type::SCENE:
 		return _transition.ToString();
 	case Type::SCENE_OVERRIDE:
 		return _scene.ToString() + " - " + _transition.ToString();
 	case Type::SOURCE_SHOW:
-		return _scene.ToString() + " - " + _source.ToString() + " - " +
-		       _transition.ToString();
 	case Type::SOURCE_HIDE:
 		return _scene.ToString() + " - " + _source.ToString() + " - " +
 		       _transition.ToString();
@@ -312,16 +309,18 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 
 	auto typeLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.action.transition.entry.line1"),
+			     "AdvSceneSwitcher.action.transition.layout.type"),
 		     typeLayout, widgetPlaceholders);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.transition.layout.transition"),
+		_transitionLayout, widgetPlaceholders);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.transition.layout.duration"),
+		_durationLayout, widgetPlaceholders);
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.action.transition.entry.line2"),
-		     _transitionLayout, widgetPlaceholders);
-	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.action.transition.entry.line3"),
-		     _durationLayout, widgetPlaceholders);
-	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.action.transition.entry.line4"),
+			     "AdvSceneSwitcher.action.transition.layout.tbar"),
 		     _tbarLayout, widgetPlaceholders);
 	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(typeLayout);
@@ -343,7 +342,7 @@ void MacroActionTransitionEdit::UpdateEntryData()
 
 	_actions->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_scenes->SetScene(_entryData->_scene);
-	_sources->SetSceneItem((_entryData->_source));
+	_sources->SetSceneItem(_entryData->_source);
 	_setDuration->setChecked(_entryData->_setDuration);
 	_duration->SetDuration(_entryData->_duration);
 	_setTransition->setChecked(_entryData->_setTransitionType);
