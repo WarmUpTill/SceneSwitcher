@@ -64,10 +64,24 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.channel.info.language.set"},
 	{MacroActionTwitch::Action::CHANNEL_INFO_CONTENT_LABELS_SET,
 	 "AdvSceneSwitcher.action.twitch.type.channel.info.contentClassification.set"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_BRANDED_CONTENT_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.brandedContent.enable"},
+	{MacroActionTwitch::Action::CHANNEL_INFO_BRANDED_CONTENT_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.channel.info.brandedContent.disable"},
 	{MacroActionTwitch::Action::RAID_START,
 	 "AdvSceneSwitcher.action.twitch.type.raid.start"},
+	{MacroActionTwitch::Action::RAID_END,
+	 "AdvSceneSwitcher.action.twitch.type.raid.end"},
+	{MacroActionTwitch::Action::SHOUTOUT_SEND,
+	 "AdvSceneSwitcher.action.twitch.type.shoutout.send"},
+	{MacroActionTwitch::Action::SHIELD_MODE_START,
+	 "AdvSceneSwitcher.action.twitch.type.shieldMode.start"},
+	{MacroActionTwitch::Action::SHIELD_MODE_END,
+	 "AdvSceneSwitcher.action.twitch.type.shieldMode.end"},
 	{MacroActionTwitch::Action::COMMERCIAL_START,
 	 "AdvSceneSwitcher.action.twitch.type.commercial.start"},
+	{MacroActionTwitch::Action::COMMERCIAL_SNOOZE,
+	 "AdvSceneSwitcher.action.twitch.type.commercial.snooze"},
 	{MacroActionTwitch::Action::MARKER_CREATE,
 	 "AdvSceneSwitcher.action.twitch.type.marker.create"},
 	{MacroActionTwitch::Action::CLIP_CREATE,
@@ -682,12 +696,104 @@ bool MacroActionTwitch::PerformAction()
 	case Action::CHANNEL_INFO_CONTENT_LABELS_SET:
 		_contentClassification.SetContentClassification(*token);
 		break;
+	case Action::CHANNEL_INFO_BRANDED_CONTENT_ENABLE:
+	case Action::CHANNEL_INFO_BRANDED_CONTENT_DISABLE: {
+		const auto id = token->GetUserID();
+		if (!id) {
+			vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+			break;
+		}
+		OBSDataAutoRelease data = obs_data_create();
+		obs_data_set_bool(
+			data, "is_branded_content",
+			_action == Action::CHANNEL_INFO_BRANDED_CONTENT_ENABLE);
+		auto result = SendPatchRequest(*token, "https://api.twitch.tv",
+					       "/helix/channels",
+					       {{"broadcaster_id", *id}},
+					       data.Get());
+		if (result.status != 204) {
+			blog(LOG_INFO,
+			     "Failed to set branded content flag! (%d)",
+			     result.status);
+		}
+		break;
+	}
 	case Action::RAID_START:
 		StartRaid(token);
 		break;
+	case Action::RAID_END: {
+		const auto id = token->GetUserID();
+		if (!id) {
+			vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+			break;
+		}
+		auto result = SendDeleteRequest(*token, "https://api.twitch.tv",
+						"/helix/raids",
+						{{"broadcaster_id", *id}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to cancel raid! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::SHOUTOUT_SEND: {
+		const auto id = token->GetUserID();
+		const auto toId = _channel.GetUserID(*token);
+		if (!id || toId.empty()) {
+			vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+			break;
+		}
+		auto result = SendPostRequest(*token, "https://api.twitch.tv",
+					      "/helix/chat/shoutouts",
+					      {{"from_broadcaster_id", *id},
+					       {"to_broadcaster_id", toId},
+					       {"moderator_id", *id}});
+		if (result.status != 204) {
+			blog(LOG_INFO, "Failed to send shoutout! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::SHIELD_MODE_START:
+	case Action::SHIELD_MODE_END: {
+		const auto id = token->GetUserID();
+		if (!id) {
+			vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+			break;
+		}
+		OBSDataAutoRelease data = obs_data_create();
+		obs_data_set_bool(data, "is_active",
+				  _action == Action::SHIELD_MODE_START);
+		auto result = SendPutRequest(*token, "https://api.twitch.tv",
+					     "/helix/moderation/shield_mode",
+					     {{"broadcaster_id", *id},
+					      {"moderator_id", *id}},
+					     data.Get());
+		if (result.status != 200) {
+			blog(LOG_INFO, "Failed to set shield mode! (%d)",
+			     result.status);
+		}
+		break;
+	}
 	case Action::COMMERCIAL_START:
 		StartCommercial(token);
 		break;
+	case Action::COMMERCIAL_SNOOZE: {
+		const auto id = token->GetUserID();
+		if (!id) {
+			vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+			break;
+		}
+		auto result =
+			SendPostRequest(*token, "https://api.twitch.tv",
+					"/helix/channels/commercial/snooze",
+					{{"broadcaster_id", *id}});
+		if (result.status != 200) {
+			blog(LOG_INFO, "Failed to snooze commercial! (%d)",
+			     result.status);
+		}
+		break;
+	}
 	case Action::MARKER_CREATE:
 		CreateStreamMarker(token);
 		break;
