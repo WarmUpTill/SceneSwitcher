@@ -523,6 +523,13 @@ static RequestResult sendDeleteRequest(const TwitchToken &token,
 	return processResult(response, __func__);
 }
 
+RequestResult SendDeleteRequest(const TwitchToken &token,
+				const std::string &uri, const std::string &path,
+				const httplib::Params &params)
+{
+	return sendDeleteRequest(token, uri, path, params);
+}
+
 void SetJsonTempVars(const std::string &jsonStr,
 		     std::function<void(const char *, const char *)> setVarFunc)
 {
