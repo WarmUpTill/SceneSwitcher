@@ -34,7 +34,10 @@ public:
 		RUN_SEQUENCE,
 		SET_INDEX,
 	};
-	Action _action = Action::RUN_SEQUENCE;
+
+	Action GetAction() const { return _action; }
+	void SetAction(Action);
+
 	bool _restart = true;
 	IntVariable _resetIndex = 1;
 
@@ -44,6 +47,10 @@ public:
 private:
 	bool RunSequence();
 	bool SetSequenceIndex() const;
+
+	void SetupTempVars();
+
+	Action _action = Action::RUN_SEQUENCE;
 
 	static bool _registered;
 	static const std::string id;

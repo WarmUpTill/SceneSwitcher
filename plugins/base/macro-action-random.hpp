@@ -15,6 +15,7 @@ public:
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
+	bool PostLoad();
 	std::string GetId() const { return id; };
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
@@ -22,7 +23,10 @@ public:
 	bool _allowRepeat = false;
 
 private:
+	void SetupTempVars();
+
 	MacroRef lastRandomMacro;
+
 	static bool _registered;
 	static const std::string id;
 };

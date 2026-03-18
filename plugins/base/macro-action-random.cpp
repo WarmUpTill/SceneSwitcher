@@ -47,20 +47,28 @@ getNextMacros(std::vector<MacroRef> &macros, MacroRef &lastRandomMacroRef,
 bool MacroActionRandom::PerformAction()
 {
 	if (_macros.size() == 0) {
+		SetTempVarValue("macro", "");
 		return true;
 	}
 
 	auto macros = getNextMacros(_macros, lastRandomMacro, _allowRepeat);
 	if (macros.size() == 0) {
+		SetTempVarValue("macro", "");
 		return true;
 	}
+
 	if (macros.size() == 1) {
 		lastRandomMacro = macros[0];
+		SetTempVarValue("macro", GetMacroName(macros[0].get()));
 		return RunMacroActions(macros[0].get());
 	}
+
 	srand((unsigned int)time(0));
 	size_t idx = std::rand() % (macros.size());
 	lastRandomMacro = macros[idx];
+
+	SetTempVarValue("macro", GetMacroName(macros[idx].get()));
+
 	return RunMacroActions(macros[idx].get());
 }
 
@@ -85,6 +93,11 @@ bool MacroActionRandom::Load(obs_data_t *obj)
 	return true;
 }
 
+bool MacroActionRandom::PostLoad()
+{
+	return MacroAction::PostLoad() && MultiMacroRefAction::PostLoad();
+}
+
 std::shared_ptr<MacroAction> MacroActionRandom::Create(Macro *m)
 {
 	return std::make_shared<MacroActionRandom>(m);
@@ -93,6 +106,16 @@ std::shared_ptr<MacroAction> MacroActionRandom::Create(Macro *m)
 std::shared_ptr<MacroAction> MacroActionRandom::Copy() const
 {
 	return std::make_shared<MacroActionRandom>(*this);
+}
+
+void MacroActionRandom::SetupTempVars()
+{
+	MacroAction::SetupTempVars();
+	AddTempvar(
+		"macro",
+		obs_module_text("AdvSceneSwitcher.tempVar.random.macro"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.random.macro.description"));
 }
 
 MacroActionRandomEdit::MacroActionRandomEdit(
