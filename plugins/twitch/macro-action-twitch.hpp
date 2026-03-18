@@ -183,6 +183,7 @@ public:
 	StringVariable _announcementMessage = obs_module_text(
 		"AdvSceneSwitcher.action.twitch.announcement.message");
 	AnnouncementColor _announcementColor = AnnouncementColor::PRIMARY;
+	int _nonModDelayDuration = 2;
 	TwitchChannel _channel;
 	StringVariable _chatMessage;
 	UserInfoQueryType _userInfoQueryType = UserInfoQueryType::LOGIN;
@@ -200,8 +201,6 @@ private:
 	void CreateStreamClip(const std::shared_ptr<TwitchToken> &) const;
 	void StartCommercial(const std::shared_ptr<TwitchToken> &) const;
 	void SendChatAnnouncement(const std::shared_ptr<TwitchToken> &) const;
-	void SetChatEmoteOnlyMode(const std::shared_ptr<TwitchToken> &,
-				  bool enable) const;
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
 	void GetUserInfo(const std::shared_ptr<TwitchToken> &);
@@ -255,6 +254,7 @@ private slots:
 	void DurationChanged(const Duration &);
 	void AnnouncementMessageChanged();
 	void AnnouncementColorChanged(int index);
+	void NonModDelayDurationChanged(int index);
 	void ChannelChanged(const TwitchChannel &);
 	void ChatMessageChanged();
 	void UserInfoQueryTypeChanged(int);
@@ -295,6 +295,7 @@ private:
 	DurationSelection *_duration;
 	VariableTextEdit *_announcementMessage;
 	QComboBox *_announcementColor;
+	QComboBox *_nonModDelayDuration;
 	TwitchChannelSelection *_channel;
 	VariableTextEdit *_chatMessage;
 	QComboBox *_userInfoQueryType;

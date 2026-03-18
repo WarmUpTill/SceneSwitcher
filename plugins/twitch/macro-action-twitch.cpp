@@ -92,6 +92,26 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.chat.emoteOnly.enable"},
 	{MacroActionTwitch::Action::CHAT_EMOTE_ONLY_DISABLE,
 	 "AdvSceneSwitcher.action.twitch.type.chat.emoteOnly.disable"},
+	{MacroActionTwitch::Action::CHAT_FOLLOWER_ONLY_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.followerOnly.enable"},
+	{MacroActionTwitch::Action::CHAT_FOLLOWER_ONLY_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.followerOnly.disable"},
+	{MacroActionTwitch::Action::CHAT_SUBSCRIBER_ONLY_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.subscriberOnly.enable"},
+	{MacroActionTwitch::Action::CHAT_SUBSCRIBER_ONLY_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.subscriberOnly.disable"},
+	{MacroActionTwitch::Action::CHAT_SLOW_MODE_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.slowMode.enable"},
+	{MacroActionTwitch::Action::CHAT_SLOW_MODE_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.slowMode.disable"},
+	{MacroActionTwitch::Action::CHAT_NON_MODERATOR_DELAY_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.nonModeratorDelay.enable"},
+	{MacroActionTwitch::Action::CHAT_NON_MODERATOR_DELAY_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.nonModeratorDelay.disable"},
+	{MacroActionTwitch::Action::CHAT_UNIQUE_MODE_ENABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.uniqueMode.enable"},
+	{MacroActionTwitch::Action::CHAT_UNIQUE_MODE_DISABLE,
+	 "AdvSceneSwitcher.action.twitch.type.chat.uniqueMode.disable"},
 	{MacroActionTwitch::Action::SEND_CHAT_MESSAGE,
 	 "AdvSceneSwitcher.action.twitch.type.chat.sendMessage"},
 	{MacroActionTwitch::Action::USER_GET_INFO,
@@ -307,25 +327,25 @@ void MacroActionTwitch::SendChatAnnouncement(
 	}
 }
 
-void MacroActionTwitch::SetChatEmoteOnlyMode(
-	const std::shared_ptr<TwitchToken> &token, bool enable) const
+static void setChatSetting(const TwitchToken &token, const char *field,
+			   bool enable, const char *settingName)
 {
-	const auto id = token->GetUserID();
+	const auto id = token.GetUserID();
 	if (!id) {
 		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
 		return;
 	}
 
 	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_bool(data, "emote_mode", enable);
+	obs_data_set_bool(data, field, enable);
 
 	auto result = SendPatchRequest(
-		*token, "https://api.twitch.tv", "/helix/chat/settings",
+		token, "https://api.twitch.tv", "/helix/chat/settings",
 		{{"broadcaster_id", *id}, {"moderator_id", *id}}, data.Get());
 
 	if (result.status != 200) {
-		blog(LOG_INFO, "Failed to %s chat's emote-only mode! (%d)",
-		     enable ? "enable" : "disable", result.status);
+		blog(LOG_INFO, "Failed to %s %s! (%d)",
+		     enable ? "enable" : "disable", settingName, result.status);
 	}
 }
 
@@ -804,10 +824,67 @@ bool MacroActionTwitch::PerformAction()
 		SendChatAnnouncement(token);
 		break;
 	case Action::CHAT_EMOTE_ONLY_ENABLE:
-		SetChatEmoteOnlyMode(token, true);
+		setChatSetting(*token, "emote_mode", true,
+			       "chat's emote-only mode");
 		break;
 	case Action::CHAT_EMOTE_ONLY_DISABLE:
-		SetChatEmoteOnlyMode(token, false);
+		setChatSetting(*token, "emote_mode", false,
+			       "chat's emote-only mode");
+		break;
+	case Action::CHAT_FOLLOWER_ONLY_ENABLE:
+		setChatSetting(*token, "follower_mode", true,
+			       "chat's follower-only mode");
+		break;
+	case Action::CHAT_FOLLOWER_ONLY_DISABLE:
+		setChatSetting(*token, "follower_mode", false,
+			       "chat's follower-only mode");
+		break;
+	case Action::CHAT_SUBSCRIBER_ONLY_ENABLE:
+		setChatSetting(*token, "subscriber_mode", true,
+			       "chat's subscriber-only mode");
+		break;
+	case Action::CHAT_SUBSCRIBER_ONLY_DISABLE:
+		setChatSetting(*token, "subscriber_mode", false,
+			       "chat's subscriber-only mode");
+		break;
+	case Action::CHAT_SLOW_MODE_ENABLE:
+		setChatSetting(*token, "slow_mode", true, "chat's slow mode");
+		break;
+	case Action::CHAT_SLOW_MODE_DISABLE:
+		setChatSetting(*token, "slow_mode", false, "chat's slow mode");
+		break;
+	case Action::CHAT_NON_MODERATOR_DELAY_ENABLE: {
+		const auto id = token->GetUserID();
+		if (!id) {
+			vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+			break;
+		}
+		OBSDataAutoRelease data = obs_data_create();
+		obs_data_set_bool(data, "non_moderator_chat_delay", true);
+		obs_data_set_int(data, "non_moderator_chat_delay_duration",
+				 _nonModDelayDuration);
+		auto result = SendPatchRequest(
+			*token, "https://api.twitch.tv", "/helix/chat/settings",
+			{{"broadcaster_id", *id}, {"moderator_id", *id}},
+			data.Get());
+		if (result.status != 200) {
+			blog(LOG_INFO,
+			     "Failed to enable chat's non-moderator message delay! (%d)",
+			     result.status);
+		}
+		break;
+	}
+	case Action::CHAT_NON_MODERATOR_DELAY_DISABLE:
+		setChatSetting(*token, "non_moderator_chat_delay", false,
+			       "chat's non-moderator message delay");
+		break;
+	case Action::CHAT_UNIQUE_MODE_ENABLE:
+		setChatSetting(*token, "unique_chat_mode", true,
+			       "chat's unique message mode");
+		break;
+	case Action::CHAT_UNIQUE_MODE_DISABLE:
+		setChatSetting(*token, "unique_chat_mode", false,
+			       "chat's unique message mode");
 		break;
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		SendChatMessage(token);
@@ -1015,6 +1092,7 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	_announcementMessage.Save(obj, "announcementMessage");
 	obs_data_set_int(obj, "announcementColor",
 			 static_cast<int>(_announcementColor));
+	obs_data_set_int(obj, "nonModDelayDuration", _nonModDelayDuration);
 	_channel.Save(obj);
 	_chatMessage.Save(obj, "chatMessage");
 	obs_data_set_int(obj, "userInfoQueryType",
@@ -1047,6 +1125,12 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_announcementMessage.Load(obj, "announcementMessage");
 	_announcementColor = static_cast<AnnouncementColor>(
 		obs_data_get_int(obj, "announcementColor"));
+	_nonModDelayDuration =
+		(int)obs_data_get_int(obj, "nonModDelayDuration");
+	if (_nonModDelayDuration != 2 && _nonModDelayDuration != 4 &&
+	    _nonModDelayDuration != 6) {
+		_nonModDelayDuration = 2;
+	}
 	_channel.Load(obj);
 	_chatMessage.Load(obj, "chatMessage");
 	_userInfoQueryType = static_cast<UserInfoQueryType>(
@@ -1266,6 +1350,7 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _duration(new DurationSelection(this, false, 0)),
 	  _announcementMessage(new VariableTextEdit(this)),
 	  _announcementColor(new QComboBox(this)),
+	  _nonModDelayDuration(new QComboBox(this)),
 	  _channel(new TwitchChannelSelection(this)),
 	  _chatMessage(new VariableTextEdit(this)),
 	  _userInfoQueryType(new QComboBox(this)),
@@ -1443,6 +1528,13 @@ void MacroActionTwitchEdit::AnnouncementColorChanged(int index)
 		static_cast<MacroActionTwitch::AnnouncementColor>(index);
 }
 
+void MacroActionTwitchEdit::NonModDelayDurationChanged(int index)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_nonModDelayDuration =
+		_nonModDelayDuration->itemData(index).toInt();
+}
+
 void MacroActionTwitchEdit::SetWidgetProperties()
 {
 	_streamTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -1463,6 +1555,14 @@ void MacroActionTwitchEdit::SetWidgetProperties()
 
 	_userId->setMaximum(999999999999999);
 	_userId->setDecimals(0);
+
+	for (int secs : {2, 4, 6}) {
+		_nonModDelayDuration->addItem(
+			QString::number(secs) + " " +
+				obs_module_text(
+					"AdvSceneSwitcher.unit.seconds"),
+			secs);
+	}
 
 	_toggleRewardSelection->setCheckable(true);
 	_toggleRewardSelection->setMaximumWidth(11);
@@ -1509,6 +1609,8 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 			 SLOT(AnnouncementMessageChanged()));
 	QWidget::connect(_announcementColor, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(AnnouncementColorChanged(int)));
+	QWidget::connect(_nonModDelayDuration, SIGNAL(currentIndexChanged(int)),
+			 this, SLOT(NonModDelayDurationChanged(int)));
 	QWidget::connect(_channel,
 			 SIGNAL(ChannelChanged(const TwitchChannel &)), this,
 			 SLOT(ChannelChanged(const TwitchChannel &)));
@@ -1582,6 +1684,9 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		action == MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
 	_announcementColor->setVisible(
 		action == MacroActionTwitch::Action::CHAT_ANNOUNCEMENT_SEND);
+	_nonModDelayDuration->setVisible(
+		action ==
+		MacroActionTwitch::Action::CHAT_NON_MODERATOR_DELAY_ENABLE);
 	_chatMessage->setVisible(action ==
 				 MacroActionTwitch::Action::SEND_CHAT_MESSAGE);
 	const bool isUserTargetAction =
@@ -1698,6 +1803,7 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 					     _clipHasDelay,
 					     _duration,
 					     _announcementColor,
+					     _nonModDelayDuration,
 					     _channel,
 					     _userInfoQueryType,
 					     _userLogin,
@@ -1722,6 +1828,7 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 		{"{{clipHasDelay}}", _clipHasDelay},
 		{"{{duration}}", _duration},
 		{"{{announcementColor}}", _announcementColor},
+		{"{{nonModDelayDuration}}", _nonModDelayDuration},
 		{"{{channel}}", _channel},
 		{"{{userInfoQueryType}}", _userInfoQueryType},
 		{"{{userLogin}}", _userLogin},
@@ -1812,6 +1919,8 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_announcementMessage->setPlainText(_entryData->_announcementMessage);
 	_announcementColor->setCurrentIndex(
 		static_cast<int>(_entryData->_announcementColor));
+	_nonModDelayDuration->setCurrentIndex(_nonModDelayDuration->findData(
+		_entryData->_nonModDelayDuration));
 	_channel->SetToken(_entryData->_token);
 	_channel->SetChannel(_entryData->_channel);
 	_chatMessage->setPlainText(_entryData->_chatMessage);
