@@ -105,18 +105,21 @@ bool MacroActionSequence::RunSequence()
 	return RunMacroActions(macro.get());
 }
 
-bool MacroActionSequence::SetSequenceIndex() const
+bool MacroActionSequence::SetSequenceIndex()
 {
 	auto macro = _macro.GetMacro();
 	if (!macro) {
+		SetTempVarValue("nextMacro", "");
 		return true;
 	}
 
 	auto actions = GetMacroActions(macro.get());
 	if (!actions) {
+		SetTempVarValue("nextMacro", "");
 		return true;
 	}
 
+	std::string nextMacroName;
 	for (const auto &action : *actions) {
 		if (action->GetId() != id) {
 			continue;
@@ -130,7 +133,10 @@ bool MacroActionSequence::SetSequenceIndex() const
 		// -2 is needed since the _lastIndex starts at -1 and the reset
 		// index starts at 1
 		sequenceAction->_lastIdx = _resetIndex - 2;
+		nextMacroName = GetMacroName(
+			sequenceAction->GetNextMacro(false).GetMacro().get());
 	}
+	SetTempVarValue("nextMacro", nextMacroName);
 	return true;
 }
 
@@ -138,15 +144,21 @@ void MacroActionSequence::SetupTempVars()
 {
 	MacroAction::SetupTempVars();
 
-	if (_action != Action::RUN_SEQUENCE) {
-		return;
+	if (_action == Action::RUN_SEQUENCE) {
+		AddTempvar(
+			"macro",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.sequence.macro"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.sequence.macro.description"));
+	} else if (_action == Action::SET_INDEX) {
+		AddTempvar(
+			"nextMacro",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.sequence.nextMacro"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.sequence.nextMacro.description"));
 	}
-
-	AddTempvar(
-		"macro",
-		obs_module_text("AdvSceneSwitcher.tempVar.sequence.macro"),
-		obs_module_text(
-			"AdvSceneSwitcher.tempVar.sequence.macro.description"));
 }
 
 bool MacroActionSequence::PerformAction()

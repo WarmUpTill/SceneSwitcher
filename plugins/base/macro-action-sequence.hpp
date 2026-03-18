@@ -46,7 +46,7 @@ public:
 
 private:
 	bool RunSequence();
-	bool SetSequenceIndex() const;
+	bool SetSequenceIndex();
 
 	void SetupTempVars();
 
