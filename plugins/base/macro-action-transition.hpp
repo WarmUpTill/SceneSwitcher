@@ -4,6 +4,8 @@
 #include "transition-selection.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
+#include "variable-number.hpp"
+#include "variable-spinbox.hpp"
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -28,6 +30,7 @@ public:
 		SCENE_OVERRIDE,
 		SOURCE_SHOW,
 		SOURCE_HIDE,
+		TBAR,
 	};
 
 	Type _type = Type::SCENE;
@@ -37,11 +40,13 @@ public:
 	bool _setTransitionType = true;
 	TransitionSelection _transition;
 	Duration _duration;
+	DoubleVariable _tbarPosition = 0.0;
 
 private:
 	void SetSceneTransition();
 	void SetTransitionOverride();
 	void SetSourceTransition(bool);
+	void SetTbarPosition();
 
 	static bool _registered;
 	static const std::string id;
@@ -72,6 +77,7 @@ private slots:
 	void SetDurationChanged(int state);
 	void TransitionChanged(const TransitionSelection &);
 	void DurationChanged(const Duration &seconds);
+	void TbarPositionChanged(const NumberVariable<double> &);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -83,8 +89,10 @@ protected:
 	QCheckBox *_setDuration;
 	TransitionSelectionWidget *_transitions;
 	DurationSelection *_duration;
+	VariableDoubleSpinBox *_tbarPosition;
 	QHBoxLayout *_transitionLayout;
 	QHBoxLayout *_durationLayout;
+	QHBoxLayout *_tbarLayout;
 	std::shared_ptr<MacroActionTransition> _entryData;
 
 private:

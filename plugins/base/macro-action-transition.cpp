@@ -3,6 +3,7 @@
 #include "transition-helpers.hpp"
 
 #include <obs-frontend-api.h>
+#include <algorithm>
 
 namespace advss {
 
@@ -22,6 +23,8 @@ const static std::map<MacroActionTransition::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.transition.type.sourceShow"},
 	{MacroActionTransition::Type::SOURCE_HIDE,
 	 "AdvSceneSwitcher.action.transition.type.sourceHide"},
+	{MacroActionTransition::Type::TBAR,
+	 "AdvSceneSwitcher.action.transition.type.tbar"},
 };
 
 void MacroActionTransition::SetSceneTransition()
@@ -76,6 +79,17 @@ static void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item,
 }
 #endif
 
+void MacroActionTransition::SetTbarPosition()
+{
+	const double percent = std::clamp(_tbarPosition.GetValue(), 0.0, 100.0);
+	const int tbarValue = (int)std::round(percent / 100.0 * 1023.0);
+	obs_frontend_set_tbar_position(tbarValue);
+
+	if (tbarValue == 0 || tbarValue == 1024) {
+		obs_frontend_release_tbar();
+	}
+}
+
 void MacroActionTransition::SetSourceTransition(bool show)
 {
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(27, 0, 0)
@@ -110,6 +124,9 @@ bool MacroActionTransition::PerformAction()
 	case Type::SOURCE_HIDE:
 		SetSourceTransition(false);
 		break;
+	case Type::TBAR:
+		SetTbarPosition();
+		break;
 	}
 	return true;
 }
@@ -135,6 +152,10 @@ void MacroActionTransition::LogAction() const
 			    _source.ToString(true) + " on scene " +
 			    _scene.ToString(true);
 		break;
+	case Type::TBAR:
+		ablog(LOG_INFO, "set T-Bar position to %.2f%%",
+		      _tbarPosition.GetValue());
+		return;
 	}
 	if (_setDuration) {
 		ablog(LOG_INFO, "%s duration to %s", msgBegin.c_str(),
@@ -156,6 +177,7 @@ bool MacroActionTransition::Save(obs_data_t *obj) const
 	_transition.Save(obj);
 	obs_data_set_bool(obj, "setDuration", _setDuration);
 	obs_data_set_bool(obj, "setType", _setTransitionType);
+	_tbarPosition.Save(obj, "tbarPosition");
 	return true;
 }
 
@@ -169,6 +191,7 @@ bool MacroActionTransition::Load(obs_data_t *obj)
 	_transition.Load(obj);
 	_setDuration = obs_data_get_bool(obj, "setDuration");
 	_setTransitionType = obs_data_get_bool(obj, "setType");
+	_tbarPosition.Load(obj, "tbarPosition");
 	return true;
 }
 
@@ -186,6 +209,8 @@ std::string MacroActionTransition::GetShortDesc() const
 	case Type::SOURCE_HIDE:
 		return _scene.ToString() + " - " + _source.ToString() + " - " +
 		       _transition.ToString();
+	case Type::TBAR:
+		return std::to_string(_tbarPosition.GetValue()) + "%";
 	}
 	return "";
 }
@@ -205,6 +230,7 @@ void MacroActionTransition::ResolveVariablesToFixedValues()
 	_source.ResolveVariables();
 	_scene.ResolveVariables();
 	_duration.ResolveVariables();
+	_tbarPosition.ResolveVariables();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -236,9 +262,16 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	  _setDuration(new QCheckBox),
 	  _transitions(new TransitionSelectionWidget(this, false)),
 	  _duration(new DurationSelection(this, false)),
+	  _tbarPosition(new VariableDoubleSpinBox),
 	  _transitionLayout(new QHBoxLayout),
-	  _durationLayout(new QHBoxLayout)
+	  _durationLayout(new QHBoxLayout),
+	  _tbarLayout(new QHBoxLayout)
 {
+	_tbarPosition->setMinimum(0.0);
+	_tbarPosition->setMaximum(100.0);
+	_tbarPosition->setDecimals(2);
+	_tbarPosition->setSuffix("%");
+
 	populateActionSelection(_actions);
 
 	QWidget::connect(_actions, SIGNAL(currentIndexChanged(int)), this,
@@ -260,6 +293,11 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 			 SLOT(SetTransitionChanged(int)));
 	QWidget::connect(_setDuration, SIGNAL(stateChanged(int)), this,
 			 SLOT(SetDurationChanged(int)));
+	QWidget::connect(
+		_tbarPosition,
+		SIGNAL(NumberVariableChanged(const NumberVariable<double> &)),
+		this,
+		SLOT(TbarPositionChanged(const NumberVariable<double> &)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{type}}", _actions},
@@ -269,6 +307,7 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 		{"{{duration}}", _duration},
 		{"{{setTransition}}", _setTransition},
 		{"{{setDuration}}", _setDuration},
+		{"{{tbarPosition}}", _tbarPosition},
 	};
 
 	auto typeLayout = new QHBoxLayout;
@@ -281,10 +320,14 @@ MacroActionTransitionEdit::MacroActionTransitionEdit(
 	PlaceWidgets(obs_module_text(
 			     "AdvSceneSwitcher.action.transition.entry.line3"),
 		     _durationLayout, widgetPlaceholders);
+	PlaceWidgets(obs_module_text(
+			     "AdvSceneSwitcher.action.transition.entry.line4"),
+		     _tbarLayout, widgetPlaceholders);
 	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(typeLayout);
 	mainLayout->addLayout(_transitionLayout);
 	mainLayout->addLayout(_durationLayout);
+	mainLayout->addLayout(_tbarLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -307,6 +350,7 @@ void MacroActionTransitionEdit::UpdateEntryData()
 	_transitions->SetTransition(_entryData->_transition);
 	_transitions->setEnabled(_entryData->_setTransitionType);
 	_duration->setEnabled(_entryData->_setDuration);
+	_tbarPosition->SetValue(_entryData->_tbarPosition);
 	SetWidgetVisibility();
 }
 
@@ -353,11 +397,17 @@ void MacroActionTransitionEdit::DurationChanged(const Duration &dur)
 
 void MacroActionTransitionEdit::SetWidgetVisibility()
 {
+	const bool isTbar = _entryData->_type ==
+			    MacroActionTransition::Type::TBAR;
 	_sources->setVisible(
 		_entryData->_type == MacroActionTransition::Type::SOURCE_HIDE ||
 		_entryData->_type == MacroActionTransition::Type::SOURCE_SHOW);
 	_scenes->setVisible(_entryData->_type !=
-			    MacroActionTransition::Type::SCENE);
+				    MacroActionTransition::Type::SCENE &&
+			    !isTbar);
+	SetLayoutVisible(_transitionLayout, !isTbar);
+	SetLayoutVisible(_durationLayout, !isTbar);
+	SetLayoutVisible(_tbarLayout, isTbar);
 	adjustSize();
 }
 
@@ -379,6 +429,15 @@ void MacroActionTransitionEdit::SetDurationChanged(int state)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_setDuration = state;
 	_duration->setEnabled(state);
+}
+
+void MacroActionTransitionEdit::TbarPositionChanged(
+	const NumberVariable<double> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_tbarPosition = value;
+	emit HeaderInfoChanged(
+		QString::fromStdString(_entryData->GetShortDesc()));
 }
 
 } // namespace advss
