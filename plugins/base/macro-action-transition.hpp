@@ -4,7 +4,6 @@
 #include "transition-selection.hpp"
 #include "scene-selection.hpp"
 #include "scene-item-selection.hpp"
-#include "variable-number.hpp"
 #include "variable-spinbox.hpp"
 
 #include <QCheckBox>
