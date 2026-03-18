@@ -82,13 +82,22 @@ void MacroActionSequence::ResolveVariablesToFixedValues()
 	_resetIndex.ResolveVariables();
 }
 
+void MacroActionSequence::SetAction(Action action)
+{
+	_action = action;
+	SetupTempVars();
+}
+
 bool MacroActionSequence::RunSequence()
 {
 	if (_macros.size() == 0) {
+		SetTempVarValue("macro", "");
 		return true;
 	}
 
 	auto macro = GetNextMacro().GetMacro();
+	SetTempVarValue("macro", GetMacroName(macro.get()));
+
 	if (!macro.get()) {
 		return true;
 	}
@@ -123,6 +132,21 @@ bool MacroActionSequence::SetSequenceIndex() const
 		sequenceAction->_lastIdx = _resetIndex - 2;
 	}
 	return true;
+}
+
+void MacroActionSequence::SetupTempVars()
+{
+	MacroAction::SetupTempVars();
+
+	if (_action != Action::RUN_SEQUENCE) {
+		return;
+	}
+
+	AddTempvar(
+		"macro",
+		obs_module_text("AdvSceneSwitcher.tempVar.sequence.macro"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.sequence.macro.description"));
 }
 
 bool MacroActionSequence::PerformAction()
@@ -162,7 +186,7 @@ bool MacroActionSequence::Load(obs_data_t *obj)
 	LoadMacroList(obj, _macros);
 	_restart = obs_data_get_bool(obj, "restart");
 	_macro.Load(obj);
-	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
+	SetAction(static_cast<Action>(obs_data_get_int(obj, "action")));
 	_resetIndex.Load(obj, "resetIndex");
 	return true;
 }
@@ -256,7 +280,7 @@ void MacroActionSequenceEdit::UpdateEntryData()
 	_macroList->SetContent(_entryData->_macros);
 	_restart->setChecked(_entryData->_restart);
 	_resetIndex->SetValue(_entryData->_resetIndex);
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(static_cast<int>(_entryData->GetAction()));
 	_macros->SetCurrentMacro(_entryData->_macro);
 	SetWidgetVisibility();
 	adjustSize();
@@ -361,7 +385,7 @@ void MacroActionSequenceEdit::UpdateStatusLine()
 void MacroActionSequenceEdit::ActionChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_action = static_cast<MacroActionSequence::Action>(value);
+	_entryData->SetAction(static_cast<MacroActionSequence::Action>(value));
 	SetWidgetVisibility();
 }
 
@@ -385,10 +409,10 @@ void MacroActionSequenceEdit::SetWidgetVisibility()
 
 	ClearLayout(_layout);
 
+	const auto action = _entryData->GetAction();
 	PlaceWidgets(
 		obs_module_text(
-			_entryData->_action ==
-					MacroActionSequence::Action::RUN_SEQUENCE
+			action == MacroActionSequence::Action::RUN_SEQUENCE
 				? "AdvSceneSwitcher.action.sequence.entry.run"
 				: "AdvSceneSwitcher.action.sequence.entry.setIndex"),
 		_layout,
@@ -396,15 +420,14 @@ void MacroActionSequenceEdit::SetWidgetVisibility()
 		 {"{{macros}}", _macros},
 		 {"{{index}}", _resetIndex}});
 
-	_macroList->setVisible(_entryData->_action ==
+	_macroList->setVisible(action ==
 			       MacroActionSequence::Action::RUN_SEQUENCE);
-	_restart->setVisible(_entryData->_action ==
+	_restart->setVisible(action ==
 			     MacroActionSequence::Action::RUN_SEQUENCE);
-	_statusLine->setVisible(_entryData->_action ==
+	_statusLine->setVisible(action ==
 				MacroActionSequence::Action::RUN_SEQUENCE);
-	_macros->setVisible(_entryData->_action ==
-			    MacroActionSequence::Action::SET_INDEX);
-	_resetIndex->setVisible(_entryData->_action ==
+	_macros->setVisible(action == MacroActionSequence::Action::SET_INDEX);
+	_resetIndex->setVisible(action ==
 				MacroActionSequence::Action::SET_INDEX);
 
 	adjustSize();
