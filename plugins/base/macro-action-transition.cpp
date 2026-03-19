@@ -25,6 +25,8 @@ const static std::map<MacroActionTransition::Type, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.transition.type.sourceHide"},
 	{MacroActionTransition::Type::TBAR,
 	 "AdvSceneSwitcher.action.transition.type.tbar"},
+	{MacroActionTransition::Type::RELEASE_TBAR,
+	 "AdvSceneSwitcher.action.transition.type.releaseTbar"},
 };
 
 void MacroActionTransition::SetSceneTransition()
@@ -84,10 +86,6 @@ void MacroActionTransition::SetTbarPosition()
 	const double percent = std::clamp(_tbarPosition.GetValue(), 0.0, 100.0);
 	const int tbarValue = (int)std::round(percent / 100.0 * 1023.0);
 	obs_frontend_set_tbar_position(tbarValue);
-
-	if (tbarValue == 0 || tbarValue == 1024) {
-		obs_frontend_release_tbar();
-	}
 }
 
 void MacroActionTransition::SetSourceTransition(bool show)
@@ -127,6 +125,9 @@ bool MacroActionTransition::PerformAction()
 	case Type::TBAR:
 		SetTbarPosition();
 		break;
+	case Type::RELEASE_TBAR:
+		obs_frontend_release_tbar();
+		break;
 	}
 	return true;
 }
@@ -155,6 +156,9 @@ void MacroActionTransition::LogAction() const
 	case Type::TBAR:
 		ablog(LOG_INFO, "set T-Bar position to %.2f%%",
 		      _tbarPosition.GetValue());
+		return;
+	case Type::RELEASE_TBAR:
+		ablog(LOG_INFO, "release T-Bar");
 		return;
 	}
 	if (_setDuration) {
@@ -208,6 +212,8 @@ std::string MacroActionTransition::GetShortDesc() const
 		       _transition.ToString();
 	case Type::TBAR:
 		return std::to_string(_tbarPosition.GetValue()) + "%";
+	case Type::RELEASE_TBAR:
+		return "";
 	}
 	return "";
 }
@@ -398,14 +404,16 @@ void MacroActionTransitionEdit::SetWidgetVisibility()
 {
 	const bool isTbar = _entryData->_type ==
 			    MacroActionTransition::Type::TBAR;
+	const bool isReleaseTbar = _entryData->_type ==
+				   MacroActionTransition::Type::RELEASE_TBAR;
 	_sources->setVisible(
 		_entryData->_type == MacroActionTransition::Type::SOURCE_HIDE ||
 		_entryData->_type == MacroActionTransition::Type::SOURCE_SHOW);
 	_scenes->setVisible(_entryData->_type !=
 				    MacroActionTransition::Type::SCENE &&
-			    !isTbar);
-	SetLayoutVisible(_transitionLayout, !isTbar);
-	SetLayoutVisible(_durationLayout, !isTbar);
+			    !isTbar && !isReleaseTbar);
+	SetLayoutVisible(_transitionLayout, !isTbar && !isReleaseTbar);
+	SetLayoutVisible(_durationLayout, !isTbar && !isReleaseTbar);
 	SetLayoutVisible(_tbarLayout, isTbar);
 	adjustSize();
 }

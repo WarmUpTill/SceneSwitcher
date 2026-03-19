@@ -30,6 +30,7 @@ public:
 		SOURCE_SHOW,
 		SOURCE_HIDE,
 		TBAR,
+		RELEASE_TBAR,
 	};
 
 	Type _type = Type::SCENE;
