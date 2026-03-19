@@ -45,6 +45,10 @@ const static std::map<MacroActionSource::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.source.type.closeFilterDialog"},
 	{MacroActionSource::Action::CLOSE_PROPERTIES_DIALOG,
 	 "AdvSceneSwitcher.action.source.type.closePropertiesDialog"},
+	{MacroActionSource::Action::GET_SETTING,
+	 "AdvSceneSwitcher.action.source.type.getSetting"},
+	{MacroActionSource::Action::GET_SETTINGS,
+	 "AdvSceneSwitcher.action.source.type.getSettings"},
 };
 
 const static std::map<obs_deinterlace_mode, std::string> deinterlaceModes = {
@@ -273,6 +277,22 @@ bool MacroActionSource::PerformAction()
 					  "OBSBasicProperties");
 		});
 		break;
+	case Action::GET_SETTING: {
+		const auto value =
+			GetSourceSettingValue(_source.GetSource(), _setting);
+		if (value) {
+			SetTempVarValue("setting", *value);
+		}
+		break;
+	}
+	case Action::GET_SETTINGS: {
+		const auto settings =
+			GetSourceSettings(_source.GetSource(), true);
+		if (settings) {
+			SetTempVarValue("settings", *settings);
+		}
+		break;
+	}
 	default:
 		break;
 	}
@@ -358,6 +378,31 @@ void MacroActionSource::ResolveVariablesToFixedValues()
 	_source.ResolveVariables();
 	_settingsString.ResolveVariables();
 	_manualSettingValue.ResolveVariables();
+}
+
+void MacroActionSource::SetupTempVars()
+{
+	MacroAction::SetupTempVars();
+	switch (_action) {
+	case Action::GET_SETTING:
+		AddTempvar("setting",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.source.setting"));
+		break;
+	case Action::GET_SETTINGS:
+		AddTempvar("settings",
+			   obs_module_text(
+				   "AdvSceneSwitcher.tempVar.source.settings"));
+		break;
+	default:
+		break;
+	}
+}
+
+void MacroActionSource::SetAction(Action action)
+{
+	_action = action;
+	SetupTempVars();
 }
 
 static inline void populateActionSelection(QComboBox *list)
@@ -502,7 +547,7 @@ void MacroActionSourceEdit::UpdateEntryData()
 
 	const auto weakSource = _entryData->_source.GetSource();
 	_settingsButtons->SetSelection(weakSource, _entryData->_button);
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(static_cast<int>(_entryData->GetAction()));
 	_sources->SetSource(_entryData->_source);
 	_sourceSettings->SetSelection(weakSource, _entryData->_setting);
 	_settingsString->setPlainText(_entryData->_settingsString);
@@ -537,7 +582,7 @@ void MacroActionSourceEdit::SourceChanged(const SourceSelection &source)
 void MacroActionSourceEdit::ActionChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_action = static_cast<MacroActionSource::Action>(value);
+	_entryData->SetAction(static_cast<MacroActionSource::Action>(value));
 	SetWidgetVisibility();
 }
 
@@ -664,19 +709,29 @@ static QString GetIndividualListEntryName()
 
 void MacroActionSourceEdit::SetWidgetVisibility()
 {
+	const auto action = _entryData->GetAction();
+
+	const bool isSetSettings = action ==
+				   MacroActionSource::Action::SETTINGS;
+	const bool isGetSetting = action ==
+				  MacroActionSource::Action::GET_SETTING;
+	const bool isGetSettings = action ==
+				   MacroActionSource::Action::GET_SETTINGS;
+
 	SetLayoutVisible(_settingsLayout,
-			 _entryData->_action ==
-				 MacroActionSource::Action::SETTINGS);
+			 isSetSettings || isGetSetting || isGetSettings);
+	_settingsInputMethods->setVisible(isSetSettings);
 	_sourceSettings->setVisible(
-		_entryData->_action == MacroActionSource::Action::SETTINGS &&
-		_entryData->_settingsInputMethod !=
-			MacroActionSource::SettingsInputMethod::JSON_STRING);
+		(isSetSettings &&
+		 _entryData->_settingsInputMethod !=
+			 MacroActionSource::SettingsInputMethod::JSON_STRING) ||
+		isGetSetting);
 	_settingsString->setVisible(
-		_entryData->_action == MacroActionSource::Action::SETTINGS &&
+		isSetSettings &&
 		_entryData->_settingsInputMethod ==
 			MacroActionSource::SettingsInputMethod::JSON_STRING);
 	_getSettings->setVisible(
-		_entryData->_action == MacroActionSource::Action::SETTINGS &&
+		isSetSettings &&
 		_entryData->_settingsInputMethod !=
 			MacroActionSource::SettingsInputMethod::
 				INDIVIDUAL_TEMPVAR);
@@ -685,13 +740,12 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 			     GetIndividualListEntryName(),
 			     _entryData->_setting.IsList());
 
-	_tempVars->setVisible(_entryData->_action ==
-				      MacroActionSource::Action::SETTINGS &&
+	_tempVars->setVisible(isSetSettings &&
 			      _entryData->_settingsInputMethod ==
 				      MacroActionSource::SettingsInputMethod::
 					      INDIVIDUAL_TEMPVAR);
 
-	if (_entryData->_action == MacroActionSource::Action::SETTINGS &&
+	if (isSetSettings &&
 	    (_entryData->_settingsInputMethod ==
 		     MacroActionSource::SettingsInputMethod::INDIVIDUAL_MANUAL ||
 	     _entryData->_settingsInputMethod ==
@@ -704,35 +758,31 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 		_manualSettingValue->hide();
 	}
 
-	const bool showWarning =
-		_entryData->_action == MacroActionSource::Action::ENABLE ||
-		_entryData->_action == MacroActionSource::Action::DISABLE;
+	const bool showWarning = action == MacroActionSource::Action::ENABLE ||
+				 action == MacroActionSource::Action::DISABLE;
 	_warning->setVisible(showWarning);
 	_settingsButtons->setVisible(
-		_entryData->_action ==
-		MacroActionSource::Action::SETTINGS_BUTTON);
+		action == MacroActionSource::Action::SETTINGS_BUTTON);
 	_deinterlaceMode->setVisible(
-		_entryData->_action ==
-		MacroActionSource::Action::DEINTERLACE_MODE);
+		action == MacroActionSource::Action::DEINTERLACE_MODE);
 	_deinterlaceOrder->setVisible(
-		_entryData->_action ==
-		MacroActionSource::Action::DEINTERLACE_FIELD_ORDER);
+		action == MacroActionSource::Action::DEINTERLACE_FIELD_ORDER);
 
 	_refreshSettingSelection->setVisible(
-		(_entryData->_settingsInputMethod ==
-			 MacroActionSource::SettingsInputMethod::
-				 INDIVIDUAL_MANUAL ||
-		 _entryData->_settingsInputMethod ==
-			 MacroActionSource::SettingsInputMethod::
-				 INDIVIDUAL_LIST_ENTRY) &&
+		((isSetSettings &&
+		  (_entryData->_settingsInputMethod ==
+			   MacroActionSource::SettingsInputMethod::
+				   INDIVIDUAL_MANUAL ||
+		   _entryData->_settingsInputMethod ==
+			   MacroActionSource::SettingsInputMethod::
+				   INDIVIDUAL_LIST_ENTRY)) ||
+		 isGetSetting) &&
 		_entryData->_source.GetType() ==
 			SourceSelection::Type::VARIABLE);
 
 	_acceptDialog->setVisible(
-		_entryData->_action ==
-			MacroActionSource::Action::CLOSE_FILTER_DIALOG ||
-		_entryData->_action ==
-			MacroActionSource::Action::CLOSE_PROPERTIES_DIALOG);
+		action == MacroActionSource::Action::CLOSE_FILTER_DIALOG ||
+		action == MacroActionSource::Action::CLOSE_PROPERTIES_DIALOG);
 
 	adjustSize();
 	updateGeometry();
