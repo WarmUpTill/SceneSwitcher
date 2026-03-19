@@ -283,7 +283,9 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 		SetTempVarValue("patternCount", "0");
 		return false;
 	}
-	const auto count = countNonZero(result);
+	const auto count = CountPatternMatches(
+		result, {_patternImageData.rgbaPattern.cols,
+			 _patternImageData.rgbaPattern.rows});
 	SetTempVarValue("similarity", std::to_string(bestMatchValue));
 	SetTempVarValue("patternCount", std::to_string(count));
 	return count > 0;
