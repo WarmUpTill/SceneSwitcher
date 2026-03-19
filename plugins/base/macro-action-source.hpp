@@ -24,17 +24,7 @@ public:
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
-
-	SourceSelection _source;
-	SourceSettingButton _button;
-	StringVariable _settingsString = "";
-	StringVariable _manualSettingValue = "";
-	obs_deinterlace_mode _deinterlaceMode = OBS_DEINTERLACE_MODE_DISABLE;
-	obs_deinterlace_field_order _deinterlaceOrder =
-		OBS_DEINTERLACE_FIELD_ORDER_TOP;
-	TempVariableRef _tempVar;
-	SourceSetting _setting;
-	bool _acceptDialog = false;
+	void SetupTempVars();
 
 	enum class Action {
 		ENABLE,
@@ -50,8 +40,23 @@ public:
 		CLOSE_INTERACTION_DIALOG,
 		CLOSE_FILTER_DIALOG,
 		CLOSE_PROPERTIES_DIALOG,
+		GET_SETTING,
+		GET_SETTINGS,
 	};
-	Action _action = Action::SETTINGS;
+
+	void SetAction(Action);
+	Action GetAction() const { return _action; }
+
+	SourceSelection _source;
+	SourceSettingButton _button;
+	StringVariable _settingsString = "";
+	StringVariable _manualSettingValue = "";
+	obs_deinterlace_mode _deinterlaceMode = OBS_DEINTERLACE_MODE_DISABLE;
+	obs_deinterlace_field_order _deinterlaceOrder =
+		OBS_DEINTERLACE_FIELD_ORDER_TOP;
+	TempVariableRef _tempVar;
+	SourceSetting _setting;
+	bool _acceptDialog = false;
 
 	enum class SettingsInputMethod {
 		INDIVIDUAL_MANUAL,
@@ -63,6 +68,8 @@ public:
 		SettingsInputMethod::INDIVIDUAL_MANUAL;
 
 private:
+	Action _action = Action::SETTINGS;
+
 	static bool _registered;
 	static const std::string id;
 };
