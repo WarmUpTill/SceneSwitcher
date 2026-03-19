@@ -283,10 +283,18 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 		SetTempVarValue("patternCount", "0");
 		return false;
 	}
-	const auto count = countNonZero(result);
+
 	SetTempVarValue("similarity", std::to_string(bestMatchValue));
-	SetTempVarValue("patternCount", std::to_string(count));
-	return count > 0;
+
+	if (IsTempVarInUse("patternCount")) {
+		const auto count = CountPatternMatches(
+			result, {_patternImageData.rgbaPattern.cols,
+				 _patternImageData.rgbaPattern.rows});
+		SetTempVarValue("patternCount", std::to_string(count));
+		return count > 0;
+	}
+
+	return countNonZero(result) > 0;
 }
 
 bool MacroConditionVideo::FileInputIsUpToDate() const

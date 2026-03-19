@@ -97,6 +97,35 @@ double MatchPattern(QImage &img, const PatternImageData &patternData,
 	return bestFitValue;
 }
 
+int CountPatternMatches(const cv::Mat &result, const cv::Size &patternSize)
+{
+	if (result.empty()) {
+		return 0;
+	}
+
+	cv::Mat work = result.clone();
+	int count = 0;
+
+	while (true) {
+		double maxVal;
+		cv::Point maxLoc;
+		cv::minMaxLoc(work, nullptr, &maxVal, nullptr, &maxLoc);
+		if (maxVal <= 0.0) {
+			break;
+		}
+		count++;
+		// Suppress the template-sized region around this match so
+		// overlapping high-scoring positions are not counted separately
+		int x = std::max(0, maxLoc.x - patternSize.width / 2);
+		int y = std::max(0, maxLoc.y - patternSize.height / 2);
+		int w = std::min(patternSize.width, work.cols - x);
+		int h = std::min(patternSize.height, work.rows - y);
+		work(cv::Rect(x, y, w, h)) = 0.0f;
+	}
+
+	return count;
+}
+
 double MatchPattern(QImage &img, QImage &pattern, double threshold,
 		    cv::Mat &result, bool useAlphaAsMask,
 		    cv::TemplateMatchModes matchColor)

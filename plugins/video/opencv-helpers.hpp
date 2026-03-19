@@ -68,6 +68,7 @@ double MatchPattern(QImage &img, const PatternImageData &patternData,
 double MatchPattern(QImage &img, QImage &pattern, double threshold,
 		    cv::Mat &result, bool useAlphaAsMask,
 		    cv::TemplateMatchModes matchMode);
+int CountPatternMatches(const cv::Mat &result, const cv::Size &patternSize);
 std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
 				  double scaleFactor, int minNeighbors,
 				  const cv::Size &minSize,
