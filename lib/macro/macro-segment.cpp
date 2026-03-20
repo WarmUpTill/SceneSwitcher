@@ -13,6 +13,11 @@
 
 namespace advss {
 
+std::vector<TempVariableRef> MacroSegment::GetTempVarRefs() const
+{
+	return {};
+}
+
 MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
 	: _macro(m),
 	  _supportsVariableValue(supportsVariableValue)
@@ -150,6 +155,16 @@ void MacroSegment::AddTempvar(const std::string &id, const std::string &name,
 	TempVariable var(id, name, description, sharedSegment);
 	_tempVariables.emplace_back(std::move(var));
 	NotifyUIAboutTempVarChange(this);
+}
+
+bool MacroSegment::IsTempVarInUse(const std::string &id) const
+{
+	for (const auto &var : _tempVariables) {
+		if (var.ID() == id) {
+			return var.IsInUse();
+		}
+	}
+	return false;
 }
 
 void MacroSegment::SetTempVarValue(const std::string &id,

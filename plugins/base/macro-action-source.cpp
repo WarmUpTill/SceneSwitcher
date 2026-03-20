@@ -13,6 +13,14 @@ namespace advss {
 
 const std::string MacroActionSource::id = "source";
 
+std::vector<TempVariableRef> MacroActionSource::GetTempVarRefs() const
+{
+	if (!_tempVar.HasValidID()) {
+		return {};
+	}
+	return {_tempVar};
+}
+
 bool MacroActionSource::_registered = MacroActionFactory::Register(
 	MacroActionSource::id,
 	{MacroActionSource::Create, MacroActionSourceEdit::Create,
@@ -652,6 +660,7 @@ void MacroActionSourceEdit::SelectionChanged(const TempVariableRef &var)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_tempVar = var;
+	IncrementTempVarInUseGeneration();
 }
 
 void MacroActionSourceEdit::SettingsInputMethodChanged(int idx)

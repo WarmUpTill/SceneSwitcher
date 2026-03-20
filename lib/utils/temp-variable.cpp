@@ -10,8 +10,11 @@
 
 #include <QVariant>
 #include <QAbstractItemView>
+#include <atomic>
 
 Q_DECLARE_METATYPE(advss::TempVariableRef);
+
+static std::atomic<uint64_t> tempVarInUseGeneration{0};
 
 namespace advss {
 
@@ -118,6 +121,60 @@ TempVariableRef TempVariable::GetRef() const
 	ref._id = _id;
 	ref._segment = _segment;
 	return ref;
+}
+
+static bool refsContain(const std::vector<TempVariableRef> &refs,
+			const TempVariableRef &ref)
+{
+	for (const auto &r : refs) {
+		if (r == ref) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template<typename T>
+static bool segmentsReferTo(const T &segments, const TempVariableRef &ref)
+{
+	for (const auto &segment : segments) {
+		if (refsContain(segment->GetTempVarRefs(), ref)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool TempVariable::IsInUse() const
+{
+	const auto currentGen =
+		tempVarInUseGeneration.load(std::memory_order_relaxed);
+	if (_isInUseCacheGeneration == currentGen) {
+		return _isInUseCache;
+	}
+
+	bool inUse = false;
+	const auto ref = GetRef();
+
+	if (ref.HasValidID()) {
+		for (const auto &macro : GetAllMacros()) {
+			if (segmentsReferTo(macro->Conditions(), ref) ||
+			    segmentsReferTo(macro->Actions(), ref) ||
+			    segmentsReferTo(macro->ElseActions(), ref)) {
+				inUse = true;
+				break;
+			}
+		}
+	}
+
+	_isInUseCache = inUse;
+	_isInUseCacheGeneration = currentGen;
+	return inUse;
+}
+
+void IncrementTempVarInUseGeneration()
+{
+	tempVarInUseGeneration.fetch_add(1, std::memory_order_relaxed);
 }
 
 TempVariableRef::SegmentType TempVariableRef::GetType() const
@@ -665,6 +722,7 @@ TempVarSignalManager *TempVarSignalManager::Instance()
 
 void NotifyUIAboutTempVarChange(MacroSegment *segment)
 {
+	IncrementTempVarInUseGeneration();
 	obs_queue_task(
 		OBS_TASK_UI,
 		[](void *segment) {

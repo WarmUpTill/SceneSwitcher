@@ -20,6 +20,7 @@ public:
 	bool Load(obs_data_t *obj);
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
+	std::vector<TempVariableRef> GetTempVarRefs() const;
 	static std::shared_ptr<MacroCondition> Create(Macro *m)
 	{
 		return std::make_shared<MacroConditionTempVar>(m);

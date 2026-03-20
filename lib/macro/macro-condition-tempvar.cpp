@@ -6,6 +6,14 @@ namespace advss {
 
 const std::string MacroConditionTempVar::id = "temp_var";
 
+std::vector<TempVariableRef> MacroConditionTempVar::GetTempVarRefs() const
+{
+	if (!_tempVar.HasValidID()) {
+		return {};
+	}
+	return {_tempVar};
+}
+
 bool MacroConditionTempVar::_registered = MacroConditionFactory::Register(
 	MacroConditionTempVar::id,
 	{MacroConditionTempVar::Create, MacroConditionTempVarEdit::Create,
@@ -266,6 +274,7 @@ void MacroConditionTempVarEdit::VariableChanged(const TempVariableRef &var)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_tempVar = var;
+	IncrementTempVarInUseGeneration();
 }
 
 void MacroConditionTempVarEdit::Variable2Changed(const QString &text)
