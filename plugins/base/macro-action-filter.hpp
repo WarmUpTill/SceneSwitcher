@@ -41,6 +41,8 @@ public:
 	SettingsInputMethod _settingsInputMethod =
 		SettingsInputMethod::INDIVIDUAL_MANUAL;
 
+	std::vector<TempVariableRef> GetTempVarRefs() const;
+
 	SourceSelection _source;
 	FilterSelection _filter;
 	Action _action = Action::ENABLE;

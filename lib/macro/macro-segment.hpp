@@ -34,6 +34,7 @@ public:
 	std::string GetCustomLabel() const { return _customLabel; }
 	virtual bool Save(obs_data_t *obj) const = 0;
 	virtual bool Load(obs_data_t *obj) = 0;
+	virtual std::vector<TempVariableRef> GetTempVarRefs() const;
 	virtual bool PostLoad();
 	virtual std::string GetShortDesc() const;
 	virtual std::string GetId() const = 0;
@@ -54,6 +55,7 @@ protected:
 	void AddTempvar(const std::string &id, const std::string &name,
 			const std::string &description = "");
 
+	bool IsTempVarInUse(const std::string &id) const;
 	void SetTempVarValue(const std::string &id, const std::string &value);
 
 	template<typename T, typename = std::enable_if_t<
@@ -62,6 +64,14 @@ protected:
 	{
 		SetTempVarValue(id, value ? std::string("true")
 					  : std::string("false"));
+	}
+
+	template<typename F, typename = std::enable_if_t<std::is_invocable_v<F>>>
+	void SetTempVarValue(const std::string &id, F &&valueProvider)
+	{
+		if (IsTempVarInUse(id)) {
+			SetTempVarValue(id, valueProvider());
+		}
 	}
 
 private:

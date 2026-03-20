@@ -15,16 +15,22 @@ namespace advss {
 class MacroActionSource : public MacroAction {
 public:
 	MacroActionSource(Macro *m) : MacroAction(m) {}
-	bool PerformAction();
-	void LogAction() const;
-	bool Save(obs_data_t *obj) const;
-	bool Load(obs_data_t *obj);
-	std::string GetShortDesc() const;
-	std::string GetId() const { return id; };
+
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
+
+	bool PerformAction();
+	void LogAction() const;
+
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+
+	std::string GetShortDesc() const;
+	std::string GetId() const { return id; };
+
 	void ResolveVariablesToFixedValues();
 	void SetupTempVars();
+	std::vector<TempVariableRef> GetTempVarRefs() const;
 
 	enum class Action {
 		ENABLE,

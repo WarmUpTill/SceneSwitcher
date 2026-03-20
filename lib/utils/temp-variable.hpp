@@ -44,6 +44,7 @@ public:
 	void SetValue(const std::string &val);
 	void InvalidateValue();
 	TempVariableRef GetRef() const;
+	EXPORT bool IsInUse() const;
 
 private:
 	std::string _id = "";
@@ -53,6 +54,8 @@ private:
 	mutable std::mutex _lastValuesMutex;
 	std::vector<std::string> _lastValues;
 	bool _valueIsValid = false;
+	mutable bool _isInUseCache = false;
+	mutable uint64_t _isInUseCacheGeneration = UINT64_MAX;
 
 	std::weak_ptr<MacroSegment> _segment;
 	friend TempVariableSelection;
@@ -122,5 +125,6 @@ private:
 };
 
 void NotifyUIAboutTempVarChange(MacroSegment *);
+EXPORT void IncrementTempVarInUseGeneration();
 
 } // namespace advss

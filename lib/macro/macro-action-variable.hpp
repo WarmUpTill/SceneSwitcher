@@ -23,6 +23,7 @@ public:
 	bool PostLoad();
 	std::string GetShortDesc() const;
 	std::string GetId() const { return id; };
+	std::vector<TempVariableRef> GetTempVarRefs() const;
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
 	void SetSegmentIndexValue(int);
