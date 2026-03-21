@@ -286,9 +286,9 @@ QColor GetAverageColor(const QImage &img)
 
 	auto image = QImageToMat(img);
 	cv::Scalar meanColor = cv::mean(image);
-	int averageBlue = cvRound(meanColor[0]);
+	int averageRed = cvRound(meanColor[0]);
 	int averageGreen = cvRound(meanColor[1]);
-	int averageRed = cvRound(meanColor[2]);
+	int averageBlue = cvRound(meanColor[2]);
 
 	return QColor(averageRed, averageGreen, averageBlue);
 }
@@ -309,8 +309,8 @@ QColor GetDominantColor(const QImage &img, int k)
 	cv::TermCriteria criteria(
 		cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 100, 0.2);
 	cv::Mat labels, centers;
-	cv::kmeans(reshapedImage, k, labels, criteria, 1,
-		   cv::KMEANS_RANDOM_CENTERS, centers);
+	cv::kmeans(reshapedImage, k, labels, criteria, 3, cv::KMEANS_PP_CENTERS,
+		   centers);
 
 	// Find the dominant color
 	// Center of the cluster with the largest number of pixels
@@ -321,16 +321,16 @@ QColor GetDominantColor(const QImage &img, int k)
 
 	cv::Point max_loc;
 	cv::minMaxLoc(counts, nullptr, nullptr, nullptr, &max_loc);
-	try {
-		cv::Scalar dominantColor = centers.at<cv::Scalar>(max_loc.y);
-		const int blue = cv::saturate_cast<int>(dominantColor.val[0]);
-		const int green = cv::saturate_cast<int>(dominantColor.val[1]);
-		const int red = cv::saturate_cast<int>(dominantColor.val[2]);
-		const int alpha = cv::saturate_cast<int>(dominantColor.val[3]);
-		return QColor(red, green, blue, alpha);
-	} catch (...) {
-	}
-	return QColor();
+	const int clusterIdx = max_loc.x;
+	const int red =
+		cv::saturate_cast<int>(centers.at<float>(clusterIdx, 0));
+	const int green =
+		cv::saturate_cast<int>(centers.at<float>(clusterIdx, 1));
+	const int blue =
+		cv::saturate_cast<int>(centers.at<float>(clusterIdx, 2));
+	const int alpha =
+		cv::saturate_cast<int>(centers.at<float>(clusterIdx, 3));
+	return QColor(red, green, blue, alpha);
 }
 
 // Assumption is that QImage uses Format_RGBA8888.
