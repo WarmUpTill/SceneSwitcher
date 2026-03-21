@@ -377,13 +377,19 @@ bool MacroConditionVideo::CheckColor()
 		_screenshotData.GetImage(), _colorParameters.color,
 		_colorParameters.colorThreshold,
 		_colorParameters.matchThreshold);
-	// Way too slow for now
-	//SetTempVarValue("dominantColor", GetDominantColor(_screenshotData.image, 3)
-	//				 .name(QColor::HexArgb)
-	//				 .toStdString());
-	SetTempVarValue("color", GetAverageColor(_screenshotData.GetImage())
-					 .name(QColor::HexArgb)
-					 .toStdString());
+
+	SetTempVarValue("color", [&]() {
+		return GetAverageColor(_screenshotData.GetImage())
+			.name(QColor::HexArgb)
+			.toStdString();
+	});
+
+	SetTempVarValue("dominantColor", [&]() {
+		return GetDominantColor(_screenshotData.GetImage(), 3)
+			.name(QColor::HexArgb)
+			.toStdString();
+	});
+
 	return ret;
 }
 
@@ -479,6 +485,12 @@ void MacroConditionVideo::SetupTempVars()
 			obs_module_text("AdvSceneSwitcher.tempVar.video.color"),
 			obs_module_text(
 				"AdvSceneSwitcher.tempVar.video.color.description"));
+		AddTempvar(
+			"dominantColor",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.dominantColor"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.dominantColor.description"));
 		break;
 	case VideoCondition::MATCH:
 	case VideoCondition::DIFFER:
