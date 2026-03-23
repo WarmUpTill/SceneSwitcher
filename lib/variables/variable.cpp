@@ -12,16 +12,23 @@ static std::deque<std::shared_ptr<Item>> variables;
 
 // Keep track of the last time a variable was changed to save some work when
 // when resolving strings containing variables, etc.
+static std::mutex lastVariableChangeMutex;
 static std::chrono::high_resolution_clock::time_point lastVariableChange{};
+
+static void setLastVariableChangeTime()
+{
+	std::lock_guard<std::mutex> lock(lastVariableChangeMutex);
+	lastVariableChange = std::chrono::high_resolution_clock::now();
+}
 
 Variable::Variable() : Item()
 {
-	lastVariableChange = std::chrono::high_resolution_clock::now();
+	setLastVariableChangeTime();
 }
 
 Variable::~Variable()
 {
-	lastVariableChange = std::chrono::high_resolution_clock::now();
+	setLastVariableChangeTime();
 }
 
 void Variable::Load(obs_data_t *obj)
@@ -37,7 +44,7 @@ void Variable::Load(obs_data_t *obj)
 		SetValue(_defaultValue);
 	}
 
-	lastVariableChange = std::chrono::high_resolution_clock::now();
+	setLastVariableChangeTime();
 }
 
 void Variable::Save(obs_data_t *obj) const
@@ -45,8 +52,11 @@ void Variable::Save(obs_data_t *obj) const
 	Item::Save(obj);
 	obs_data_set_int(obj, "saveAction", static_cast<int>(_saveAction));
 
-	if (_saveAction == SaveAction::SAVE) {
-		obs_data_set_string(obj, "value", _value.c_str());
+	{
+		std::lock_guard<std::mutex> lock(_mutex);
+		if (_saveAction == SaveAction::SAVE) {
+			obs_data_set_string(obj, "value", _value.c_str());
+		}
 	}
 
 	obs_data_set_string(obj, "defaultValue", _defaultValue.c_str());
@@ -60,6 +70,18 @@ std::string Variable::Value(bool updateLastUsed) const
 	}
 
 	return _value;
+}
+
+std::string Variable::GetPreviousValue() const
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+	return _previousValue;
+}
+
+int Variable::GetValueChangeCount() const
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+	return _valueChangeCount;
 }
 
 std::optional<double> Variable::DoubleValue() const
@@ -79,8 +101,11 @@ void Variable::SetValue(const std::string &value)
 	_value = value;
 
 	UpdateLastUsed();
-	UpdateLastChanged();
-	lastVariableChange = std::chrono::high_resolution_clock::now();
+	if (_previousValue != _value) {
+		_lastChanged = std::chrono::high_resolution_clock::now();
+		++_valueChangeCount;
+	}
+	setLastVariableChangeTime();
 }
 
 void Variable::SetValue(double value)
@@ -90,6 +115,7 @@ void Variable::SetValue(double value)
 
 std::optional<uint64_t> Variable::GetSecondsSinceLastUse() const
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (_lastUsed.time_since_epoch().count() == 0) {
 		return {};
 	}
@@ -101,6 +127,7 @@ std::optional<uint64_t> Variable::GetSecondsSinceLastUse() const
 
 std::optional<uint64_t> Variable::GetSecondsSinceLastChange() const
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (_lastChanged.time_since_epoch().count() == 0) {
 		return {};
 	}
@@ -116,12 +143,10 @@ void Variable::UpdateLastUsed() const
 	_lastUsed = std::chrono::high_resolution_clock::now();
 }
 
-void Variable::UpdateLastChanged()
+void Variable::MarkAsUsed() const
 {
-	if (_previousValue != _value) {
-		_lastChanged = std::chrono::high_resolution_clock::now();
-		++_valueChangeCount;
-	}
+	std::lock_guard<std::mutex> lock(_mutex);
+	UpdateLastUsed();
 }
 
 static void populateSaveActionSelection(QComboBox *list)
@@ -206,7 +231,7 @@ bool VariableSettingsDialog::AskForSettings(QWidget *parent, Variable &settings)
 		dialog._defaultValue->toPlainText().toStdString();
 	settings._saveAction =
 		static_cast<Variable::SaveAction>(dialog._save->currentIndex());
-	lastVariableChange = std::chrono::high_resolution_clock::now();
+	setLastVariableChangeTime();
 
 	return true;
 }
@@ -461,6 +486,7 @@ void ImportVariables(obs_data_t *data)
 
 std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime()
 {
+	std::lock_guard<std::mutex> lock(lastVariableChangeMutex);
 	return lastVariableChange;
 }
 
