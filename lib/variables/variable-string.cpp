@@ -9,11 +9,12 @@ void StringVariable::Resolve() const
 		_resolvedValue = _value;
 		return;
 	}
-	if (_lastResolve == GetLastVariableChangeTime()) {
+	const auto lastChange = GetLastVariableChangeTime();
+	if (_lastResolve == lastChange) {
 		return;
 	}
 	_resolvedValue = SubstitueVariables(_value);
-	_lastResolve = GetLastVariableChangeTime();
+	_lastResolve = lastChange;
 }
 
 StringVariable::operator std::string() const
@@ -81,7 +82,7 @@ std::string SubstitueVariables(std::string str)
 		const auto &variable = std::dynamic_pointer_cast<Variable>(v);
 		const std::string pattern = "${" + variable->Name() + "}";
 		if (ReplaceAll(str, pattern, variable->Value(false))) {
-			variable->UpdateLastUsed();
+			variable->MarkAsUsed();
 		}
 	}
 	return str;

@@ -40,7 +40,7 @@ TEST_CASE("Variable", "[variable]")
 	variable.Value(false);
 	REQUIRE(*variable.GetSecondsSinceLastUse() > 1);
 
-	variable.UpdateLastUsed();
+	variable.MarkAsUsed();
 	REQUIRE(*variable.GetSecondsSinceLastUse() == 0);
 
 	variable.SetValue(123);
