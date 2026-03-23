@@ -54,7 +54,9 @@ MacroSegmentScriptInlineEdit::MacroSegmentScriptInlineEdit(
 	  _scriptType(new QComboBox(this)),
 	  _language(new QComboBox(this)),
 	  _script(new ScriptEditor(this)),
-	  _path(new FileSelection(FileSelection::Type::WRITE, this)),
+	  _path(new FileSelection(
+		  FileSelection::Type::WRITE, this,
+		  obs_module_text("AdvSceneSwitcher.script.file.select"))),
 	  _openFile(new QPushButton(
 		  obs_module_text("AdvSceneSwitcher.script.file.open"), this)),
 	  _fileLayout(new QHBoxLayout()),

@@ -7,9 +7,11 @@
 
 namespace advss {
 
-FileSelection::FileSelection(FileSelection::Type type, QWidget *parent)
+FileSelection::FileSelection(FileSelection::Type type, QWidget *parent,
+			     const QString &browseTitle)
 	: QWidget(parent),
 	  _type(type),
+	  _browseTitle(browseTitle),
 	  _filePath(new VariableLineEdit(this)),
 	  _browseButton(
 		  new QPushButton(obs_module_text("AdvSceneSwitcher.browse")))
@@ -55,11 +57,14 @@ void FileSelection::BrowseButtonClicked()
 	QString defaultPath = ValidPathOrDesktop(_filePath->text());
 	QString path;
 	if (_type == FileSelection::Type::WRITE) {
-		path = QFileDialog::getSaveFileName(this, "", defaultPath);
+		path = QFileDialog::getSaveFileName(this, _browseTitle,
+						    defaultPath);
 	} else if (_type == FileSelection::Type::READ) {
-		path = QFileDialog::getOpenFileName(this, "", defaultPath);
+		path = QFileDialog::getOpenFileName(this, _browseTitle,
+						    defaultPath);
 	} else {
-		path = QFileDialog::getExistingDirectory(this, "", defaultPath);
+		path = QFileDialog::getExistingDirectory(this, _browseTitle,
+							 defaultPath);
 	}
 
 	if (path.isEmpty()) {

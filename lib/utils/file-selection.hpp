@@ -19,7 +19,7 @@ public:
 
 	EXPORT
 	FileSelection(FileSelection::Type type = FileSelection::Type::READ,
-		      QWidget *parent = 0);
+		      QWidget *parent = 0, const QString &browseTitle = "");
 	EXPORT void SetPath(const StringVariable &);
 	EXPORT void SetPath(const QString &);
 	EXPORT QString GetPath() const;
@@ -34,6 +34,7 @@ signals:
 
 private:
 	Type _type;
+	QString _browseTitle;
 	VariableLineEdit *_filePath;
 	QPushButton *_browseButton;
 };
