@@ -9,19 +9,15 @@ namespace advss {
 
 std::variant<double, std::string> EvalMathExpression(const std::string &expr)
 {
-	static bool setupDone = false;
-	static exprtk::symbol_table<double> symbolTable;
-	static std::random_device rd;
-	static std::mt19937 gen(rd());
-	static std::uniform_real_distribution<double> dis(0.0, 1.0);
 	static auto randomFunc = []() {
+		thread_local std::mt19937 gen(std::random_device{}());
+		thread_local std::uniform_real_distribution<double> dis(0.0,
+									1.0);
 		return dis(gen);
 	};
 
-	if (!setupDone) {
-		symbolTable.add_function("random", randomFunc);
-		setupDone = true;
-	}
+	exprtk::symbol_table<double> symbolTable;
+	symbolTable.add_function("random", randomFunc);
 
 	exprtk::expression<double> expression;
 	expression.register_symbol_table(symbolTable);
