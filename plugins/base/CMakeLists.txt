@@ -25,6 +25,8 @@ target_sources(
           macro-action-obs-settings.hpp
           macro-action-osc.cpp
           macro-action-osc.hpp
+          macro-action-play-audio.cpp
+          macro-action-play-audio.hpp
           macro-action-plugin-state.cpp
           macro-action-plugin-state.hpp
           macro-action-profile.cpp
