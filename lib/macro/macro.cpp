@@ -428,10 +428,11 @@ bool Macro::RunActionsHelper(
 		}
 		if (action->Enabled()) {
 			action->LogAction();
-			bool actionResult = false;
-			action->WithLock([&action, &actionResult]() {
-				actionResult = action->PerformAction();
+			std::shared_ptr<MacroAction> actionCopy;
+			action->WithLock([&action, &actionCopy]() {
+				actionCopy = action->Copy();
 			});
+			bool actionResult = actionCopy->PerformAction();
 			actionsExecutedSuccessfully =
 				actionsExecutedSuccessfully && actionResult;
 		} else {
