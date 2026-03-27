@@ -14,11 +14,6 @@ On Linux the plugin is available via the **Flatpak** package manager for users w
 flatpak install com.obsproject.Studio.Plugin.SceneSwitcher
 ```
 
-The **Snap** package manager offers an OBS Studio installation which is bundled with the plugin:
-```
-sudo snap install obs-studio
-```
-
 More information can be found [here](https://github.com/WarmUpTill/SceneSwitcher/wiki/Installation).
 
 ## Contributing
