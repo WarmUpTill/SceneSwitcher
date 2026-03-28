@@ -48,8 +48,17 @@ if(MSVC)
 endif()
 
 target_sources(
-  ${PROJECT_NAME} PRIVATE macro-action-http.cpp macro-action-http.hpp
-                          key-value-list.cpp key-value-list.hpp)
+  ${PROJECT_NAME}
+  PRIVATE macro-action-http.cpp
+          macro-action-http.hpp
+          macro-condition-http.cpp
+          macro-condition-http.hpp
+          http-server.cpp
+          http-server.hpp
+          http-server-tab.cpp
+          http-server-tab.hpp
+          key-value-list.cpp
+          key-value-list.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
