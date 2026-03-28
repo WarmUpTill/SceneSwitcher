@@ -485,10 +485,10 @@ void MacroActionHttpEdit::SetWidgetLayout()
 
 	auto layout = new QVBoxLayout;
 	layout->addLayout(actionLayout);
-	layout->addWidget(_setHeaders);
-	layout->addLayout(_headerListLayout);
 	layout->addWidget(_setParams);
 	layout->addLayout(_paramListLayout);
+	layout->addWidget(_setHeaders);
+	layout->addLayout(_headerListLayout);
 	layout->addLayout(_contentTypeLayout);
 	layout->addLayout(_bodyLayout);
 	layout->addLayout(timeoutLayout);
