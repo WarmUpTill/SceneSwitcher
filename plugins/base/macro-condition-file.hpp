@@ -7,9 +7,6 @@
 #include <QWidget>
 #include <QComboBox>
 #include <QDateTime>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QCheckBox>
 
 namespace advss {
 
@@ -26,11 +23,6 @@ public:
 		return std::make_shared<MacroConditionFile>(m);
 	}
 
-	enum class FileType {
-		LOCAL,
-		REMOTE,
-	};
-
 	enum class Condition {
 		MATCH,
 		CONTENT_CHANGE,
@@ -46,15 +38,9 @@ public:
 	StringVariable _text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig _regex;
 
-	// TODO: Remove in future version
-	bool _useTime = false;
-	bool _onlyMatchIfChanged = false;
-	FileType _fileType = FileType::LOCAL;
-
 private:
 	bool MatchFileContent(QString &filedata);
-	bool CheckRemoteFileContent();
-	bool CheckLocalFileContent();
+	bool CheckFileContent();
 	bool CheckChangeContent();
 	bool CheckChangeDate();
 	void SetupTempVars();
@@ -93,28 +79,21 @@ public:
 	}
 
 private slots:
-	void FileTypeChanged(int index);
 	void ConditionChanged(int index);
 	void PathChanged(const QString &text);
 	void MatchTextChanged();
 	void RegexChanged(const RegexConfig &);
-	void CheckModificationDateChanged(int state);
-	void OnlyMatchIfChangedChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
 
-protected:
-	QComboBox *_fileTypes;
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_conditions;
 	FileSelection *_filePath;
 	VariableTextEdit *_matchText;
 	RegexConfigWidget *_regex;
-	QCheckBox *_checkModificationDate;
-	QCheckBox *_checkFileContent;
 	std::shared_ptr<MacroConditionFile> _entryData;
-
-private:
-	void SetWidgetVisibility();
 
 	bool _loading = true;
 };
