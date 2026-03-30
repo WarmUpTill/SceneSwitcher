@@ -175,6 +175,18 @@ target_sources(
           ${ADVSS_SOURCE_DIR}/lib/variables/variable-spinbox.cpp
           ${ADVSS_SOURCE_DIR}/lib/variables/variable-string.cpp)
 
+# --- macro-condition-file --- #
+
+target_include_directories(${PROJECT_NAME}
+                           PRIVATE ${ADVSS_SOURCE_DIR}/plugins/base)
+
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE test-macro-condition-file.cpp
+          ${ADVSS_SOURCE_DIR}/plugins/base/macro-condition-file.cpp
+          ${ADVSS_SOURCE_DIR}/lib/utils/file-selection.cpp
+          ${ADVSS_SOURCE_DIR}/lib/variables/variable-text-edit.cpp)
+
 # --- Testing --- #
 
 enable_testing()
