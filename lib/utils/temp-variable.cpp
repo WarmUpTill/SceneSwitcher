@@ -723,13 +723,12 @@ TempVarSignalManager *TempVarSignalManager::Instance()
 void NotifyUIAboutTempVarChange(MacroSegment *segment)
 {
 	IncrementTempVarInUseGeneration();
-	obs_queue_task(
-		OBS_TASK_UI,
+	QueueUITask(
 		[](void *segment) {
 			TempVarSignalManager::Instance()->SegmentTempVarsChanged(
 				(MacroSegment *)segment);
 		},
-		segment, false);
+		segment);
 }
 
 } // namespace advss
