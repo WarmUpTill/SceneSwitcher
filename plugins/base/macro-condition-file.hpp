@@ -62,6 +62,7 @@ private:
 	Condition _condition = Condition::MATCH;
 	QDateTime _lastMod;
 	size_t _lastHash = 0;
+	bool _firstContentCheck = true;
 	std::string _lastFile;
 	std::string _basename;
 	std::string _basenameComplete;

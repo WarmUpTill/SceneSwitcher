@@ -124,8 +124,10 @@ bool MacroConditionFile::CheckChangeContent()
 
 	SetTempVarValue("content", filedata.toStdString());
 	size_t newHash = strHash(filedata.toUtf8().constData());
-	const bool contentChanged = newHash != _lastHash;
+	const bool contentChanged = !_firstContentCheck &&
+				    (newHash != _lastHash);
 	_lastHash = newHash;
+	_firstContentCheck = false;
 	return contentChanged;
 }
 
@@ -138,7 +140,7 @@ bool MacroConditionFile::CheckChangeDate()
 	QFile file(QString::fromStdString(_file));
 	QDateTime newLastMod = QFileInfo(file).lastModified();
 	SetVariableValue(newLastMod.toString().toStdString());
-	const bool dateChanged = _lastMod != newLastMod;
+	const bool dateChanged = _lastMod.isValid() && (_lastMod != newLastMod);
 	_lastMod = newLastMod;
 	SetTempVarValue("date", newLastMod.toString(Qt::ISODate).toStdString());
 	return dateChanged;
