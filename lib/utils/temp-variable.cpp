@@ -5,11 +5,20 @@
 #include "macro-edit.hpp"
 #include "macro-segment.hpp"
 #include "plugin-state-helpers.hpp"
+#include "sync-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
+#include "variable.hpp"
 
-#include <QVariant>
 #include <QAbstractItemView>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPropertyAnimation>
+#include <QPushButton>
+#include <QToolButton>
+#include <QVariant>
+#include <QVBoxLayout>
+
 #include <atomic>
 
 Q_DECLARE_METATYPE(advss::TempVariableRef);
@@ -729,6 +738,295 @@ void NotifyUIAboutTempVarChange(MacroSegment *segment)
 				(MacroSegment *)segment);
 		},
 		segment);
+}
+
+TempVarOutputMappingsWidget::TempVarOutputMappingsWidget(QWidget *parent)
+	: QWidget(parent),
+	  _rowsLayout(new QVBoxLayout()),
+	  _addButton(new QPushButton(
+		  obs_module_text("AdvSceneSwitcher.tempVar.outputMappings.add"),
+		  this)),
+	  _animation(new QPropertyAnimation(this, "maximumHeight", this))
+{
+	_rowsLayout->setContentsMargins(0, 0, 0, 0);
+	_rowsLayout->setSpacing(2);
+	auto rowsContainer = new QWidget(this);
+	rowsContainer->setLayout(_rowsLayout);
+
+	auto label = new QLabel(
+		obs_module_text("AdvSceneSwitcher.tempVar.outputMappings"),
+		this);
+
+	auto mainLayout = new QVBoxLayout();
+	mainLayout->addWidget(label);
+	mainLayout->addWidget(rowsContainer);
+	mainLayout->addWidget(_addButton);
+	setLayout(mainLayout);
+
+	_animation->setDuration(300);
+	_animation->setEasingCurve(QEasingCurve::InOutQuad);
+	connect(_animation, &QPropertyAnimation::finished, this,
+		&TempVarOutputMappingsWidget::AnimationFinished);
+
+	hide();
+
+	connect(_addButton, &QPushButton::clicked, this,
+		&TempVarOutputMappingsWidget::Add);
+	connect(TempVarSignalManager::Instance(),
+		SIGNAL(SegmentTempVarsChanged(MacroSegment *)), this,
+		SLOT(SegmentTempVarsChanged(MacroSegment *)));
+}
+
+void TempVarOutputMappingsWidget::SetSegment(MacroSegment *segment)
+{
+	_segment = segment;
+	_panelExpanded = false;
+	Rebuild();
+}
+
+void TempVarOutputMappingsWidget::Add()
+{
+	if (!_segment) {
+		return;
+	}
+	auto mappings = _segment->GetVarMappings();
+	mappings.push_back(VarMapping{});
+	{
+		auto lock = LockContext();
+		_segment->SetVarMappings(mappings);
+	}
+	Rebuild();
+}
+
+void TempVarOutputMappingsWidget::Remove(int rowIdx)
+{
+	if (!_segment) {
+		return;
+	}
+	auto mappings = _segment->GetVarMappings();
+	if (rowIdx < 0 || rowIdx >= (int)mappings.size()) {
+		return;
+	}
+	mappings.erase(mappings.begin() + rowIdx);
+	{
+		auto lock = LockContext();
+		_segment->SetVarMappings(mappings);
+	}
+	Rebuild();
+}
+
+void TempVarOutputMappingsWidget::SegmentTempVarsChanged(MacroSegment *segment)
+{
+	if (segment != _segment) {
+		return;
+	}
+	// Re-populate each temp var combobox in case temp vars were added/removed
+	_loading = true;
+	const auto &mappings = _segment->GetVarMappings();
+	for (int i = 0; i < (int)_rows.size(); i++) {
+		auto combo = _rows[i].tempVarCombo;
+		const QSignalBlocker blocker(combo);
+		combo->clear();
+		PopulateTempVarCombo(combo);
+		if (i < (int)mappings.size() &&
+		    mappings[i].tempVar.HasValidID()) {
+			QVariant v;
+			v.setValue(mappings[i].tempVar);
+			combo->setCurrentIndex(combo->findData(v));
+		}
+	}
+	_loading = false;
+	UpdateVisibility();
+}
+
+void TempVarOutputMappingsWidget::WriteBackMappings()
+{
+	if (_loading || !_segment) {
+		return;
+	}
+	std::vector<VarMapping> mappings;
+	for (const auto &row : _rows) {
+		VarMapping m;
+		const int idx = row.tempVarCombo->currentIndex();
+		if (idx >= 0) {
+			m.tempVar = row.tempVarCombo->itemData(idx)
+					    .value<TempVariableRef>();
+		}
+
+		auto item = row.varSelection->GetCurrentItem();
+		if (!item) {
+			continue;
+		}
+
+		m.variable = GetWeakVariableByName(item->Name());
+		mappings.push_back(std::move(m));
+	}
+	auto lock = LockContext();
+	_segment->SetVarMappings(mappings);
+}
+
+void TempVarOutputMappingsWidget::Rebuild()
+{
+	_loading = true;
+
+	// Remove all existing row widgets from layout and delete them
+	for (auto &row : _rows) {
+		_rowsLayout->removeWidget(row.container);
+		delete row.container;
+	}
+	_rows.clear();
+
+	if (!_segment) {
+		_loading = false;
+		UpdateVisibility();
+		return;
+	}
+
+	const auto &mappings = _segment->GetVarMappings();
+	for (int i = 0; i < (int)mappings.size(); i++) {
+		const auto &mapping = mappings[i];
+
+		auto container = new QWidget(this);
+		auto rowLayout = new QHBoxLayout();
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+
+		auto tempVarCombo = new FilterComboBox(
+			container,
+			obs_module_text("AdvSceneSwitcher.tempVar.select"));
+		tempVarCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+		tempVarCombo->setMaximumWidth(350);
+		tempVarCombo->setDuplicatesEnabled(true);
+		PopulateTempVarCombo(tempVarCombo);
+		if (mapping.tempVar.HasValidID()) {
+			QVariant v;
+			v.setValue(mapping.tempVar);
+			tempVarCombo->setCurrentIndex(
+				tempVarCombo->findData(v));
+		}
+
+		auto arrowLabel = new QLabel(container);
+		{
+			QIcon icon;
+			const auto path = (GetThemeTypeName() == "Light")
+						  ? "theme:Light/right.svg"
+						  : "theme:Dark/right.svg";
+			icon.addFile(QString::fromUtf8(path), QSize(),
+				     QIcon::Normal, QIcon::Off);
+			arrowLabel->setPixmap(icon.pixmap(16, 16));
+		}
+
+		auto varSel = new VariableSelection(container);
+		varSel->SetVariable(mapping.variable);
+
+		auto removeBtn = new QToolButton(container);
+		removeBtn->setProperty("themeID", QVariant(QString::fromUtf8(
+							  "removeIconSmall")));
+		removeBtn->setProperty(
+			"class", QVariant(QString::fromUtf8("icon-trash")));
+		removeBtn->setToolTip(obs_module_text(
+			"AdvSceneSwitcher.tempVar.outputMappings.remove"));
+
+		rowLayout->addWidget(tempVarCombo, 1);
+		rowLayout->addWidget(arrowLabel);
+		rowLayout->addWidget(varSel, 1);
+		rowLayout->addWidget(removeBtn);
+		container->setLayout(rowLayout);
+
+		_rowsLayout->addWidget(container);
+		_rows.push_back({container, tempVarCombo, varSel});
+
+		const int capturedIdx = i;
+		connect(removeBtn, &QPushButton::clicked, this,
+			[this, capturedIdx]() { Remove(capturedIdx); });
+		connect(tempVarCombo,
+			QOverload<int>::of(&QComboBox::currentIndexChanged),
+			this, &TempVarOutputMappingsWidget::WriteBackMappings);
+		connect(varSel, &VariableSelection::SelectionChanged, this,
+			[this](const QString &) { WriteBackMappings(); });
+	}
+
+	_loading = false;
+	UpdateVisibility();
+}
+
+bool TempVarOutputMappingsWidget::IsExpandable() const
+{
+	return _segment && !_segment->GetOwnTempVars().empty();
+}
+
+void TempVarOutputMappingsWidget::SetPanelExpanded(bool expanded)
+{
+	_panelExpanded = expanded;
+	UpdateHeight();
+}
+
+void TempVarOutputMappingsWidget::SetSectionCollapsed(bool collapsed)
+{
+	_sectionCollapsed = collapsed;
+	UpdateHeight();
+}
+
+void TempVarOutputMappingsWidget::AnimateTo(int targetHeight)
+{
+	if (_animation->state() == QAbstractAnimation::Running) {
+		_animation->stop();
+	}
+
+	if (targetHeight > 0 && !isVisible()) {
+		setMinimumHeight(0);
+		setMaximumHeight(0);
+		show();
+	}
+
+	const int currentMax = maximumHeight();
+	const int currentHeight = (currentMax >= QWIDGETSIZE_MAX) ? height()
+								  : currentMax;
+
+	_animationTargetHeight = targetHeight;
+	_animation->setStartValue(currentHeight);
+	_animation->setEndValue(targetHeight);
+	_animation->start();
+}
+
+void TempVarOutputMappingsWidget::AnimationFinished()
+{
+	if (_animationTargetHeight > 0) {
+		setMaximumHeight(QWIDGETSIZE_MAX);
+	} else {
+		hide();
+		setMaximumHeight(QWIDGETSIZE_MAX);
+	}
+}
+
+void TempVarOutputMappingsWidget::UpdateHeight()
+{
+	const bool shouldShow = _panelExpanded && !_sectionCollapsed &&
+				IsExpandable();
+	if (shouldShow) {
+		AnimateTo(sizeHint().height());
+	} else {
+		AnimateTo(0);
+	}
+}
+
+void TempVarOutputMappingsWidget::UpdateVisibility()
+{
+	const bool expandable = IsExpandable();
+	emit ExpandableChanged(expandable);
+	UpdateHeight();
+}
+
+void TempVarOutputMappingsWidget::PopulateTempVarCombo(
+	FilterComboBox *combo) const
+{
+	if (!_segment) {
+		return;
+	}
+	for (const auto &var : _segment->GetOwnTempVars()) {
+		QVariant v;
+		v.setValue(var.GetRef());
+		combo->addItem(QString::fromStdString(var.Name()), v);
+	}
 }
 
 } // namespace advss

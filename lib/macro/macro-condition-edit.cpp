@@ -126,10 +126,12 @@ MacroConditionEdit::MacroConditionEdit(
 	_section->AddHeaderWidget(_conditionSelection);
 	_section->AddHeaderWidget(_headerInfo);
 	_section->AddHeaderWidget(_dur);
+	_section->AddHeaderWidget(_varMappingToggle);
 
 	QVBoxLayout *conditionLayout = new QVBoxLayout;
 	conditionLayout->setContentsMargins({7, 7, 7, 7});
 	conditionLayout->addWidget(_section);
+	conditionLayout->addWidget(_outputMappings);
 	_contentLayout->addLayout(conditionLayout);
 
 	QHBoxLayout *mainLayout = new QHBoxLayout;
@@ -204,7 +206,10 @@ void MacroConditionEdit::SetupWidgets(bool basicSetup)
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
+	QWidget::connect(widget, SIGNAL(ShowVariableMappings(bool)), this,
+			 SLOT(ShowVariableMappings(bool)));
 	_section->SetContent(widget, (*_entryData)->GetCollapsed());
+	SetupVarMappings((*_entryData).get());
 	SetFocusPolicyOfWidgets();
 
 	_allWidgetsAreSetup = true;
@@ -245,7 +250,10 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));
+	QWidget::connect(widget, SIGNAL(ShowVariableMappings(bool)), this,
+			 SLOT(ShowVariableMappings(bool)));
 	_section->SetContent(widget);
+	SetupVarMappings((*_entryData).get());
 	_dur->setVisible(MacroConditionFactory::UsesDurationModifier(id));
 	SetFocusPolicyOfWidgets();
 }

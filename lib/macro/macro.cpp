@@ -113,6 +113,7 @@ static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
 	condition->WithLock([&condition, &conditionMatched]() {
 		conditionMatched = condition->EvaluateCondition();
 	});
+	condition->ApplyVarMappings();
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const auto timeSpent = endTime - startTime;
 
@@ -432,6 +433,7 @@ bool Macro::RunActionsHelper(
 			action->WithLock([&action, &actionResult]() {
 				actionResult = action->PerformAction();
 			});
+			action->ApplyVarMappings();
 			actionsExecutedSuccessfully =
 				actionsExecutedSuccessfully && actionResult;
 		} else {
