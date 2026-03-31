@@ -11,10 +11,11 @@ const std::string MacroActionFilter::id = "filter";
 
 std::vector<TempVariableRef> MacroActionFilter::GetTempVarRefs() const
 {
-	if (!_tempVar.HasValidID()) {
-		return {};
+	auto refs = MacroSegment::GetTempVarRefs();
+	if (_tempVar.HasValidID()) {
+		refs.push_back(_tempVar);
 	}
-	return {_tempVar};
+	return refs;
 }
 
 bool MacroActionFilter::_registered = MacroActionFactory::Register(

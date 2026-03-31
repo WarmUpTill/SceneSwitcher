@@ -5,10 +5,11 @@
 #include <obs-data.h>
 #include <mutex>
 #include <optional>
-#include <QEnterEvent>
-#include <QEvent>
-#include <QStringList>
 #include <string>
+
+class QPropertyAnimation;
+class QPushButton;
+class QVBoxLayout;
 
 namespace advss {
 
@@ -17,6 +18,9 @@ class MacroEdit;
 class MacroSegment;
 class TempVariableRef;
 class TempVariableSelection;
+class TempVarOutputMappingsWidget;
+class VariableSelection;
+struct VarMapping;
 
 // TempVariables are variables that are local to a given macro.
 // They can be created and used by macro segments.
@@ -126,5 +130,49 @@ private:
 
 void NotifyUIAboutTempVarChange(MacroSegment *);
 EXPORT void IncrementTempVarInUseGeneration();
+
+class ADVSS_EXPORT TempVarOutputMappingsWidget : public QWidget {
+	Q_OBJECT
+
+public:
+	TempVarOutputMappingsWidget(QWidget *parent);
+	void SetSegment(MacroSegment *segment);
+	void SetPanelExpanded(bool expanded);
+	void SetSectionCollapsed(bool collapsed);
+	bool IsExpandable() const;
+
+signals:
+	void ExpandableChanged(bool);
+
+private slots:
+	void Add();
+	void Remove(int rowIdx);
+	void SegmentTempVarsChanged(MacroSegment *segment);
+	void WriteBackMappings();
+	void AnimationFinished();
+
+private:
+	void Rebuild();
+	void UpdateVisibility();
+	void UpdateHeight();
+	void AnimateTo(int targetHeight);
+	void PopulateTempVarCombo(FilterComboBox *combo) const;
+
+	struct MappingRow {
+		QWidget *container;
+		FilterComboBox *tempVarCombo;
+		VariableSelection *varSelection;
+	};
+
+	MacroSegment *_segment = nullptr;
+	QVBoxLayout *_rowsLayout;
+	QPushButton *_addButton;
+	std::vector<MappingRow> _rows;
+	bool _loading = false;
+	bool _panelExpanded = false;
+	bool _sectionCollapsed = false;
+	int _animationTargetHeight = 0;
+	QPropertyAnimation *_animation;
+};
 
 } // namespace advss

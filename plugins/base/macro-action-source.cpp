@@ -15,10 +15,11 @@ const std::string MacroActionSource::id = "source";
 
 std::vector<TempVariableRef> MacroActionSource::GetTempVarRefs() const
 {
-	if (!_tempVar.HasValidID()) {
-		return {};
+	auto refs = MacroSegment::GetTempVarRefs();
+	if (_tempVar.HasValidID()) {
+		refs.push_back(_tempVar);
 	}
-	return {_tempVar};
+	return refs;
 }
 
 bool MacroActionSource::_registered = MacroActionFactory::Register(

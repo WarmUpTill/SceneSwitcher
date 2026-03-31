@@ -1,8 +1,10 @@
 #include "macro-segment.hpp"
 #include "macro.hpp"
 #include "mouse-wheel-guard.hpp"
+#include "path-helpers.hpp"
 #include "section.hpp"
 #include "ui-helpers.hpp"
+#include "variable.hpp"
 
 #include <QApplication>
 #include <QEvent>
@@ -15,7 +17,48 @@ namespace advss {
 
 std::vector<TempVariableRef> MacroSegment::GetTempVarRefs() const
 {
-	return {};
+	std::vector<TempVariableRef> refs;
+	for (const auto &mapping : _varMappings) {
+		if (mapping.tempVar.HasValidID()) {
+			refs.push_back(mapping.tempVar);
+		}
+	}
+	return refs;
+}
+
+void MacroSegment::ApplyVarMappings()
+{
+	auto macro = GetMacro();
+	for (const auto &mapping : _varMappings) {
+		auto var = mapping.variable.lock();
+		if (!var) {
+			continue;
+		}
+		const auto tempVar = mapping.tempVar.GetTempVariable(macro);
+		if (!tempVar) {
+			continue;
+		}
+		const auto value = tempVar->Value();
+		if (!value) {
+			continue;
+		}
+		var->SetValue(*value);
+	}
+}
+
+const std::vector<VarMapping> &MacroSegment::GetVarMappings() const
+{
+	return _varMappings;
+}
+
+void MacroSegment::SetVarMappings(const std::vector<VarMapping> &mappings)
+{
+	_varMappings = mappings;
+}
+
+std::vector<TempVariable> MacroSegment::GetOwnTempVars() const
+{
+	return _tempVariables;
 }
 
 MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
@@ -24,14 +67,32 @@ MacroSegment::MacroSegment(Macro *m, bool supportsVariableValue)
 {
 }
 
+void MacroSegment::SetVarMappingExpanded(bool expanded)
+{
+	_varMappingExpanded = expanded;
+}
+
 bool MacroSegment::Save(obs_data_t *obj) const
 {
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_bool(data, "collapsed", _collapsed);
+	obs_data_set_bool(data, "varMappingExpanded", _varMappingExpanded);
 	obs_data_set_bool(data, "useCustomLabel", _useCustomLabel);
 	obs_data_set_string(data, "customLabel", _customLabel.c_str());
 	obs_data_set_bool(data, "enabled", _enabled);
 	obs_data_set_int(data, "version", 1);
+
+	OBSDataArrayAutoRelease mappingsArray = obs_data_array_create();
+	for (const auto &mapping : _varMappings) {
+		OBSDataAutoRelease item = obs_data_create();
+		mapping.tempVar.Save(item, GetMacro(), "tempVar");
+		obs_data_set_string(
+			item, "variable",
+			GetWeakVariableName(mapping.variable).c_str());
+		obs_data_array_push_back(mappingsArray, item);
+	}
+	obs_data_set_array(data, "varMappings", mappingsArray);
+
 	obs_data_set_obj(obj, "segmentSettings", data);
 	return true;
 }
@@ -40,6 +101,7 @@ bool MacroSegment::Load(obs_data_t *obj)
 {
 	OBSDataAutoRelease data = obs_data_get_obj(obj, "segmentSettings");
 	_collapsed = obs_data_get_bool(data, "collapsed");
+	_varMappingExpanded = obs_data_get_bool(data, "varMappingExpanded");
 	_useCustomLabel = obs_data_get_bool(data, "useCustomLabel");
 	_customLabel = obs_data_get_string(data, "customLabel");
 	obs_data_set_default_bool(data, "enabled", true);
@@ -48,6 +110,20 @@ bool MacroSegment::Load(obs_data_t *obj)
 	// TODO: remove this fallback at some point
 	if (!obs_data_has_user_value(data, "version")) {
 		_enabled = obs_data_get_bool(obj, "enabled");
+	}
+
+	_varMappings.clear();
+	OBSDataArrayAutoRelease mappingsArray =
+		obs_data_get_array(data, "varMappings");
+	const size_t count = obs_data_array_count(mappingsArray);
+	_varMappings.reserve(count);
+	for (size_t i = 0; i < count; i++) {
+		OBSDataAutoRelease item = obs_data_array_item(mappingsArray, i);
+		VarMapping mapping;
+		mapping.variable = GetWeakVariableByName(
+			obs_data_get_string(item, "variable"));
+		_varMappings.push_back(std::move(mapping));
+		_varMappings.back().tempVar.Load(item, GetMacro(), "tempVar");
 	}
 
 	ClearAvailableTempvars();
@@ -226,11 +302,38 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent)
 	  _headerInfo(new QLabel()),
 	  _frame(new QWidget),
 	  _contentLayout(new QVBoxLayout),
+	  _outputMappings(new TempVarOutputMappingsWidget(this)),
+	  _varMappingToggle(new QPushButton(this)),
 	  _noBorderframe(new QFrame),
 	  _borderFrame(new QFrame),
 	  _dropLineAbove(new QFrame),
 	  _dropLineBelow(new QFrame)
 {
+	const auto iconPath = QString::fromStdString(GetDataFilePath(
+		"res/images/" + GetThemeTypeName() + "Variable.svg"));
+	_varMappingToggle->setIcon(QIcon(iconPath));
+	_varMappingToggle->setMaximumWidth(22);
+	_varMappingToggle->setFlat(true);
+	_varMappingToggle->setCheckable(true);
+	_varMappingToggle->setVisible(false);
+	_varMappingToggle->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.tempVar.outputMappings.toggle"));
+
+	QWidget::connect(_varMappingToggle, &QPushButton::toggled,
+			 _outputMappings,
+			 &TempVarOutputMappingsWidget::SetPanelExpanded);
+	QWidget::connect(_varMappingToggle, &QPushButton::toggled, this,
+			 [this](bool checked) {
+				 if (Data()) {
+					 Data()->SetVarMappingExpanded(checked);
+				 }
+			 });
+	QWidget::connect(_outputMappings,
+			 &TempVarOutputMappingsWidget::ExpandableChanged,
+			 _varMappingToggle, &QPushButton::setVisible);
+	QWidget::connect(_section, &Section::Collapsed, _outputMappings,
+			 &TempVarOutputMappingsWidget::SetSectionCollapsed);
+
 	_dropLineAbove->setLineWidth(3);
 	_dropLineAbove->setFixedHeight(11);
 	_dropLineBelow->setLineWidth(3);
@@ -290,6 +393,21 @@ MacroSegmentEdit::MacroSegmentEdit(QWidget *parent)
 
 	// Enable dragging while clicking on the header text
 	_headerInfo->installEventFilter(this);
+}
+
+void MacroSegmentEdit::SetupVarMappings(MacroSegment *segment)
+{
+	_outputMappings->SetSegment(segment);
+	_varMappingToggle->setChecked(segment &&
+				      segment->GetVarMappingExpanded());
+}
+
+void MacroSegmentEdit::ShowVariableMappings(bool show)
+{
+	_varMappingToggle->setChecked(show);
+	if (Data()) {
+		Data()->SetVarMappingExpanded(show);
+	}
 }
 
 bool MacroSegmentEdit::eventFilter(QObject *obj, QEvent *ev)

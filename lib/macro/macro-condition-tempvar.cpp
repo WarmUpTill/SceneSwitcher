@@ -8,10 +8,11 @@ const std::string MacroConditionTempVar::id = "temp_var";
 
 std::vector<TempVariableRef> MacroConditionTempVar::GetTempVarRefs() const
 {
-	if (!_tempVar.HasValidID()) {
-		return {};
+	auto refs = MacroSegment::GetTempVarRefs();
+	if (_tempVar.HasValidID()) {
+		refs.push_back(_tempVar);
 	}
-	return {_tempVar};
+	return refs;
 }
 
 bool MacroConditionTempVar::_registered = MacroConditionFactory::Register(
