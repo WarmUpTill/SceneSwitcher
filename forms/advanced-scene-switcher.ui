@@ -251,6 +251,13 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QCheckBox" name="suppressCrashRecoveryDialog">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.suppressCrashRecoveryDialog</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
