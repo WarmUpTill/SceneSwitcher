@@ -1,4 +1,5 @@
 #include "advanced-scene-switcher.hpp"
+#include "crash-handler.hpp"
 #include "file-selection.hpp"
 #include "filter-combo-box.hpp"
 #include "first-run-wizard.hpp"
@@ -192,6 +193,15 @@ void AdvSceneSwitcher::on_warnPluginLoadFailure_stateChanged(int state)
 	}
 
 	switcher->warnPluginLoadFailure = state;
+}
+
+void AdvSceneSwitcher::on_suppressCrashRecoveryDialog_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	SetSuppressCrashDialog(state);
 }
 
 static bool isLegacyTab(const QString &name)
@@ -946,6 +956,7 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	FilterComboBox::SetFilterBehaviourEnabled(
 		!switcher->disableFilterComboboxFilter);
 	ui->warnPluginLoadFailure->setChecked(switcher->warnPluginLoadFailure);
+	ui->suppressCrashRecoveryDialog->setChecked(GetSuppressCrashDialog());
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 
 	populatePriorityFunctionList(ui->priorityList);

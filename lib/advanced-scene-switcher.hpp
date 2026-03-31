@@ -66,6 +66,7 @@ public slots:
 	void on_uiHintsDisable_stateChanged(int state);
 	void on_disableComboBoxFilter_stateChanged(int state);
 	void on_warnPluginLoadFailure_stateChanged(int state);
+	void on_suppressCrashRecoveryDialog_stateChanged(int state);
 	void on_hideLegacyTabs_stateChanged(int state);
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();

@@ -2,17 +2,18 @@
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
-#include "ui-helpers.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs-module.h>
 
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
+#include <QLabel>
 #include <QMainWindow>
-#include <QTimer>
-
-#include <thread>
+#include <QVBoxLayout>
 
 namespace advss {
 
@@ -25,10 +26,29 @@ static constexpr bool handleUncleanShutdown = true;
 #endif
 
 static bool wasCleanShutdown = false;
+static bool suppressCrashDialog = false;
+
+bool GetSuppressCrashDialog()
+{
+	return suppressCrashDialog;
+}
+
+void SetSuppressCrashDialog(bool suppress)
+{
+	suppressCrashDialog = suppress;
+}
 
 static void setup();
 static bool setupDone = []() {
 	AddPluginInitStep(setup);
+	AddSaveStep([](obs_data_t *obj) {
+		obs_data_set_bool(obj, "suppressCrashDialog",
+				  suppressCrashDialog);
+	});
+	AddLoadStep([](obs_data_t *obj) {
+		suppressCrashDialog =
+			obs_data_get_bool(obj, "suppressCrashDialog");
+	});
 	return true;
 }();
 
@@ -108,8 +128,39 @@ static bool wasUncleanShutdown()
 
 static void askForStartupSkip()
 {
-	bool skipStart = DisplayMessage(
-		obs_module_text("AdvSceneSwitcher.crashDetected"), true, false);
+	auto mainWindow =
+		static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	auto dialog = new QDialog(mainWindow);
+	dialog->setWindowTitle(obs_module_text("AdvSceneSwitcher.windowTitle"));
+	dialog->setWindowFlags(dialog->windowFlags() &
+			       ~Qt::WindowContextHelpButtonHint);
+
+	auto layout = new QVBoxLayout(dialog);
+	auto label = new QLabel(
+		obs_module_text("AdvSceneSwitcher.crashDetected"), dialog);
+	label->setWordWrap(true);
+	layout->addWidget(label);
+
+	auto checkbox = new QCheckBox(
+		obs_module_text(
+			"AdvSceneSwitcher.crashDetected.suppressCheckbox"),
+		dialog);
+	layout->addWidget(checkbox);
+
+	auto buttonbox = new QDialogButtonBox(
+		QDialogButtonBox::Yes | QDialogButtonBox::No, dialog);
+	QObject::connect(buttonbox, &QDialogButtonBox::accepted, dialog,
+			 &QDialog::accept);
+	QObject::connect(buttonbox, &QDialogButtonBox::rejected, dialog,
+			 &QDialog::reject);
+	layout->addWidget(buttonbox);
+
+	dialog->setLayout(layout);
+
+	bool skipStart = dialog->exec() == QDialog::Accepted;
+	suppressCrashDialog = checkbox->isChecked();
+	dialog->deleteLater();
+
 	if (!skipStart) {
 		StartPlugin();
 	}
@@ -118,6 +169,10 @@ static void askForStartupSkip()
 bool ShouldSkipPluginStartOnUncleanShutdown()
 {
 	if (!wasUncleanShutdown()) {
+		return false;
+	}
+
+	if (suppressCrashDialog) {
 		return false;
 	}
 
