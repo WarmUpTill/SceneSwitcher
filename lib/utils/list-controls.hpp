@@ -10,6 +10,8 @@ class ADVSS_EXPORT ListControls final : public QToolBar {
 
 public:
 	ListControls(QWidget *parent = nullptr, bool reorder = true);
+	void AddWidget(QWidget *widget);
+	void AddSeparator();
 
 signals:
 	void Add();
