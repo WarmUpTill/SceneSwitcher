@@ -710,6 +710,12 @@ void MacroConditionDateEdit::UpdateEntryData()
 	SetWidgetStatus();
 }
 
+void MacroConditionDateEdit::showEvent(QShowEvent *event)
+{
+	const QSignalBlocker b(this);
+	UpdateEntryData();
+}
+
 void MacroConditionDateEdit::SetupSimpleView()
 {
 	SetLayoutVisible(_simpleLayout, true);
