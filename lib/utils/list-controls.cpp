@@ -32,6 +32,17 @@ ListControls::ListControls(QWidget *parent, bool reorder) : QToolBar(parent)
 	}
 }
 
+void ListControls::AddWidget(QWidget *widget)
+{
+	addSeparator();
+	addWidget(widget);
+}
+
+void ListControls::AddSeparator()
+{
+	addSeparator();
+}
+
 void ListControls::AddActionHelper(const char *theme, const char *className,
 				   const char *tooltip,
 				   const std::function<void()> &signal)
