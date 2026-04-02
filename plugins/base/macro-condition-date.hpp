@@ -107,6 +107,16 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 protected:
+	void showEvent(QShowEvent *event) override;
+
+private:
+	void SetupSimpleView();
+	void SetupAdvancedView();
+	void SetupPatternView();
+	void SetWidgetStatus();
+	void ShowFirstDateSelection(bool visible);
+	void ShowSecondDateSelection(bool visible);
+
 	QComboBox *_weekCondition;
 	DayOfWeekSelector *_days;
 	QCheckBox *_ignoreWeekTime;
@@ -134,16 +144,9 @@ protected:
 	QHBoxLayout *_repeatUpdateLayout;
 	QHBoxLayout *_patternLayout;
 
-	std::shared_ptr<MacroConditionDate> _entryData;
-
-private:
-	void SetupSimpleView();
-	void SetupAdvancedView();
-	void SetupPatternView();
-	void SetWidgetStatus();
-	void ShowFirstDateSelection(bool visible);
-	void ShowSecondDateSelection(bool visible);
 	QTimer _timer;
+
+	std::shared_ptr<MacroConditionDate> _entryData;
 	bool _loading = true;
 };
 
