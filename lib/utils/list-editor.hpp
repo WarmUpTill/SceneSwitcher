@@ -15,6 +15,8 @@ public:
 	ListEditor(QWidget *parent = nullptr, bool reorder = true);
 	int count() const { return _list->count(); };
 	void SetPlaceholderText(const QString &text);
+	void SetMinListHeight(int);
+	void SetMaxListHeight(int);
 
 protected:
 	void showEvent(QShowEvent *);
@@ -38,6 +40,8 @@ protected:
 
 private:
 	QLabel *_placeholder;
+	int _minHeight = -1;
+	int _maxHeight = -1;
 };
 
 } // namespace advss

@@ -44,6 +44,16 @@ void ListEditor::SetPlaceholderText(const QString &text)
 	UpdatePlaceholder();
 }
 
+void ListEditor::SetMinListHeight(int value)
+{
+	_minHeight = value;
+}
+
+void ListEditor::SetMaxListHeight(int value)
+{
+	_maxHeight = value;
+}
+
 void ListEditor::UpdatePlaceholder()
 {
 	bool visible = !_placeholder->text().isEmpty() && _list->count() == 0;
@@ -104,11 +114,24 @@ int ListEditor::GetIndexOfSignal() const
 void ListEditor::UpdateListSize()
 {
 	SetHeightToContentHeight(_list);
+
 	if (_list->count() == 0 && !_placeholder->text().isEmpty()) {
 		auto height = _list->fontMetrics().height() * 3;
 		_list->setMinimumHeight(height);
 		_list->setMaximumHeight(height);
 	}
+
+	if (_minHeight >= 0 && _list->minimumHeight() != _minHeight) {
+		_list->setMinimumHeight(_minHeight);
+	}
+
+	if (_maxHeight >= 0 && _list->maximumHeight() != _maxHeight) {
+		if (_list->minimumHeight() > _maxHeight) {
+			_list->setMinimumHeight(_maxHeight);
+		}
+		_list->setMaximumHeight(_maxHeight);
+	}
+
 	adjustSize();
 	updateGeometry();
 }
