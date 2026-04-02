@@ -59,6 +59,8 @@ target_sources(
           macro-action-sequence.hpp
           macro-action-source.cpp
           macro-action-source.hpp
+          macro-action-source-interaction.cpp
+          macro-action-source-interaction.hpp
           macro-action-streaming.cpp
           macro-action-streaming.hpp
           macro-action-studio-mode.cpp
@@ -146,7 +148,17 @@ target_sources(
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE utils/audio-helpers.cpp
+  PRIVATE utils/source-interaction-recorder.cpp
+          utils/source-interaction-recorder.hpp
+          utils/source-interaction-step.cpp
+          utils/source-interaction-step.hpp
+          utils/source-interaction-step-edit.cpp
+          utils/source-interaction-step-edit.hpp
+          utils/source-interaction-step-list.cpp
+          utils/source-interaction-step-list.hpp
+          utils/source-preview-widget.cpp
+          utils/source-preview-widget.hpp
+          utils/audio-helpers.cpp
           utils/audio-helpers.hpp
           utils/connection-manager.cpp
           utils/connection-manager.hpp
