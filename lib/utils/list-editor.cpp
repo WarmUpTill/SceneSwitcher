@@ -1,13 +1,16 @@
 #include "list-editor.hpp"
 #include "ui-helpers.hpp"
 
+#include <QEvent>
+
 namespace advss {
 
 ListEditor::ListEditor(QWidget *parent, bool reorder)
 	: QWidget(parent),
 	  _list(new QListWidget()),
 	  _controls(new ListControls(this, reorder)),
-	  _mainLayout(new QVBoxLayout())
+	  _mainLayout(new QVBoxLayout()),
+	  _placeholder(new QLabel(_list->viewport()))
 {
 	QWidget::connect(_controls, SIGNAL(Add()), this, SLOT(Add()));
 	QWidget::connect(_controls, SIGNAL(Remove()), this, SLOT(Remove()));
@@ -15,11 +18,48 @@ ListEditor::ListEditor(QWidget *parent, bool reorder)
 	QWidget::connect(_controls, SIGNAL(Down()), this, SLOT(Down()));
 	QWidget::connect(_list, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
 			 this, SLOT(Clicked(QListWidgetItem *)));
+	QWidget::connect(_list->model(),
+			 SIGNAL(rowsInserted(QModelIndex, int, int)), this,
+			 SLOT(UpdatePlaceholder()));
+	QWidget::connect(_list->model(),
+			 SIGNAL(rowsRemoved(QModelIndex, int, int)), this,
+			 SLOT(UpdatePlaceholder()));
+	QWidget::connect(_list->model(), SIGNAL(modelReset()), this,
+			 SLOT(UpdatePlaceholder()));
+
+	_placeholder->setAlignment(Qt::AlignCenter);
+	_placeholder->setWordWrap(true);
+	_placeholder->hide();
+	_list->viewport()->installEventFilter(this);
 
 	_mainLayout->setContentsMargins(0, 0, 0, 0);
 	_mainLayout->addWidget(_list);
 	_mainLayout->addWidget(_controls);
 	setLayout(_mainLayout);
+}
+
+void ListEditor::SetPlaceholderText(const QString &text)
+{
+	_placeholder->setText(text);
+	UpdatePlaceholder();
+}
+
+void ListEditor::UpdatePlaceholder()
+{
+	bool visible = !_placeholder->text().isEmpty() && _list->count() == 0;
+	_placeholder->setVisible(visible);
+	if (visible) {
+		_placeholder->setGeometry(_list->viewport()->rect());
+	}
+}
+
+bool ListEditor::eventFilter(QObject *obj, QEvent *event)
+{
+	if (obj == _list->viewport() && event->type() == QEvent::Resize &&
+	    _placeholder->isVisible()) {
+		_placeholder->setGeometry(_list->viewport()->rect());
+	}
+	return QWidget::eventFilter(obj, event);
 }
 
 void ListEditor::showEvent(QShowEvent *e)
@@ -64,6 +104,11 @@ int ListEditor::GetIndexOfSignal() const
 void ListEditor::UpdateListSize()
 {
 	SetHeightToContentHeight(_list);
+	if (_list->count() == 0 && !_placeholder->text().isEmpty()) {
+		auto height = _list->fontMetrics().height() * 3;
+		_list->setMinimumHeight(height);
+		_list->setMaximumHeight(height);
+	}
 	adjustSize();
 	updateGeometry();
 }
