@@ -62,6 +62,9 @@ private slots:
 signals:
 	void HeaderInfoChanged(const QString &);
 
+protected:
+	void showEvent(QShowEvent *event) override;
+
 private:
 	void SetCurrentStepEditor(int row);
 
