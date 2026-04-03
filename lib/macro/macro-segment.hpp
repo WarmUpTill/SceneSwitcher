@@ -57,6 +57,7 @@ protected:
 
 	bool IsTempVarInUse(const std::string &id) const;
 	void SetTempVarValue(const std::string &id, const std::string &value);
+	void CopyTempVarValuesFrom(const MacroSegment &other);
 
 	template<typename T, typename = std::enable_if_t<
 				     std::is_same<std::decay_t<T>, bool>::value>>

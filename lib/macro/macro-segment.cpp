@@ -167,6 +167,24 @@ bool MacroSegment::IsTempVarInUse(const std::string &id) const
 	return false;
 }
 
+void MacroSegment::CopyTempVarValuesFrom(const MacroSegment &other)
+{
+	for (const auto &src : other._tempVariables) {
+		for (auto &dst : _tempVariables) {
+			if (dst.ID() != src.ID()) {
+				continue;
+			}
+			auto value = src.Value();
+			if (value) {
+				dst.SetValue(*value);
+			} else {
+				dst.InvalidateValue();
+			}
+			break;
+		}
+	}
+}
+
 void MacroSegment::SetTempVarValue(const std::string &id,
 				   const std::string &value)
 {
