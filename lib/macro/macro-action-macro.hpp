@@ -56,11 +56,14 @@ public:
 		TOGGLE_ACTION,
 		TOGGLE_PAUSE,
 		NESTED_MACRO,
+		GET_INFO,
 	};
+
+	void SetAction(Action);
+	Action GetAction() const { return _action; }
 
 	enum class SelectionType { INDEX, LABEL, ID };
 
-	Action _action = Action::NESTED_MACRO;
 	SelectionType _actionSelectionType = SelectionType::INDEX;
 	bool _useElseSection = false;
 	IntVariable _actionIndex = 1;
@@ -72,8 +75,11 @@ public:
 	int _customWidgetHeight = 0;
 
 private:
+	void SetupTempVars();
 	void RunActions(Macro *actionMacro) const;
 	void AdjustActionState(Macro *) const;
+
+	Action _action = Action::NESTED_MACRO;
 
 	static bool _registered;
 	static const std::string id;

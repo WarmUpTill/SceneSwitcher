@@ -366,7 +366,7 @@ static void runSegmentHighlightChecksHelper(MacroSegmentList *list)
 		// highlight its segments if required
 		auto macroAction = dynamic_cast<MacroActionMacro *>(data.get());
 		if (macroAction &&
-		    macroAction->_action ==
+		    macroAction->GetAction() ==
 			    MacroActionMacro::Action::NESTED_MACRO) {
 			continue;
 		}

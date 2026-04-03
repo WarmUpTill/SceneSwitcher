@@ -52,6 +52,8 @@ void MacroActionMacro::RunActions(Macro *actionMacro) const {}
 
 void MacroActionMacro::AdjustActionState(Macro *macro) const {}
 
+void MacroActionMacro::SetupTempVars() {}
+
 MacroActionMacroEdit::MacroActionMacroEdit(
 	QWidget *parent, std::shared_ptr<MacroActionMacro> entryData)
 	: ResizableWidget(parent),
