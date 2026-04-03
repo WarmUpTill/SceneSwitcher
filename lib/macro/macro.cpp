@@ -433,6 +433,9 @@ bool Macro::RunActionsHelper(
 				actionCopy = action->Copy();
 			});
 			bool actionResult = actionCopy->PerformAction();
+			action->WithLock([&action, &actionCopy]() {
+				action->CopyTempVarValuesFrom(*actionCopy);
+			});
 			actionsExecutedSuccessfully =
 				actionsExecutedSuccessfully && actionResult;
 		} else {
