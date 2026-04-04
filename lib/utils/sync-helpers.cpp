@@ -66,4 +66,15 @@ void Lockable::WithLock(const std::function<void()> &func)
 	func();
 }
 
+SuspendLock::SuspendLock(Lockable &lockable)
+	: _mtx(static_cast<std::mutex &>(lockable._mtx))
+{
+	_mtx.unlock();
+}
+
+SuspendLock::~SuspendLock()
+{
+	_mtx.lock();
+}
+
 } // namespace advss

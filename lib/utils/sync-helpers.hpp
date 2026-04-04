@@ -51,6 +51,24 @@ public:
 
 private:
 	PerInstanceMutex _mtx;
+
+	friend class SuspendLock;
+};
+
+// RAII guard that temporarily releases a Lockable's per-segment lock.
+// Use this inside PerformAction() / CheckCondition() to unblock the UI
+// during long-running operations while still running on the original segment.
+// The caller MUST be holding the lock (i.e. be inside WithLock) when
+// constructing this object; the lock is re-acquired on destruction.
+class EXPORT SuspendLock {
+public:
+	SuspendLock(Lockable &lockable);
+	~SuspendLock();
+	SuspendLock(const SuspendLock &) = delete;
+	SuspendLock &operator=(const SuspendLock &) = delete;
+
+private:
+	std::mutex &_mtx;
 };
 
 } // namespace advss

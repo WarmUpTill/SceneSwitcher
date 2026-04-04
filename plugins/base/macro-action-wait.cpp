@@ -57,8 +57,11 @@ bool MacroActionWait::PerformAction()
 		    std::chrono::milliseconds((int)(sleepDuration * 1000));
 
 	SetMacroAbortWait(false);
-	std::unique_lock<std::mutex> lock(*GetMutex());
-	waitHelper(&lock, GetMacro(), time);
+	{
+		SuspendLock suspendLock(*this);
+		std::unique_lock<std::mutex> lock(*GetMutex());
+		waitHelper(&lock, GetMacro(), time);
+	}
 
 	return !MacroWaitShouldAbort();
 }

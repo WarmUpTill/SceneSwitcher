@@ -35,6 +35,7 @@ bool MacroActionScript::PerformAction()
 		return true;
 	}
 
+	SuspendLock suspendLock(static_cast<MacroAction &>(*this));
 	(void)SendTriggerSignal();
 	return true;
 }

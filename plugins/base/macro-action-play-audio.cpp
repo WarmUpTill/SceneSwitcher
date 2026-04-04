@@ -159,7 +159,10 @@ bool MacroActionPlayAudio::PerformAction()
 
 	if (_waitForCompletion) {
 		SetMacroAbortWait(false);
-		waitForPlaybackToEnd(GetMacro(), source, maxMs);
+		{
+			SuspendLock suspendLock(*this);
+			waitForPlaybackToEnd(GetMacro(), source, maxMs);
+		}
 		deactivatePlayback(source, wantsOutput);
 		return true;
 	}

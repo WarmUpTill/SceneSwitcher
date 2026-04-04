@@ -45,7 +45,7 @@ public:
 	SceneSelection _scene;
 
 private:
-	void PerformActionHelper(obs_source_t *) const;
+	void PerformActionHelper(obs_source_t *);
 	void SeekToPercentage(obs_source_t *source) const;
 
 	static bool _registered;
