@@ -112,48 +112,56 @@ static URLInfo getURLInfo(const std::string &input, bool keepParams)
 
 bool MacroActionHttp::PerformAction()
 {
+	// Capture all config while holding the segment lock
 	const auto [host, path] = getURLInfo(_url, !_setParams);
-
 	httplib::Client cli(host);
 	setTimeout(cli, _timeout);
 	const auto params = _setParams ? getParams(_params) : httplib::Params();
 	const auto headers = _setHeaders ? getHeaders(_headers)
 					 : httplib::Headers();
+	const auto method = _method;
+	const std::string body = _body;
+	const std::string contentType = _contentType;
 
+	// Release the segment lock for the blocking network call
 	httplib::Result response;
-	switch (_method) {
-	case MacroActionHttp::Method::GET:
-		response = cli.Get(path, params, headers);
-		break;
-	case MacroActionHttp::Method::POST: {
-		const auto pathWithParam =
-			httplib::append_query_params(path, params);
-		response =
-			cli.Post(pathWithParam, headers, _body, _contentType);
-		break;
-	}
-	case MacroActionHttp::Method::PUT: {
-		const auto pathWithParam =
-			httplib::append_query_params(path, params);
-		response = cli.Put(pathWithParam, headers, _body, _contentType);
-		break;
-	}
-	case MacroActionHttp::Method::PATCH: {
-		const auto pathWithParam =
-			httplib::append_query_params(path, params);
-		response =
-			cli.Patch(pathWithParam, headers, _body, _contentType);
-		break;
-	}
-	case MacroActionHttp::Method::DELETE: {
-		const auto pathWithParam =
-			httplib::append_query_params(path, params);
-		response =
-			cli.Delete(pathWithParam, headers, _body, _contentType);
-		break;
-	}
-	default:
-		break;
+	{
+		SuspendLock suspendLock(*this);
+		switch (method) {
+		case MacroActionHttp::Method::GET:
+			response = cli.Get(path, params, headers);
+			break;
+		case MacroActionHttp::Method::POST: {
+			const auto pathWithParam =
+				httplib::append_query_params(path, params);
+			response = cli.Post(pathWithParam, headers, body,
+					    contentType);
+			break;
+		}
+		case MacroActionHttp::Method::PUT: {
+			const auto pathWithParam =
+				httplib::append_query_params(path, params);
+			response = cli.Put(pathWithParam, headers, body,
+					   contentType);
+			break;
+		}
+		case MacroActionHttp::Method::PATCH: {
+			const auto pathWithParam =
+				httplib::append_query_params(path, params);
+			response = cli.Patch(pathWithParam, headers, body,
+					     contentType);
+			break;
+		}
+		case MacroActionHttp::Method::DELETE: {
+			const auto pathWithParam =
+				httplib::append_query_params(path, params);
+			response = cli.Delete(pathWithParam, headers, body,
+					      contentType);
+			break;
+		}
+		default:
+			break;
+		}
 	}
 
 	if (VerboseLoggingEnabled() && !response) {

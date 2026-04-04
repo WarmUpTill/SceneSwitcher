@@ -36,6 +36,7 @@ bool MacroConditionScript::CheckCondition()
 		return false;
 	}
 
+	SuspendLock suspendLock(static_cast<MacroCondition &>(*this));
 	return SendTriggerSignal();
 }
 

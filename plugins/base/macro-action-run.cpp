@@ -15,9 +15,20 @@ bool MacroActionRun::_registered = MacroActionFactory::Register(
 bool MacroActionRun::PerformAction()
 {
 	if (_wait) {
-		_procConfig.StartProcessAndWait(_timeout.Milliseconds());
-		SetTempVarValues();
-
+		// Snapshot config before releasing the lock for the blocking wait
+		auto procConfig = _procConfig;
+		const auto timeout = _timeout.Milliseconds();
+		{
+			SuspendLock suspendLock(*this);
+			procConfig.StartProcessAndWait(timeout);
+		}
+		SetTempVarValue("process.id", procConfig.GetProcessId());
+		SetTempVarValue("process.exitCode",
+				procConfig.GetProcessExitCode());
+		SetTempVarValue("process.stream.output",
+				procConfig.GetProcessOutputStream());
+		SetTempVarValue("process.stream.error",
+				procConfig.GetProcessErrorStream());
 		return true;
 	}
 

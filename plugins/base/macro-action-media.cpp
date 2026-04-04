@@ -95,7 +95,7 @@ static void waitHelper(std::unique_lock<std::mutex> *lock, Macro *macro,
 	}
 }
 
-void MacroActionMedia::PerformActionHelper(obs_source_t *source) const
+void MacroActionMedia::PerformActionHelper(obs_source_t *source)
 {
 	obs_media_state state = obs_source_media_get_state(source);
 
@@ -130,6 +130,7 @@ void MacroActionMedia::PerformActionHelper(obs_source_t *source) const
 		SeekToPercentage(source);
 		break;
 	case Action::WAIT_FOR_PLAYBACK_STOP: {
+		SuspendLock suspendLock(*this);
 		std::unique_lock<std::mutex> lock(*GetMutex());
 		waitHelper(&lock, GetMacro(), source);
 		break;
