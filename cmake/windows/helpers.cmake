@@ -30,13 +30,13 @@ function(set_target_properties_plugin target)
 
   install(
     TARGETS ${target}
-    RUNTIME DESTINATION bin/64bit
-    LIBRARY DESTINATION obs-plugins/64bit)
+    RUNTIME DESTINATION "${target}/bin/64bit"
+    LIBRARY DESTINATION "${target}/bin/64bit")
 
   install(
     FILES "$<TARGET_PDB_FILE:${target}>"
     CONFIGURATIONS RelWithDebInfo Debug Release
-    DESTINATION obs-plugins/64bit
+    DESTINATION "${target}/bin/64bit"
     OPTIONAL)
 
   if(OBS_BUILD_DIR)
@@ -44,11 +44,11 @@ function(set_target_properties_plugin target)
       TARGET ${target}
       POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E make_directory
-              "${OBS_BUILD_DIR}/obs-plugins/64bit"
+              "${OBS_BUILD_DIR}/plugins/${target}/bin/64bit"
       COMMAND
         "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${target}>"
         "$<$<CONFIG:Debug,RelWithDebInfo,Release>:$<TARGET_PDB_FILE:${target}>>"
-        "${OBS_BUILD_DIR}/obs-plugins/64bit"
+        "${OBS_BUILD_DIR}/plugins/${target}/bin/64bit"
       COMMENT "Copy ${target} to obs-studio directory ${OBS_BUILD_DIR}"
       VERBATIM)
   endif()
@@ -105,7 +105,7 @@ function(target_install_resources target)
 
     install(
       DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/"
-      DESTINATION data/obs-plugins/${target}
+      DESTINATION "${target}/data"
       USE_SOURCE_PERMISSIONS)
 
     if(OBS_BUILD_DIR)
@@ -113,11 +113,11 @@ function(target_install_resources target)
         TARGET ${target}
         POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E make_directory
-                "${OBS_BUILD_DIR}/data/obs-plugins/${target}"
+                "${OBS_BUILD_DIR}/plugins/${target}/data"
         COMMAND
           "${CMAKE_COMMAND}" -E copy_directory
           "${CMAKE_CURRENT_SOURCE_DIR}/data"
-          "${OBS_BUILD_DIR}/data/obs-plugins/${target}"
+          "${OBS_BUILD_DIR}/plugins/${target}/data"
         COMMENT "Copy ${target} resources to data directory"
         VERBATIM)
     endif()
@@ -133,7 +133,7 @@ function(target_add_resource target resource)
 
   install(
     FILES "${resource}"
-    DESTINATION data/obs-plugins/${target}
+    DESTINATION "${target}/data"
     COMPONENT Runtime)
 
   if(OBS_BUILD_DIR)
@@ -141,9 +141,9 @@ function(target_add_resource target resource)
       TARGET ${target}
       POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E make_directory
-              "${OBS_BUILD_DIR}/data/obs-plugins/${target}"
+              "${OBS_BUILD_DIR}/plugins/${target}/data"
       COMMAND "${CMAKE_COMMAND}" -E copy "${resource}"
-              "${OBS_BUILD_DIR}/data/obs-plugins/${target}"
+              "${OBS_BUILD_DIR}/plugins/${target}/data"
       COMMENT "Copy ${target} resource ${resource} to library directory"
       VERBATIM)
   endif()

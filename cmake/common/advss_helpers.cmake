@@ -2,7 +2,7 @@
 
 if(BUILD_OUT_OF_TREE)
   if(OS_WINDOWS)
-    set(OBS_PLUGIN_DESTINATION "obs-plugins/64bit")
+    set(OBS_PLUGIN_DESTINATION "${CMAKE_PROJECT_NAME}/bin/64bit")
   else()
     set(OBS_PLUGIN_DESTINATION "${CMAKE_INSTALL_LIBDIR}/obs-plugins")
   endif()
