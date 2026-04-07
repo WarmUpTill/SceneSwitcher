@@ -32,6 +32,9 @@
 #endif
 #include <fstream>
 #include <sstream>
+#include <climits>
+#include <dirent.h>
+#include <unistd.h>
 #include "kwin-helpers.h"
 
 namespace advss {
@@ -481,6 +484,74 @@ void GetForegroundProcessName(std::string &proc)
 	proc.resize(0);
 	auto pid = getForegroundProcessPid();
 	proc = getProcNameFromPid(pid);
+}
+
+static std::string getProcessPathFromPid(long pid)
+{
+	std::string linkPath = "/proc/" + std::to_string(pid) + "/exe";
+	char buf[PATH_MAX];
+	ssize_t len = readlink(linkPath.c_str(), buf, sizeof(buf) - 1);
+	if (len <= 0) {
+		return {};
+	}
+	buf[len] = '\0';
+	return buf;
+}
+
+std::string GetForegroundProcessPath()
+{
+	auto pid = getForegroundProcessPid();
+	if (pid <= 0) {
+		return {};
+	}
+	return getProcessPathFromPid(pid);
+}
+
+QStringList GetProcessPathsFromName(const QString &name)
+{
+	QStringList paths;
+	const std::string nameStr = name.toStdString();
+	DIR *procDir = opendir("/proc");
+	if (!procDir) {
+		return paths;
+	}
+
+	struct dirent *entry;
+	while ((entry = readdir(procDir)) != nullptr) {
+		bool isPid = (entry->d_name[0] != '\0');
+		for (const char *c = entry->d_name; *c; c++) {
+			if (!isdigit(*c)) {
+				isPid = false;
+				break;
+			}
+		}
+		if (!isPid) {
+			continue;
+		}
+
+		std::string pid = entry->d_name;
+		std::string commPath = "/proc/" + pid + "/comm";
+		std::ifstream commFile(commPath);
+		if (!commFile) {
+			continue;
+		}
+		std::string comm;
+		std::getline(commFile, comm);
+		if (comm != nameStr) {
+			continue;
+		}
+
+		std::string path = getProcessPathFromPid(std::stol(pid));
+		if (path.empty()) {
+			continue;
+		}
+		QString qPath = QString::fromStdString(path);
+		if (!paths.contains(qPath)) {
+			paths.append(qPath);
+		}
+	}
+	closedir(procDir);
+	return paths;
 }
 
 bool IsInFocus(const QString &executable)

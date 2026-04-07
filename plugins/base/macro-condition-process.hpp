@@ -1,7 +1,7 @@
 #pragma once
 #include "macro-condition-edit.hpp"
 #include "regex-config.hpp"
-#include "variable-string.hpp"
+#include "variable-line-edit.hpp"
 
 #include <QCheckBox>
 
@@ -21,8 +21,11 @@ public:
 	}
 
 	StringVariable _process;
-	bool _checkFocus = true;
 	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig();
+	bool _checkFocus = true;
+	bool _checkPath = false;
+	StringVariable _processPath;
+	RegexConfig _pathRegex = RegexConfig::PartialMatchRegexConfig();
 
 private:
 	void SetupTempVars();
@@ -54,6 +57,9 @@ private slots:
 	void ProcessChanged(const QString &text);
 	void RegexChanged(const RegexConfig &);
 	void FocusChanged(int state);
+	void CheckPathChanged(int state);
+	void ProcessPathChanged(const QString &text);
+	void PathRegexChanged(const RegexConfig &);
 	void UpdateFocusProcess();
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -66,6 +72,10 @@ private:
 	QCheckBox *_focused;
 	QLabel *_focusProcess;
 	QHBoxLayout *_focusLayout;
+	QCheckBox *_checkPath;
+	VariableLineEdit *_processPath;
+	RegexConfigWidget *_pathRegex;
+	QHBoxLayout *_pathLayout;
 	QTimer _timer;
 	std::shared_ptr<MacroConditionProcess> _entryData;
 	bool _loading = true;

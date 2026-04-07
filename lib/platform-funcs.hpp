@@ -20,6 +20,8 @@ EXPORT std::optional<std::string> GetTextInWindow(const std::string &window);
 EXPORT int SecondsSinceLastInput();
 EXPORT void GetProcessList(QStringList &processes);
 EXPORT void GetForegroundProcessName(std::string &name);
+EXPORT std::string GetForegroundProcessPath();
+EXPORT QStringList GetProcessPathsFromName(const QString &name);
 EXPORT bool IsInFocus(const QString &executable);
 void PlatformInit();
 void PlatformCleanup();

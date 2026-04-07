@@ -415,6 +415,68 @@ void GetForegroundProcessName(std::string &proc)
 	proc = temp.toStdString();
 }
 
+std::string GetForegroundProcessPath()
+{
+	HWND foregroundWindow = GetForegroundWindow();
+	DWORD processId = 0;
+	GetWindowThreadProcessId(foregroundWindow, &processId);
+
+	HANDLE process = OpenProcess(
+		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (process == NULL) {
+		return {};
+	}
+
+	WCHAR executablePath[600];
+	GetModuleFileNameEx(process, 0, executablePath, 600);
+	CloseHandle(process);
+
+	return QString::fromWCharArray(executablePath).toStdString();
+}
+
+QStringList GetProcessPathsFromName(const QString &name)
+{
+	QStringList paths;
+	HANDLE procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (procSnapshot == INVALID_HANDLE_VALUE) {
+		return paths;
+	}
+
+	PROCESSENTRY32 procEntry;
+	procEntry.dwSize = sizeof(PROCESSENTRY32);
+
+	if (!Process32First(procSnapshot, &procEntry)) {
+		CloseHandle(procSnapshot);
+		return paths;
+	}
+
+	do {
+		QString exeName = QString::fromWCharArray(procEntry.szExeFile);
+		if (exeName != name) {
+			continue;
+		}
+
+		HANDLE process =
+			OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+				    FALSE, procEntry.th32ProcessID);
+		if (process == NULL) {
+			continue;
+		}
+
+		WCHAR executablePath[600];
+		if (GetModuleFileNameEx(process, 0, executablePath, 600)) {
+			QString path = QString::fromWCharArray(executablePath);
+			if (!paths.contains(path)) {
+				paths.append(path);
+			}
+		}
+		CloseHandle(process);
+	} while (Process32Next(procSnapshot, &procEntry));
+
+	CloseHandle(procSnapshot);
+	return paths;
+}
+
 bool IsInFocus(const QString &executable)
 {
 	// only checks if the current foreground window is from the same executable,
