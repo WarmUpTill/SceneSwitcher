@@ -68,6 +68,25 @@ function Package {
 
     Remove-Item @RemoveArgs
 
+    # Add legacy folder structure alongside the recommended one so both are
+    # included in the zip archive.  Users on older OBS versions can still
+    # copy files from obs-plugins/64bit and data/obs-plugins/<name>/ while
+    # new installations use the recommended plugins/<name>/bin|data layout.
+    $ReleasePath   = "${ProjectRoot}/release/${Configuration}"
+    $LegacyBinPath = "${ReleasePath}/obs-plugins/64bit"
+    $LegacyDataPath = "${ReleasePath}/data/obs-plugins/${ProductName}"
+    $NewBinPath    = "${ReleasePath}/${ProductName}/bin/64bit"
+    $NewDataPath   = "${ReleasePath}/${ProductName}/data"
+
+    if ( Test-Path -Path $NewBinPath ) {
+        New-Item -ItemType Directory -Force -Path $LegacyBinPath | Out-Null
+        Copy-Item -Path "${NewBinPath}/*" -Destination $LegacyBinPath -Recurse -Force
+    }
+    if ( Test-Path -Path $NewDataPath ) {
+        New-Item -ItemType Directory -Force -Path $LegacyDataPath | Out-Null
+        Copy-Item -Path "${NewDataPath}/*" -Destination $LegacyDataPath -Recurse -Force
+    }
+
     Log-Group "Archiving ${ProductName}..."
     $CompressArgs = @{
         Path = (Get-ChildItem -Path "${ProjectRoot}/release/${Configuration}" -Exclude "${OutputName}*.*")
@@ -90,6 +109,10 @@ function Package {
         Push-Location -Stack BuildTemp
         Ensure-Location -Path "${ProjectRoot}/release"
         Copy-Item -Path ${Configuration} -Destination Package -Recurse
+        # Remove the legacy paths from the installer package — the installer
+        # targets the recommended layout only.
+        Remove-Item -Path "Package/obs-plugins" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path "Package/data"        -Recurse -Force -ErrorAction SilentlyContinue
         Invoke-External iscc ${IsccFile} /O"${ProjectRoot}/release" /F"${OutputName}-Installer"
         Remove-Item -Path Package -Recurse
         Pop-Location -Stack BuildTemp
