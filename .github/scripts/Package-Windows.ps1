@@ -68,14 +68,44 @@ function Package {
 
     Remove-Item @RemoveArgs
 
+    # Build a staging directory with two subfolders:
+    #   recommended/ - new layout, extract to %ProgramData%\obs-studio\
+    #   legacy/      - old layout, extract to the OBS install directory
+    $ReleasePath  = "${ProjectRoot}/release/${Configuration}"
+    $StagingPath  = "${ProjectRoot}/release/zip-staging"
+    $NewBinPath   = "${ReleasePath}/${ProductName}/bin/64bit"
+    $NewDataPath  = "${ReleasePath}/${ProductName}/data"
+
+    Remove-Item -Path $StagingPath -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $StagingPath | Out-Null
+    Copy-Item -Path "${ProjectRoot}/build-aux/CI/windows/README.txt" -Destination "${StagingPath}/README.txt"
+
+    if ( Test-Path -Path $NewBinPath ) {
+        $RecBinPath    = "${StagingPath}/recommended/${ProductName}/bin/64bit"
+        $LegacyBinPath = "${StagingPath}/legacy/obs-plugins/64bit"
+        New-Item -ItemType Directory -Force -Path $RecBinPath    | Out-Null
+        New-Item -ItemType Directory -Force -Path $LegacyBinPath | Out-Null
+        Copy-Item -Path "${NewBinPath}/*" -Destination $RecBinPath    -Recurse -Force
+        Copy-Item -Path "${NewBinPath}/*" -Destination $LegacyBinPath -Recurse -Force
+    }
+    if ( Test-Path -Path $NewDataPath ) {
+        $RecDataPath    = "${StagingPath}/recommended/${ProductName}/data"
+        $LegacyDataPath = "${StagingPath}/legacy/data/obs-plugins/${ProductName}"
+        New-Item -ItemType Directory -Force -Path $RecDataPath    | Out-Null
+        New-Item -ItemType Directory -Force -Path $LegacyDataPath | Out-Null
+        Copy-Item -Path "${NewDataPath}/*" -Destination $RecDataPath    -Recurse -Force
+        Copy-Item -Path "${NewDataPath}/*" -Destination $LegacyDataPath -Recurse -Force
+    }
+
     Log-Group "Archiving ${ProductName}..."
     $CompressArgs = @{
-        Path = (Get-ChildItem -Path "${ProjectRoot}/release/${Configuration}" -Exclude "${OutputName}*.*")
+        Path = (Get-ChildItem -Path $StagingPath)
         CompressionLevel = 'Optimal'
         DestinationPath = "${ProjectRoot}/release/${OutputName}.zip"
-        Verbose = ($Env:CI -ne $null)
+        Verbose = ($null -ne $Env:CI)
     }
     Compress-Archive -Force @CompressArgs
+    Remove-Item -Path $StagingPath -Recurse -Force
     Log-Group
 
     if ( ( $BuildInstaller ) ) {
