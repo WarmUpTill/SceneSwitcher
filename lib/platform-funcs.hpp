@@ -11,15 +11,14 @@ namespace advss {
 
 enum class HotkeyType;
 
-EXPORT void GetWindowList(std::vector<std::string> &windows);
-EXPORT void GetWindowList(QStringList &windows);
-EXPORT void GetCurrentWindowTitle(std::string &title);
+EXPORT std::vector<std::string> GetWindowList();
+EXPORT std::string GetCurrentWindowTitle();
 EXPORT bool IsFullscreen(const std::string &title);
 EXPORT bool IsMaximized(const std::string &title);
 EXPORT std::optional<std::string> GetTextInWindow(const std::string &window);
 EXPORT int SecondsSinceLastInput();
-EXPORT void GetProcessList(QStringList &processes);
-EXPORT void GetForegroundProcessName(std::string &name);
+EXPORT QStringList GetProcessList();
+EXPORT std::string GetForegroundProcessName();
 EXPORT std::string GetForegroundProcessPath();
 EXPORT QStringList GetProcessPathsFromName(const QString &name);
 EXPORT bool IsInFocus(const QString &executable);

@@ -322,8 +322,7 @@ void SwitcherData::SetPreconditions()
 {
 	// Window title
 	lastTitle = currentTitle;
-	std::string title;
-	GetCurrentWindowTitle(title);
+	auto title = GetCurrentWindowTitle();
 	for (auto &window : ignoreWindowsSwitches) {
 		bool equals = (title == window);
 		bool matches = false;
@@ -343,7 +342,7 @@ void SwitcherData::SetPreconditions()
 	currentTitle = title;
 
 	// Process name
-	GetForegroundProcessName(currentForegroundProcess);
+	currentForegroundProcess = GetForegroundProcessName();
 
 	// Macro
 	InvalidateMacroTempVarValues();

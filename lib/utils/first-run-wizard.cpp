@@ -55,9 +55,7 @@ static void WriteFirstRun(bool value)
 
 static QString DetectFocusedWindow()
 {
-	std::string title;
-	GetCurrentWindowTitle(title);
-	return QString::fromStdString(title);
+	return QString::fromStdString(GetCurrentWindowTitle());
 }
 
 // ===========================================================================

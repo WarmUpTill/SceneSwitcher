@@ -92,12 +92,11 @@ bool SwitcherData::checkExeSwitch(OBSWeakSource &scene,
 	}
 
 	std::string title = switcher->currentTitle;
-	QStringList runningProcesses;
 	bool ignored = false;
 	bool match = false;
 
 	// Check for match
-	GetProcessList(runningProcesses);
+	const auto runningProcesses = GetProcessList();
 	for (ExecutableSwitch &s : executableSwitches) {
 		if (!s.initialized()) {
 			continue;

@@ -236,9 +236,9 @@ std::string getWindowName(Window window)
 	return windowTitle;
 }
 
-void GetWindowList(std::vector<std::string> &windows)
+std::vector<std::string> GetWindowList()
 {
-	windows.resize(0);
+	std::vector<std::string> windows;
 	for (auto window : getTopLevelWindows()) {
 		auto name = getWindowName(window);
 		if (name.empty()) {
@@ -246,18 +246,7 @@ void GetWindowList(std::vector<std::string> &windows)
 		}
 		windows.emplace_back(name);
 	}
-}
-
-void GetWindowList(QStringList &windows)
-{
-	windows.clear();
-	for (auto window : getTopLevelWindows()) {
-		auto name = getWindowName(window);
-		if (name.empty()) {
-			continue;
-		}
-		windows << QString::fromStdString(name);
-	}
+	return windows;
 }
 
 int getActiveWindow(Window *&window)
@@ -281,29 +270,24 @@ int getActiveWindow(Window *&window)
 				  &bytes, (uint8_t **)&window);
 }
 
-void GetCurrentWindowTitle(std::string &title)
+std::string GetCurrentWindowTitle()
 {
 	if (KWin) {
-		title = FocusNotifier::getActiveWindowTitle();
-		return;
+		return FocusNotifier::getActiveWindowTitle();
 	}
 
 	Window *data = 0;
 	if (getActiveWindow(data) != Success || !data) {
-		return;
+		return {};
 	}
 	if (!data[0]) {
 		XFree(data);
-		return;
+		return {};
 	}
 
 	auto name = getWindowName(data[0]);
 	XFree(data);
-
-	if (name.empty()) {
-		return;
-	}
-	title = name;
+	return name;
 }
 
 bool windowStatesAreSet(const std::string &windowTitle,
@@ -412,16 +396,17 @@ static void getProcessListProcps2(QStringList &processes)
 #endif
 }
 
-void GetProcessList(QStringList &processes)
+QStringList GetProcessList()
 {
-	processes.clear();
+	QStringList processes;
 	if (libprocpsSupported) {
 		getProcessListProcps(processes);
-		return;
+		return processes;
 	}
 	if (libprocps2Supported) {
 		getProcessListProcps2(processes);
 	}
+	return processes;
 }
 
 long getForegroundProcessPid()
@@ -472,18 +457,10 @@ std::string getProcNameFromPid(long pid)
 	return name;
 }
 
-void GetForegroundProcessName(QString &proc)
+std::string GetForegroundProcessName()
 {
-	std::string temp;
-	GetForegroundProcessName(temp);
-	proc = QString::fromStdString(temp);
-}
-
-void GetForegroundProcessName(std::string &proc)
-{
-	proc.resize(0);
 	auto pid = getForegroundProcessPid();
-	proc = getProcNameFromPid(pid);
+	return getProcNameFromPid(pid);
 }
 
 static std::string getProcessPathFromPid(long pid)
@@ -556,8 +533,7 @@ QStringList GetProcessPathsFromName(const QString &name)
 
 bool IsInFocus(const QString &executable)
 {
-	std::string current;
-	GetForegroundProcessName(current);
+	const auto current = GetForegroundProcessName();
 
 	// True if executable switch equals current window
 	bool equals = (executable.toStdString() == current);
