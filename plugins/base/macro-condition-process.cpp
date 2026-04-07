@@ -16,8 +16,7 @@ bool MacroConditionProcess::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionProcess::CheckCondition()
 {
-	std::string foregroundProcessName;
-	GetForegroundProcessName(foregroundProcessName);
+	const auto foregroundProcessName = GetForegroundProcessName();
 	SetVariableValue(foregroundProcessName);
 
 	const QString proc = QString::fromStdString(_process);
@@ -58,8 +57,7 @@ bool MacroConditionProcess::CheckCondition()
 		return true;
 	}
 
-	QStringList runningProcesses;
-	GetProcessList(runningProcesses);
+	const auto runningProcesses = GetProcessList();
 
 	for (const auto &process : runningProcesses) {
 		bool nameMatches = _regex.Enabled()
@@ -275,9 +273,8 @@ void MacroConditionProcessEdit::PathRegexChanged(const RegexConfig &conf)
 
 void MacroConditionProcessEdit::UpdateFocusProcess()
 {
-	std::string name;
-	GetForegroundProcessName(name);
-	_focusProcess->setText(QString::fromStdString(name));
+	_focusProcess->setText(
+		QString::fromStdString(GetForegroundProcessName()));
 }
 
 void MacroConditionProcessEdit::SetWidgetVisibility()

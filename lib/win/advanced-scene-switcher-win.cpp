@@ -133,9 +133,9 @@ const std::vector<std::string> getOBSWindows()
 	return lastDoneHelper->windows;
 }
 
-void GetWindowList(std::vector<std::string> &windows)
+std::vector<std::string> GetWindowList()
 {
-	windows.resize(0);
+	std::vector<std::string> windows;
 	EnumWindowsWithMetro(GetTitleCB, reinterpret_cast<LPARAM>(&windows));
 
 	// Also add OBS windows
@@ -147,20 +147,10 @@ void GetWindowList(std::vector<std::string> &windows)
 
 	// Add entry for OBS Studio itself - see GetCurrentWindowTitle()
 	windows.emplace_back("OBS");
+	return windows;
 }
 
-void GetWindowList(QStringList &windows)
-{
-	windows.clear();
-
-	std::vector<std::string> w;
-	GetWindowList(w);
-	for (auto window : w) {
-		windows << QString::fromStdString(window);
-	}
-}
-
-void GetCurrentWindowTitle(std::string &title)
+std::string GetCurrentWindowTitle()
 {
 	HWND window = GetForegroundWindow();
 	DWORD pid;
@@ -178,15 +168,15 @@ void GetCurrentWindowTitle(std::string &title)
 	//
 	// So instead rely on Qt to get the title of the active window.
 	if (GetCurrentProcessId() == pid) {
-		auto window = QApplication::activeWindow();
-		if (window) {
-			title = window->windowTitle().toStdString();
-		} else {
-			title = "OBS";
+		auto obsWindow = QApplication::activeWindow();
+		if (obsWindow) {
+			return obsWindow->windowTitle().toStdString();
 		}
-		return;
+		return "OBS";
 	}
+	std::string title;
 	GetWindowTitle(window, title);
+	return title;
 }
 
 static HWND getHWNDfromTitle(const std::string &title)
@@ -350,22 +340,22 @@ bool IsFullscreen(const std::string &title)
 	return false;
 }
 
-void GetProcessList(QStringList &processes)
+QStringList GetProcessList()
 {
-
+	QStringList processes;
 	HANDLE procSnapshot;
 	PROCESSENTRY32 procEntry;
 
 	procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (procSnapshot == INVALID_HANDLE_VALUE) {
-		return;
+		return processes;
 	}
 
 	procEntry.dwSize = sizeof(PROCESSENTRY32);
 
 	if (!Process32First(procSnapshot, &procEntry)) {
 		CloseHandle(procSnapshot);
-		return;
+		return processes;
 	}
 
 	do {
@@ -383,9 +373,10 @@ void GetProcessList(QStringList &processes)
 	} while (Process32Next(procSnapshot, &procEntry));
 
 	CloseHandle(procSnapshot);
+	return processes;
 }
 
-static void GetForegroundProcessName(QString &proc)
+static QString getForegroundProcessNameStr()
 {
 	// only checks if the current foreground window is from the same executable,
 	// may return true for any window from a program
@@ -396,23 +387,21 @@ static void GetForegroundProcessName(QString &proc)
 	HANDLE process = OpenProcess(
 		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
 	if (process == NULL) {
-		return;
+		return {};
 	}
 
 	WCHAR executablePath[600];
 	GetModuleFileNameEx(process, 0, executablePath, 600);
 	CloseHandle(process);
 
-	proc = QString::fromWCharArray(executablePath)
-		       .split(QRegularExpression("(/|\\\\)"))
-		       .back();
+	return QString::fromWCharArray(executablePath)
+		.split(QRegularExpression("(/|\\\\)"))
+		.back();
 }
 
-void GetForegroundProcessName(std::string &proc)
+std::string GetForegroundProcessName()
 {
-	QString temp;
-	GetForegroundProcessName(temp);
-	proc = temp.toStdString();
+	return getForegroundProcessNameStr().toStdString();
 }
 
 std::string GetForegroundProcessPath()
@@ -481,8 +470,7 @@ bool IsInFocus(const QString &executable)
 {
 	// only checks if the current foreground window is from the same executable,
 	// may return true for any window from a program
-	QString foregroundProc;
-	GetForegroundProcessName(foregroundProc);
+	const auto foregroundProc = getForegroundProcessNameStr();
 
 	// True if executable switch equals current window
 	bool equals = (executable == foregroundProc);

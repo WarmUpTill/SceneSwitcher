@@ -14,10 +14,9 @@
 
 namespace advss {
 
-void GetWindowList(std::vector<std::string> &windows)
+std::vector<std::string> GetWindowList()
 {
-	windows.resize(0);
-
+	std::vector<std::string> windows;
 	@autoreleasepool {
 		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
 			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
@@ -49,21 +48,12 @@ void GetWindowList(std::vector<std::string> &windows)
 		apps = nil;
 		CFRelease(cfApps);
 	}
+	return windows;
 }
 
-void GetWindowList(QStringList &windows)
+std::string GetCurrentWindowTitle()
 {
-	windows.clear();
-	std::vector<std::string> temp;
-	GetWindowList(temp);
-	for (auto &w : temp) {
-		windows << QString::fromStdString(w);
-	}
-}
-
-void GetCurrentWindowTitle(std::string &title)
-{
-	title.resize(0);
+	std::string title;
 	@autoreleasepool {
 		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
 			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
@@ -107,6 +97,7 @@ void GetCurrentWindowTitle(std::string &title)
 		apps = nil;
 		CFRelease(cfApps);
 	}
+	return title;
 }
 
 bool isWindowOriginOnScreen(NSDictionary *app, NSScreen *screen,
@@ -273,9 +264,9 @@ int SecondsSinceLastInput()
 	return (int)time;
 }
 
-void GetProcessList(QStringList &list)
+QStringList GetProcessList()
 {
-	list.clear();
+	QStringList list;
 	@autoreleasepool {
 		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
 		NSArray *array = [ws runningApplications];
@@ -291,11 +282,11 @@ void GetProcessList(QStringList &list)
 			}
 		}
 	}
+	return list;
 }
 
-void GetForegroundProcessName(std::string &proc)
+std::string GetForegroundProcessName()
 {
-	proc.resize(0);
 	@autoreleasepool {
 		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
 		NSArray *array = [ws runningApplications];
@@ -308,17 +299,13 @@ void GetForegroundProcessName(std::string &proc)
 				break;
 			}
 			const char *str = name.UTF8String;
-			proc = std::string(str);
+			if (str) {
+				return str;
+			}
 			break;
 		}
 	}
-}
-
-void GetForegroundProcessName(QString &proc)
-{
-	std::string temp;
-	GetForegroundProcessName(temp);
-	proc = QString::fromStdString(temp);
+	return {};
 }
 
 std::string GetForegroundProcessPath()
@@ -378,8 +365,7 @@ QStringList GetProcessPathsFromName(const QString &name)
 
 bool IsInFocus(const QString &executable)
 {
-	std::string current;
-	GetForegroundProcessName(current);
+	const auto current = GetForegroundProcessName();
 
 	// True if executable switch equals current window
 	bool equals = (executable.toStdString() == current);

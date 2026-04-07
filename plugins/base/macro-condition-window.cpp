@@ -135,8 +135,7 @@ static bool foregroundWindowChanged()
 
 bool MacroConditionWindow::CheckCondition()
 {
-	std::vector<std::string> windowList;
-	GetWindowList(windowList);
+	const auto windowList = GetWindowList();
 	bool match = false;
 	if (_windowRegex.Enabled()) {
 		match = WindowRegexMatches(windowList);

@@ -42,8 +42,7 @@ void CloseWindow(const std::string &) {}
 
 std::optional<std::string> MacroActionWindow::GetMatchingWindow() const
 {
-	std::vector<std::string> windowList;
-	GetWindowList(windowList);
+	const auto windowList = GetWindowList();
 
 	if (!_regex.Enabled()) {
 		if (std::find(windowList.begin(), windowList.end(),

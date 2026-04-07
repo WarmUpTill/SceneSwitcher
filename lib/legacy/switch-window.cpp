@@ -230,8 +230,7 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 
 	std::string currentWindowTitle = switcher->currentTitle;
 	bool match = false;
-	std::vector<std::string> windowList;
-	GetWindowList(windowList);
+	const auto windowList = GetWindowList();
 
 	for (WindowSwitch &s : windowSwitches) {
 		if (!s.initialized()) {
