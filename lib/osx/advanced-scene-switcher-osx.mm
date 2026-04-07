@@ -321,6 +321,61 @@ void GetForegroundProcessName(QString &proc)
 	proc = QString::fromStdString(temp);
 }
 
+std::string GetForegroundProcessPath()
+{
+	@autoreleasepool {
+		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+		for (NSRunningApplication *app in [ws runningApplications]) {
+			if (!app.isActive) {
+				continue;
+			}
+			NSURL *url = app.executableURL;
+			if (!url) {
+				break;
+			}
+			const char *str = url.path.UTF8String;
+			if (str) {
+				return str;
+			}
+			break;
+		}
+	}
+	return {};
+}
+
+QStringList GetProcessPathsFromName(const QString &name)
+{
+	QStringList paths;
+	@autoreleasepool {
+		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+		for (NSRunningApplication *app in [ws runningApplications]) {
+			NSString *appName = app.localizedName;
+			if (!appName) {
+				continue;
+			}
+			const char *nameStr = appName.UTF8String;
+			if (!nameStr ||
+			    name != QString::fromUtf8(nameStr)) {
+				continue;
+			}
+			NSURL *url = app.executableURL;
+			if (!url) {
+				continue;
+			}
+			const char *pathStr = url.path.UTF8String;
+			if (!pathStr) {
+				continue;
+			}
+			QString path = QString::fromUtf8(pathStr);
+			if (!paths.contains(path)) {
+				paths.append(path);
+			}
+		}
+	}
+
+	return paths;
+}
+
 bool IsInFocus(const QString &executable)
 {
 	std::string current;

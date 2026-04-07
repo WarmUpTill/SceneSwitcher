@@ -16,54 +16,102 @@ bool MacroConditionProcess::_registered = MacroConditionFactory::Register(
 
 bool MacroConditionProcess::CheckCondition()
 {
-	QStringList runningProcesses;
-	QString proc = QString::fromStdString(_process);
-	GetProcessList(runningProcesses);
 	std::string foregroundProcessName;
 	GetForegroundProcessName(foregroundProcessName);
-
 	SetVariableValue(foregroundProcessName);
 
-	if (!_regex.Enabled()) {
-		if (runningProcesses.contains(proc) &&
-		    (!_checkFocus || IsInFocus(proc))) {
-			SetTempVarValue("name", proc.toStdString());
-			return true;
-		}
-		return false;
-	}
+	const QString proc = QString::fromStdString(_process);
 
-	int matchIndex = -1;
-	bool foundMatch = false;
-	for (const auto &process : runningProcesses) {
-		matchIndex++;
-		if (_regex.Matches(process, proc)) {
-			foundMatch = true;
-			break;
+	if (_checkFocus) {
+		// Check name and path against the same foreground process
+		// instance to avoid false positives when multiple processes
+		// share the same name
+		const auto foregroundPath = GetForegroundProcessPath();
+		const QString foregroundName =
+			QString::fromStdString(foregroundProcessName);
+
+		SetTempVarValue("name", foregroundProcessName);
+		SetTempVarValue("path", foregroundPath);
+
+		bool nameMatches =
+			_regex.Enabled() ? _regex.Matches(foregroundName, proc)
+					 : (foregroundName == proc);
+		if (!nameMatches) {
+			return false;
 		}
-	}
-	if (!foundMatch) {
-		return false;
-	}
-	if (!_checkFocus) {
-		SetTempVarValue("name",
-				runningProcesses.at(matchIndex).toStdString());
+
+		if (_checkPath) {
+			const QString pathPattern =
+				QString::fromStdString(_processPath);
+			const QString qForegroundPath =
+				QString::fromStdString(foregroundPath);
+			bool pathMatches =
+				_pathRegex.Enabled()
+					? _pathRegex.Matches(qForegroundPath,
+							     pathPattern)
+					: qForegroundPath == pathPattern;
+			if (!pathMatches) {
+				return false;
+			}
+		}
+
 		return true;
 	}
-	if (!IsInFocus(proc)) {
-		return false;
+
+	QStringList runningProcesses;
+	GetProcessList(runningProcesses);
+
+	for (const auto &process : runningProcesses) {
+		bool nameMatches = _regex.Enabled()
+					   ? _regex.Matches(process, proc)
+					   : (process == proc);
+		if (!nameMatches) {
+			continue;
+		}
+
+		if (!_checkPath) {
+			SetTempVarValue("name", process.toStdString());
+			return true;
+		}
+
+		const auto paths = GetProcessPathsFromName(process);
+
+		const QString pathPattern =
+			QString::fromStdString(_processPath);
+		bool foundMatchingPath = false;
+		for (const auto &path : paths) {
+			bool pathMatches =
+				_pathRegex.Enabled()
+					? _pathRegex.Matches(path, pathPattern)
+					: path == pathPattern;
+			if (pathMatches) {
+				SetTempVarValue("path", path.toStdString());
+				foundMatchingPath = true;
+				break;
+			}
+		}
+
+		if (!foundMatchingPath) {
+			continue;
+		}
+
+		SetTempVarValue("name", process.toStdString());
+		return true;
 	}
-	SetTempVarValue("name", foregroundProcessName);
-	return true;
+
+	return false;
 }
 
 bool MacroConditionProcess::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_process.Save(obj, "process");
-	obs_data_set_bool(obj, "focus", _checkFocus);
 	_regex.Save(obj);
-	obs_data_set_int(obj, "version", 1);
+	obs_data_set_bool(obj, "focus", _checkFocus);
+	obs_data_set_bool(obj, "checkPath", _checkPath);
+	_processPath.Save(obj, "processPath");
+	_pathRegex.Save(obj, "pathRegex");
+	obs_data_set_int(obj, "version", 2);
 	return true;
 }
 
@@ -78,6 +126,9 @@ bool MacroConditionProcess::Load(obs_data_t *obj)
 	} else {
 		_regex.Load(obj);
 	}
+	_checkPath = obs_data_get_bool(obj, "checkPath");
+	_processPath.Load(obj, "processPath");
+	_pathRegex.Load(obj, "pathRegex");
 	return true;
 }
 
@@ -91,6 +142,8 @@ void MacroConditionProcess::SetupTempVars()
 	MacroCondition::SetupTempVars();
 	AddTempvar("name",
 		   obs_module_text("AdvSceneSwitcher.tempVar.process.name"));
+	AddTempvar("path",
+		   obs_module_text("AdvSceneSwitcher.tempVar.process.path"));
 }
 
 MacroConditionProcessEdit::MacroConditionProcessEdit(
@@ -100,11 +153,18 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 	  _regex(new RegexConfigWidget(this)),
 	  _focused(new QCheckBox()),
 	  _focusProcess(new QLabel()),
-	  _focusLayout(new QHBoxLayout())
+	  _focusLayout(new QHBoxLayout()),
+	  _checkPath(new QCheckBox()),
+	  _processPath(new VariableLineEdit(this)),
+	  _pathRegex(new RegexConfigWidget(this)),
+	  _pathLayout(new QHBoxLayout())
 {
 	_processSelection->setEditable(true);
 	_processSelection->setMaxVisibleItems(20);
 	_processSelection->setToolTip(
+		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
+
+	_processPath->setToolTip(
 		obs_module_text("AdvSceneSwitcher.tooltip.availableVariables"));
 
 	QWidget::connect(_processSelection,
@@ -115,6 +175,13 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 			 SLOT(RegexChanged(const RegexConfig &)));
 	QWidget::connect(_focused, SIGNAL(stateChanged(int)), this,
 			 SLOT(FocusChanged(int)));
+	QWidget::connect(_checkPath, SIGNAL(stateChanged(int)), this,
+			 SLOT(CheckPathChanged(int)));
+	QWidget::connect(_processPath, SIGNAL(textChanged(const QString &)),
+			 this, SLOT(ProcessPathChanged(const QString &)));
+	QWidget::connect(_pathRegex,
+			 SIGNAL(RegexConfigChanged(const RegexConfig &)), this,
+			 SLOT(PathRegexChanged(const RegexConfig &)));
 	QWidget::connect(&_timer, SIGNAL(timeout()), this,
 			 SLOT(UpdateFocusProcess()));
 
@@ -125,18 +192,25 @@ MacroConditionProcessEdit::MacroConditionProcessEdit(
 		{"{{regex}}", _regex},
 		{"{{focused}}", _focused},
 		{"{{focusProcess}}", _focusProcess},
+		{"{{checkPath}}", _checkPath},
+		{"{{path}}", _processPath},
+		{"{{pathRegex}}", _pathRegex},
 	};
 
 	auto entryLayout = new QHBoxLayout;
 	PlaceWidgets(
-		obs_module_text("AdvSceneSwitcher.condition.process.entry"),
+		obs_module_text("AdvSceneSwitcher.condition.process.layout"),
 		entryLayout, widgetPlaceholders);
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.process.entry.focus"),
+			     "AdvSceneSwitcher.condition.process.layout.focus"),
 		     _focusLayout, widgetPlaceholders);
+	PlaceWidgets(obs_module_text(
+			     "AdvSceneSwitcher.condition.process.layout.path"),
+		     _pathLayout, widgetPlaceholders);
 	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(entryLayout);
 	mainLayout->addLayout(_focusLayout);
+	mainLayout->addLayout(_pathLayout);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -178,6 +252,27 @@ void MacroConditionProcessEdit::FocusChanged(int state)
 	SetWidgetVisibility();
 }
 
+void MacroConditionProcessEdit::CheckPathChanged(int state)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_checkPath = state;
+	SetWidgetVisibility();
+}
+
+void MacroConditionProcessEdit::ProcessPathChanged(const QString &text)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_processPath = text.toStdString();
+}
+
+void MacroConditionProcessEdit::PathRegexChanged(const RegexConfig &conf)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_pathRegex = conf;
+	adjustSize();
+	updateGeometry();
+}
+
 void MacroConditionProcessEdit::UpdateFocusProcess()
 {
 	std::string name;
@@ -191,6 +286,13 @@ void MacroConditionProcessEdit::SetWidgetVisibility()
 		return;
 	}
 	SetLayoutVisible(_focusLayout, _entryData->_checkFocus);
+	_processPath->setVisible(_entryData->_checkPath);
+	_pathRegex->setVisible(_entryData->_checkPath);
+	if (_entryData->_checkPath) {
+		RemoveStretchIfPresent(_pathLayout);
+	} else {
+		AddStretchIfNecessary(_pathLayout);
+	}
 	adjustSize();
 	updateGeometry();
 }
@@ -205,6 +307,9 @@ void MacroConditionProcessEdit::UpdateEntryData()
 		_entryData->_process.UnresolvedValue().c_str());
 	_regex->SetRegexConfig(_entryData->_regex);
 	_focused->setChecked(_entryData->_checkFocus);
+	_checkPath->setChecked(_entryData->_checkPath);
+	_processPath->setText(_entryData->_processPath);
+	_pathRegex->SetRegexConfig(_entryData->_pathRegex);
 	SetWidgetVisibility();
 }
 
