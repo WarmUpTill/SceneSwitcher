@@ -187,6 +187,13 @@ target_sources(
           ${ADVSS_SOURCE_DIR}/lib/utils/file-selection.cpp
           ${ADVSS_SOURCE_DIR}/lib/variables/variable-text-edit.cpp)
 
+# --- macro-condition-process --- #
+
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE test-macro-condition-process.cpp stubs/platform-funcs.cpp
+          ${ADVSS_SOURCE_DIR}/plugins/base/macro-condition-process.cpp)
+
 # --- Testing --- #
 
 enable_testing()
