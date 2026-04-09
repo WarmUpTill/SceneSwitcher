@@ -11,6 +11,7 @@
 
 #include <QCheckBox>
 #include <QHBoxLayout>
+#include <QLabel>
 
 namespace advss {
 
@@ -57,6 +58,7 @@ public:
 		TOGGLE_PAUSE,
 		NESTED_MACRO,
 		GET_INFO,
+		RUN_MACRO,
 	};
 
 	void SetAction(Action);
@@ -131,6 +133,8 @@ private:
 	QCheckBox *_reevaluateConditionState;
 	QComboBox *_actionSections;
 	QCheckBox *_skipWhenPaused;
+	QLabel *_noConditionsWarning;
+	HelpIcon *_runMacroHelp;
 	QCheckBox *_setInputs;
 	MacroInputEdit *_inputs;
 	QHBoxLayout *_entryLayout;

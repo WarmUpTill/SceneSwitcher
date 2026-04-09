@@ -120,6 +120,15 @@ bool MacroActionMacro::PerformAction()
 		case Action::TOGGLE_ACTION:
 			AdjustActionState(macro);
 			break;
+		case Action::RUN_MACRO: {
+			if (_runOptions.skipWhenPaused && macro->Paused()) {
+				break;
+			}
+			const bool conditionsMatched =
+				macro->CheckConditions(true);
+			macro->PerformActions(conditionsMatched, false, true);
+			break;
+		}
 		case Action::GET_INFO: {
 			SetTempVarValue(
 				"conditionCount",
@@ -209,6 +218,9 @@ void MacroActionMacro::LogAction() const
 		break;
 	case Action::GET_INFO:
 		ablog(LOG_INFO, "get info for \"%s\"", macro->Name().c_str());
+		break;
+	case Action::RUN_MACRO:
+		ablog(LOG_INFO, "run macro \"%s\"", macro->Name().c_str());
 		break;
 	default:
 		break;
@@ -403,7 +415,9 @@ static void populateActionSelection(QComboBox *list)
 			{MacroActionMacro::Action::NESTED_MACRO,
 			 "AdvSceneSwitcher.action.macro.type.nestedMacro"},
 			{MacroActionMacro::Action::RUN_ACTIONS,
-			 "AdvSceneSwitcher.action.macro.type.run"},
+			 "AdvSceneSwitcher.action.macro.type.runActions"},
+			{MacroActionMacro::Action::RUN_MACRO,
+			 "AdvSceneSwitcher.action.macro.type.runMacro"},
 			{MacroActionMacro::Action::STOP,
 			 "AdvSceneSwitcher.action.macro.type.stop"},
 			{MacroActionMacro::Action::DISABLE_ACTION,
@@ -483,6 +497,10 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	  _actionSections(new QComboBox(this)),
 	  _skipWhenPaused(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.macro.type.run.skipWhenPaused"))),
+	  _noConditionsWarning(new QLabel(obs_module_text(
+		  "AdvSceneSwitcher.action.macro.type.runMacro.noConditionsWarning"))),
+	  _runMacroHelp(new HelpIcon(obs_module_text(
+		  "AdvSceneSwitcher.action.macro.type.runMacro.help"))),
 	  _setInputs(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.action.macro.type.run.setInputs"))),
 	  _inputs(new MacroInputEdit()),
@@ -556,6 +574,7 @@ MacroActionMacroEdit::MacroActionMacroEdit(
 	layout->addLayout(_setInputsLayout);
 	layout->addWidget(_inputs);
 	layout->addWidget(_skipWhenPaused);
+	layout->addWidget(_noConditionsWarning);
 	layout->addWidget(_nestedMacro);
 	setLayout(layout);
 	_entryData = entryData;
@@ -725,6 +744,7 @@ void MacroActionMacroEdit::InputsChanged(const StringList &inputs)
 void MacroActionMacroEdit::SetWidgetVisibility()
 {
 	_entryLayout->removeWidget(_actions);
+	_entryLayout->removeWidget(_runMacroHelp);
 	_entryLayout->removeWidget(_actionIndex);
 	_entryLayout->removeWidget(_macros);
 	_entryLayout->removeWidget(_actionSections);
@@ -740,6 +760,7 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 
 	const std::unordered_map<std::string, QWidget *> placeholders = {
 		{"{{actions}}", _actions},
+		{"{{runMacroHelp}}", _runMacroHelp},
 		{"{{actionIndex}}", _actionIndex},
 		{"{{macros}}", _macros},
 		{"{{actionSections}}", _actionSections},
@@ -763,6 +784,9 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	case MacroActionMacro::Action::NESTED_MACRO:
 	case MacroActionMacro::Action::GET_INFO:
 		layoutText = "AdvSceneSwitcher.action.macro.layout.other";
+		break;
+	case MacroActionMacro::Action::RUN_MACRO:
+		layoutText = "AdvSceneSwitcher.action.macro.layout.runMacro";
 		break;
 	case MacroActionMacro::Action::RUN_ACTIONS:
 		layoutText = "AdvSceneSwitcher.action.macro.layout.run";
@@ -790,7 +814,8 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	}
 
 	if (action == MacroActionMacro::Action::RUN_ACTIONS ||
-	    action == MacroActionMacro::Action::STOP) {
+	    action == MacroActionMacro::Action::STOP ||
+	    action == MacroActionMacro::Action::RUN_MACRO) {
 		_macros->HideSelectedMacro();
 	} else {
 		_macros->ShowAllMacros();
@@ -835,8 +860,17 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	_actionSections->setVisible(
 		action == MacroActionMacro::Action::RUN_ACTIONS ||
 		isModifyingActionState);
-	_skipWhenPaused->setVisible(action ==
-				    MacroActionMacro::Action::RUN_ACTIONS);
+	_skipWhenPaused->setVisible(
+		action == MacroActionMacro::Action::RUN_ACTIONS ||
+		action == MacroActionMacro::Action::RUN_MACRO);
+
+	if (action == MacroActionMacro::Action::RUN_MACRO) {
+		auto macro = _entryData->_macro.GetMacro();
+		_noConditionsWarning->setVisible(!macro ||
+						 macro->Conditions().empty());
+	} else {
+		_noConditionsWarning->setVisible(false);
+	}
 
 	_nestedMacro->setVisible(action ==
 				 MacroActionMacro::Action::NESTED_MACRO);
