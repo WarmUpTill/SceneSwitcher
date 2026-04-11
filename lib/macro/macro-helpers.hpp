@@ -58,6 +58,8 @@ LastMacroConditionCheckTime(const Macro *);
 
 EXPORT bool MacroIsStopped(const Macro *);
 EXPORT bool MacroIsPaused(const Macro *);
+EXPORT void SetMacroPaused(Macro *, bool paused);
+EXPORT void StopMacro(Macro *);
 EXPORT bool
 MacroWasPausedSince(const Macro *,
 		    const std::chrono::high_resolution_clock::time_point &);
@@ -66,10 +68,14 @@ EXPORT bool MacroWasCheckedSinceLastStart(const Macro *);
 EXPORT void AddMacroHelperThread(Macro *, std::thread &&);
 
 EXPORT bool CheckMacros();
+EXPORT bool CheckMacroConditions(Macro *, bool ignorePause = false);
 
-EXPORT bool RunMacroActions(Macro *);
-bool RunMacroElseActions(Macro *);
+EXPORT bool RunMacroActions(Macro *, bool forceParallel = false,
+			    bool ignorePause = false);
+EXPORT bool RunMacroElseActions(Macro *, bool forceParallel = false,
+				bool ignorePause = false);
 EXPORT bool RunMacros();
+
 void StopAllMacros();
 
 EXPORT void LoadMacros(obs_data_t *obj);
