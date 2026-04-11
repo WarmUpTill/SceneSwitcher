@@ -214,6 +214,20 @@ bool MacroIsPaused(const Macro *macro)
 	return macro ? macro->Paused() : true;
 }
 
+void SetMacroPaused(Macro *macro, bool paused)
+{
+	if (macro) {
+		macro->SetPaused(paused);
+	}
+}
+
+void StopMacro(Macro *macro)
+{
+	if (macro) {
+		macro->Stop();
+	}
+}
+
 bool MacroWasPausedSince(
 	const Macro *macro,
 	const std::chrono::high_resolution_clock::time_point &time)
@@ -237,14 +251,20 @@ void AddMacroHelperThread(Macro *macro, std::thread &&newThread)
 	macro->AddHelperThread(std::move(newThread));
 }
 
-bool RunMacroActions(Macro *macro)
+bool RunMacroActions(Macro *macro, bool forceParallel, bool ignorePause)
 {
-	return macro && macro->PerformActions(true);
+	return macro && macro->PerformActions(true, forceParallel, ignorePause);
 }
 
-bool RunMacroElseActions(Macro *macro)
+bool RunMacroElseActions(Macro *macro, bool forceParallel, bool ignorePause)
 {
-	return macro && macro->PerformActions(false);
+	return macro &&
+	       macro->PerformActions(false, forceParallel, ignorePause);
+}
+
+bool CheckMacroConditions(Macro *macro, bool ignorePause)
+{
+	return macro && macro->CheckConditions(ignorePause);
 }
 
 void ResetMacroConditionTimers(Macro *macro)
