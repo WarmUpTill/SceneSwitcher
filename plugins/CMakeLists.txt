@@ -7,8 +7,6 @@ endmacro()
 
 # ---------------------------------------------------------------------------- #
 
-add_subdirectory(base)
-
 # Add plugins below, which have dependencies to external libraries or other
 # components which might potentially not be fulfilled.
 
@@ -28,10 +26,12 @@ install_advss_plugin_dependency(...)
 ... to install the plugin and its dependencies.
 #]]
 
+add_plugin(base)
 add_plugin(http)
 add_plugin(midi)
 add_plugin(mqtt)
 add_plugin(openvr)
+add_plugin(schedule)
 add_plugin(scripting)
 add_plugin(stream-deck)
 add_plugin(twitch)
