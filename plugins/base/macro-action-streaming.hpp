@@ -67,12 +67,14 @@ private slots:
 	void StringValueChanged();
 	void ShowPassword();
 	void HidePassword();
+	void GetCurrentValueClicked();
 
 protected:
 	QComboBox *_actions;
 	VariableSpinBox *_keyFrameInterval;
 	VariableLineEdit *_stringValue;
 	QPushButton *_showPassword;
+	QPushButton *_getCurrentValue;
 	std::shared_ptr<MacroActionStream> _entryData;
 
 private:
