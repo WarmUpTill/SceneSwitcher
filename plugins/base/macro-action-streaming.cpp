@@ -4,6 +4,7 @@
 #include "ui-helpers.hpp"
 
 #include <obs-frontend-api.h>
+#include <obs.hpp>
 #include <util/config-file.h>
 
 namespace advss {
@@ -183,6 +184,8 @@ MacroActionStreamEdit::MacroActionStreamEdit(
 	  _keyFrameInterval(new VariableSpinBox()),
 	  _stringValue(new VariableLineEdit(this)),
 	  _showPassword(new QPushButton()),
+	  _getCurrentValue(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.action.streaming.getCurrentValue"))),
 	  _layout(new QHBoxLayout())
 {
 	_keyFrameInterval->setMinimum(0);
@@ -208,13 +211,17 @@ MacroActionStreamEdit::MacroActionStreamEdit(
 			 SLOT(ShowPassword()));
 	QWidget::connect(_showPassword, SIGNAL(released()), this,
 			 SLOT(HidePassword()));
+	QWidget::connect(_getCurrentValue, SIGNAL(clicked()), this,
+			 SLOT(GetCurrentValueClicked()));
 
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.streaming.entry"),
-		     _layout,
-		     {{"{{actions}}", _actions},
-		      {"{{keyFrameInterval}}", _keyFrameInterval},
-		      {"{{stringValue}}", _stringValue},
-		      {"{{showPassword}}", _showPassword}});
+	PlaceWidgets(
+		obs_module_text("AdvSceneSwitcher.action.streaming.layout"),
+		_layout,
+		{{"{{actions}}", _actions},
+		 {"{{keyFrameInterval}}", _keyFrameInterval},
+		 {"{{stringValue}}", _stringValue},
+		 {"{{showPassword}}", _showPassword},
+		 {"{{getCurrentValue}}", _getCurrentValue}});
 	setLayout(_layout);
 
 	_entryData = entryData;
@@ -290,6 +297,62 @@ void MacroActionStreamEdit::SetWidgetVisibility()
 	} else {
 		_stringValue->setEchoMode(QLineEdit::Normal);
 		_showPassword->hide();
+	}
+	_getCurrentValue->setVisible(
+		action == MacroActionStream::Action::KEYFRAME_INTERVAL ||
+		action == MacroActionStream::Action::SERVER ||
+		action == MacroActionStream::Action::STREAM_KEY ||
+		action == MacroActionStream::Action::USERNAME ||
+		action == MacroActionStream::Action::PASSWORD);
+}
+
+void MacroActionStreamEdit::GetCurrentValueClicked()
+{
+	if (!_entryData) {
+		return;
+	}
+	switch (_entryData->_action) {
+	case MacroActionStream::Action::KEYFRAME_INTERVAL: {
+		const auto configPath =
+			GetPathInProfileDir("streamEncoder.json");
+		OBSDataAutoRelease settings =
+			obs_data_create_from_json_file_safe(configPath.c_str(),
+							    "bak");
+		if (!settings) {
+			break;
+		}
+		_keyFrameInterval->SetFixedValue(
+			(int)obs_data_get_int(settings, "keyint_sec"));
+		break;
+	}
+	case MacroActionStream::Action::SERVER:
+	case MacroActionStream::Action::STREAM_KEY:
+	case MacroActionStream::Action::USERNAME:
+	case MacroActionStream::Action::PASSWORD: {
+		static const std::map<MacroActionStream::Action, const char *>
+			settingsKeys = {
+				{MacroActionStream::Action::SERVER, "server"},
+				{MacroActionStream::Action::STREAM_KEY, "key"},
+				{MacroActionStream::Action::USERNAME,
+				 "username"},
+				{MacroActionStream::Action::PASSWORD,
+				 "password"},
+			};
+		auto service = obs_frontend_get_streaming_service();
+		OBSDataAutoRelease settings = obs_service_get_settings(service);
+		if (!settings) {
+			obs_service_release(service);
+			break;
+		}
+		const char *val = obs_data_get_string(
+			settings, settingsKeys.at(_entryData->_action));
+		if (val) {
+			_stringValue->setText(QString(val));
+		}
+		break;
+	}
+	default:
+		break;
 	}
 }
 
