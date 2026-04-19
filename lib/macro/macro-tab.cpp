@@ -1,5 +1,4 @@
 #include "advanced-scene-switcher.hpp"
-#include "action-queue.hpp"
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
@@ -316,13 +315,9 @@ void AdvSceneSwitcher::ExportMacros() const
 		obs_data_array_push_back(macroArray, obj);
 	}
 	obs_data_set_array(data, "macros", macroArray);
-	SaveVariables(data);
-	SaveActionQueues(data);
 	obs_data_set_string(data, "version", g_GIT_TAG);
-	auto json = obs_data_get_json(data);
-	QString exportString(json);
 
-	MacroExportImportDialog::ExportMacros(exportString);
+	MacroExportImportDialog::ExportMacros(data);
 }
 
 bool AdvSceneSwitcher::ResolveMacroImportNameConflict(
@@ -384,8 +379,6 @@ void AdvSceneSwitcher::ImportMacros()
 		ImportMacros();
 		return;
 	}
-	ImportVariables(data);
-	ImportQueues(data);
 
 	auto version = obs_data_get_string(data, "version");
 	if (strcmp(version, g_GIT_TAG) != 0) {
