@@ -255,6 +255,10 @@ ${_usage_host:-}"
 
         cmake_args+=(
           -DCMAKE_PREFIX_PATH="${advss_deps_path}"
+          -DOPENSSL_ROOT_DIR="${advss_deps_path}"
+          -DOPENSSL_INCLUDE_DIR="${advss_deps_path}/include"
+          -DOPENSSL_CRYPTO_LIBRARY="${advss_deps_path}/lib/libcrypto.a"
+          -DOPENSSL_SSL_LIBRARY="${advss_deps_path}/lib/libssl.a"
           --preset ${_preset}
         )
 
