@@ -1,6 +1,7 @@
 #include "http-server.hpp"
 #include "layout-helpers.hpp"
 #include "log-helper.hpp"
+#include "macro-export-extensions.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
 
@@ -32,6 +33,49 @@ bool setup()
 		}
 		httpServers.clear();
 	});
+	AddMacroExportExtension(
+		{"AdvSceneSwitcher.macroTab.export.httpServers", "httpServers",
+		 [](obs_data_t *data, const QStringList &selectedIds) {
+			 OBSDataArrayAutoRelease array =
+				 obs_data_array_create();
+			 for (const auto &s : httpServers) {
+				 if (!selectedIds.isEmpty() &&
+				     !selectedIds.contains(
+					     QString::fromStdString(s->Name())))
+					 continue;
+				 OBSDataAutoRelease item = obs_data_create();
+				 s->Save(item);
+				 obs_data_array_push_back(array, item);
+			 }
+			 obs_data_set_array(data, "httpServers", array);
+		 },
+		 [](obs_data_t *data, const QStringList &) {
+			 OBSDataArrayAutoRelease array =
+				 obs_data_get_array(data, "httpServers");
+			 const size_t count = obs_data_array_count(array);
+			 for (size_t i = 0; i < count; ++i) {
+				 OBSDataAutoRelease item =
+					 obs_data_array_item(array, i);
+				 auto server = HttpServer::Create();
+				 server->Load(item);
+				 if (!GetWeakHttpServerByName(server->Name())
+					      .expired())
+					 continue;
+				 httpServers.emplace_back(server);
+				 HttpServerSignalManager::Instance()->Add(
+					 QString::fromStdString(
+						 server->Name()));
+			 }
+		 },
+		 []() -> QList<QPair<QString, QString>> {
+			 QList<QPair<QString, QString>> items;
+			 for (const auto &s : httpServers) {
+				 const QString name =
+					 QString::fromStdString(s->Name());
+				 items.append({name, name});
+			 }
+			 return items;
+		 }});
 	return true;
 }
 
