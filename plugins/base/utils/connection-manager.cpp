@@ -1,5 +1,6 @@
 #include "connection-manager.hpp"
 #include "layout-helpers.hpp"
+#include "macro-export-extensions.hpp"
 #include "name-dialog.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
@@ -24,6 +25,51 @@ bool setup()
 	AddSaveStep(saveConnections);
 	AddLoadStep(loadConnections);
 	AddPluginCleanupStep([]() { connections.clear(); });
+	AddMacroExportExtension(
+		{"AdvSceneSwitcher.macroTab.export.websocketConnections",
+		 "websocketConnections",
+		 [](obs_data_t *data, const QStringList &selectedIds) {
+			 OBSDataArrayAutoRelease array =
+				 obs_data_array_create();
+			 for (const auto &c : connections) {
+				 if (!selectedIds.isEmpty() &&
+				     !selectedIds.contains(
+					     QString::fromStdString(c->Name())))
+					 continue;
+				 OBSDataAutoRelease item = obs_data_create();
+				 c->Save(item);
+				 obs_data_array_push_back(array, item);
+			 }
+			 obs_data_set_array(data, "websocketConnections",
+					    array);
+		 },
+		 [](obs_data_t *data, const QStringList &) {
+			 OBSDataArrayAutoRelease array = obs_data_get_array(
+				 data, "websocketConnections");
+			 const size_t count = obs_data_array_count(array);
+			 for (size_t i = 0; i < count; ++i) {
+				 OBSDataAutoRelease item =
+					 obs_data_array_item(array, i);
+				 auto con = WSConnection::Create();
+				 con->Load(item);
+				 if (!GetWeakConnectionByName(con->Name())
+					      .expired())
+					 continue;
+				 connections.emplace_back(con);
+				 ConnectionSelectionSignalManager::Instance()
+					 ->Add(QString::fromStdString(
+						 con->Name()));
+			 }
+		 },
+		 []() -> QList<QPair<QString, QString>> {
+			 QList<QPair<QString, QString>> items;
+			 for (const auto &c : connections) {
+				 const QString name =
+					 QString::fromStdString(c->Name());
+				 items.append({name, name});
+			 }
+			 return items;
+		 }});
 	return true;
 }
 
