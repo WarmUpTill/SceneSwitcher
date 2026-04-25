@@ -1840,7 +1840,10 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 
 	const char *layoutText;
 	const char *layout2Text = nullptr;
-	switch (_entryData->GetAction()) {
+
+	const auto action = _entryData->GetAction();
+
+	switch (action) {
 	case MacroActionTwitch::Action::SEND_CHAT_MESSAGE:
 		layoutText = obs_module_text(
 			"AdvSceneSwitcher.action.twitch.layout.chat");
@@ -1892,6 +1895,12 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 
 	_layout->setContentsMargins(0, 0, 0, 0);
 	_layout2->setContentsMargins(0, 0, 0, 0);
+
+	const bool showVariableMapping =
+		action == MacroActionTwitch::Action::CHANNEL_GET_INFO ||
+		action == MacroActionTwitch::Action::USER_GET_INFO ||
+		action == MacroActionTwitch::Action::POINTS_REWARD_GET_INFO;
+	emit ShowVariableMappings(showVariableMapping);
 }
 
 void MacroActionTwitchEdit::UpdateEntryData()
