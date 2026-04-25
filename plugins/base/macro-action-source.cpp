@@ -794,6 +794,8 @@ void MacroActionSourceEdit::SetWidgetVisibility()
 		action == MacroActionSource::Action::CLOSE_FILTER_DIALOG ||
 		action == MacroActionSource::Action::CLOSE_PROPERTIES_DIALOG);
 
+	emit ShowVariableMappings(isGetSetting || isGetSettings);
+
 	adjustSize();
 	updateGeometry();
 }

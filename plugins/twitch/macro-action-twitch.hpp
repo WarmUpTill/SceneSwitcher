@@ -267,6 +267,7 @@ private slots:
 
 signals:
 	void HeaderInfoChanged(const QString &);
+	void ShowVariableMappings(bool show);
 
 protected:
 	std::shared_ptr<MacroActionTwitch> _entryData;

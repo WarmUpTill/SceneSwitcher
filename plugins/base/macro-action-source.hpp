@@ -113,6 +113,7 @@ private slots:
 
 signals:
 	void HeaderInfoChanged(const QString &);
+	void ShowVariableMappings(bool show);
 
 private:
 	void SetWidgetVisibility();
