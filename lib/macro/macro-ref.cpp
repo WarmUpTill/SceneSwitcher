@@ -1,6 +1,8 @@
 #include "macro-ref.hpp"
 #include "macro.hpp"
 
+#include "plugin-state-helpers.hpp"
+
 namespace advss {
 
 MacroRef::MacroRef(std::string name)
@@ -19,6 +21,7 @@ void MacroRef::Load(obs_data_t *obj)
 	auto name = obs_data_get_string(obj, "macro");
 	_postLoadName = name;
 	_macro = GetWeakMacroByName(name);
+	AddPostLoadStep([this]() { MacroRef::PostLoad(); });
 }
 
 void MacroRef::PostLoad()
