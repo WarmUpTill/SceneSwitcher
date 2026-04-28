@@ -627,6 +627,13 @@ static void handleSceneCollectionCleanup()
 		return;
 	}
 
+	// OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP is also called on
+	// shutdown.
+	// Here we also don't want to reload the settings.
+	if (switcher->obsIsShuttingDown) {
+		return;
+	}
+
 	SaveSceneSwitcher(nullptr, false, nullptr);
 }
 
