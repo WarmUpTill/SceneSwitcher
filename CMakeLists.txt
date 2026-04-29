@@ -504,7 +504,11 @@ endif()
 # --- End of section ---
 
 add_subdirectory(plugins)
-add_subdirectory(tests)
+
+option(ADVSS_ENABLE_TESTS "Build advanced-scene-switcher unit tests" OFF)
+if(ADVSS_ENABLE_TESTS)
+  add_subdirectory(tests)
+endif()
 
 # --- Install ---
 

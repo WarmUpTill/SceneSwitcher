@@ -41,7 +41,8 @@
       "description": "Build for macOS 11.0+ (Universal binary) for CI",
       "generator": "Xcode",
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ADVSS_ENABLE_TESTS": true
       }
     },
     {
@@ -69,7 +70,8 @@
       "displayName": "Windows x64 CI build",
       "description": "Build for Windows x64 on CI",
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ADVSS_ENABLE_TESTS": true
       }
     },
     {
@@ -97,7 +99,8 @@
       "description": "Build for Linux x86_64 on CI",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ADVSS_ENABLE_TESTS": true
       }
     },
     {
@@ -125,7 +128,8 @@
       "description": "Build for Linux aarch64 on CI",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ADVSS_ENABLE_TESTS": true
       }
     }
   ],

@@ -13,7 +13,10 @@ using advss::MacroConditionFile;
 static void writeFile(const QString &path, const QString &content)
 {
 	QFile f(path);
-	f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
+	if (!f.open(QIODevice::WriteOnly | QIODevice::Text |
+		    QIODevice::Truncate)) {
+		return;
+	}
 	QTextStream(&f) << content;
 }
 
@@ -155,7 +158,9 @@ TEST_CASE("DATE_CHANGE: triggers when modification date changes",
 	// Explicitly set the modification time to a known future value so the
 	// test is not sensitive to filesystem mtime resolution.
 	QFile f(path);
-	f.open(QIODevice::ReadWrite);
+	if (!f.open(QIODevice::ReadWrite)) {
+		return;
+	}
 	f.setFileTime(QDateTime::currentDateTime().addSecs(10),
 		      QFileDevice::FileModificationTime);
 	f.close();
