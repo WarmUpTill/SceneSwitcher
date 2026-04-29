@@ -17,6 +17,17 @@
 
 namespace advss {
 
+static bool setup()
+{
+	AddPluginCleanupStep([]() {
+		GetTopLevelMacros().clear();
+		GetTemporaryMacros().clear();
+	});
+	return true;
+}
+
+static bool setupDone = setup();
+
 Macro::Macro(const std::string &name) : _dockSettings(this)
 {
 	SetName(name);
