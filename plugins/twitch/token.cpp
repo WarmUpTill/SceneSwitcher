@@ -87,6 +87,7 @@ static bool setupTwitchTokenSupport()
 {
 	AddSaveStep(saveConnections);
 	AddLoadStep(loadConnections);
+	AddPluginCleanupStep([]() { twitchTokens.clear(); });
 	return true;
 }
 
