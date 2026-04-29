@@ -4,6 +4,8 @@
 #include "ui-helpers.hpp"
 #include "utility.hpp"
 
+#include <obs.hpp>
+
 #include <QGridLayout>
 
 namespace advss {
@@ -418,34 +420,32 @@ static bool variableWithNameExists(const std::string &name)
 
 void SaveVariables(obs_data_t *obj)
 {
-	obs_data_array_t *variablesArray = obs_data_array_create();
+	OBSDataArrayAutoRelease variablesArray = obs_data_array_create();
 	for (const auto &v : variables) {
-		obs_data_t *array_obj = obs_data_create();
+		OBSDataAutoRelease array_obj = obs_data_create();
 		v->Save(array_obj);
 		obs_data_array_push_back(variablesArray, array_obj);
-		obs_data_release(array_obj);
 	}
 
 	obs_data_set_array(obj, "variables", variablesArray);
-	obs_data_array_release(variablesArray);
 }
 
 void LoadVariables(obs_data_t *obj)
 {
 	variables.clear();
 
-	obs_data_array_t *variablesArray = obs_data_get_array(obj, "variables");
+	OBSDataArrayAutoRelease variablesArray =
+		obs_data_get_array(obj, "variables");
 	size_t count = obs_data_array_count(variablesArray);
 
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(variablesArray, i);
+		OBSDataAutoRelease array_obj =
+			obs_data_array_item(variablesArray, i);
 		auto var = Variable::Create();
 		variables.emplace_back(var);
 		variables.back()->Load(array_obj);
 		obs_data_release(array_obj);
 	}
-
-	obs_data_array_release(variablesArray);
 }
 
 static void signalImportedVariables(void *varsPtr)
@@ -460,16 +460,15 @@ static void signalImportedVariables(void *varsPtr)
 
 void ImportVariables(obs_data_t *data)
 {
-	obs_data_array_t *array = obs_data_get_array(data, "variables");
+	OBSDataArrayAutoRelease array = obs_data_get_array(data, "variables");
 	size_t count = obs_data_array_count(array);
 
 	auto importedVars = new std::vector<std::shared_ptr<Item>>;
 
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *arrayElement = obs_data_array_item(array, i);
+		OBSDataAutoRelease arrayElement = obs_data_array_item(array, i);
 		auto var = Variable::Create();
 		var->Load(arrayElement);
-		obs_data_release(arrayElement);
 
 		if (variableWithNameExists(var->Name())) {
 			continue;
@@ -478,8 +477,6 @@ void ImportVariables(obs_data_t *data)
 		GetVariables().emplace_back(var);
 		importedVars->emplace_back(var);
 	}
-
-	obs_data_array_release(array);
 
 	QueueUITask(signalImportedVariables, importedVars);
 }
