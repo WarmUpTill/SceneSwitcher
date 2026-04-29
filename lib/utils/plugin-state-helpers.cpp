@@ -310,7 +310,7 @@ bool HighlightUIElementsEnabled()
 
 bool OBSIsShuttingDown()
 {
-	return GetSwitcher() && GetSwitcher()->obsIsShuttingDown;
+	return !GetSwitcher() || GetSwitcher()->obsIsShuttingDown;
 }
 
 bool InitialLoadIsComplete()

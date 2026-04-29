@@ -28,6 +28,8 @@ static constexpr bool handleUncleanShutdown = true;
 static bool wasCleanShutdown = false;
 static bool suppressCrashDialog = false;
 
+static char *sentinelFile = nullptr;
+
 bool GetSuppressCrashDialog()
 {
 	return suppressCrashDialog;
@@ -58,7 +60,6 @@ static void handleShutdown(enum obs_frontend_event event, void *)
 		return;
 	}
 
-	char *sentinelFile = obs_module_config_path(sentinel.data());
 	if (!sentinelFile) {
 		return;
 	}
@@ -78,7 +79,8 @@ static void handleShutdown(enum obs_frontend_event event, void *)
 
 static void setup()
 {
-	char *sentinelFile = obs_module_config_path(sentinel.data());
+	// Freed in handleShutdown()
+	sentinelFile = obs_module_config_path(sentinel.data());
 	if (!sentinelFile) {
 		return;
 	}
@@ -106,7 +108,6 @@ static void setup()
 
 	file.write("running");
 	file.close();
-	bfree(sentinelFile);
 
 	obs_frontend_add_event_callback(handleShutdown, nullptr);
 	return;

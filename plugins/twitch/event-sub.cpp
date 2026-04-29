@@ -8,6 +8,8 @@
 #include "date/tz.h"
 #endif
 
+using namespace std::chrono_literals;
+
 namespace advss {
 
 using websocketpp::lib::placeholders::_1;
@@ -28,7 +30,7 @@ static constexpr std::string_view registerSubscriptionURL =
 static constexpr std::string_view registerSubscriptionPath =
 	"/helix/eventsub/subscriptions";
 #endif
-static const int reconnectDelay = 15;
+static const auto reconnectDelay = 15s;
 
 #undef DispatchMessage
 
@@ -81,6 +83,10 @@ void EventSub::ConnectThread()
 	} else {
 		_client->connect(con);
 		_connection = connection_hdl(con);
+		if (_disconnect) {
+			_client->close(con, websocketpp::close::status::normal,
+				       "Twitch EventSub stopping", ec);
+		}
 		_client->run();
 	}
 
@@ -98,9 +104,9 @@ void EventSub::WaitAndReconnect()
 	auto thread = std::thread([this]() {
 		std::unique_lock<std::mutex> lock(_waitMtx);
 		blog(LOG_INFO,
-		     "Twitch EventSub trying to reconnect to in %d seconds.",
-		     reconnectDelay);
-		_cv.wait_for(lock, std::chrono::seconds(reconnectDelay));
+		     "Twitch EventSub trying to reconnect to in %lld seconds.",
+		     (long long)reconnectDelay.count());
+		_cv.wait_for(lock, reconnectDelay);
 		_reconnecting = false;
 
 		if (_disconnect) {
@@ -153,12 +159,6 @@ void EventSub::Disconnect()
 	{
 		std::unique_lock<std::mutex> waitLock(_waitMtx);
 		_cv.notify_all();
-	}
-
-	while (_connected) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		_client->close(_connection, websocketpp::close::status::normal,
-			       "Twitch EventSub stopping", ec);
 	}
 
 	if (_thread.joinable()) {
@@ -342,8 +342,7 @@ static bool isValidTimestamp(const std::string &timestamp)
 
 		auto duration = now - parsedTime;
 		// Clocks might be off by a bit, so allow negative values also
-		return duration <= std::chrono::minutes(10) &&
-		       duration >= std::chrono::minutes(-1);
+		return duration <= 10min && duration >= -1min;
 	} catch (const std::exception &e) {
 		blog(LOG_WARNING, "%s: %s", __func__, e.what());
 		return false;

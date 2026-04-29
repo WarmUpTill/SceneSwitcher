@@ -627,13 +627,20 @@ static void handleSceneCollectionCleanup()
 		return;
 	}
 
+	// OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP is also called on
+	// shutdown.
+	// Here we also don't want to clear the settings.
+	if (switcher->obsIsShuttingDown) {
+		return;
+	}
+
 	SaveSceneSwitcher(nullptr, false, nullptr);
 }
 
 // Note to future self:
 // be careful using switcher->m here as there is potential for deadlocks when using
 // frontend functions such as obs_frontend_set_current_scene()
-static void OBSEvent(enum obs_frontend_event event, void *switcher)
+static void OBSEvent(enum obs_frontend_event event, void *)
 {
 	if (!switcher) {
 		return;
@@ -785,7 +792,7 @@ extern "C" EXPORT void InitSceneSwitcher(obs_module_t *module,
 	RunPluginInitSteps();
 
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
-	obs_frontend_add_event_callback(OBSEvent, switcher);
+	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(
 		obs_module_text("AdvSceneSwitcher.pluginName"));

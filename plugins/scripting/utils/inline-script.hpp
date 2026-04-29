@@ -15,6 +15,7 @@ class InlineScript {
 public:
 	InlineScript();
 	InlineScript(const InlineScript &);
+	~InlineScript();
 
 	enum Type { INLINE, FILE };
 
@@ -33,6 +34,8 @@ public:
 	bool Run();
 
 	void ResolveVariablesToFixedValues();
+
+	static void DeregisterAll();
 
 private:
 	void Setup();
