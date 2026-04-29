@@ -2,8 +2,12 @@
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 
+#include <obs-frontend-api.h>
 #include <obs-module.h>
 #include <obs.hpp>
+
+#include <mutex>
+#include <unordered_set>
 
 #include <QDir>
 #include <QFileInfo>
@@ -28,12 +32,25 @@ const std::string_view InlineScript::_defaultLUAScript =
 	"end";
 ;
 
+static std::mutex instancesMutex;
+static std::unordered_set<InlineScript *> instances;
+
+static void handleScriptingShutdown(enum obs_frontend_event event, void *)
+{
+	if (event != OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN) {
+		return;
+	}
+	InlineScript::DeregisterAll();
+}
+
 static bool setup()
 {
 	auto sh = obs_get_signal_handler();
 	auto signalDecl =
 		std::string("void ") + signalName.data() + "(string id)";
 	signal_handler_add(sh, signalDecl.c_str());
+
+	obs_frontend_add_event_callback(handleScriptingShutdown, nullptr);
 
 	return true;
 }
@@ -98,6 +115,10 @@ static bool createScriptFile(const char *settingsFile, const char *content)
 
 InlineScript::InlineScript() : _instanceId(_instanceIdCounter++)
 {
+	{
+		std::lock_guard<std::mutex> lock(instancesMutex);
+		instances.insert(this);
+	}
 	Setup();
 }
 
@@ -107,7 +128,25 @@ InlineScript::InlineScript(const InlineScript &other)
 	  _textLUA(other._textLUA),
 	  _instanceId(_instanceIdCounter++)
 {
+	{
+		std::lock_guard<std::mutex> lock(instancesMutex);
+		instances.insert(this);
+	}
 	Setup();
+}
+
+InlineScript::~InlineScript()
+{
+	std::lock_guard<std::mutex> lock(instancesMutex);
+	instances.erase(this);
+}
+
+void InlineScript::DeregisterAll()
+{
+	std::lock_guard<std::mutex> lock(instancesMutex);
+	for (auto *instance : instances) {
+		instance->_script.reset();
+	}
 }
 
 void InlineScript::Save(obs_data_t *data) const
