@@ -83,6 +83,10 @@ void EventSub::ConnectThread()
 	} else {
 		_client->connect(con);
 		_connection = connection_hdl(con);
+		if (_disconnect) {
+			_client->close(con, websocketpp::close::status::normal,
+				       "Twitch EventSub stopping", ec);
+		}
 		_client->run();
 	}
 
@@ -155,12 +159,6 @@ void EventSub::Disconnect()
 	{
 		std::unique_lock<std::mutex> waitLock(_waitMtx);
 		_cv.notify_all();
-	}
-
-	while (_connected) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		_client->close(_connection, websocketpp::close::status::normal,
-			       "Twitch EventSub stopping", ec);
 	}
 
 	if (_thread.joinable()) {
