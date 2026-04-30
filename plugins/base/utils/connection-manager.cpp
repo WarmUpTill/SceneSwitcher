@@ -23,6 +23,7 @@ bool setup()
 {
 	AddSaveStep(saveConnections);
 	AddLoadStep(loadConnections);
+	AddPluginCleanupStep([]() { connections.clear(); });
 	return true;
 }
 

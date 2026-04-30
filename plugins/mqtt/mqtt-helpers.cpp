@@ -718,6 +718,7 @@ static bool setup()
 {
 	AddSaveStep(SaveMqttConnections);
 	AddLoadStep(LoadMqttConnections);
+	AddPluginCleanupStep([]() { GetMqttConnections().clear(); });
 	return true;
 }
 
