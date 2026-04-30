@@ -16,13 +16,16 @@ static void setupTab(QTabWidget *);
 
 static ActionQueueTable *tabWidget = nullptr;
 
-void RegisterActionQueueTab()
+static bool setup()
 {
-	AddPluginInitStep([]() {
+	AddPluginInitStep([] {
 		AddSetupTabCallback("actionQueueTab", ActionQueueTable::Create,
 				    setupTab);
 	});
+	return true;
 }
+
+static bool setupDone = setup();
 
 static void setTabVisible(QTabWidget *tabWidget, bool visible)
 {

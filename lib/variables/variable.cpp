@@ -1,6 +1,7 @@
 #include "variable.hpp"
 #include "math-helpers.hpp"
 #include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
 
@@ -16,6 +17,15 @@ static std::deque<std::shared_ptr<Item>> variables;
 // when resolving strings containing variables, etc.
 static std::mutex lastVariableChangeMutex;
 static std::chrono::high_resolution_clock::time_point lastVariableChange{};
+
+static bool setup()
+{
+	AddSaveStep(SaveVariables);
+	AddLoadStep(LoadVariables);
+	AddPluginCleanupStep([]() { variables.clear(); });
+	return true;
+}
+static bool setupDone = setup();
 
 static void setLastVariableChangeTime()
 {

@@ -774,8 +774,6 @@ void HighlightMacroSettingsButton(bool enable)
 		enable);
 }
 
-void SetupActionQueues();
-
 extern "C" EXPORT void InitSceneSwitcher(obs_module_t *module,
 					 translateFunc translate)
 {
@@ -787,7 +785,6 @@ extern "C" EXPORT void InitSceneSwitcher(obs_module_t *module,
 	PlatformInit();
 	LoadPlugins();
 	SetupDock();
-	SetupActionQueues();
 
 	RunPluginInitSteps();
 
