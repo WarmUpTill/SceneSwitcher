@@ -157,6 +157,15 @@ bool Macro::CheckConditionHelper(
 		return conditionMatched;
 	};
 
+	if (!condition->Enabled()) {
+		vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
+		      condition->GetId().c_str(), _name.c_str());
+		if (!_useShortCircuitEvaluation) {
+			(void)evaluateCondition();
+		}
+		return _matched;
+	}
+
 	const auto logicType = condition->GetLogicType();
 	if (logicType == Logic::Type::NONE) {
 		vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
