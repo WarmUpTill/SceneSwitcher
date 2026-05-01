@@ -8,7 +8,6 @@
 namespace advss {
 
 const std::map<Logic::Type, const char *> Logic::localeMap = {
-	{Logic::Type::NONE, {"AdvSceneSwitcher.logic.none"}},
 	{Logic::Type::AND, {"AdvSceneSwitcher.logic.and"}},
 	{Logic::Type::OR, {"AdvSceneSwitcher.logic.or"}},
 	{Logic::Type::AND_NOT, {"AdvSceneSwitcher.logic.andNot"}},
@@ -67,7 +66,7 @@ void Logic::PopulateLogicTypeSelection(QComboBox *list, bool isRootCondition)
 					 return typeValue < rootOffset;
 				 }}
 			       : std::function<bool(int)>{[](int typeValue) {
-					 return typeValue >= rootOffset;
+					 return typeValue > rootOffset;
 				 }};
 	for (const auto &[type, name] : localeMap) {
 		const int typeValue = static_cast<int>(type);

@@ -8,6 +8,8 @@
 
 namespace advss {
 
+class SwitchButton;
+
 class DurationModifierEdit : public QWidget {
 	Q_OBJECT
 public:
@@ -47,11 +49,13 @@ private slots:
 	void ConditionSelectionChanged(const QString &text);
 	void DurationChanged(const Duration &value);
 	void DurationModifierChanged(DurationModifier::Type m);
+	void ConditionEnableChanged(bool);
 
 private:
 	void SetLogicSelection();
 	std::shared_ptr<MacroSegment> Data() const;
 
+	SwitchButton *_enable;
 	QComboBox *_logicSelection;
 	FilterComboBox *_conditionSelection;
 	DurationModifierEdit *_dur;

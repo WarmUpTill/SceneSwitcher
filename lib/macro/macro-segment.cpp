@@ -80,7 +80,7 @@ bool MacroSegment::Save(obs_data_t *obj) const
 	obs_data_set_bool(data, "useCustomLabel", _useCustomLabel);
 	obs_data_set_string(data, "customLabel", _customLabel.c_str());
 	obs_data_set_bool(data, "enabled", _enabled);
-	obs_data_set_int(data, "version", 1);
+	obs_data_set_int(data, "version", 2);
 
 	OBSDataArrayAutoRelease mappingsArray = obs_data_array_create();
 	for (const auto &mapping : _varMappings) {
@@ -110,6 +110,12 @@ bool MacroSegment::Load(obs_data_t *obj)
 	// TODO: remove this fallback at some point
 	if (!obs_data_has_user_value(data, "version")) {
 		_enabled = obs_data_get_bool(obj, "enabled");
+	}
+
+	// Reset the previously unused "enabled" value for conditions to "true"
+	if (obs_data_get_int(data, "version") < 2 &&
+	    obs_data_has_user_value(obj, "logic")) {
+		_enabled = true;
 	}
 
 	_varMappings.clear();

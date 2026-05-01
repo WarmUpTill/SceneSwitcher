@@ -31,6 +31,10 @@ bool MacroCondition::Load(obs_data_t *obj)
 {
 	MacroSegment::Load(obj);
 	_logic.Load(obj, "logic");
+	if (_logic.GetType() == Logic::Type::NONE) {
+		SetEnabled(false);
+		_logic.SetType(Logic::Type::AND);
+	}
 	_durationModifier.Load(obj);
 	return true;
 }
@@ -50,7 +54,8 @@ void MacroCondition::ValidateLogicSelection(bool isRootCondition,
 		return;
 	}
 
-	_logic.SetType(Logic::Type::NONE);
+	_logic.SetType(Logic::Type::AND);
+	SetEnabled(false);
 	blog(LOG_WARNING,
 	     "setting invalid logic selection to 'ignore' for macro %s",
 	     context);
