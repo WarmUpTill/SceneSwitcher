@@ -113,7 +113,8 @@ class FirstRunWizard : public QWizard {
 	Q_OBJECT
 public:
 	explicit FirstRunWizard(QWidget *parent = nullptr);
-	static std::shared_ptr<Macro> ShowWizard(QWidget *parent);
+	static std::shared_ptr<Macro> ShowWizard(QWidget *parent,
+						 bool *wasSkipped = nullptr);
 	static bool
 	CreateMacro(std::shared_ptr<Macro> &macro, const std::string &macroName,
 		    const std::string &conditionId, obs_data_t *conditionData,
