@@ -391,11 +391,15 @@ void AdvSceneSwitcher::CheckFirstTimeSetup()
 		return;
 	}
 
-	auto macro = FirstRunWizard::ShowWizard(this);
+	bool wasSkipped = false;
+	auto macro = FirstRunWizard::ShowWizard(this, &wasSkipped);
 	if (macro) {
 		renameMacroIfNecessary(macro);
 		QTimer::singleShot(0, this,
 				   [this, macro]() { ui->macros->Add(macro); });
+	}
+	if (wasSkipped) {
+		ui->alwaysShowFeatureTabs->setChecked(true);
 	}
 	switcher->Start();
 }

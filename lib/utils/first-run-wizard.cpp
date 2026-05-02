@@ -398,10 +398,14 @@ void FirstRunWizard::markFirstRunComplete()
 }
 
 // static
-std::shared_ptr<Macro> FirstRunWizard::ShowWizard(QWidget *parent)
+std::shared_ptr<Macro> FirstRunWizard::ShowWizard(QWidget *parent,
+						  bool *wasSkipped)
 {
 	auto wizard = new FirstRunWizard(parent);
 	wizard->exec();
+	if (wasSkipped) {
+		*wasSkipped = (wizard->result() == QDialog::Rejected);
+	}
 	wizard->deleteLater();
 	return wizard->_macro;
 }
