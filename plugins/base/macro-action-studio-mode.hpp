@@ -18,13 +18,28 @@ public:
 	void ResolveVariablesToFixedValues();
 
 	enum class Action {
-		SWAP_SCENE,
-		SET_SCENE, // TODO: Remove in future version as the
-			   // functionality moved to the scene switch action
-		ENABLE_STUDIO_MODE,
-		DISABLE_STUDIO_MODE,
+		TRANSITION = 10,
+		TRANSITION_WITH_SWAP = 20,
+
+		ENALBE_TRANSITION_SWAP = 30,
+		DISABLE_TRANSITION_SWAP = 40,
+		TOGGLE_TRANSITION_SWAP = 50,
+
+		ENALBE_DUPLICATE_SCENE = 60,
+		DISABLE_DUPLICATE_SCENE = 70,
+		TOGGLE_DUPLICATE_SCENE = 80,
+
+		ENALBE_DUPLICATE_SOURCE = 90,
+		DISABLE_DUPLICATE_SOURCE = 100,
+		TOGGLE_DUPLICATE_SOURCE = 110,
+
+		ENABLE_STUDIO_MODE = 120,
+		DISABLE_STUDIO_MODE = 130,
+		TOGGLE_STUDIO_MODE = 140,
+
+		SET_SCENE = 1000, // Deprecated
 	};
-	Action _action = Action::SWAP_SCENE;
+	Action _action = Action::TRANSITION;
 	SceneSelection _scene;
 
 private:
