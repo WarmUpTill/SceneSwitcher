@@ -162,4 +162,47 @@ bool IsMediaSource(obs_source_t *source)
 	return (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0;
 }
 
+SourceActiveKeeper::~SourceActiveKeeper()
+{
+	ReleaseRef();
+}
+
+void SourceActiveKeeper::SetActive(bool active)
+{
+	if (_active == active) {
+		return;
+	}
+	_active = active;
+	if (_active) {
+		AcquireRef();
+	} else {
+		ReleaseRef();
+	}
+}
+
+void SourceActiveKeeper::SetSource(obs_source_t *source)
+{
+	if (_source == source) {
+		return;
+	}
+	ReleaseRef();
+	_source = source;
+	AcquireRef();
+}
+
+void SourceActiveKeeper::AcquireRef()
+{
+	if (_active && _source) {
+		obs_source_inc_active(_source);
+	}
+}
+
+void SourceActiveKeeper::ReleaseRef()
+{
+	if (_active && _source) {
+		obs_source_dec_active(_source);
+		_source = nullptr;
+	}
+}
+
 } // namespace advss

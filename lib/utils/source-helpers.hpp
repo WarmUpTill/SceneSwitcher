@@ -20,4 +20,25 @@ EXPORT OBSWeakSource GetWeakFilterByQString(OBSWeakSource source,
 EXPORT int GetSceneItemCount(const OBSWeakSource &);
 EXPORT bool IsMediaSource(obs_source_t *source);
 
+// RAII helper that keeps an OBS source active (via obs_source_inc_active /
+// obs_source_dec_active) for as long as the keeper is enabled.
+class EXPORT SourceActiveKeeper {
+public:
+	SourceActiveKeeper() = default;
+	~SourceActiveKeeper();
+
+	SourceActiveKeeper(const SourceActiveKeeper &) = delete;
+	SourceActiveKeeper &operator=(const SourceActiveKeeper &) = delete;
+
+	void SetActive(bool active);
+	void SetSource(obs_source_t *source);
+
+private:
+	void AcquireRef();
+	void ReleaseRef();
+
+	OBSSource _source;
+	bool _active = false;
+};
+
 } // namespace advss
