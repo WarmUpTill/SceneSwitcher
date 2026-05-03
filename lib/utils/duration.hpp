@@ -27,8 +27,13 @@ public:
 		SECONDS,
 		MINUTES,
 		HOURS,
+		DAYS,
+		WEEKS,
+		MONTHS,
+		YEARS,
 	};
 	EXPORT Unit GetUnit() const { return _unit; }
+	EXPORT static int ConvertUnitToMultiplier(Unit unit);
 
 	// TODO: Remove
 	// Only use this function if you intend to convert old settings formats
