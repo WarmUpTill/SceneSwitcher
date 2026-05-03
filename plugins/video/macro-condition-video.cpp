@@ -124,6 +124,11 @@ bool MacroConditionVideo::CheckCondition()
 		return false;
 	}
 
+	_activeKeeper.SetActive(_keepActive);
+	if (_video.type != VideoInput::Type::OBS_MAIN_OUTPUT) {
+		_activeKeeper.SetSource(OBSGetStrongRef(_video.GetVideo()));
+	}
+
 	bool match = false;
 	if (CheckShouldBeSkipped()) {
 		return _lastMatchResult;
@@ -159,6 +164,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
 	_video.Save(obj);
+	obs_data_set_bool(obj, "keepActive", _keepActive);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	obs_data_set_string(obj, "filePath", _file.c_str());
 	obs_data_set_bool(obj, "blockUntilScreenshotDone",
@@ -178,6 +184,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_video.Load(obj);
+	_keepActive = obs_data_get_bool(obj, "keepActive");
 	SetCondition(static_cast<VideoCondition>(
 		obs_data_get_int(obj, "condition")));
 	_file = obs_data_get_string(obj, "filePath");
@@ -1233,7 +1240,12 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _area(new AreaEdit(this, &_previewDialog, entryData)),
 	  _throttleControlLayout(new QHBoxLayout),
 	  _throttleEnable(new QCheckBox()),
-	  _throttleCount(new QSpinBox())
+	  _throttleCount(new QSpinBox()),
+	  _keepActive(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.keepSourceActive"))),
+	  _keepActiveHelp(new HelpIcon(
+		  obs_module_text("AdvSceneSwitcher.keepSourceActive.help"),
+		  this))
 {
 	_reduceLatency->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.reduceLatency.tooltip"));
@@ -1290,6 +1302,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			 SLOT(ThrottleEnableChanged(int)));
 	QWidget::connect(_throttleCount, SIGNAL(valueChanged(int)), this,
 			 SLOT(ThrottleCountChanged(int)));
+	QWidget::connect(_keepActive, SIGNAL(stateChanged(int)), this,
+			 SLOT(KeepActiveChanged(int)));
 	QWidget::connect(_showMatch, SIGNAL(clicked()), this,
 			 SLOT(ShowMatchClicked()));
 	QWidget::connect(this,
@@ -1334,6 +1348,11 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			"AdvSceneSwitcher.condition.video.layout.throttle"),
 		_throttleControlLayout, widgetPlaceholders);
 
+	QHBoxLayout *keepActiveLayout = new QHBoxLayout;
+	keepActiveLayout->addWidget(_keepActive);
+	keepActiveLayout->addWidget(_keepActiveHelp);
+	keepActiveLayout->addStretch();
+
 	QHBoxLayout *showMatchLayout = new QHBoxLayout;
 	showMatchLayout->addWidget(_showMatch);
 	showMatchLayout->addStretch();
@@ -1349,6 +1368,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addWidget(_color);
 	mainLayout->addLayout(_throttleControlLayout);
 	mainLayout->addWidget(_area);
+	mainLayout->addLayout(keepActiveLayout);
 	mainLayout->addWidget(_reduceLatency);
 	mainLayout->addLayout(showMatchLayout);
 	setLayout(mainLayout);
@@ -1569,6 +1589,12 @@ void MacroConditionVideoEdit::ThrottleCountChanged(int value)
 	_entryData->_throttleCount = value / GetIntervalValue();
 }
 
+void MacroConditionVideoEdit::KeepActiveChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_keepActive = value;
+}
+
 void MacroConditionVideoEdit::ShowMatchClicked()
 {
 	_previewDialog.show();
@@ -1633,6 +1659,11 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	SetLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->GetCondition()));
 	_area->setVisible(needsAreaControls(_entryData->GetCondition()));
+
+	const bool sourceOrScene = _entryData->_video.type !=
+				   VideoInput::Type::OBS_MAIN_OUTPUT;
+	_keepActive->setVisible(sourceOrScene);
+	_keepActiveHelp->setVisible(sourceOrScene);
 
 	if (_entryData->GetCondition() == VideoCondition::HAS_CHANGED ||
 	    _entryData->GetCondition() == VideoCondition::HAS_NOT_CHANGED) {
@@ -1700,6 +1731,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_throttleEnable->setChecked(_entryData->_throttleEnabled);
 	_throttleCount->setValue(_entryData->_throttleCount *
 				 GetIntervalValue());
+	_keepActive->setChecked(_entryData->_keepActive);
 	UpdatePreviewTooltip();
 	SetupPreviewDialogParams();
 	SetWidgetVisibility();
