@@ -4,10 +4,12 @@
 #include "parameter-wrappers.hpp"
 #include "preview-dialog.hpp"
 
+#include <help-icon.hpp>
 #include <macro-condition-edit.hpp>
 #include <file-selection.hpp>
 #include <screenshot-helper.hpp>
 #include <slider-spinbox.hpp>
+#include <source-helpers.hpp>
 #include <variable-line-edit.hpp>
 #include <variable-text-edit.hpp>
 
@@ -53,6 +55,7 @@ public:
 	void SetupTempVars();
 
 	VideoInput _video;
+	bool _keepActive = false;
 	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	// Enabling this will reduce matching latency, but slow down the
 	// the condition checks of all macros overall.
@@ -80,6 +83,7 @@ signals:
 
 private:
 	bool FileInputIsUpToDate() const;
+	void UpdateActiveKeeper();
 
 	bool OutputChanged();
 	bool ScreenshotContainsPattern();
@@ -92,6 +96,8 @@ private:
 
 	VideoCondition _condition = VideoCondition::MATCH;
 
+	SourceActiveKeeper _activeKeeper;
+	OBSWeakSource _lastActiveKeeperSource;
 	bool _getNextScreenshot = true;
 	Screenshot _screenshotData;
 	QImage _matchImage;
@@ -285,6 +291,7 @@ private slots:
 	void ThrottleEnableChanged(int value);
 	void ThrottleCountChanged(int value);
 	void ShowMatchClicked();
+	void KeepActiveChanged(int value);
 
 	void SetWidgetVisibility();
 	void Resize();
@@ -325,6 +332,9 @@ private:
 	QHBoxLayout *_throttleControlLayout;
 	QCheckBox *_throttleEnable;
 	QSpinBox *_throttleCount;
+
+	QCheckBox *_keepActive;
+	HelpIcon *_keepActiveHelp;
 
 	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;
