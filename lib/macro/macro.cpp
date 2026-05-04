@@ -380,7 +380,7 @@ bool Macro::ShouldRunActions() const
 		!_paused && (_matched || _elseActions.size() > 0) &&
 		_actionModeMatch;
 
-	if (VerboseLoggingEnabled() && !_actionModeMatch) {
+	if (VerboseLoggingEnabled() && !_actionModeMatch && !_paused) {
 		if (_matched && _actions.size() > 0) {
 			blog(LOG_INFO, "skip actions for Macro %s (on change)",
 			     _name.c_str());
