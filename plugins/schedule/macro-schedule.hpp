@@ -41,6 +41,7 @@ public:
 	bool ShouldTrigger(const QDateTime &now) const;
 	void MarkTriggered(const QDateTime &now);
 	bool IsExpired() const;
+	void FastForwardTo(const QDateTime &now);
 
 	QString GetSummary() const;
 	QString GetRepeatDescription() const;

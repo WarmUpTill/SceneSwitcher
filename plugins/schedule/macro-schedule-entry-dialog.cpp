@@ -348,7 +348,12 @@ void MacroScheduleEntryDialog::ApplyToEntry(MacroScheduleEntry &entry) const
 	const QString macroName = _macroSel->currentText();
 	entry.macro = macroName;
 
-	entry.startDateTime = _startDateTime->dateTime();
+	const QDateTime newStartDateTime = _startDateTime->dateTime();
+	const bool startChanged = (newStartDateTime != entry.startDateTime);
+	entry.startDateTime = newStartDateTime;
+	if (startChanged) {
+		entry.FastForwardTo(QDateTime::currentDateTime());
+	}
 
 	entry.hasEndDate = _hasEndDate->isChecked();
 	if (entry.hasEndDate) {

@@ -293,6 +293,38 @@ void MacroScheduleEntry::MarkTriggered(const QDateTime &now)
 	lastTriggered = now;
 }
 
+void MacroScheduleEntry::FastForwardTo(const QDateTime &now)
+{
+	timesTriggered = 0;
+	lastTriggered = QDateTime();
+
+	if (!startDateTime.isValid()) {
+		return;
+	}
+
+	if (repeatType == RepeatType::NONE) {
+		// One-shot: count it as triggered if the start lies in the past.
+		if (startDateTime <= now) {
+			timesTriggered = 1;
+			lastTriggered = startDateTime;
+		}
+		return;
+	}
+
+	// Repeating: walk intervals from startDateTime and count each one
+	// that falls at or before 'now'.
+	QDateTime t = startDateTime;
+	while (t <= now) {
+		++timesTriggered;
+		lastTriggered = t;
+		const QDateTime next = advanceFrom(t);
+		if (!next.isValid()) {
+			break;
+		}
+		t = next;
+	}
+}
+
 QString MacroScheduleEntry::GetRepeatDescription() const
 {
 	if (repeatType == RepeatType::NONE) {
