@@ -557,6 +557,10 @@ void AdvSceneSwitcher::HighlightOnChange() const
 		return;
 	}
 
+	if (macro->Paused()) {
+		return;
+	}
+
 	if (macro->ActionTriggerModePreventedActionsSince(
 		    lastOnChangeHighlightCheckTime)) {
 		HighlightWidget(ui->actionTriggerMode, Qt::yellow,
