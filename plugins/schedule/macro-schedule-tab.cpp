@@ -624,19 +624,21 @@ void MacroScheduleTab::ToggleEnabled()
 	}
 
 	// If all selected entries are enabled, disable them; otherwise enable all.
-	auto lock = LockContext();
-	bool allEnabled = true;
-	for (const auto &entry : GetScheduleEntries()) {
-		if (ids.contains(QString::fromStdString(entry.id)) &&
-		    !entry.enabled) {
-			allEnabled = false;
-			break;
+	{
+		auto lock = LockContext();
+		bool allEnabled = true;
+		for (const auto &entry : GetScheduleEntries()) {
+			if (ids.contains(QString::fromStdString(entry.id)) &&
+			    !entry.enabled) {
+				allEnabled = false;
+				break;
+			}
 		}
-	}
-	const bool newState = !allEnabled;
-	for (auto &entry : GetScheduleEntries()) {
-		if (ids.contains(QString::fromStdString(entry.id))) {
-			entry.enabled = newState;
+		const bool newState = !allEnabled;
+		for (auto &entry : GetScheduleEntries()) {
+			if (ids.contains(QString::fromStdString(entry.id))) {
+				entry.enabled = newState;
+			}
 		}
 	}
 	Refresh();
