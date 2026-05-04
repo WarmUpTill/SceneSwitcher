@@ -23,6 +23,8 @@ static std::atomic<bool> schedulerRunning{false};
 static std::mutex schedulerWaitMutex;
 static std::condition_variable schedulerWaitCV;
 
+static void initScheduler();
+static void cleanupScheduler();
 static void saveEntries(obs_data_t *obj);
 static void loadEntries(obs_data_t *obj);
 static bool setup();
@@ -32,9 +34,10 @@ static bool setup()
 {
 	AddSaveStep(saveEntries);
 	AddLoadStep(loadEntries);
-	AddFinishedLoadingStep(InitScheduler);
+	AddStartStep(initScheduler);
+	AddStopStep(cleanupScheduler);
 	AddPluginCleanupStep([]() {
-		CleanupScheduler();
+		cleanupScheduler();
 		scheduleEntries.clear();
 	});
 	AddMacroExportExtension(
@@ -479,7 +482,7 @@ static void checkAndFireEntries()
 	}
 }
 
-void InitScheduler()
+static void initScheduler()
 {
 	if (schedulerRunning.exchange(true)) {
 		return; // already running
@@ -489,13 +492,13 @@ void InitScheduler()
 			checkAndFireEntries();
 			std::unique_lock<std::mutex> lock(schedulerWaitMutex);
 			schedulerWaitCV.wait_for(
-				lock, std::chrono::seconds(10),
+				lock, std::chrono::seconds(1),
 				[]() { return !schedulerRunning.load(); });
 		}
 	});
 }
 
-void CleanupScheduler()
+static void cleanupScheduler()
 {
 	schedulerRunning = false;
 	schedulerWaitCV.notify_all();

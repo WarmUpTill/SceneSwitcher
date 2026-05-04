@@ -77,7 +77,4 @@ private:
 
 std::deque<MacroScheduleEntry> &GetScheduleEntries();
 
-void InitScheduler();
-void CleanupScheduler();
-
 } // namespace advss
