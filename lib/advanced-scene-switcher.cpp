@@ -506,6 +506,8 @@ bool SwitcherData::AnySceneTransitionStarted()
  ******************************************************************************/
 extern "C" EXPORT void FreeSceneSwitcher()
 {
+	switcher->Stop();
+
 	PlatformCleanup();
 	RunPluginCleanupSteps();
 
