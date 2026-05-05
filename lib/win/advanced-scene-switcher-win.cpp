@@ -1,10 +1,12 @@
 #include "platform-funcs.hpp"
+#include "plugin-state-helpers.hpp"
 
 #include <windows.h>
 #include <UIAutomation.h>
 #include <util/platform.h>
 #include <TlHelp32.h>
 #include <Psapi.h>
+#include <memory>
 #include <locale>
 #include <codecvt>
 #include <string>
@@ -15,6 +17,9 @@
 #include <QApplication>
 #include <QWidget>
 #include <mutex>
+
+#define ADVSS_WIDEN_(x) L##x
+#define ADVSS_WIDEN(x) ADVSS_WIDEN_(x)
 
 namespace advss {
 
@@ -500,9 +505,86 @@ int SecondsSinceLastInput()
 	return (getTime() - getLastInputTime()) / 1000;
 }
 
+static void addPluginFolderToSymbolPath()
+{
+	// This runs after OBS_FRONTEND_EVENT_FINISHED_LOADING, which fires after
+	// obs_load_all_modules() completes. By that point OBS has already called
+	// reset_win32_symbol_paths() -> SymInitializeW(), so DbgHelp is
+	// initialized and we can append our plugins subfolder (where the PDB
+	// files live) to the existing search path.
+	HMODULE dbghelp = LoadLibraryW(L"DbgHelp");
+	if (!dbghelp) {
+		return;
+	}
+
+	typedef BOOL(WINAPI * SymGetSearchPathW_t)(HANDLE, PWSTR, DWORD);
+	typedef BOOL(WINAPI * SymSetSearchPathW_t)(HANDLE, PCWSTR);
+	typedef BOOL(WINAPI * SymRefreshModuleList_t)(HANDLE);
+
+	auto symGetSearchPathW = reinterpret_cast<SymGetSearchPathW_t>(
+		GetProcAddress(dbghelp, "SymGetSearchPathW"));
+	auto symSetSearchPathW = reinterpret_cast<SymSetSearchPathW_t>(
+		GetProcAddress(dbghelp, "SymSetSearchPathW"));
+	auto symRefreshModuleList = reinterpret_cast<SymRefreshModuleList_t>(
+		GetProcAddress(dbghelp, "SymRefreshModuleList"));
+
+	if (!symGetSearchPathW || !symSetSearchPathW || !symRefreshModuleList) {
+		FreeLibrary(dbghelp);
+		return;
+	}
+
+	HMODULE hModule = NULL;
+	if (!GetModuleHandleExW(
+		    GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+			    GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		    reinterpret_cast<LPCWSTR>(addPluginFolderToSymbolPath),
+		    &hModule)) {
+		FreeLibrary(dbghelp);
+		return;
+	}
+
+	wchar_t dllDir[MAX_PATH];
+	if (!GetModuleFileNameW(hModule, dllDir, MAX_PATH)) {
+		FreeLibrary(dbghelp);
+		return;
+	}
+
+	wchar_t *lastSep = wcsrchr(dllDir, L'\\');
+	if (!lastSep) {
+		FreeLibrary(dbghelp);
+		return;
+	}
+	*lastSep = L'\0';
+
+	wchar_t pluginsPath[MAX_PATH];
+	wcsncpy_s(pluginsPath, MAX_PATH, dllDir, _TRUNCATE);
+	wcsncat_s(pluginsPath, MAX_PATH, L"\\" ADVSS_WIDEN(ADVSS_PLUGIN_FOLDER),
+		  _TRUNCATE);
+
+	constexpr DWORD currentPathLen = 4096;
+	constexpr DWORD newPathLen = 8192;
+	auto currentPath = std::make_unique<wchar_t[]>(currentPathLen);
+	auto newPath = std::make_unique<wchar_t[]>(newPathLen);
+
+	symGetSearchPathW(GetCurrentProcess(), currentPath.get(),
+			  currentPathLen);
+
+	if (currentPath[0] != L'\0') {
+		_snwprintf_s(newPath.get(), newPathLen, _TRUNCATE, L"%s;%s",
+			     currentPath.get(), pluginsPath);
+	} else {
+		wcsncpy_s(newPath.get(), newPathLen, pluginsPath, _TRUNCATE);
+	}
+
+	symSetSearchPathW(GetCurrentProcess(), newPath.get());
+	symRefreshModuleList(GetCurrentProcess());
+	FreeLibrary(dbghelp);
+}
+
 void PlatformInit()
 {
 	CoInitialize(NULL);
+	AddFinishedLoadingStep(addPluginFolderToSymbolPath);
 }
 
 void PlatformCleanup()
