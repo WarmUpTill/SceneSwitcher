@@ -290,7 +290,7 @@ bool Macro::CheckConditions(bool ignorePause)
 
 	const bool hasActionsToExecute = _matched ? (_actions.size() > 0)
 						  : (_elseActions.size() > 0);
-	if (!_actionModeMatch && hasActionsToExecute) {
+	if (!_actionModeMatch && hasActionsToExecute && !_paused) {
 		_lastActionRunModePreventTime =
 			std::chrono::high_resolution_clock::now();
 	}
