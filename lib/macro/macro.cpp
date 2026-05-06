@@ -157,6 +157,15 @@ bool Macro::CheckConditionHelper(
 		return conditionMatched;
 	};
 
+	if (!condition->Enabled()) {
+		vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
+		      condition->GetId().c_str(), _name.c_str());
+		if (!_useShortCircuitEvaluation) {
+			(void)evaluateCondition();
+		}
+		return _matched;
+	}
+
 	const auto logicType = condition->GetLogicType();
 	if (logicType == Logic::Type::NONE) {
 		vblog(LOG_INFO, "ignoring condition '%s' for '%s'",
@@ -281,7 +290,7 @@ bool Macro::CheckConditions(bool ignorePause)
 
 	const bool hasActionsToExecute = _matched ? (_actions.size() > 0)
 						  : (_elseActions.size() > 0);
-	if (!_actionModeMatch && hasActionsToExecute) {
+	if (!_actionModeMatch && hasActionsToExecute && !_paused) {
 		_lastActionRunModePreventTime =
 			std::chrono::high_resolution_clock::now();
 	}
@@ -380,7 +389,7 @@ bool Macro::ShouldRunActions() const
 		!_paused && (_matched || _elseActions.size() > 0) &&
 		_actionModeMatch;
 
-	if (VerboseLoggingEnabled() && !_actionModeMatch) {
+	if (VerboseLoggingEnabled() && !_actionModeMatch && !_paused) {
 		if (_matched && _actions.size() > 0) {
 			blog(LOG_INFO, "skip actions for Macro %s (on change)",
 			     _name.c_str());

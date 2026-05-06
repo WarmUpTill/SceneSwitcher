@@ -5,6 +5,7 @@
 #include "path-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "section.hpp"
+#include "switch-button.hpp"
 #include "ui-helpers.hpp"
 #include "utility.hpp"
 
@@ -102,12 +103,15 @@ MacroConditionEdit::MacroConditionEdit(
 	QWidget *parent, std::shared_ptr<MacroCondition> *entryData,
 	bool isRootCondition)
 	: MacroSegmentEdit(parent),
+	  _enable(new SwitchButton()),
 	  _logicSelection(new QComboBox()),
 	  _conditionSelection(new FilterComboBox()),
 	  _dur(new DurationModifierEdit()),
 	  _entryData(entryData),
 	  _isRoot(isRootCondition)
 {
+	QWidget::connect(_enable, SIGNAL(checked(bool)), this,
+			 SLOT(ConditionEnableChanged(bool)));
 	QWidget::connect(_logicSelection, SIGNAL(currentIndexChanged(int)),
 			 this, SLOT(LogicSelectionChanged(int)));
 	QWidget::connect(_conditionSelection,
@@ -122,6 +126,7 @@ MacroConditionEdit::MacroConditionEdit(
 	Logic::PopulateLogicTypeSelection(_logicSelection, isRootCondition);
 	populateConditionSelection(_conditionSelection);
 
+	_section->AddHeaderWidget(_enable);
 	_section->AddHeaderWidget(_logicSelection);
 	_section->AddHeaderWidget(_conditionSelection);
 	_section->AddHeaderWidget(_headerInfo);
@@ -154,8 +159,17 @@ void MacroConditionEdit::LogicSelectionChanged(int idx)
 	const auto logic = static_cast<Logic::Type>(
 		_logicSelection->itemData(idx).toInt());
 	(*_entryData)->SetLogicType(logic);
+}
 
-	SetEnableAppearance(logic != Logic::Type::NONE);
+void MacroConditionEdit::ConditionEnableChanged(bool value)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	auto lock = LockContext();
+	(*_entryData)->SetEnabled(value);
+	SetDisableEffect(!value);
 }
 
 bool MacroConditionEdit::IsRootNode() const
@@ -168,7 +182,9 @@ void MacroConditionEdit::SetLogicSelection()
 	const auto logic = (*_entryData)->GetLogicType();
 	_logicSelection->setCurrentIndex(
 		_logicSelection->findData(static_cast<int>(logic)));
-	SetEnableAppearance(logic != Logic::Type::NONE);
+	const bool enabled = (*_entryData)->Enabled();
+	_enable->setChecked(enabled);
+	SetEnableAppearance(enabled);
 }
 
 void MacroConditionEdit::SetRootNode(bool root)
@@ -239,10 +255,12 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	{
 		auto lock = LockContext();
 		auto logic = (*_entryData)->GetLogicType();
+		const bool enabled = (*_entryData)->Enabled();
 		_entryData->reset();
 		*_entryData = MacroConditionFactory::Create(id, macro);
 		(*_entryData)->SetIndex(idx);
 		(*_entryData)->SetLogicType(logic);
+		(*_entryData)->SetEnabled(enabled);
 		(*_entryData)->PostLoad();
 		RunAndClearPostLoadSteps();
 	}
