@@ -357,6 +357,7 @@ void MacroConditionTransitionEdit::SceneChanged(const SceneSelection &s)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_scene = s;
+	_entryData->ConnectToTransitionSignals();
 }
 
 void MacroConditionTransitionEdit::DurationChanged(const Duration &dur)
