@@ -4,6 +4,8 @@ namespace advss {
 
 void SavePluginSettings(obs_data_t *) {}
 void LoadPluginSettings(obs_data_t *) {}
+void AddEarlySaveStep(std::function<void(obs_data_t *)>) {}
+void AddEarlyLoadStep(std::function<void(obs_data_t *)>) {}
 void AddSaveStep(std::function<void(obs_data_t *)>) {}
 void AddLoadStep(std::function<void(obs_data_t *)>) {}
 void AddPostLoadStep(std::function<void()>) {}

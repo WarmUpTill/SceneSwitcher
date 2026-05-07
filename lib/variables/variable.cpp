@@ -20,8 +20,8 @@ static std::chrono::high_resolution_clock::time_point lastVariableChange{};
 
 static bool setup()
 {
-	AddSaveStep(SaveVariables);
-	AddLoadStep(LoadVariables);
+	AddEarlySaveStep(SaveVariables);
+	AddEarlyLoadStep(LoadVariables);
 	AddPluginCleanupStep([]() { variables.clear(); });
 	return true;
 }
