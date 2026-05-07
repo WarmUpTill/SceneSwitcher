@@ -75,6 +75,18 @@ static std::vector<std::function<void()>> &getStopSteps()
 	return steps;
 }
 
+static std::vector<std::function<void(obs_data_t *)>> &getEarlySaveSteps()
+{
+	static std::vector<std::function<void(obs_data_t *)>> steps;
+	return steps;
+}
+
+static std::vector<std::function<void(obs_data_t *)>> &getEarlyLoadSteps()
+{
+	static std::vector<std::function<void(obs_data_t *)>> steps;
+	return steps;
+}
+
 static std::vector<std::function<void(obs_data_t *)>> &getSaveSteps()
 {
 	static std::vector<std::function<void(obs_data_t *)>> steps;
@@ -109,6 +121,18 @@ void LoadPluginSettings(obs_data_t *obj)
 	GetSwitcher()->LoadSettings(obj);
 }
 
+void AddEarlySaveStep(std::function<void(obs_data_t *)> step)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	getEarlySaveSteps().emplace_back(step);
+}
+
+void AddEarlyLoadStep(std::function<void(obs_data_t *)> step)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	getEarlyLoadSteps().emplace_back(step);
+}
+
 void AddSaveStep(std::function<void(obs_data_t *)> step)
 {
 	std::lock_guard<std::mutex> lock(mutex);
@@ -136,6 +160,9 @@ void AddIntervalResetStep(std::function<void()> step)
 void RunSaveSteps(obs_data_t *obj)
 {
 	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &func : getEarlySaveSteps()) {
+		func(obj);
+	}
 	for (const auto &func : getSaveSteps()) {
 		func(obj);
 	}
@@ -144,6 +171,9 @@ void RunSaveSteps(obs_data_t *obj)
 void RunLoadSteps(obs_data_t *obj)
 {
 	std::lock_guard<std::mutex> lock(mutex);
+	for (const auto &func : getEarlyLoadSteps()) {
+		func(obj);
+	}
 	for (const auto &func : getLoadSteps()) {
 		func(obj);
 	}

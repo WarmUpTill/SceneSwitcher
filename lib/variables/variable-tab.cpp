@@ -63,7 +63,6 @@ static void load(obs_data_t *data)
 {
 	tabSettings.Load(data, "tabSettings");
 	dockSettings.Load(data, "dockSettings");
-
 	enableDock(obs_data_get_bool(data, "addVariablesDock"));
 }
 
