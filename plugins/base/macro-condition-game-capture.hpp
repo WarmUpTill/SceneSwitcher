@@ -1,9 +1,12 @@
 #pragma once
+#include "help-icon.hpp"
 #include "macro-condition-edit.hpp"
+#include "source-helpers.hpp"
 #include "source-selection.hpp"
 
 #include <QWidget>
 #include <QComboBox>
+#include <QCheckBox>
 
 namespace advss {
 
@@ -20,6 +23,7 @@ public:
 	}
 
 	SourceSelection _source;
+	bool _keepActive = false;
 
 private:
 	static void HookedSignalReceived(void *data, calldata_t *);
@@ -31,6 +35,7 @@ private:
 	void GetCalldataInfo(calldata_t *cd);
 
 	obs_source_t *_lastSource = nullptr;
+	SourceActiveKeeper _activeKeeper;
 	OBSSignal _hookSignal;
 	OBSSignal _unhookSignal;
 
@@ -63,9 +68,12 @@ public:
 
 private slots:
 	void SourceChanged(const SourceSelection &);
+	void KeepActiveChanged(int);
 
 private:
 	SourceSelectionWidget *_sources;
+	QCheckBox *_keepActive;
+	HelpIcon *_keepActiveHelp;
 	std::shared_ptr<MacroConditionGameCapture> _entryData;
 
 	bool _loading = true;
