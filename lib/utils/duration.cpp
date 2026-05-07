@@ -121,6 +121,8 @@ static std::string durationUnitToString(Duration::Unit u)
 		return obs_module_text("AdvSceneSwitcher.unit.minutes");
 	case Duration::Unit::HOURS:
 		return obs_module_text("AdvSceneSwitcher.unit.hours");
+	case Duration::Unit::DAYS:
+		return obs_module_text("AdvSceneSwitcher.unit.days");
 	default:
 		break;
 	}
@@ -151,6 +153,8 @@ static int durationUnitToMultiplier(Duration::Unit u)
 		return 60;
 	case Duration::Unit::HOURS:
 		return 3600;
+	case Duration::Unit::DAYS:
+		return 86400;
 	default:
 		break;
 	}

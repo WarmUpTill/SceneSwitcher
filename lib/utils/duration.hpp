@@ -27,6 +27,7 @@ public:
 		SECONDS,
 		MINUTES,
 		HOURS,
+		DAYS,
 	};
 	EXPORT Unit GetUnit() const { return _unit; }
 

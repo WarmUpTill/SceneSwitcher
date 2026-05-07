@@ -11,6 +11,7 @@ static void populateUnits(QComboBox *list)
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.seconds"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.minutes"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.unit.hours"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.unit.days"));
 }
 
 DurationSelection::DurationSelection(QWidget *parent, bool showUnitSelection,
@@ -66,6 +67,8 @@ static int durationUnitToMultiplier(Duration::Unit u)
 		return 60;
 	case Duration::Unit::HOURS:
 		return 3600;
+	case Duration::Unit::DAYS:
+		return 86400;
 	default:
 		break;
 	}
