@@ -871,6 +871,8 @@ void MacroActionMacroEdit::SetWidgetVisibility()
 	} else {
 		_noConditionsWarning->setVisible(false);
 	}
+	_runMacroHelp->setVisible(action ==
+				  MacroActionMacro::Action::RUN_MACRO);
 
 	_nestedMacro->setVisible(action ==
 				 MacroActionMacro::Action::NESTED_MACRO);
