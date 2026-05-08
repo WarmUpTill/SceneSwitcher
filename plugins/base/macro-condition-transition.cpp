@@ -158,8 +158,21 @@ void MacroConditionTransition::TransitionStarted(void *data, calldata_t *cd)
 
 	OBSSourceAutoRelease startSource = obs_transition_get_source(
 		transitionSource, OBS_TRANSITION_SOURCE_A);
+
+	// In studio mode, source A may be a private copy of the scene.
+	// Look up the original by name to get a comparable reference.
+	const bool studioModeActive =
+		obs_frontend_preview_program_mode_active();
+	if (studioModeActive) {
+		OBSSourceAutoRelease startSourceByName = obs_get_source_by_name(
+			obs_source_get_name(startSource));
+		if (startSourceByName) {
+			startSource = std::move(startSourceByName);
+		}
+	}
+
 	OBSSourceAutoRelease endSource =
-		obs_frontend_preview_program_mode_active()
+		studioModeActive
 			? obs_frontend_get_current_scene()
 			: obs_transition_get_source(transitionSource,
 						    OBS_TRANSITION_SOURCE_B);
