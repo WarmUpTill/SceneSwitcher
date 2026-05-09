@@ -296,13 +296,41 @@ bool MacroConditionVideo::ScreenshotContainsPattern()
 			     _patternMatchParameters.threshold, result,
 			     _patternMatchParameters.useAlphaAsMask,
 			     _patternMatchParameters.matchMode);
+
 	if (result.total() == 0) {
 		SetTempVarValue("similarity", std::to_string(bestMatchValue));
 		SetTempVarValue("patternCount", "0");
+		SetTempVarValue("matchX", "-1");
+		SetTempVarValue("matchY", "-1");
+		SetTempVarValue("matchWidth", "0");
+		SetTempVarValue("matchHeight", "0");
 		return false;
 	}
 
 	SetTempVarValue("similarity", std::to_string(bestMatchValue));
+	SetTempVarValue("matchWidth",
+			std::to_string(_patternImageData.rgbaPattern.cols));
+	SetTempVarValue("matchHeight",
+			std::to_string(_patternImageData.rgbaPattern.rows));
+
+	if (IsTempVarInUse("matchX") || IsTempVarInUse("matchY")) {
+		double maxVal;
+		cv::Point maxLoc;
+		cv::minMaxLoc(result, nullptr, &maxVal, nullptr, &maxLoc);
+		if (maxVal > 0.0) {
+			int matchX = maxLoc.x;
+			int matchY = maxLoc.y;
+			if (_areaParameters.enable) {
+				matchX += _areaParameters.area.x;
+				matchY += _areaParameters.area.y;
+			}
+			SetTempVarValue("matchX", std::to_string(matchX));
+			SetTempVarValue("matchY", std::to_string(matchY));
+		} else {
+			SetTempVarValue("matchX", "-1");
+			SetTempVarValue("matchY", "-1");
+		}
+	}
 
 	if (IsTempVarInUse("patternCount")) {
 		const auto count = CountPatternMatches(
@@ -473,6 +501,30 @@ void MacroConditionVideo::SetupTempVars()
 				"AdvSceneSwitcher.tempVar.video.patternCount"),
 			obs_module_text(
 				"AdvSceneSwitcher.tempVar.video.patternCount.description"));
+		AddTempvar(
+			"matchX",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchX"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchX.description"));
+		AddTempvar(
+			"matchY",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchY"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchY.description"));
+		AddTempvar(
+			"matchWidth",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchWidth"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchWidth.description"));
+		AddTempvar(
+			"matchHeight",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchHeight"),
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.video.matchHeight.description"));
 		break;
 	case VideoCondition::OBJECT:
 		AddTempvar(
