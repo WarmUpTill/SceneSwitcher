@@ -54,6 +54,7 @@ const std::vector<VarMapping> &MacroSegment::GetVarMappings() const
 void MacroSegment::SetVarMappings(const std::vector<VarMapping> &mappings)
 {
 	_varMappings = mappings;
+	IncrementTempVarInUseGeneration();
 }
 
 void MacroSegment::FixupVarMappingRefs(const MacroSegment *originalSegment)
