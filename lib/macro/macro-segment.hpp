@@ -57,6 +57,7 @@ public:
 	const std::vector<VarMapping> &GetVarMappings() const;
 	void SetVarMappings(const std::vector<VarMapping> &mappings);
 	std::vector<TempVariable> GetOwnTempVars() const;
+	void FixupVarMappingRefs(const MacroSegment *originalSegment);
 
 protected:
 	friend bool SupportsVariableValue(MacroSegment *);

@@ -87,6 +87,7 @@ private:
 
 	friend TempVariable;
 	friend TempVariableSelection;
+	friend MacroSegment;
 };
 
 class ADVSS_EXPORT TempVariableSelection : public QWidget {
