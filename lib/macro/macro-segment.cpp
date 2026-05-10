@@ -56,6 +56,22 @@ void MacroSegment::SetVarMappings(const std::vector<VarMapping> &mappings)
 	_varMappings = mappings;
 }
 
+void MacroSegment::FixupVarMappingRefs(const MacroSegment *originalSegment)
+{
+	for (auto &mapping : _varMappings) {
+		auto refSeg = mapping.tempVar._segment.lock();
+		if (refSeg.get() != originalSegment) {
+			continue;
+		}
+		for (const auto &var : _tempVariables) {
+			if (var.ID() == mapping.tempVar._id) {
+				mapping.tempVar = var.GetRef();
+				break;
+			}
+		}
+	}
+}
+
 std::vector<TempVariable> MacroSegment::GetOwnTempVars() const
 {
 	return _tempVariables;
