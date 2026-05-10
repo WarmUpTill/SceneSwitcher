@@ -454,7 +454,6 @@ void LoadVariables(obs_data_t *obj)
 		auto var = Variable::Create();
 		variables.emplace_back(var);
 		variables.back()->Load(array_obj);
-		obs_data_release(array_obj);
 	}
 }
 
