@@ -20,8 +20,6 @@ void Duration::Save(obs_data_t *obj, const char *name) const
 	obs_data_release(data);
 }
 
-static int durationUnitToMultiplier(Duration::Unit u);
-
 void Duration::Load(obs_data_t *obj, const char *name)
 {
 	auto data = obs_data_get_obj(obj, name);
@@ -49,7 +47,7 @@ void Duration::Load(obs_data_t *obj, const char *name)
 			_unit = Duration::Unit::SECONDS;
 		}
 
-		_value = _value / durationUnitToMultiplier(_unit);
+		_value = _value / ConvertUnitToMultiplier(_unit);
 
 		obs_data_release(data);
 		return;
@@ -78,7 +76,7 @@ bool Duration::IsReset() const
 
 double Duration::Seconds() const
 {
-	return _value.GetValue() * durationUnitToMultiplier(_unit);
+	return _value.GetValue() * ConvertUnitToMultiplier(_unit);
 }
 
 double Duration::Milliseconds() const
@@ -121,6 +119,14 @@ static std::string durationUnitToString(Duration::Unit u)
 		return obs_module_text("AdvSceneSwitcher.unit.minutes");
 	case Duration::Unit::HOURS:
 		return obs_module_text("AdvSceneSwitcher.unit.hours");
+	case Duration::Unit::DAYS:
+		return obs_module_text("AdvSceneSwitcher.unit.days");
+	case Duration::Unit::WEEKS:
+		return obs_module_text("AdvSceneSwitcher.unit.weeks");
+	case Duration::Unit::MONTHS:
+		return obs_module_text("AdvSceneSwitcher.unit.months");
+	case Duration::Unit::YEARS:
+		return obs_module_text("AdvSceneSwitcher.unit.years");
 	default:
 		break;
 	}
@@ -139,18 +145,23 @@ std::string Duration::ToString() const
 	return ss.str();
 }
 
-// TODO: Remove the code below
-// Only used for backwards compatibility
-
-static int durationUnitToMultiplier(Duration::Unit u)
+int Duration::ConvertUnitToMultiplier(Unit unit)
 {
-	switch (u) {
-	case Duration::Unit::SECONDS:
+	switch (unit) {
+	case Unit::SECONDS:
 		return 1;
-	case Duration::Unit::MINUTES:
+	case Unit::MINUTES:
 		return 60;
-	case Duration::Unit::HOURS:
+	case Unit::HOURS:
 		return 3600;
+	case Unit::DAYS:
+		return 86400;
+	case Unit::WEEKS:
+		return 604800;
+	case Unit::MONTHS:
+		return 2629746;
+	case Unit::YEARS:
+		return 31556952;
 	default:
 		break;
 	}
@@ -160,8 +171,8 @@ static int durationUnitToMultiplier(Duration::Unit u)
 
 void Duration::SetUnit(Unit u)
 {
-	double prevMultiplier = durationUnitToMultiplier(_unit);
-	double newMultiplier = durationUnitToMultiplier(u);
+	double prevMultiplier = ConvertUnitToMultiplier(_unit);
+	double newMultiplier = ConvertUnitToMultiplier(u);
 	_unit = u;
 	_value = _value * (prevMultiplier / newMultiplier);
 }
