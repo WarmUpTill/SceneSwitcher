@@ -391,6 +391,7 @@ void PreviewImage::MarkOCRMatch(QImage &screenshot,
 	if (!text) {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.ocrMatchFail"));
+		return;
 	}
 
 	QString status(obs_module_text(

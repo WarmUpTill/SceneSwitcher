@@ -108,7 +108,10 @@ public:
 	void SetCustomConfigFile(const std::string &);
 	std::string GetCustomConfigFile() const { return configFile; }
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
-	tesseract::TessBaseAPI *GetOCR() const { return ocr.get(); }
+	tesseract::TessBaseAPI *GetOCR() const
+	{
+		return initDone ? ocr.get() : nullptr;
+	}
 
 	StringVariable text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
