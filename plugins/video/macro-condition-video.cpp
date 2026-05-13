@@ -124,6 +124,10 @@ void MacroConditionVideo::UpdateActiveKeeper()
 	if (_video.type == VideoInput::Type::OBS_MAIN_OUTPUT) {
 		return;
 	}
+	if (!_keepActive) {
+		_lastActiveKeeperSource = nullptr;
+		return;
+	}
 	auto videoSource = _video.GetVideo();
 	if (videoSource == _lastActiveKeeperSource) {
 		return;
