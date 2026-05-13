@@ -231,10 +231,9 @@ std::optional<std::string> RunOCR(tesseract::TessBaseAPI *ocr,
 				  const QImage &image, const QColor &color,
 				  double colorDiff)
 {
-	(void)ocr;
 	(void)color;
 	(void)colorDiff;
-	if (image.isNull()) {
+	if (!ocr || image.isNull()) {
 		return {};
 	}
 
