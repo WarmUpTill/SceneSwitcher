@@ -172,11 +172,12 @@ void SourceActiveKeeper::SetActive(bool active)
 	if (_active == active) {
 		return;
 	}
-	_active = active;
-	if (_active) {
+	if (active) {
+		_active = true;
 		AcquireRef();
 	} else {
 		ReleaseRef();
+		_active = false;
 	}
 }
 
