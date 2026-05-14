@@ -25,6 +25,9 @@ void PopulateProfileSelection(QComboBox *box)
 std::string GetPathInProfileDir(const char *filePath)
 {
 	auto path = obs_frontend_get_current_profile_path();
+	if (!path) {
+		return "";
+	}
 	std::string result(path);
 	bfree(path);
 	return result + "/" + filePath;
