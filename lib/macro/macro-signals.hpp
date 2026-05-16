@@ -18,6 +18,7 @@ signals:
 	void Remove(const QString &);
 	void SegmentOrderChanged();
 	void HighlightChanged(bool value);
+	void ConditionTypeCreated(const QString &typeId);
 
 private:
 	MacroSignalManager(QObject *parent = nullptr);
