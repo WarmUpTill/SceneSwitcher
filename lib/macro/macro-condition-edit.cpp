@@ -1,5 +1,6 @@
 #include "macro-condition-edit.hpp"
 #include "advanced-scene-switcher.hpp"
+#include "macro-signals.hpp"
 #include "macro-settings.hpp"
 #include "macro.hpp"
 #include "path-helpers.hpp"
@@ -274,6 +275,9 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 	SetupVarMappings((*_entryData).get());
 	_dur->setVisible(MacroConditionFactory::UsesDurationModifier(id));
 	SetFocusPolicyOfWidgets();
+
+	emit MacroSignalManager::Instance()->ConditionTypeCreated(
+		QString::fromStdString(id));
 }
 
 void MacroConditionEdit::DurationChanged(const Duration &seconds)

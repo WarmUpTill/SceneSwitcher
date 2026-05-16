@@ -2,6 +2,7 @@
 #include "calendar/calendar-event.hpp"
 #include "macro-schedule-entry-dialog.hpp"
 
+#include "macro-condition.hpp"
 #include "macro-helpers.hpp"
 #include "macro-signals.hpp"
 #include "obs-module-helper.hpp"
@@ -40,22 +41,42 @@ static bool enoughMacros()
 	return (int)GetAllMacros().size() >= MACRO_COUNT_THRESHOLD;
 }
 
+static const QStringList schedulingConditionIds = {"date", "timer"};
+
+static bool anyMacroHasSchedulingCondition()
+{
+	for (const auto &macro : GetAllMacros()) {
+		auto conditions = GetMacroConditions(macro.get());
+		if (!conditions) {
+			continue;
+		}
+		for (const auto &condition : *conditions) {
+			if (schedulingConditionIds.contains(
+				    QString::fromStdString(
+					    condition->GetId()))) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static void setupTab(QTabWidget *tab)
 {
-	if (!GetScheduleEntries().empty()) {
+	if (!GetScheduleEntries().empty() || anyMacroHasSchedulingCondition()) {
 		setTabVisible(tab, true);
 		return;
-	}
-
-	if (!enoughMacros()) {
+	} else {
 		setTabVisible(tab, false);
 	}
 
 	QWidget::connect(MacroSignalManager::Instance(),
-			 &MacroSignalManager::Add, tab, [tab](const QString &) {
-				 if (enoughMacros()) {
-					 setTabVisible(tab, true);
+			 &MacroSignalManager::ConditionTypeCreated, tab,
+			 [tab](const QString &typeId) {
+				 if (!schedulingConditionIds.contains(typeId)) {
+					 return;
 				 }
+				 setTabVisible(tab, true);
 			 });
 }
 
