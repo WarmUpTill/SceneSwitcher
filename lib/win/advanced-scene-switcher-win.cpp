@@ -345,6 +345,26 @@ bool IsFullscreen(const std::string &title)
 	return false;
 }
 
+std::optional<WindowGeometry> GetWindowGeometry(const std::string &title)
+{
+	HWND hwnd = getHWNDfromTitle(title);
+	if (!hwnd) {
+		return {};
+	}
+
+	RECT rect;
+	if (!GetWindowRect(hwnd, &rect)) {
+		return {};
+	}
+
+	WindowGeometry geo;
+	geo.x = rect.left;
+	geo.y = rect.top;
+	geo.width = rect.right - rect.left;
+	geo.height = rect.bottom - rect.top;
+	return geo;
+}
+
 QStringList GetProcessList()
 {
 	QStringList processes;
