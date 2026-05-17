@@ -107,6 +107,15 @@ void MacroConditionWindow::SetVariableValueBasedOnMatch(
 	const std::string &matchWindow)
 {
 	SetTempVarValue("window", matchWindow);
+
+	const auto geo = GetWindowGeometry(matchWindow);
+	if (geo) {
+		SetTempVarValue("windowX", std::to_string(geo->x));
+		SetTempVarValue("windowY", std::to_string(geo->y));
+		SetTempVarValue("windowWidth", std::to_string(geo->width));
+		SetTempVarValue("windowHeight", std::to_string(geo->height));
+	}
+
 #ifdef _WIN32
 	SetTempVarValue("windowClass",
 			GetWindowClassByWindowTitle(matchWindow));
@@ -201,6 +210,26 @@ void MacroConditionWindow::SetupTempVars()
 		obs_module_text("AdvSceneSwitcher.tempVar.window.window"),
 		obs_module_text(
 			"AdvSceneSwitcher.tempVar.window.window.description"));
+	AddTempvar(
+		"windowX",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.windowX"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.windowX.description"));
+	AddTempvar(
+		"windowY",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.windowY"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.windowY.description"));
+	AddTempvar(
+		"windowWidth",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.windowWidth"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.windowWidth.description"));
+	AddTempvar(
+		"windowHeight",
+		obs_module_text("AdvSceneSwitcher.tempVar.window.windowHeight"),
+		obs_module_text(
+			"AdvSceneSwitcher.tempVar.window.windowHeight.description"));
 #ifdef _WIN32
 	AddTempvar(
 		"windowClass",
