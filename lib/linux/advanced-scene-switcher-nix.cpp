@@ -352,6 +352,41 @@ std::optional<std::string> GetTextInWindow(const std::string &)
 	return {};
 }
 
+std::optional<WindowGeometry> GetWindowGeometry(const std::string &title)
+{
+	auto display = disp();
+	if (!display) {
+		return {};
+	}
+
+	for (auto window : getTopLevelWindows()) {
+		if (getWindowName(window) != title) {
+			continue;
+		}
+
+		XWindowAttributes attrs;
+		if (!XGetWindowAttributes(display, window, &attrs)) {
+			return {};
+		}
+
+		int x = 0;
+		int y = 0;
+		Window child;
+		XTranslateCoordinates(display, window,
+				      DefaultRootWindow(display), 0, 0, &x, &y,
+				      &child);
+
+		WindowGeometry geo;
+		geo.x = x;
+		geo.y = y;
+		geo.width = attrs.width;
+		geo.height = attrs.height;
+		return geo;
+	}
+
+	return {};
+}
+
 static void getProcessListProcps(QStringList &processes)
 {
 #ifdef PROCPS_AVAILABLE
