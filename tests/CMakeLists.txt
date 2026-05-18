@@ -194,6 +194,14 @@ target_sources(
   PRIVATE test-macro-condition-process.cpp stubs/platform-funcs.cpp
           ${ADVSS_SOURCE_DIR}/plugins/base/macro-condition-process.cpp)
 
+# --- macro-condition-window --- #
+
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE test-macro-condition-window.cpp
+          ${ADVSS_SOURCE_DIR}/plugins/base/macro-condition-window.cpp
+          ${ADVSS_SOURCE_DIR}/plugins/base/utils/window-selection.cpp)
+
 # --- Testing --- #
 
 enable_testing()
