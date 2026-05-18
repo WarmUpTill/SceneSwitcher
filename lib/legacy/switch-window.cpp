@@ -178,47 +178,19 @@ void AdvSceneSwitcher::on_ignoreWindows_currentRowChanged(int idx)
 	}
 }
 
-void checkWindowTitleSwitchDirect(WindowSwitch &s,
-				  std::string &currentWindowTitle, bool &match,
-				  OBSWeakSource &scene,
-				  OBSWeakSource &transition)
+static bool windowInfoMatchesSwitch(const WindowInfo &info,
+				    const WindowSwitch &s)
 {
-	bool focus = (!s.focus || s.window == currentWindowTitle);
-	bool fullscreen = (!s.fullscreen || IsFullscreen(s.window));
-	bool max = (!s.maximized || IsMaximized(s.window));
-
-	if (focus && fullscreen && max) {
-		match = true;
-		scene = s.getScene();
-		transition = s.transition;
+	if (s.focus && !info.focused) {
+		return false;
 	}
-}
-
-void checkWindowTitleSwitchRegex(WindowSwitch &s,
-				 std::string &currentWindowTitle,
-				 std::vector<std::string> windowList,
-				 bool &match, OBSWeakSource &scene,
-				 OBSWeakSource &transition)
-{
-	for (auto &window : windowList) {
-		try {
-			std::regex expr(s.window);
-			if (!std::regex_match(window, expr)) {
-				continue;
-			}
-		} catch (const std::regex_error &) {
-		}
-
-		bool focus = (!s.focus || window == currentWindowTitle);
-		bool fullscreen = (!s.fullscreen || IsFullscreen(window));
-		bool max = (!s.maximized || IsMaximized(window));
-
-		if (focus && fullscreen && max) {
-			match = true;
-			scene = s.getScene();
-			transition = s.transition;
-		}
+	if (s.fullscreen && !info.fullscreen) {
+		return false;
 	}
+	if (s.maximized && !info.maximized) {
+		return false;
+	}
+	return true;
 }
 
 bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
@@ -228,23 +200,37 @@ bool SwitcherData::checkWindowTitleSwitch(OBSWeakSource &scene,
 		return false;
 	}
 
-	std::string currentWindowTitle = switcher->currentTitle;
 	bool match = false;
-	const auto windowList = GetWindowList();
+
+	WindowQueryOptions options;
+	options.focus = true;
+	options.fullscreen = true;
+	options.maximized = true;
+	const auto windows = GetWindows(options);
 
 	for (WindowSwitch &s : windowSwitches) {
 		if (!s.initialized()) {
 			continue;
 		}
 
-		if (std::find(windowList.begin(), windowList.end(), s.window) !=
-		    windowList.end()) {
-			checkWindowTitleSwitchDirect(s, currentWindowTitle,
-						     match, scene, transition);
-		} else {
-			checkWindowTitleSwitchRegex(s, currentWindowTitle,
-						    windowList, match, scene,
-						    transition);
+		for (const auto &info : windows) {
+			bool titleMatch = false;
+			try {
+				std::regex expr(s.window);
+				titleMatch = info.title == s.window ||
+					     std::regex_match(info.title, expr);
+			} catch (const std::regex_error &) {
+				titleMatch = info.title == s.window;
+			}
+
+			if (!titleMatch || !windowInfoMatchesSwitch(info, s)) {
+				continue;
+			}
+
+			match = true;
+			scene = s.getScene();
+			transition = s.transition;
+			break;
 		}
 
 		if (match) {

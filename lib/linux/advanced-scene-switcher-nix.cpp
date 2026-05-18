@@ -236,17 +236,65 @@ std::string getWindowName(Window window)
 	return windowTitle;
 }
 
-std::vector<std::string> GetWindowList()
+std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
 {
-	std::vector<std::string> windows;
-	for (auto window : getTopLevelWindows()) {
+	const std::string foregroundTitle = GetCurrentWindowTitle();
+	const auto topLevel = getTopLevelWindows();
+	auto display = disp();
+
+	std::vector<WindowInfo> result;
+	result.reserve(topLevel.size());
+
+	for (auto window : topLevel) {
 		auto name = getWindowName(window);
 		if (name.empty()) {
 			continue;
 		}
-		windows.emplace_back(name);
+
+		WindowInfo info;
+		info.title = name;
+
+		if (options.focus) {
+			info.focused = (name == foregroundTitle);
+		}
+
+		if (options.fullscreen || options.maximized) {
+			QStringList states = getStates(window);
+			if (options.fullscreen) {
+				info.fullscreen = states.contains(
+					"_NET_WM_STATE_FULLSCREEN");
+			}
+			if (options.maximized) {
+				info.maximized =
+					states.contains(
+						"_NET_WM_STATE_MAXIMIZED_VERT") &&
+					states.contains(
+						"_NET_WM_STATE_MAXIMIZED_HORZ");
+			}
+		}
+
+		if (options.geometry && display) {
+			XWindowAttributes attrs;
+			if (XGetWindowAttributes(display, window, &attrs)) {
+				int x = 0;
+				int y = 0;
+				Window child;
+				XTranslateCoordinates(
+					display, window,
+					DefaultRootWindow(display), 0, 0, &x,
+					&y, &child);
+				info.x = x;
+				info.y = y;
+				info.width = attrs.width;
+				info.height = attrs.height;
+			}
+		}
+
+		// windowClass and text not implemented on Linux
+		result.emplace_back(std::move(info));
 	}
-	return windows;
+
+	return result;
 }
 
 int getActiveWindow(Window *&window)
@@ -288,103 +336,6 @@ std::string GetCurrentWindowTitle()
 	auto name = getWindowName(data[0]);
 	XFree(data);
 	return name;
-}
-
-bool windowStatesAreSet(const std::string &windowTitle,
-			std::vector<QString> &expectedStates)
-{
-	if (!ewmhIsSupported()) {
-		return false;
-	}
-
-	std::vector<Window> windows = getTopLevelWindows();
-	for (auto &window : windows) {
-		auto name = getWindowName(window);
-		if (name.empty()) {
-			continue;
-		}
-
-		bool equals = windowTitle == name;
-		bool matches = QString::fromStdString(name).contains(
-			QRegularExpression(
-				QString::fromStdString(windowTitle)));
-
-		if (!(equals || matches)) {
-			continue;
-		}
-
-		QStringList states = getStates(window);
-		if (states.isEmpty()) {
-			if (expectedStates.empty()) {
-				return true;
-			}
-			return false;
-		}
-
-		for (const auto &state : expectedStates) {
-			if (!states.contains(state)) {
-				return false;
-			}
-		}
-		return true;
-	}
-	return false;
-}
-
-bool IsMaximized(const std::string &title)
-{
-	std::vector<QString> states;
-	states.emplace_back("_NET_WM_STATE_MAXIMIZED_VERT");
-	states.emplace_back("_NET_WM_STATE_MAXIMIZED_HORZ");
-	return windowStatesAreSet(title, states);
-}
-
-bool IsFullscreen(const std::string &title)
-{
-	std::vector<QString> states;
-	states.emplace_back("_NET_WM_STATE_FULLSCREEN");
-	return windowStatesAreSet(title, states);
-}
-
-std::optional<std::string> GetTextInWindow(const std::string &)
-{
-	// Not implemented
-	return {};
-}
-
-std::optional<WindowGeometry> GetWindowGeometry(const std::string &title)
-{
-	auto display = disp();
-	if (!display) {
-		return {};
-	}
-
-	for (auto window : getTopLevelWindows()) {
-		if (getWindowName(window) != title) {
-			continue;
-		}
-
-		XWindowAttributes attrs;
-		if (!XGetWindowAttributes(display, window, &attrs)) {
-			return {};
-		}
-
-		int x = 0;
-		int y = 0;
-		Window child;
-		XTranslateCoordinates(display, window,
-				      DefaultRootWindow(display), 0, 0, &x, &y,
-				      &child);
-
-		WindowGeometry geo;
-		geo.x = x;
-		geo.y = y;
-		geo.width = attrs.width;
-		geo.height = attrs.height;
-		return geo;
-	}
-
-	return {};
 }
 
 static void getProcessListProcps(QStringList &processes)

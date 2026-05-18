@@ -1,5 +1,6 @@
 #pragma once
 #include "macro-condition-edit.hpp"
+#include "platform-funcs.hpp"
 #include "variable-text-edit.hpp"
 #include "regex-config.hpp"
 #include "window-selection.hpp"
@@ -37,10 +38,9 @@ public:
 	RegexConfig _textRegex = RegexConfig::PartialMatchRegexConfig();
 
 private:
-	bool WindowMatchesRequirements(const std::string &window) const;
-	bool WindowMatches(const std::vector<std::string> &windowList);
-	bool WindowRegexMatches(const std::vector<std::string> &windowList);
-	void SetVariableValueBasedOnMatch(const std::string &matchWindow);
+	bool WindowMatchesRequirements(const WindowInfo &info) const;
+	bool FindMatch(const std::vector<WindowInfo> &windows);
+	void SetVariableValueBasedOnMatch(const WindowInfo *info);
 	void SetupTempVars();
 
 	// For now only supported on Windows

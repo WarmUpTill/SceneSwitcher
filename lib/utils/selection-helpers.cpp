@@ -173,10 +173,10 @@ void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny,
 void PopulateWindowSelection(QComboBox *sel, bool addSelect)
 {
 
-	const auto windows = GetWindowList();
+	const auto windows = GetWindows();
 
-	for (const std::string &window : windows) {
-		sel->addItem(window.c_str());
+	for (const auto &info : windows) {
+		sel->addItem(info.title.c_str());
 	}
 
 	sel->model()->sort(0);
