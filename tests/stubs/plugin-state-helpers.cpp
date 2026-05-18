@@ -2,6 +2,23 @@
 
 namespace advss {
 
+namespace {
+
+std::string g_foregroundWindowTitle;
+std::string g_previousForegroundWindowTitle;
+
+} // namespace
+
+void SetStubForegroundWindowTitle(const std::string &title)
+{
+	g_foregroundWindowTitle = title;
+}
+
+void SetStubPreviousForegroundWindowTitle(const std::string &title)
+{
+	g_previousForegroundWindowTitle = title;
+}
+
 void SavePluginSettings(obs_data_t *) {}
 void LoadPluginSettings(obs_data_t *) {}
 void AddEarlySaveStep(std::function<void(obs_data_t *)>) {}
@@ -47,11 +64,11 @@ void SetNoMatchScene(const OBSWeakSource &) {}
 
 std::string ForegroundWindowTitle()
 {
-	return "";
+	return g_foregroundWindowTitle;
 }
 std::string PreviousForegroundWindowTitle()
 {
-	return "";
+	return g_previousForegroundWindowTitle;
 }
 bool SettingsWindowIsOpened()
 {
