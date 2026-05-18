@@ -42,19 +42,20 @@ void CloseWindow(const std::string &) {}
 
 std::optional<std::string> MacroActionWindow::GetMatchingWindow() const
 {
-	const auto windowList = GetWindowList();
+	const auto windows = GetWindows();
 
 	if (!_regex.Enabled()) {
-		if (std::find(windowList.begin(), windowList.end(),
-			      std::string(_window)) == windowList.end()) {
-			return {};
+		for (const auto &info : windows) {
+			if (info.title == std::string(_window)) {
+				return info.title;
+			}
 		}
-		return _window;
+		return {};
 	}
 
-	for (const auto &window : windowList) {
-		if (_regex.Matches(window, _window)) {
-			return window;
+	for (const auto &info : windows) {
+		if (_regex.Matches(info.title, _window)) {
+			return info.title;
 		}
 	}
 

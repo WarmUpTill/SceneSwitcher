@@ -205,26 +205,6 @@ static std::vector<HWND> getHWNDfromTitle(const std::string &title)
 	return hwnds;
 }
 
-std::string GetWindowClassByWindowTitle(const std::string &window)
-{
-	auto hwnds = getHWNDfromTitle(window);
-	if (hwnds.empty()) {
-		return "";
-	}
-	auto hwnd = hwnds.at(0);
-	std::wstring wClass;
-	wClass.resize(1024);
-	if (!GetClassNameW(hwnd, &wClass[0], wClass.capacity())) {
-		return "";
-	}
-
-	size_t len = os_wcs_to_utf8(wClass.c_str(), 0, nullptr, 0);
-	std::string className;
-	className.resize(len);
-	os_wcs_to_utf8(wClass.c_str(), 0, &className[0], len + 1);
-	return className;
-}
-
 void SetFocusWindow(const std::string &title)
 {
 	auto hwnds = getHWNDfromTitle(title);
