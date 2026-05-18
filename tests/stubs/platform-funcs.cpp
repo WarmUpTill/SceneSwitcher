@@ -14,6 +14,7 @@ std::string g_foregroundProcessName;
 std::string g_foregroundProcessPath;
 QStringList g_processList;
 QStringList g_processPathsFromName;
+std::vector<WindowInfo> g_windows;
 
 } // namespace
 
@@ -37,29 +38,19 @@ void SetStubProcessPaths(const QStringList &paths)
 	g_processPathsFromName = paths;
 }
 
+void SetStubWindows(const std::vector<WindowInfo> &windows)
+{
+	g_windows = windows;
+}
+
 // --- platform-funcs.hpp stubs ---
 
-std::vector<std::string> GetWindowList()
+std::vector<WindowInfo> GetWindows(const WindowQueryOptions &)
 {
-	return {};
+	return g_windows;
 }
 
 std::string GetCurrentWindowTitle()
-{
-	return {};
-}
-
-bool IsFullscreen(const std::string &)
-{
-	return false;
-}
-
-bool IsMaximized(const std::string &)
-{
-	return false;
-}
-
-std::optional<std::string> GetTextInWindow(const std::string &)
 {
 	return {};
 }
@@ -97,5 +88,6 @@ bool IsInFocus(const QString &)
 // --- selection-helpers.hpp stubs ---
 
 void PopulateProcessSelection(QComboBox *, bool) {}
+void PopulateWindowSelection(QComboBox *, bool) {}
 
 } // namespace advss
