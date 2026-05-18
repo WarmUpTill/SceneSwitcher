@@ -138,7 +138,7 @@ const std::vector<std::string> getOBSWindows()
 	return lastDoneHelper->windows;
 }
 
-std::vector<std::string> GetWindowList()
+static std::vector<std::string> getAllWindowTitles()
 {
 	std::vector<std::string> windows;
 	EnumWindowsWithMetro(GetTitleCB, reinterpret_cast<LPARAM>(&windows));
@@ -153,6 +153,129 @@ std::vector<std::string> GetWindowList()
 	// Add entry for OBS Studio itself - see GetCurrentWindowTitle()
 	windows.emplace_back("OBS");
 	return windows;
+}
+
+static bool isWindowMaximized(HWND hwnd)
+{
+	if (!hwnd || hwnd == GetDesktopWindow() || hwnd == GetShellWindow()) {
+		return false;
+	}
+	if (IsZoomed(hwnd)) {
+		return true;
+	}
+	RECT appBounds;
+	MONITORINFO monitorInfo = {0};
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
+		       &monitorInfo);
+	GetWindowRect(hwnd, &appBounds);
+	return monitorInfo.rcMonitor.bottom == appBounds.bottom &&
+	       monitorInfo.rcMonitor.top == appBounds.top &&
+	       monitorInfo.rcMonitor.left == appBounds.left &&
+	       monitorInfo.rcMonitor.right == appBounds.right;
+}
+
+static bool isWindowFullscreen(HWND hwnd)
+{
+	if (!hwnd || hwnd == GetDesktopWindow() || hwnd == GetShellWindow()) {
+		return false;
+	}
+	RECT appBounds;
+	MONITORINFO monitorInfo = {0};
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
+		       &monitorInfo);
+	GetWindowRect(hwnd, &appBounds);
+	return monitorInfo.rcMonitor.bottom == appBounds.bottom &&
+	       monitorInfo.rcMonitor.top == appBounds.top &&
+	       monitorInfo.rcMonitor.left == appBounds.left &&
+	       monitorInfo.rcMonitor.right == appBounds.right;
+}
+
+static std::string getWindowClass(HWND hwnd)
+{
+	std::wstring wClass;
+	wClass.resize(256);
+	int len = GetClassNameW(hwnd, &wClass[0], (int)wClass.size());
+	if (len <= 0) {
+		return "";
+	}
+	wClass.resize(len);
+	size_t utf8len = os_wcs_to_utf8(wClass.c_str(), 0, nullptr, 0);
+	std::string result;
+	result.resize(utf8len);
+	os_wcs_to_utf8(wClass.c_str(), 0, &result[0], utf8len + 1);
+	return result;
+}
+
+static HWND getHWNDfromTitle(const std::string &title);
+static std::optional<std::string> GetTextInWindow(const std::string &window);
+
+std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
+{
+	const std::string foregroundTitle = GetCurrentWindowTitle();
+	const auto titles = getAllWindowTitles();
+
+	std::vector<WindowInfo> result;
+	result.reserve(titles.size());
+
+	for (const auto &title : titles) {
+		WindowInfo info;
+		info.title = title;
+
+		const bool needHwnd = options.geometry || options.fullscreen ||
+				      options.maximized ||
+				      options.windowClass || options.text ||
+				      options.focus;
+
+		if (options.focus) {
+			info.focused = (title == foregroundTitle);
+		}
+
+		if (!needHwnd || (!options.geometry && !options.fullscreen &&
+				  !options.maximized && !options.windowClass &&
+				  !options.text)) {
+			result.emplace_back(std::move(info));
+			continue;
+		}
+
+		HWND hwnd = getHWNDfromTitle(title);
+		if (!hwnd) {
+			result.emplace_back(std::move(info));
+			continue;
+		}
+
+		if (options.geometry || options.fullscreen ||
+		    options.maximized) {
+			RECT rect;
+			if (GetWindowRect(hwnd, &rect)) {
+				info.x = rect.left;
+				info.y = rect.top;
+				info.width = rect.right - rect.left;
+				info.height = rect.bottom - rect.top;
+			}
+		}
+
+		if (options.maximized) {
+			info.maximized = isWindowMaximized(hwnd);
+		}
+
+		if (options.fullscreen) {
+			info.fullscreen = isWindowFullscreen(hwnd);
+		}
+
+		if (options.windowClass) {
+			info.windowClass = getWindowClass(hwnd);
+		}
+
+		if (options.text) {
+			info.text = GetTextInWindow(title);
+		}
+
+		result.emplace_back(std::move(info));
+	}
+
+	return result;
 }
 
 std::string GetCurrentWindowTitle()
@@ -193,36 +316,6 @@ static HWND getHWNDfromTitle(const std::string &title)
 	return hwnd;
 }
 
-bool IsMaximized(const std::string &title)
-{
-	RECT appBounds;
-	MONITORINFO monitorInfo = {0};
-	HWND hwnd = NULL;
-
-	hwnd = getHWNDfromTitle(title);
-	if (!hwnd) {
-		return false;
-	}
-
-	monitorInfo.cbSize = sizeof(MONITORINFO);
-	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
-		       &monitorInfo);
-
-	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
-		if (IsZoomed(hwnd)) {
-			return true;
-		}
-		GetWindowRect(hwnd, &appBounds);
-		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
-		    monitorInfo.rcMonitor.top == appBounds.top &&
-		    monitorInfo.rcMonitor.left == appBounds.left &&
-		    monitorInfo.rcMonitor.right == appBounds.right) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static std::wstring GetControlText(HWND hwnd, IUIAutomationElement *element)
 {
 	VARIANT var;
@@ -249,7 +342,7 @@ static std::wstring GetControlText(HWND hwnd, IUIAutomationElement *element)
 	return text;
 }
 
-std::optional<std::string> GetTextInWindow(const std::string &window)
+static std::optional<std::string> GetTextInWindow(const std::string &window)
 {
 	HWND hwnd = getHWNDfromTitle(window);
 	if (!hwnd) {
@@ -314,55 +407,6 @@ std::optional<std::string> GetTextInWindow(const std::string &window)
 	tmp.resize(len);
 	os_wcs_to_utf8(result.c_str(), 0, &tmp[0], len + 1);
 	return tmp;
-}
-
-bool IsFullscreen(const std::string &title)
-{
-	RECT appBounds;
-	MONITORINFO monitorInfo = {0};
-
-	HWND hwnd = NULL;
-	hwnd = getHWNDfromTitle(title);
-
-	if (!hwnd) {
-		return false;
-	}
-
-	monitorInfo.cbSize = sizeof(MONITORINFO);
-	GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST),
-		       &monitorInfo);
-
-	if (hwnd && hwnd != GetDesktopWindow() && hwnd != GetShellWindow()) {
-		GetWindowRect(hwnd, &appBounds);
-		if (monitorInfo.rcMonitor.bottom == appBounds.bottom &&
-		    monitorInfo.rcMonitor.top == appBounds.top &&
-		    monitorInfo.rcMonitor.left == appBounds.left &&
-		    monitorInfo.rcMonitor.right == appBounds.right) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-std::optional<WindowGeometry> GetWindowGeometry(const std::string &title)
-{
-	HWND hwnd = getHWNDfromTitle(title);
-	if (!hwnd) {
-		return {};
-	}
-
-	RECT rect;
-	if (!GetWindowRect(hwnd, &rect)) {
-		return {};
-	}
-
-	WindowGeometry geo;
-	geo.x = rect.left;
-	geo.y = rect.top;
-	geo.width = rect.right - rect.left;
-	geo.height = rect.bottom - rect.top;
-	return geo;
 }
 
 QStringList GetProcessList()
