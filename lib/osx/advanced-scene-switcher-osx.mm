@@ -6,6 +6,7 @@
 #import <Carbon/Carbon.h>
 #include <Carbon/Carbon.h>
 #include <util/platform.h>
+#include <set>
 #include <vector>
 #include <QStringList>
 #include <QRegularExpression>
@@ -140,13 +141,44 @@ std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
 		NSArray *screens = [NSScreen screens];
 
 		CFArrayRef cfApps = CGWindowListCopyWindowInfo(
-			kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+			kCGWindowListExcludeDesktopElements, kCGNullWindowID);
 		NSMutableArray *apps = (__bridge NSMutableArray *)cfApps;
+
+		// Pre-compute which PIDs own at least one fullscreen-sized window.
+		// A fullscreen app reports a small chrome/title bar window first and
+		// its full-size content window second; checking only the first
+		// window's bounds gives a false negative.
+		std::set<int> fullscreenPIDs;
+		if (options.fullscreen) {
+			for (NSDictionary *app in apps) {
+				int layer = [[app objectForKey:@"kCGWindowLayer"]
+					intValue];
+				if (layer != 0) {
+					continue;
+				}
+				for (NSScreen *screen in screens) {
+					if (isWindowFullscreenOnScreen(app,
+								       screen)) {
+						int pid = [[app objectForKey:
+							@"kCGWindowOwnerPID"]
+							intValue];
+						fullscreenPIDs.insert(pid);
+						break;
+					}
+				}
+			}
+		}
 
 		// Track titles already added to avoid duplicates (name + owner)
 		std::vector<std::string> seen;
 
 		for (NSDictionary *app in apps) {
+			int layer =
+				[[app objectForKey:@"kCGWindowLayer"] intValue];
+			if (layer != 0) {
+				continue;
+			}
+
 			std::string name = nsStringToStdString(
 				[app objectForKey:@"kCGWindowName"]);
 			std::string owner = nsStringToStdString(
@@ -193,16 +225,11 @@ std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
 				}
 
 				if (options.fullscreen) {
-					for (NSScreen *screen in screens) {
-						if (isWindowOriginOnScreen(
-							    app, screen,
-							    true) &&
-						    isWindowFullscreenOnScreen(
-							    app, screen)) {
-							info.fullscreen = true;
-							break;
-						}
-					}
+					int pid = [[app objectForKey:
+						@"kCGWindowOwnerPID"]
+						intValue];
+					info.fullscreen =
+						fullscreenPIDs.count(pid) > 0;
 				}
 
 				if (options.maximized) {
