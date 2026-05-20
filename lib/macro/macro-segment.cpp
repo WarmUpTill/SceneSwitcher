@@ -57,20 +57,20 @@ void MacroSegment::SetVarMappings(const std::vector<VarMapping> &mappings)
 	IncrementTempVarInUseGeneration();
 }
 
-void MacroSegment::FixupVarMappingRefs(const MacroSegment *originalSegment)
+void MacroSegment::FixupVarMappingRefs()
 {
 	for (auto &mapping : _varMappings) {
-		auto refSeg = mapping.tempVar._segment.lock();
-		if (refSeg.get() != originalSegment) {
+		if (!mapping.tempVar.HasValidID()) {
 			continue;
 		}
 		for (const auto &var : _tempVariables) {
-			if (var.ID() == mapping.tempVar._id) {
+			if (var.ID() == mapping.tempVar.GetID()) {
 				mapping.tempVar = var.GetRef();
 				break;
 			}
 		}
 	}
+	NotifyUIAboutTempVarChange(this);
 }
 
 std::vector<TempVariable> MacroSegment::GetOwnTempVars() const
