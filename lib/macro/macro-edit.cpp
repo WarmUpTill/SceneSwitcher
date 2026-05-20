@@ -1118,6 +1118,9 @@ void MacroEdit::AddMacroAction(int idx)
 		macro->Actions().at(idx - 1)->Save(data);
 	}
 	AddMacroAction(macro.get(), idx, id, data);
+	if (idx < (int)macro->Actions().size()) {
+		macro->Actions().at(idx)->FixupVarMappingRefs();
+	}
 }
 
 void MacroEdit::on_actionAdd_clicked()
@@ -1426,6 +1429,9 @@ void MacroEdit::AddMacroElseAction(int idx)
 		macro->ElseActions().at(idx - 1)->Save(data);
 	}
 	AddMacroElseAction(macro.get(), idx, id, data);
+	if (idx < (int)macro->ElseActions().size()) {
+		macro->ElseActions().at(idx)->FixupVarMappingRefs();
+	}
 }
 
 void MacroEdit::RemoveMacroElseAction(int idx)
@@ -1570,6 +1576,9 @@ void MacroEdit::AddMacroCondition(int idx)
 		macro->Conditions().at(idx - 1)->Save(data);
 	}
 	AddMacroCondition(macro.get(), idx, id, data.Get(), logic);
+	if (idx < (int)macro->Conditions().size()) {
+		macro->Conditions().at(idx)->FixupVarMappingRefs();
+	}
 }
 
 void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,

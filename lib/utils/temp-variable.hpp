@@ -74,6 +74,7 @@ public:
 	EXPORT std::optional<const TempVariable> GetTempVariable(Macro *) const;
 	EXPORT bool operator==(const TempVariableRef &other) const;
 	bool HasValidID() const { return !_id.empty(); }
+	std::string GetID() const { return _id; }
 
 private:
 	enum class SegmentType { NONE, CONDITION, ACTION, ELSEACTION };
@@ -87,7 +88,6 @@ private:
 
 	friend TempVariable;
 	friend TempVariableSelection;
-	friend MacroSegment;
 };
 
 class ADVSS_EXPORT TempVariableSelection : public QWidget {
