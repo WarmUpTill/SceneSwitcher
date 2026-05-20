@@ -73,52 +73,49 @@ std::string GetCurrentWindowTitle()
 	return title;
 }
 
-bool isWindowOriginOnScreen(NSDictionary *app, NSScreen *screen,
-			    bool fullscreen = false)
-{
-	NSArray *screens = [NSScreen screens];
-	NSRect mainScreenFrame = [screens[0] frame];
-	NSRect screenFrame;
-	if (fullscreen) {
-		screenFrame = [screen frame];
-	} else {
-		screenFrame = [screen visibleFrame];
-	}
-	NSRect windowBounds;
-	CGRectMakeWithDictionaryRepresentation(
-		(CFDictionaryRef)[app objectForKey:@"kCGWindowBounds"],
-		&windowBounds);
-
-	return (windowBounds.origin.x == screenFrame.origin.x &&
-		(mainScreenFrame.size.height - screenFrame.size.height -
-			 windowBounds.origin.y ==
-		 screenFrame.origin.y));
-}
 
 bool isWindowMaximizedOnScreen(NSDictionary *app, NSScreen *screen)
 {
-	double maximizedTolerance = 0.99;
-	NSRect screenFrame = [screen frame];
 	NSRect windowBounds;
 	CGRectMakeWithDictionaryRepresentation(
 		(CFDictionaryRef)[app objectForKey:@"kCGWindowBounds"],
 		&windowBounds);
 
-	int sumX = windowBounds.origin.x + windowBounds.size.width;
-	int sumY = windowBounds.origin.y + windowBounds.size.height;
+	// CGWindowList: flipped coords, origin at top-left of main display.
+	// NSScreen: Cocoa coords, origin at bottom-left of main display.
+	NSRect mainFrame = [[NSScreen screens][0] frame];
+	NSRect visFrame = [screen visibleFrame];
 
-	// Return false if window spans over multiple screens
-	if (sumX > screenFrame.size.width) {
+	// Convert visible area to CGWindow coordinates.
+	// screenTop is just below the menubar; screenBottom is just above the
+	// dock.
+	CGFloat screenLeft = visFrame.origin.x;
+	CGFloat screenTop =
+		mainFrame.size.height - visFrame.origin.y - visFrame.size.height;
+	CGFloat screenRight = screenLeft + visFrame.size.width;
+	CGFloat screenBottom = screenTop + visFrame.size.height;
+
+	const double tolerance = 4.0;
+
+	// Width must span the full visible width.
+	if (fabs(windowBounds.origin.x - screenLeft) > tolerance) {
 		return false;
 	}
-	if (sumY > screenFrame.size.height) {
+	if (fabs((windowBounds.origin.x + windowBounds.size.width) -
+		 screenRight) > tolerance) {
 		return false;
 	}
-
-	return ((double)sumX / (double)screenFrame.size.width) >
-		       maximizedTolerance &&
-	       ((double)sumY / (double)screenFrame.size.height) >
-		       maximizedTolerance;
+	// Bottom edge must align with the visible bottom (above dock).
+	if (fabs((windowBounds.origin.y + windowBounds.size.height) -
+		 screenBottom) > tolerance) {
+		return false;
+	}
+	// Top edge must be at or above the menubar line (some apps extend
+	// their window frame behind the menubar).
+	if (windowBounds.origin.y > screenTop + tolerance) {
+		return false;
+	}
+	return true;
 }
 
 bool isWindowFullscreenOnScreen(NSDictionary *app, NSScreen *screen)
@@ -165,6 +162,56 @@ std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
 						fullscreenPIDs.insert(pid);
 						break;
 					}
+				}
+			}
+		}
+
+		std::set<int> maximizedPIDs;
+		if (options.maximized) {
+			for (NSDictionary *app in apps) {
+				int layer = [[app objectForKey:@"kCGWindowLayer"]
+					intValue];
+				if (layer != 0) {
+					continue;
+				}
+				for (NSScreen *screen in screens) {
+					if (isWindowMaximizedOnScreen(app,
+								      screen)) {
+						int pid = [[app objectForKey:
+							@"kCGWindowOwnerPID"]
+							intValue];
+						maximizedPIDs.insert(pid);
+						break;
+					}
+				}
+			}
+		}
+
+		// Pre-compute the largest-area window bounds per PID.
+		// CGWindowList often lists small auxiliary windows (toolbars,
+		// chrome) before the main content window; using the largest area
+		// avoids reporting those wrong bounds for geometry.
+		std::map<int, NSRect> largestBoundsPerPID;
+		if (options.geometry || options.maximized) {
+			for (NSDictionary *app in apps) {
+				int layer = [[app objectForKey:@"kCGWindowLayer"]
+					intValue];
+				if (layer != 0) {
+					continue;
+				}
+				NSRect b = NSZeroRect;
+				CGRectMakeWithDictionaryRepresentation(
+					(CFDictionaryRef)[app
+						objectForKey:@"kCGWindowBounds"],
+					&b);
+				int pid = [[app objectForKey:@"kCGWindowOwnerPID"]
+					intValue];
+				auto it = largestBoundsPerPID.find(pid);
+				if (it == largestBoundsPerPID.end() ||
+				    b.size.width * b.size.height >
+					    it->second.size.width *
+						    it->second.size.height) {
+					largestBoundsPerPID[pid] = b;
 				}
 			}
 		}
@@ -218,29 +265,29 @@ std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
 
 				if (options.geometry || options.fullscreen ||
 				    options.maximized) {
-					info.x = (int)bounds.origin.x;
-					info.y = (int)bounds.origin.y;
-					info.width = (int)bounds.size.width;
-					info.height = (int)bounds.size.height;
-				}
-
-				if (options.fullscreen) {
 					int pid = [[app objectForKey:
 						@"kCGWindowOwnerPID"]
 						intValue];
-					info.fullscreen =
-						fullscreenPIDs.count(pid) > 0;
-				}
+					auto it = largestBoundsPerPID.find(pid);
+					const NSRect &geoBounds =
+						(it != largestBoundsPerPID.end())
+							? it->second
+							: bounds;
+					info.x = (int)geoBounds.origin.x;
+					info.y = (int)geoBounds.origin.y;
+					info.width = (int)geoBounds.size.width;
+					info.height = (int)geoBounds.size.height;
 
-				if (options.maximized) {
-					for (NSScreen *screen in screens) {
-						if (isWindowOriginOnScreen(
-							    app, screen) &&
-						    isWindowMaximizedOnScreen(
-							    app, screen)) {
-							info.maximized = true;
-							break;
-						}
+					if (options.fullscreen) {
+						info.fullscreen =
+							fullscreenPIDs.count(pid) >
+							0;
+					}
+
+					if (options.maximized) {
+						info.maximized =
+							maximizedPIDs.count(pid) >
+							0;
 					}
 				}
 
