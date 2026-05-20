@@ -57,8 +57,6 @@ void MacroEdit::PasteMacroSegment()
 	OBSDataAutoRelease data = obs_data_create();
 	copyInfo.segment->Save(data);
 
-	const MacroSegment *const original = copyInfo.segment.get();
-
 	switch (copyInfo.type) {
 	case MacroSegmentCopyInfo::Type::CONDITION: {
 		const auto condition = std::static_pointer_cast<MacroCondition>(
@@ -75,8 +73,7 @@ void MacroEdit::PasteMacroSegment()
 		AddMacroCondition(macro.get(), macro->Conditions().size(),
 				  copyInfo.segment->GetId(), data.Get(), logic);
 		if (!macro->Conditions().empty()) {
-			macro->Conditions().back()->FixupVarMappingRefs(
-				original);
+			macro->Conditions().back()->FixupVarMappingRefs();
 		}
 		break;
 	}
@@ -84,15 +81,14 @@ void MacroEdit::PasteMacroSegment()
 		AddMacroAction(macro.get(), macro->Actions().size(),
 			       copyInfo.segment->GetId(), data.Get());
 		if (!macro->Actions().empty()) {
-			macro->Actions().back()->FixupVarMappingRefs(original);
+			macro->Actions().back()->FixupVarMappingRefs();
 		}
 		break;
 	case MacroSegmentCopyInfo::Type::ELSE:
 		AddMacroElseAction(macro.get(), macro->ElseActions().size(),
 				   copyInfo.segment->GetId(), data.Get());
 		if (!macro->ElseActions().empty()) {
-			macro->ElseActions().back()->FixupVarMappingRefs(
-				original);
+			macro->ElseActions().back()->FixupVarMappingRefs();
 		}
 		break;
 	default:
