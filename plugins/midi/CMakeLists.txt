@@ -39,7 +39,9 @@ else()
            -Wno-error=unused-parameter -Wno-error=unused-variable
            -Wno-error=sign-compare)
   if(OS_MACOS)
-    target_compile_options(libremidi PUBLIC -Wno-error=vla-extension)
+    target_compile_options(
+      libremidi PUBLIC -Wno-error=vla-extension -Wno-vla-extension
+                       -Wno-shorten-64-to-32)
   endif()
 endif()
 
