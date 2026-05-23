@@ -18,7 +18,9 @@ set(CPACK_PACKAGE_FILE_NAME
     "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_C_LIBRARY_ARCHITECTURE}"
 )
 
-set(CPACK_GENERATOR "DEB")
+set(CPACK_GENERATOR
+    "DEB"
+    CACHE STRING "CPack generator to use")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${PLUGIN_EMAIL}")
 set(CPACK_SET_DESTDIR ON)
@@ -46,6 +48,19 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME
 set(CPACK_ARCHIVE_THREADS 0)
 
 include(CPack)
+# CPack.cmake has a side effect that leaves binary packaging variables in the
+# state intended for source packaging when it finishes. Specifically it sets
+# CPACK_GENERATOR to CPACK_SOURCE_GENERATOR ("TXZ"), sets
+# CPACK_INSTALLED_DIRECTORIES to the source root (which would cause CPackDeb to
+# scan the entire source tree, including ccache object files that lack a Build
+# ID), and clears CPACK_INSTALL_CMAKE_PROJECTS (preventing the cmake install
+# mechanism from being used). In some cmake versions these overrides happen
+# before CPackConfig.cmake is written. Reset all three so that binary DEB
+# packaging works correctly regardless of cmake version.
+set(CPACK_GENERATOR "DEB")
+set(CPACK_INSTALLED_DIRECTORIES "")
+set(CPACK_INSTALL_CMAKE_PROJECTS
+    "${CMAKE_BINARY_DIR};${CMAKE_PROJECT_NAME};ALL;/")
 
 find_package(libobs QUIET)
 
