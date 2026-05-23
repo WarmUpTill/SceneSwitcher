@@ -129,12 +129,11 @@ static bool checkCondition(const std::shared_ptr<MacroCondition> &condition)
 	const auto timeSpent = endTime - startTime;
 
 	if (timeSpent >= perfLogThreshold) {
-		const long int ms =
-			std::chrono::duration_cast<std::chrono::milliseconds>(
-				timeSpent)
-				.count();
 		blog(LOG_WARNING,
-		     "spent %ld ms in %s condition check of macro '%s'!", ms,
+		     "spent %lld ms in %s condition check of macro '%s'!",
+		     (long long)std::chrono::duration_cast<
+			     std::chrono::milliseconds>(timeSpent)
+			     .count(),
 		     condition->GetId().c_str(),
 		     condition->GetMacro()->Name().c_str());
 	}

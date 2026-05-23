@@ -259,7 +259,7 @@ void MacroActionSourceInteractionEdit::AcceptRecorded(
 	_stepList->SetSteps(_entryData->_steps);
 }
 
-void MacroActionSourceInteractionEdit::showEvent(QShowEvent *event)
+void MacroActionSourceInteractionEdit::showEvent(QShowEvent *)
 {
 	const QSignalBlocker b(this);
 	UpdateEntryData();
