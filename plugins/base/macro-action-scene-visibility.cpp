@@ -46,7 +46,7 @@ public:
 
 } // namespace
 
-static void handleShutdown(enum obs_frontend_event event, void *private_data)
+static void handleShutdown(enum obs_frontend_event event, void *)
 {
 	if (event != OBS_FRONTEND_EVENT_EXIT) {
 		return;
