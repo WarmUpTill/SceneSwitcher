@@ -710,7 +710,7 @@ void MacroConditionDateEdit::UpdateEntryData()
 	SetWidgetStatus();
 }
 
-void MacroConditionDateEdit::showEvent(QShowEvent *event)
+void MacroConditionDateEdit::showEvent(QShowEvent *)
 {
 	const QSignalBlocker b(this);
 	UpdateEntryData();
