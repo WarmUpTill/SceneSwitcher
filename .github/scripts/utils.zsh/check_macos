@@ -18,4 +18,5 @@ if (( ! ${+commands[brew]} )) {
 }
 
 brew bundle --file ${SCRIPT_HOME}/.Brewfile
+rehash
 log_group
