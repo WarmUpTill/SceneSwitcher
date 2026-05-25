@@ -41,9 +41,12 @@ AdvSceneSwitcher::AdvSceneSwitcher(QWidget *parent)
 {
 	switcher->settingsWindowOpened = true;
 	ui->setupUi(this);
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->Prune();
-	LoadUI();
+	{
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switcher->Prune();
+		LoadUI();
+	}
+	CheckFirstTimeSetup();
 }
 
 AdvSceneSwitcher::~AdvSceneSwitcher()
@@ -139,7 +142,6 @@ void AdvSceneSwitcher::LoadUI()
 	SetTabOrder(ui->tabWidget);
 	SetCurrentTab(ui->tabWidget);
 	RestoreWindowGeo();
-	CheckFirstTimeSetup();
 
 	loading = false;
 }
