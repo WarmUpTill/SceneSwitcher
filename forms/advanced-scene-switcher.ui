@@ -258,6 +258,13 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QCheckBox" name="settingsLock">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.settingsLock</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
