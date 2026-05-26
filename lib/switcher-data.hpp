@@ -163,6 +163,8 @@ public:
 	bool disableHints = false;
 	bool disableFilterComboboxFilter = false;
 	bool hideLegacyTabs = true;
+	bool settingsLockEnabled = false;
+	std::string settingsLockPassword;
 	bool saveWindowGeo = false;
 	QPoint windowPos = {};
 	QSize windowSize = {};

@@ -68,6 +68,7 @@ public slots:
 	void on_warnPluginLoadFailure_stateChanged(int state);
 	void on_suppressCrashRecoveryDialog_stateChanged(int state);
 	void on_hideLegacyTabs_stateChanged(int state);
+	void on_settingsLock_stateChanged(int state);
 	void on_priorityUp_clicked();
 	void on_priorityDown_clicked();
 	void on_threadPriority_currentTextChanged(const QString &text);
