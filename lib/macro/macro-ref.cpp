@@ -74,11 +74,11 @@ void LoadMacroList(obs_data_t *obj, std::vector<MacroRef> &macros,
 {
 	obs_data_array_t *array = obs_data_get_array(obj, name.c_str());
 	size_t count = obs_data_array_count(array);
+	macros.reserve(macros.size() + count);
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *array_obj = obs_data_array_item(array, i);
-		MacroRef ref;
-		ref.Load(array_obj);
-		macros.push_back(ref);
+		macros.emplace_back();
+		macros.back().Load(array_obj);
 		obs_data_release(array_obj);
 	}
 	obs_data_array_release(array);
