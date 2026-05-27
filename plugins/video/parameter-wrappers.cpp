@@ -82,7 +82,7 @@ bool ObjDetectParameters::Save(obs_data_t *obj) const
 	minSize.Save(data, "minSize");
 	maxSize.Save(data, "maxSize");
 	obs_data_set_obj(obj, "objectMatchData", data);
-	obs_data_set_int(data, "version", 1);
+	obs_data_set_int(data, "version", 2);
 	obs_data_release(data);
 	return true;
 }
@@ -121,6 +121,21 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(data, "version")) {
 		scaleFactor = obs_data_get_double(data, "scaleFactor");
+	} else if (obs_data_get_int(data, "version") == 1) {
+#ifdef _WIN32
+		// On Windows the plugin directory moved from
+		// "Program Files/.../data/obs-plugins/advanced-scene-switcher"
+		// to "ProgramData/.../plugins/advanced-scene-switcher/data",
+		// which invalidates previously saved default model paths.
+		const std::string oldPrefix =
+			"../../data/obs-plugins/advanced-scene-switcher/res/cascadeClassifiers/";
+		if (modelPath.substr(0, oldPrefix.size()) == oldPrefix) {
+			modelPath = std::string(obs_get_module_data_path(
+					    obs_current_module())) +
+				    "/res/cascadeClassifiers/" +
+				    modelPath.substr(oldPrefix.size());
+		}
+#endif
 	}
 	if (scaleFactor.IsFixedType() && !isScaleFactorValid(scaleFactor)) {
 		scaleFactor = 1.1;
@@ -337,7 +352,7 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	SaveColor(data, "textColor", color);
 	colorThreshold.Save(data, "colorThreshold");
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
-	obs_data_set_int(data, "version", 2);
+	obs_data_set_int(data, "version", 3);
 	obs_data_set_obj(obj, "ocrData", data);
 	obs_data_release(data);
 	return true;
@@ -356,6 +371,23 @@ bool OCRParameters::Load(obs_data_t *obj)
 		tesseractBasePath = std::string(obs_get_module_data_path(
 					    obs_current_module())) +
 				    "/res/ocr/";
+	} else if (obs_data_get_int(data, "version") == 2) {
+#ifdef _WIN32
+		// On Windows the plugin directory moved from
+		// "Program Files/.../data/obs-plugins/advanced-scene-switcher"
+		// to "ProgramData/.../plugins/advanced-scene-switcher/data",
+		// which invalidates the previously saved default OCR path.
+		const std::string oldPath = tesseractBasePath;
+		if (oldPath ==
+			    "../../data/obs-plugins/advanced-scene-switcher/res/ocr/" ||
+		    oldPath ==
+			    "../../data/obs-plugins/advanced-scene-switcher/res/ocr") {
+			tesseractBasePath =
+				std::string(obs_get_module_data_path(
+					obs_current_module())) +
+				"/res/ocr/";
+		}
+#endif
 	}
 	useConfig = obs_data_get_bool(data, "useConfig");
 	configFile = obs_data_get_string(data, "configFile");
