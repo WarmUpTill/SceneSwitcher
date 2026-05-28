@@ -76,7 +76,8 @@ EXPORT bool RunMacroElseActions(Macro *, bool forceParallel = false,
 				bool ignorePause = false);
 EXPORT bool RunMacros();
 
-void StopAllMacros();
+void SignalStopAllMacros();
+void WaitForAllMacros();
 
 EXPORT void LoadMacros(obs_data_t *obj);
 EXPORT void SaveMacros(obs_data_t *obj);

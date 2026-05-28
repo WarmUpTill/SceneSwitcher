@@ -61,6 +61,7 @@ public:
 	PauseStateSaveBehavior GetPauseStateSaveBehavior() const;
 
 	void Stop();
+	void SignalStop() { _stop = true; }
 	bool GetStop() const { return _stop; }
 	void ResetTimers();
 
@@ -228,7 +229,7 @@ void LoadMacros(obs_data_t *obj);
 void SaveMacros(obs_data_t *obj);
 bool CheckMacros();
 bool RunMacros();
-void StopAllMacros();
+void WaitForAllMacros();
 void InvalidateMacroTempVarValues();
 std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval();
 

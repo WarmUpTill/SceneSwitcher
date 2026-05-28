@@ -1316,7 +1316,14 @@ bool RunMacros()
 	return true;
 }
 
-void StopAllMacros()
+void SignalStopAllMacros()
+{
+	for (const auto &m : GetAllMacros()) {
+		m->SignalStop();
+	}
+}
+
+void WaitForAllMacros()
 {
 	for (const auto &m : GetAllMacros()) {
 		m->Stop();
