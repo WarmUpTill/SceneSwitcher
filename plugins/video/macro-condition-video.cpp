@@ -403,11 +403,12 @@ bool MacroConditionVideo::CheckBrightnessThreshold()
 
 bool MacroConditionVideo::CheckOCR()
 {
-	if (!_ocrParameters.Initialized()) {
+	auto *ocr = _ocrParameters.GetOCR();
+	if (!ocr) {
 		return false;
 	}
 
-	auto text = RunOCR(_ocrParameters.GetOCR(), _screenshotData.GetImage(),
+	auto text = RunOCR(ocr, _screenshotData.GetImage(),
 			   _ocrParameters.color, _ocrParameters.colorThreshold);
 	if (!text) {
 		return false;

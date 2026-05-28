@@ -318,9 +318,6 @@ OCRParameters::OCRParameters(const OCRParameters &other)
 	  useConfig(other.useConfig),
 	  configFile(other.configFile)
 {
-	if (!initDone) {
-		Setup();
-	}
 }
 
 OCRParameters &OCRParameters::operator=(const OCRParameters &other)
@@ -334,9 +331,7 @@ OCRParameters &OCRParameters::operator=(const OCRParameters &other)
 	languageCode = other.languageCode;
 	useConfig = other.useConfig;
 	configFile = other.configFile;
-	if (!initDone) {
-		Setup();
-	}
+	initDone = false;
 	return *this;
 }
 
@@ -412,6 +407,14 @@ void OCRParameters::SetPageMode(tesseract::PageSegMode mode)
 	}
 }
 
+tesseract::TessBaseAPI *OCRParameters::GetOCR()
+{
+	if (!initDone) {
+		Setup();
+	}
+	return initDone ? ocr.get() : nullptr;
+}
+
 bool OCRParameters::SetLanguageCode(const std::string &value)
 {
 	const auto dataPath = QString::fromStdString(tesseractBasePath) + "/" +
@@ -421,7 +424,7 @@ bool OCRParameters::SetLanguageCode(const std::string &value)
 		return false;
 	}
 	languageCode = value;
-	Setup();
+	initDone = false;
 	return true;
 }
 
@@ -440,7 +443,7 @@ bool OCRParameters::SetTesseractBasePath(const std::string &value)
 		return false;
 	}
 	tesseractBasePath = value;
-	Setup();
+	initDone = false;
 	return true;
 }
 
@@ -452,13 +455,13 @@ std::string OCRParameters::GetTesseractBasePath() const
 void OCRParameters::EnableCustomConfig(bool enable)
 {
 	useConfig = enable;
-	Setup();
+	initDone = false;
 }
 
 void OCRParameters::SetCustomConfigFile(const std::string &filename)
 {
 	configFile = filename;
-	Setup();
+	initDone = false;
 }
 
 void OCRParameters::Setup()
