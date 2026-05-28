@@ -68,44 +68,53 @@ function Package {
 
     Remove-Item @RemoveArgs
 
-    # Build a staging directory with two subfolders:
-    #   recommended/ - new layout, extract to %ProgramData%\obs-studio\
-    #   legacy/      - old layout, extract to the OBS install directory
-    $ReleasePath  = "${ProjectRoot}/release/${Configuration}"
-    $StagingPath  = "${ProjectRoot}/release/zip-staging"
-    $NewBinPath   = "${ReleasePath}/${ProductName}/bin/64bit"
-    $NewDataPath  = "${ReleasePath}/${ProductName}/data"
+    $ReleasePath = "${ProjectRoot}/release/${Configuration}"
+    $NewBinPath  = "${ReleasePath}/${ProductName}/bin/64bit"
+    $NewDataPath = "${ReleasePath}/${ProductName}/data"
+    $CIWindowsDir = "${ProjectRoot}/build-aux/CI/windows"
 
-    Remove-Item -Path $StagingPath -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $StagingPath | Out-Null
-    Copy-Item -Path "${ProjectRoot}/build-aux/CI/windows/README.txt" -Destination "${StagingPath}/README.txt"
-
+    # --- Recommended zip (new layout, extract to %ProgramData%\obs-studio\) ---
+    Log-Group "Archiving ${ProductName} (recommended)..."
+    $RecStaging = "${ProjectRoot}/release/zip-staging-rec"
+    Remove-Item -Path $RecStaging -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $RecStaging | Out-Null
+    Copy-Item -Path "${CIWindowsDir}/README.txt" -Destination "${RecStaging}/README.txt"
     if ( Test-Path -Path $NewBinPath ) {
-        $RecBinPath    = "${StagingPath}/recommended/${ProductName}/bin/64bit"
-        $LegacyBinPath = "${StagingPath}/legacy/obs-plugins/64bit"
-        New-Item -ItemType Directory -Force -Path $RecBinPath    | Out-Null
-        New-Item -ItemType Directory -Force -Path $LegacyBinPath | Out-Null
-        Copy-Item -Path "${NewBinPath}/*" -Destination $RecBinPath    -Recurse -Force
-        Copy-Item -Path "${NewBinPath}/*" -Destination $LegacyBinPath -Recurse -Force
+        $RecBinPath = "${RecStaging}/${ProductName}/bin/64bit"
+        New-Item -ItemType Directory -Force -Path $RecBinPath | Out-Null
+        Copy-Item -Path "${NewBinPath}/*" -Destination $RecBinPath -Recurse -Force
     }
     if ( Test-Path -Path $NewDataPath ) {
-        $RecDataPath    = "${StagingPath}/recommended/${ProductName}/data"
-        $LegacyDataPath = "${StagingPath}/legacy/data/obs-plugins/${ProductName}"
-        New-Item -ItemType Directory -Force -Path $RecDataPath    | Out-Null
-        New-Item -ItemType Directory -Force -Path $LegacyDataPath | Out-Null
-        Copy-Item -Path "${NewDataPath}/*" -Destination $RecDataPath    -Recurse -Force
-        Copy-Item -Path "${NewDataPath}/*" -Destination $LegacyDataPath -Recurse -Force
+        $RecDataPath = "${RecStaging}/${ProductName}/data"
+        New-Item -ItemType Directory -Force -Path $RecDataPath | Out-Null
+        Copy-Item -Path "${NewDataPath}/*" -Destination $RecDataPath -Recurse -Force
     }
+    Compress-Archive -Force -Path (Get-ChildItem -Path $RecStaging) `
+        -CompressionLevel Optimal `
+        -DestinationPath "${ProjectRoot}/release/${OutputName}.zip"
+    Remove-Item -Path $RecStaging -Recurse -Force
+    Log-Group
 
-    Log-Group "Archiving ${ProductName}..."
-    $CompressArgs = @{
-        Path = (Get-ChildItem -Path $StagingPath)
-        CompressionLevel = 'Optimal'
-        DestinationPath = "${ProjectRoot}/release/${OutputName}.zip"
-        Verbose = ($null -ne $Env:CI)
+    # --- Legacy zip (old layout, extract to OBS install directory) ---
+    Log-Group "Archiving ${ProductName} (legacy)..."
+    $LegStaging = "${ProjectRoot}/release/zip-staging-leg"
+    Remove-Item -Path $LegStaging -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $LegStaging | Out-Null
+    Copy-Item -Path "${CIWindowsDir}/README-legacy.txt" -Destination "${LegStaging}/README.txt"
+    if ( Test-Path -Path $NewBinPath ) {
+        $LegBinPath = "${LegStaging}/obs-plugins/64bit"
+        New-Item -ItemType Directory -Force -Path $LegBinPath | Out-Null
+        Copy-Item -Path "${NewBinPath}/*" -Destination $LegBinPath -Recurse -Force
     }
-    Compress-Archive -Force @CompressArgs
-    Remove-Item -Path $StagingPath -Recurse -Force
+    if ( Test-Path -Path $NewDataPath ) {
+        $LegDataPath = "${LegStaging}/data/obs-plugins/${ProductName}"
+        New-Item -ItemType Directory -Force -Path $LegDataPath | Out-Null
+        Copy-Item -Path "${NewDataPath}/*" -Destination $LegDataPath -Recurse -Force
+    }
+    Compress-Archive -Force -Path (Get-ChildItem -Path $LegStaging) `
+        -CompressionLevel Optimal `
+        -DestinationPath "${ProjectRoot}/release/${OutputName}-legacy.zip"
+    Remove-Item -Path $LegStaging -Recurse -Force
     Log-Group
 
     if ( ( $BuildInstaller ) ) {

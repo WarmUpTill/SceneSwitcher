@@ -1,22 +1,15 @@
 Advanced Scene Switcher - Windows Installation
-==============================================
+===============================================
 
 For full installation instructions visit:
 https://github.com/WarmUpTill/SceneSwitcher/wiki/Installation
 
 
-Quick guide
------------
+This archive uses the recommended plugin layout for OBS 28 and newer.
 
-This archive contains two installation methods.
-Choose ONE depending on your OBS version.
+Extract the CONTENTS of this archive into:
 
-
-recommended\   (preferred)
----------------------------------------------
-Extract the CONTENTS of this folder into:
-
-    C:\ProgramData\obs-studio\
+    C:\ProgramData\obs-studio\plugins\
 
 Tip: press Win+R and type  %ProgramData%\obs-studio\plugins  to open that folder.
 
@@ -24,14 +17,5 @@ After extracting, the path should look like:
     C:\ProgramData\obs-studio\plugins\advanced-scene-switcher\bin\64bit\advanced-scene-switcher.dll
 
 
-legacy\   (older OBS versions, portable OBS installs, or if the recommended method does not work)
----------------------------------------------------------------------------
-Extract the CONTENTS of this folder into your OBS installation directory,
-typically:
-
-    C:\Program Files\obs-studio\
-
-Merge the data\ and obs-plugins\ folders with the existing ones when prompted.
-
-Steam users: right-click OBS in your library -> Manage -> Browse local files,
-then extract the contents of legacy\ into that directory.
+If the plugin does not appear in OBS, try the legacy archive instead:
+    advanced-scene-switcher-<version>-windows-x64-legacy.zip
