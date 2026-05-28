@@ -395,7 +395,7 @@ void AdvSceneSwitcher::ImportMacros()
 	std::vector<std::shared_ptr<Macro>> importedMacros;
 	auto &tempMacros = GetTemporaryMacros();
 
-	auto lock = LockContext();
+	std::unique_lock<std::mutex> lock(*GetMutex());
 	for (size_t i = 0; i < count; i++) {
 		tempMacros.clear();
 
@@ -405,10 +405,14 @@ void AdvSceneSwitcher::ImportMacros()
 		macro->Load(array_obj);
 		RunAndClearPostLoadSteps();
 
-		if (macroNameExists(macro->Name()) &&
-		    !ResolveMacroImportNameConflict(macro)) {
-			groupSize--;
-			continue;
+		if (macroNameExists(macro->Name())) {
+			lock.unlock();
+			bool resolved = ResolveMacroImportNameConflict(macro);
+			lock.lock();
+			if (!resolved) {
+				groupSize--;
+				continue;
+			}
 		}
 
 		importedMacros.emplace_back(macro);
