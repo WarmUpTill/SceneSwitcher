@@ -23,14 +23,17 @@ SolidCompression=yes
 DirExistsWarning=no
 UsePreviousAppDir=no
 SetupIconFile=installer.ico
-UninstallDisplayIcon={app}\advanced-scene-switcher\data\res\images\logo.ico
+UninstallDisplayIcon={code:GetUninstallIconPath}
 DisableDirPage=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\release\Package\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Recommended layout - used when installing to %ProgramData%\obs-studio\plugins\
+Source: "..\release\Package\recommended\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsRecommendedLayout
+; Legacy layout - used when installing to the OBS installation directory
+Source: "..\release\Package\legacy\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsLegacyLayout
 Source: "..\LICENSE"; Flags: dontcopy
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -53,22 +56,53 @@ begin
   );
 end;
 
+// Returns true when the selected install directory is under %ProgramData%,
+// meaning the recommended plugin layout should be used.
+function IsRecommendedLayout(): Boolean;
+begin
+  Result := Pos(LowerCase(ExpandConstant('{commonappdata}')),
+                LowerCase(WizardDirValue())) = 1;
+end;
+
+function IsLegacyLayout(): Boolean;
+begin
+  Result := not IsRecommendedLayout();
+end;
+
+function GetUninstallIconPath(Param: string): string;
+begin
+  if IsRecommendedLayout() then
+    Result := ExpandConstant('{app}\advanced-scene-switcher\data\res\images\logo.ico')
+  else
+    Result := ExpandConstant('{app}\data\obs-plugins\advanced-scene-switcher\res\images\logo.ico');
+end;
+
 function GetDirName(Value: string): string;
+var
+  PrevPath: string;
+  UninstallKey: string;
 begin
   Result := ExpandConstant('{commonappdata}\obs-studio\plugins');
+  UninstallKey := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + '{' + '{#MyAppId}' + '}_is1';
+  if RegQueryStringValue(HKLM, UninstallKey, 'InstallLocation', PrevPath) and (PrevPath <> '') then
+    Result := PrevPath;
 end;
 
 // Remove files placed by the legacy installer (obs-plugins/64bit and
 // data/obs-plugins layout) so the plugin is not loaded twice by OBS.
-// We read InstallLocation from our own previous uninstall entry, which is
-// the exact directory the old installer used regardless of OBS install path.
+// Only runs when upgrading from a legacy location to the recommended one.
 procedure RemoveLegacyFiles();
 var
   OldInstallPath: string;
   UninstallKey: string;
 begin
+  if not IsRecommendedLayout() then
+    Exit;
   UninstallKey := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + '{' + '{#MyAppId}' + '}_is1';
   if not RegQueryStringValue(HKLM, UninstallKey, 'InstallLocation', OldInstallPath) then
+    Exit;
+  // Skip if the previous install was already in the recommended location
+  if Pos(LowerCase(ExpandConstant('{commonappdata}')), LowerCase(OldInstallPath)) = 1 then
     Exit;
   DeleteFile(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher.dll');
   DeleteFile(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher.pdb');
@@ -83,4 +117,3 @@ begin
   if CurStep = ssInstall then
     RemoveLegacyFiles();
 end;
-
