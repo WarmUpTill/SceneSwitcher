@@ -129,7 +129,24 @@ function Package {
         Push-Location -Stack BuildTemp
         Ensure-Location -Path "${ProjectRoot}/release"
         Remove-Item -Path Package -Recurse -Force -ErrorAction SilentlyContinue
-        Copy-Item -Path ${Configuration} -Destination Package -Recurse
+
+        # Recommended layout (for %ProgramData%\obs-studio\plugins\)
+        $PkgRec = "Package/recommended"
+        New-Item -ItemType Directory -Force -Path $PkgRec | Out-Null
+        Copy-Item -Path "${Configuration}/*" -Destination $PkgRec -Recurse -Force
+
+        # Legacy layout (for OBS installation directory)
+        if ( Test-Path "${Configuration}/${ProductName}/bin/64bit" ) {
+            $PkgLegBin = "Package/legacy/obs-plugins/64bit"
+            New-Item -ItemType Directory -Force -Path $PkgLegBin | Out-Null
+            Copy-Item -Path "${Configuration}/${ProductName}/bin/64bit/*" -Destination $PkgLegBin -Recurse -Force
+        }
+        if ( Test-Path "${Configuration}/${ProductName}/data" ) {
+            $PkgLegData = "Package/legacy/data/obs-plugins/${ProductName}"
+            New-Item -ItemType Directory -Force -Path $PkgLegData | Out-Null
+            Copy-Item -Path "${Configuration}/${ProductName}/data/*" -Destination $PkgLegData -Recurse -Force
+        }
+
         Invoke-External iscc ${IsccFile} /O"${ProjectRoot}/release" /F"${OutputName}-Installer"
         Remove-Item -Path Package -Recurse
         Pop-Location -Stack BuildTemp
