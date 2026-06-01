@@ -53,6 +53,7 @@ public:
 
 	void Connect();
 	void Disconnect();
+	static void DisconnectAll();
 	[[nodiscard]] EventSubMessageBuffer RegisterForEvents();
 	bool SubscriptionIsActive(const std::string &id);
 	static std::string AddEventSubscription(std::shared_ptr<TwitchToken>,

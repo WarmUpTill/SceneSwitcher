@@ -3,6 +3,7 @@
 #include "twitch-helpers.hpp"
 
 #include <log-helper.hpp>
+#include <plugin-state-helpers.hpp>
 
 #ifdef VERIFY_TIMESTAMPS
 #include "date/tz.h"
@@ -70,6 +71,22 @@ void EventSub::UnregisterInstance()
 	auto it = std::remove(_instances.begin(), _instances.end(), this);
 	_instances.erase(it, _instances.end());
 }
+
+void EventSub::DisconnectAll()
+{
+	std::lock_guard<std::mutex> lock(_instancesMtx);
+	for (auto *instance : _instances) {
+		instance->Disconnect();
+	}
+}
+
+static bool setupEventSubSupport()
+{
+	AddStopStep(EventSub::DisconnectAll);
+	return true;
+}
+
+static bool _eventSubSetup = setupEventSubSupport();
 
 void EventSub::ConnectThread()
 {
