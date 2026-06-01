@@ -547,16 +547,18 @@ bool MacroConditionTwitch::CheckChatMessageRemove(TwitchToken &token)
 
 bool MacroConditionTwitch::ChatConnectionIsSetup(TwitchToken &token)
 {
+	if (_chatConnection) {
+		_chatConnection->ConnectToChat();
+		return true;
+	}
+
+	_chatConnection =
+		TwitchChatConnection::GetChatConnection(token, _channel);
 	if (!_chatConnection) {
-		_chatConnection = TwitchChatConnection::GetChatConnection(
-			token, _channel);
-		if (!_chatConnection) {
-			return false;
-		}
-		_chatBuffer = _chatConnection->RegisterForMessages();
 		return false;
 	}
-	return true;
+	_chatBuffer = _chatConnection->RegisterForMessages();
+	return false;
 }
 
 bool MacroConditionTwitch::HandleChatEvents(

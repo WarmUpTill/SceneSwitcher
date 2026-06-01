@@ -84,6 +84,7 @@ public:
 	static std::shared_ptr<TwitchChatConnection>
 	GetChatConnection(const TwitchToken &token,
 			  const TwitchChannel &channel);
+	static void DisconnectAll();
 	[[nodiscard]] ChatMessageBuffer RegisterForMessages();
 	[[nodiscard]] ChatMessageBuffer RegisterForWhispers();
 	void SendChatMessage(const std::string &message);
