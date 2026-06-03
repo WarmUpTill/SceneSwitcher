@@ -163,7 +163,7 @@ void MacroConditionTransition::TransitionStarted(void *data, calldata_t *cd)
 	// Look up the original by name to get a comparable reference.
 	const bool studioModeActive =
 		obs_frontend_preview_program_mode_active();
-	if (studioModeActive) {
+	if (studioModeActive && startSource) {
 		OBSSourceAutoRelease startSourceByName = obs_get_source_by_name(
 			obs_source_get_name(startSource));
 		if (startSourceByName) {
