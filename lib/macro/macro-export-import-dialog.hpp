@@ -1,13 +1,12 @@
 #pragma once
 
-#include "section.hpp"
-
 #include <QCheckBox>
 #include <QDialog>
 #include <QList>
 #include <QPlainTextEdit>
 
 #include <obs-data.h>
+#include <vector>
 
 namespace advss {
 
@@ -34,7 +33,7 @@ private:
 		QList<QPair<QString, QCheckBox *>> itemChecks;
 	};
 
-	Section *BuildExtensionSection();
+	QWidget *BuildExtensionWidget();
 	QString BuildExportJson() const;
 	void RefreshExportText();
 
@@ -42,6 +41,7 @@ private:
 	QPlainTextEdit *_importExportString;
 	QCheckBox *_usePlainText;
 	QList<ExtensionUI> _extensionUIs;
+	std::vector<int> _extensionOrder;
 };
 
 } // namespace advss
