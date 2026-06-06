@@ -294,6 +294,26 @@ std::vector<WindowInfo> GetWindows(const WindowQueryOptions &options)
 		result.emplace_back(std::move(info));
 	}
 
+	// When KWin compat is active, native Wayland windows are not tracked by
+	// X11 and therefore do not appear in the list above. If the currently
+	// focused window (reported via KWin DBus) is not already present, add it
+	// so that title and focus conditions can match native Wayland windows.
+	if (KWin && !foregroundTitle.empty()) {
+		bool found = false;
+		for (const auto &info : result) {
+			if (info.title == foregroundTitle) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			WindowInfo waylandWindow;
+			waylandWindow.title = foregroundTitle;
+			waylandWindow.focused = true;
+			result.emplace_back(std::move(waylandWindow));
+		}
+	}
+
 	return result;
 }
 
