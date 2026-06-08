@@ -43,6 +43,7 @@ public:
 	void SetRootNode(bool);
 	void SetupWidgets(bool basicSetup = false);
 	void SetEntryData(std::shared_ptr<MacroCondition> *);
+	void FocusTypeSelection() override;
 
 private slots:
 	void LogicSelectionChanged(int idx);

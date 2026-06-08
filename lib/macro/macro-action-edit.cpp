@@ -164,4 +164,9 @@ std::shared_ptr<MacroSegment> MacroActionEdit::Data() const
 	return *_entryData;
 }
 
+void MacroActionEdit::FocusTypeSelection()
+{
+	_actionSelection->setFocus();
+}
+
 } // namespace advss

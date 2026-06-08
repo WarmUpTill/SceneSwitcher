@@ -650,6 +650,18 @@ void MacroEdit::HighlightCondition(int idx, QColor color) const
 	ui->conditionsList->Highlight(idx, color);
 }
 
+void MacroEdit::ScrollAndFocusNewSegment(MacroSegmentList *list, int newIdx,
+					 int *currentIdx)
+{
+	QTimer::singleShot(0, this, [this, list, newIdx, currentIdx]() {
+		list->ensureWidgetVisible(list->WidgetAt(*currentIdx));
+		auto *widget = list->WidgetAt(newIdx);
+		if (widget) {
+			widget->FocusTypeSelection();
+		}
+	});
+}
+
 static void resetSegmentHighlights(MacroSegmentList *list)
 {
 	MacroSegmentEdit *widget = nullptr;
@@ -1087,10 +1099,7 @@ void MacroEdit::AddMacroAction(Macro *macro, int idx, const std::string &id,
 	ui->actionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
 
-	QTimer::singleShot(0, this, [this]() {
-		ui->actionsList->ensureWidgetVisible(
-			ui->actionsList->WidgetAt(currentActionIdx));
-	});
+	ScrollAndFocusNewSegment(ui->actionsList, idx, &currentActionIdx);
 }
 
 void MacroEdit::AddMacroAction(int idx)
@@ -1398,10 +1407,8 @@ void MacroEdit::AddMacroElseAction(Macro *macro, int idx, const std::string &id,
 	ui->elseActionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
 
-	QTimer::singleShot(0, this, [this]() {
-		ui->elseActionsList->ensureWidgetVisible(
-			ui->elseActionsList->WidgetAt(currentElseActionIdx));
-	});
+	ScrollAndFocusNewSegment(ui->elseActionsList, idx,
+				 &currentElseActionIdx);
 }
 
 void MacroEdit::AddMacroElseAction(int idx)
@@ -1611,10 +1618,7 @@ void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,
 	ui->conditionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
 
-	QTimer::singleShot(0, this, [this]() {
-		ui->conditionsList->ensureWidgetVisible(
-			ui->conditionsList->WidgetAt(currentConditionIdx));
-	});
+	ScrollAndFocusNewSegment(ui->conditionsList, idx, &currentConditionIdx);
 }
 
 void MacroEdit::on_conditionAdd_clicked()

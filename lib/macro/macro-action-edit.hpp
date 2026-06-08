@@ -17,6 +17,7 @@ public:
 			std::shared_ptr<MacroAction> * = nullptr);
 	void SetupWidgets(bool basicSetup = false);
 	void SetEntryData(std::shared_ptr<MacroAction> *);
+	void FocusTypeSelection() override;
 
 private slots:
 	void ActionSelectionChanged(const QString &text);
