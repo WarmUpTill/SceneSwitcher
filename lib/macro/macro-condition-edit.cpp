@@ -305,4 +305,9 @@ std::shared_ptr<MacroSegment> MacroConditionEdit::Data() const
 	return *_entryData;
 }
 
+void MacroConditionEdit::FocusTypeSelection()
+{
+	_conditionSelection->setFocus();
+}
+
 } // namespace advss

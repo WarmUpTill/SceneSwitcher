@@ -134,6 +134,7 @@ public:
 	void SetSelected(bool);
 	virtual std::shared_ptr<MacroSegment> Data() const = 0;
 	virtual void SetupWidgets(bool basicSetup = false) = 0;
+	virtual void FocusTypeSelection() {}
 
 	void SetupVarMappings(MacroSegment *segment);
 

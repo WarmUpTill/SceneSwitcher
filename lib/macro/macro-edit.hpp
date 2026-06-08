@@ -116,6 +116,8 @@ private:
 	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
 	void PopulateMacroElseActions(Macro &m, uint32_t afterIdx = 0);
 	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
+	void ScrollAndFocusNewSegment(MacroSegmentList *list, int newIdx,
+				      int *currentIdx);
 	void SetupMacroSegmentSelection(MacroSection type, int idx);
 	void
 	SetupContextMenu(const QPoint &pos,
