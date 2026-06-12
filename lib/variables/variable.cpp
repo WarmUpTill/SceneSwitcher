@@ -108,16 +108,20 @@ std::optional<int> Variable::IntValue() const
 
 void Variable::SetValue(const std::string &value)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	_previousValue = _value;
-	_value = value;
+	{
+		std::lock_guard<std::mutex> lock(_mutex);
+		_previousValue = _value;
+		_value = value;
 
-	UpdateLastUsed();
-	if (_previousValue != _value) {
-		_lastChanged = std::chrono::high_resolution_clock::now();
-		++_valueChangeCount;
+		UpdateLastUsed();
+		if (_previousValue != _value) {
+			_lastChanged =
+				std::chrono::high_resolution_clock::now();
+			++_valueChangeCount;
+		}
+		setLastVariableChangeTime();
 	}
-	setLastVariableChangeTime();
+	_cv.notify_all();
 }
 
 void Variable::SetValue(double value)

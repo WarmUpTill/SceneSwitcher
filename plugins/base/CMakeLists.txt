@@ -75,6 +75,8 @@ target_sources(
           macro-action-virtual-cam.hpp
           macro-action-wait.cpp
           macro-action-wait.hpp
+          macro-action-wait-variable.cpp
+          macro-action-wait-variable.hpp
           macro-action-websocket.cpp
           macro-action-websocket.hpp
           macro-action-window.cpp
