@@ -552,6 +552,12 @@ Macro::PauseStateSaveBehavior Macro::GetPauseStateSaveBehavior() const
 	return _pauseSaveBehavior;
 }
 
+void Macro::SignalStop()
+{
+	_stop = true;
+	GetMacroWaitCV().notify_all();
+}
+
 void Macro::Stop()
 {
 	_stop = true;
