@@ -108,7 +108,7 @@ void MacroRunButton::Pressed()
 	const bool abortMacro = DisplayMessage(
 		err.arg(QString::fromStdString(macro->Name())), true);
 	if (abortMacro) {
-		macro->Stop();
+		macro->SignalStop();
 	}
 }
 
