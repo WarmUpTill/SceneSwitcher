@@ -26,7 +26,7 @@ if(NOT OpenVR_DIR)
   set(OpenVR_DIR ${ADVSS_SOURCE_DIR}/deps/openvr)
 endif()
 
-if(EXISTS ${OpenVR_DIR})
+if(EXISTS "${OpenVR_DIR}/CMakeLists.txt")
   set(SIZEOF_VOIDP ${CMAKE_SIZEOF_VOID_P})
   if((NOT APPLE) AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
     set(PROCESSOR_ARCH "64")
