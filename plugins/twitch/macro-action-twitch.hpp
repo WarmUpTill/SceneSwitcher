@@ -142,9 +142,10 @@ public:
 
 		SEND_CHAT_MESSAGE = 5000,
 
-		// Get user info
+		// Get info
 		USER_GET_INFO = 6000,
 		CHANNEL_GET_INFO = 6100,
+		CHANNEL_ADS_GET_INFO = 6200,
 	};
 
 	enum class AnnouncementColor {
@@ -205,7 +206,8 @@ private:
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
 	void GetUserInfo(const std::shared_ptr<TwitchToken> &);
 	void GetRewardInfo(const std::shared_ptr<TwitchToken> &);
-	void GetChannelInfo(const std::shared_ptr<TwitchToken> &token);
+	void GetChannelInfo(const std::shared_ptr<TwitchToken> &);
+	void GetAdsInfo(const std::shared_ptr<TwitchToken> &);
 
 	std::optional<std::string>
 	GetTargetUserID(const std::shared_ptr<TwitchToken> &) const;
