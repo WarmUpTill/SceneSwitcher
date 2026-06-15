@@ -157,7 +157,9 @@ else()
       set_target_properties(${target} PROPERTIES INSTALL_RPATH
                                                  "$ORIGIN:$ORIGIN/..")
     endif()
-    message(STATUS "ADVSS: ENABLED PLUGIN     ${target}")
+    get_filename_component(_plugin_dir_name "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
+    set_property(GLOBAL APPEND PROPERTY ADVSS_PLUGINS_ENABLED
+                                        ${_plugin_dir_name})
   endfunction()
 
   function(install_advss_plugin_dependency_target target dep)
