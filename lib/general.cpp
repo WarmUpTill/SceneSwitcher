@@ -452,7 +452,7 @@ void AdvSceneSwitcher::CheckFirstTimeSetup()
 	}
 
 	bool wasSkipped = false;
-	auto macro = FirstRunWizard::ShowWizard(this, &wasSkipped);
+	auto macro = wiz::FirstRunWizard::ShowWizard(this, &wasSkipped);
 	if (macro) {
 		renameMacroIfNecessary(macro);
 		QTimer::singleShot(0, this,
@@ -466,7 +466,7 @@ void AdvSceneSwitcher::CheckFirstTimeSetup()
 
 void AdvSceneSwitcher::on_openSetupWizard_clicked()
 {
-	auto macro = FirstRunWizard::ShowWizard(this);
+	auto macro = wiz::FirstRunWizard::ShowWizard(this);
 	if (!macro) {
 		return;
 	}
