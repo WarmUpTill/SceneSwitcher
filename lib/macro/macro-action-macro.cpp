@@ -263,6 +263,7 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 	if (obs_data_has_user_value(obj, "nestedMacro")) {
 		OBSDataAutoRelease nestedMacroData =
 			obs_data_get_obj(obj, "nestedMacro");
+		_nestedMacro = std::make_shared<Macro>();
 		_nestedMacro->Load(nestedMacroData);
 	}
 
