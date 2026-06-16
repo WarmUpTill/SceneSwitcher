@@ -310,6 +310,15 @@ void MacroActionMacro::ResolveVariablesToFixedValues()
 {
 	_actionIndex.ResolveVariables();
 	_label.ResolveVariables();
+
+	if (_action == Action::NESTED_MACRO) {
+		for (auto &action : _nestedMacro->Actions()) {
+			action->ResolveVariablesToFixedValues();
+		}
+		for (auto &action : _nestedMacro->ElseActions()) {
+			action->ResolveVariablesToFixedValues();
+		}
+	}
 }
 
 static void runActionsHelper(Macro *macro, bool runElseActions, bool setInputs,
