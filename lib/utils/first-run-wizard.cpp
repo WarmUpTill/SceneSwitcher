@@ -1,4 +1,5 @@
 #include "first-run-wizard.hpp"
+#include "first-run-wizard-sequence.hpp"
 #include "first-run-wizard-window.hpp"
 
 #include "macro.hpp"
@@ -65,6 +66,36 @@ WelcomePage::WelcomePage(QWidget *parent) : QWizardPage(parent)
 }
 
 // ===========================================================================
+// TemplatePage
+// ===========================================================================
+
+TemplatePage::TemplatePage(QWidget *parent)
+	: QWizardPage(parent),
+	  _windowRadio(new QRadioButton(
+		  obs_module_text("FirstRunWizard.template.window"), this)),
+	  _sequenceRadio(new QRadioButton(
+		  obs_module_text("FirstRunWizard.template.sequence"), this))
+{
+	setTitle(obs_module_text("FirstRunWizard.template.title"));
+	setSubTitle(obs_module_text("FirstRunWizard.template.subtitle"));
+
+	_windowRadio->setChecked(true);
+
+	auto *layout = new QVBoxLayout(this);
+	layout->addWidget(_windowRadio);
+	layout->addWidget(_sequenceRadio);
+	layout->addStretch();
+}
+
+int TemplatePage::nextId() const
+{
+	if (_sequenceRadio->isChecked()) {
+		return PAGE_SEQ_TRIGGER;
+	}
+	return PAGE_WINDOW_SCENE;
+}
+
+// ===========================================================================
 // DonePage
 // ===========================================================================
 
@@ -92,12 +123,16 @@ FirstRunWizard::FirstRunWizard(QWidget *parent) : QWizard(parent)
 {
 	setWindowTitle(obs_module_text("FirstRunWizard.windowTitle"));
 	setWizardStyle(QWizard::ModernStyle);
-	setMinimumSize(540, 420);
+	setMinimumSize(600, 420);
 
 	setPage(PAGE_WELCOME, new WelcomePage(this));
+	setPage(PAGE_TEMPLATE, new TemplatePage(this));
 	setPage(PAGE_WINDOW_SCENE, new WindowSceneSelectionPage(this));
 	setPage(PAGE_WINDOW_CONDITION, new WindowConditionPage(this));
 	setPage(PAGE_WINDOW_REVIEW, new WindowReviewPage(this, _macro));
+	setPage(PAGE_SEQ_TRIGGER, new SequenceTriggerPage(this));
+	setPage(PAGE_SEQ_SCENES, new SequenceScenesPage(this));
+	setPage(PAGE_SEQ_REVIEW, new SequenceReviewPage(this, _macro));
 	setPage(PAGE_DONE, new DonePage(this));
 
 	setStartId(PAGE_WELCOME);

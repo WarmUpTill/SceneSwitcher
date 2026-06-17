@@ -19,9 +19,13 @@ namespace wiz {
 // ---------------------------------------------------------------------------
 enum WizardPageId {
 	PAGE_WELCOME = 0,
+	PAGE_TEMPLATE,
 	PAGE_WINDOW_SCENE,
 	PAGE_WINDOW_CONDITION,
 	PAGE_WINDOW_REVIEW,
+	PAGE_SEQ_TRIGGER,
+	PAGE_SEQ_SCENES,
+	PAGE_SEQ_REVIEW,
 	PAGE_DONE,
 };
 
@@ -32,7 +36,22 @@ class WelcomePage : public QWizardPage {
 	Q_OBJECT
 public:
 	explicit WelcomePage(QWidget *parent = nullptr);
-	int nextId() const override { return PAGE_WINDOW_SCENE; }
+	int nextId() const override { return PAGE_TEMPLATE; }
+};
+
+// ---------------------------------------------------------------------------
+// TemplatePage
+//   Lets the user choose which kind of automation to create.
+// ---------------------------------------------------------------------------
+class TemplatePage : public QWizardPage {
+	Q_OBJECT
+public:
+	explicit TemplatePage(QWidget *parent = nullptr);
+	int nextId() const override;
+
+private:
+	QRadioButton *_windowRadio;
+	QRadioButton *_sequenceRadio;
 };
 
 // ---------------------------------------------------------------------------
