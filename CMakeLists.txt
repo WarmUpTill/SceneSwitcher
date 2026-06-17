@@ -210,6 +210,8 @@ target_sources(
           lib/utils/first-run-wizard.cpp
           lib/utils/first-run-wizard.hpp
           lib/utils/first-run-wizard-helpers.hpp
+          lib/utils/first-run-wizard-sequence.cpp
+          lib/utils/first-run-wizard-sequence.hpp
           lib/utils/first-run-wizard-window.cpp
           lib/utils/first-run-wizard-window.hpp
           lib/utils/help-icon.hpp
