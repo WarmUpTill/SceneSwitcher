@@ -26,6 +26,9 @@ enum WizardPageId {
 	PAGE_SEQ_TRIGGER,
 	PAGE_SEQ_SCENES,
 	PAGE_SEQ_REVIEW,
+	PAGE_AUDIO_SOURCE,
+	PAGE_AUDIO_TARGET,
+	PAGE_AUDIO_REVIEW,
 	PAGE_DONE,
 };
 
@@ -52,6 +55,7 @@ public:
 private:
 	QRadioButton *_windowRadio;
 	QRadioButton *_sequenceRadio;
+	QRadioButton *_audioRadio;
 };
 
 // ---------------------------------------------------------------------------
