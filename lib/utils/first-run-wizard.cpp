@@ -1,4 +1,5 @@
 #include "first-run-wizard.hpp"
+#include "first-run-wizard-audio.hpp"
 #include "first-run-wizard-sequence.hpp"
 #include "first-run-wizard-window.hpp"
 
@@ -74,7 +75,9 @@ TemplatePage::TemplatePage(QWidget *parent)
 	  _windowRadio(new QRadioButton(
 		  obs_module_text("FirstRunWizard.template.window"), this)),
 	  _sequenceRadio(new QRadioButton(
-		  obs_module_text("FirstRunWizard.template.sequence"), this))
+		  obs_module_text("FirstRunWizard.template.sequence"), this)),
+	  _audioRadio(new QRadioButton(
+		  obs_module_text("FirstRunWizard.template.audio"), this))
 {
 	setTitle(obs_module_text("FirstRunWizard.template.title"));
 	setSubTitle(obs_module_text("FirstRunWizard.template.subtitle"));
@@ -84,6 +87,7 @@ TemplatePage::TemplatePage(QWidget *parent)
 	auto *layout = new QVBoxLayout(this);
 	layout->addWidget(_windowRadio);
 	layout->addWidget(_sequenceRadio);
+	layout->addWidget(_audioRadio);
 	layout->addStretch();
 }
 
@@ -91,6 +95,9 @@ int TemplatePage::nextId() const
 {
 	if (_sequenceRadio->isChecked()) {
 		return PAGE_SEQ_TRIGGER;
+	}
+	if (_audioRadio->isChecked()) {
+		return PAGE_AUDIO_SOURCE;
 	}
 	return PAGE_WINDOW_SCENE;
 }
@@ -133,6 +140,9 @@ FirstRunWizard::FirstRunWizard(QWidget *parent) : QWizard(parent)
 	setPage(PAGE_SEQ_TRIGGER, new SequenceTriggerPage(this));
 	setPage(PAGE_SEQ_SCENES, new SequenceScenesPage(this));
 	setPage(PAGE_SEQ_REVIEW, new SequenceReviewPage(this, _macro));
+	setPage(PAGE_AUDIO_SOURCE, new AudioSourcePage(this));
+	setPage(PAGE_AUDIO_TARGET, new AudioTargetPage(this));
+	setPage(PAGE_AUDIO_REVIEW, new AudioReviewPage(this, _macro));
 	setPage(PAGE_DONE, new DonePage(this));
 
 	setStartId(PAGE_WELCOME);
