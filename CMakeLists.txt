@@ -209,6 +209,8 @@ target_sources(
           lib/utils/filter-combo-box.hpp
           lib/utils/first-run-wizard.cpp
           lib/utils/first-run-wizard.hpp
+          lib/utils/first-run-wizard-audio.cpp
+          lib/utils/first-run-wizard-audio.hpp
           lib/utils/first-run-wizard-helpers.hpp
           lib/utils/first-run-wizard-sequence.cpp
           lib/utils/first-run-wizard-sequence.hpp
