@@ -700,6 +700,14 @@ static void LoadPlugins()
 #ifdef _WIN32
 	QString libPattern = "*.dll";
 	SetDllDirectory(pluginDir.toStdWString().c_str());
+	// Pre-load OpenSSL by full path so the bundled versions are used
+	// before implicit loads triggered by http/mqtt/twitch sub-plugins.
+	// On some machines a different libcrypto version is already in the
+	// process, causing libssl to fail with ERROR_PROC_NOT_FOUND.
+	QLibrary crypto(pluginDir + "/libcrypto-3-x64.dll");
+	crypto.load();
+	QLibrary ssl(pluginDir + "/libssl-3-x64.dll");
+	ssl.load();
 #else
 	QString libPattern = "*.so";
 #endif
