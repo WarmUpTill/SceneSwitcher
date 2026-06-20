@@ -259,7 +259,7 @@ ${_usage_host:-}"
       cmake --build build_${target##*-} --config ${config} -t package ${cmake_args}
 
       # Mark certain deps as optional
-      build-aux/CI/linux/demote-deps.sh ${project_root}/release/*.deb Recommends '(mqtt)|(opencv)|(tesseract)|(usb)|(x11)'
+      build-aux/CI/linux/demote-deps.sh ${project_root}/release/*.deb Recommends '(mqtt)|(opencv)|(tesseract)|(usb)|(x11)|(libobs)'
 
       if [ ! -e ${project_root}/release/${output_name}.deb ]; then
         mv ${project_root}/release/*.deb ${project_root}/release/${output_name}.deb
