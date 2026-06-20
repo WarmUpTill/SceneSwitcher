@@ -44,7 +44,7 @@ public:
 		SHOUTOUT_SEND = 200,
 
 		// Poll
-		POLL_START = 300, // TODO
+		POLL_START = 300,
 		POLL_END = 310,
 
 		// Prediction
@@ -148,6 +148,11 @@ public:
 		CHANNEL_ADS_GET_INFO = 6200,
 	};
 
+	enum class PollEndStatus {
+		TERMINATED,
+		ARCHIVED,
+	};
+
 	enum class AnnouncementColor {
 		PRIMARY,
 		BLUE,
@@ -194,6 +199,9 @@ public:
 	TwitchPointsReward _pointsReward;
 	std::weak_ptr<Variable> _rewardVariable;
 	bool _useVariableForRewardSelection = false;
+	StringVariable _pollTitle = "Poll question";
+	StringVariable _pollChoices = "Choice 1\nChoice 2";
+	PollEndStatus _pollEndStatus = PollEndStatus::TERMINATED;
 
 private:
 	void SetStreamTitle(const std::shared_ptr<TwitchToken> &) const;
@@ -203,6 +211,8 @@ private:
 	void StartCommercial(const std::shared_ptr<TwitchToken> &) const;
 	void SendChatAnnouncement(const std::shared_ptr<TwitchToken> &) const;
 	void StartRaid(const std::shared_ptr<TwitchToken> &);
+	void StartPoll(const std::shared_ptr<TwitchToken> &) const;
+	void EndPoll(const std::shared_ptr<TwitchToken> &) const;
 	void SendChatMessage(const std::shared_ptr<TwitchToken> &);
 	void GetUserInfo(const std::shared_ptr<TwitchToken> &);
 	void GetRewardInfo(const std::shared_ptr<TwitchToken> &);
@@ -263,6 +273,9 @@ private slots:
 	void UserLoginChanged();
 	void UserIdChanged(const NumberVariable<double> &);
 	void BanReasonChanged();
+	void PollTitleChanged();
+	void PollChoicesChanged();
+	void PollEndStatusChanged(int);
 	void PointsRewardChanged(const TwitchPointsReward &);
 	void RewardVariableChanged(const QString &);
 	void ToggleRewardSelection(bool);
@@ -307,6 +320,9 @@ private:
 	// we use QDoubleSpinBox instead
 	VariableDoubleSpinBox *_userId;
 	VariableLineEdit *_banReason;
+	VariableLineEdit *_pollTitle;
+	VariableTextEdit *_pollChoices;
+	QComboBox *_pollEndStatus;
 	TwitchPointsRewardWidget *_pointsReward;
 	VariableSelection *_rewardVariable;
 	QPushButton *_toggleRewardSelection;
