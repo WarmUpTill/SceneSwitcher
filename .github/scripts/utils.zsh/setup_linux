@@ -35,14 +35,27 @@ if (( ! (${skips[(Ie)all]} + ${skips[(Ie)deps]}) )) {
     sudo apt-get install ${apt_args} gcc-${${target##*-}//_/-}-linux-gnu g++-${${target##*-}//_/-}-linux-gnu
   }
 
-  sudo add-apt-repository --yes ppa:obsproject/obs-studio
-  sudo apt update
+  local dist_version
+  read -r dist_version <<< "$(source /etc/os-release; print "${VERSION_ID}")"
 
-  sudo apt-get install ${apt_args} \
-    build-essential \
-    libgles2-mesa-dev \
-    libsimde-dev \
+  autoload -Uz is-at-least
+  if ! is-at-least 26 ${dist_version}; then
+    sudo add-apt-repository --yes ppa:obsproject/obs-studio
+    sudo apt update
+  fi
+
+  local -a _obs_packages=(
+    build-essential
+    libgles2-mesa-dev
+    libsimde-dev
     obs-studio
+  )
+
+  if is-at-least 26 ${dist_version}; then
+    _obs_packages+=(libobs-dev)
+  fi
+
+  sudo apt-get install ${apt_args} ${_obs_packages}
 
   local -a _qt_packages=()
 
