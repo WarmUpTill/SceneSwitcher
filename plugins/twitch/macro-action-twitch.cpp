@@ -26,6 +26,8 @@ void MacroActionTwitch::ResolveVariablesToFixedValues()
 	_userLogin.ResolveVariables();
 	_userId.ResolveVariables();
 	_banReason.ResolveVariables();
+	_pollTitle.ResolveVariables();
+	_pollChoices.ResolveVariables();
 	_useVariableForRewardSelection = false;
 	auto token = _token.lock();
 	if (token) {
@@ -74,6 +76,10 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.raid.end"},
 	{MacroActionTwitch::Action::SHOUTOUT_SEND,
 	 "AdvSceneSwitcher.action.twitch.type.shoutout.send"},
+	{MacroActionTwitch::Action::POLL_START,
+	 "AdvSceneSwitcher.action.twitch.type.poll.start"},
+	{MacroActionTwitch::Action::POLL_END,
+	 "AdvSceneSwitcher.action.twitch.type.poll.end"},
 	{MacroActionTwitch::Action::SHIELD_MODE_START,
 	 "AdvSceneSwitcher.action.twitch.type.shieldMode.start"},
 	{MacroActionTwitch::Action::SHIELD_MODE_END,
@@ -346,6 +352,131 @@ static void setChatSetting(const TwitchToken &token, const char *field,
 	if (result.status != 200) {
 		blog(LOG_INFO, "Failed to %s %s! (%d)",
 		     enable ? "enable" : "disable", settingName, result.status);
+	}
+}
+
+static std::vector<std::string> splitLines(const std::string &str)
+{
+	std::vector<std::string> lines;
+	size_t start = 0;
+	while (start < str.size()) {
+		size_t end = str.find('\n', start);
+		if (end == std::string::npos) {
+			end = str.size();
+		}
+		size_t lineEnd = end;
+		if (lineEnd > start && str[lineEnd - 1] == '\r') {
+			--lineEnd;
+		}
+		if (lineEnd > start) {
+			lines.push_back(str.substr(start, lineEnd - start));
+		}
+		start = end + 1;
+	}
+	return lines;
+}
+
+void MacroActionTwitch::StartPoll(
+	const std::shared_ptr<TwitchToken> &token) const
+{
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
+	const auto pollTitle = std::string(_pollTitle);
+	if (pollTitle.empty()) {
+		blog(LOG_WARNING, "Poll title is empty!");
+		return;
+	}
+
+	auto choices = splitLines(std::string(_pollChoices));
+	if (choices.size() < 2) {
+		blog(LOG_WARNING, "Poll requires at least 2 choices!");
+		return;
+	}
+	if (choices.size() > 10) {
+		choices.resize(10);
+	}
+
+	const auto duration = _duration.Seconds();
+	if (duration < 15 || duration > 1800) {
+		blog(LOG_WARNING,
+		     "Poll duration must be between 15 and 1800 seconds! (%d)",
+		     (int)duration);
+		return;
+	}
+
+	const auto channelId = _channel.GetUserID(*token);
+	const auto &broadcasterId = channelId.empty() ? *id : channelId;
+
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "broadcaster_id", broadcasterId.c_str());
+	obs_data_set_string(data, "title", pollTitle.c_str());
+	obs_data_set_int(data, "duration", duration);
+
+	OBSDataArrayAutoRelease choicesArray = obs_data_array_create();
+	for (const auto &choice : choices) {
+		OBSDataAutoRelease choiceData = obs_data_create();
+		obs_data_set_string(choiceData, "title", choice.c_str());
+		obs_data_array_push_back(choicesArray, choiceData);
+	}
+	obs_data_set_array(data, "choices", choicesArray);
+
+	auto result = SendPostRequest(*token, "https://api.twitch.tv",
+				      "/helix/polls", {}, data.Get());
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed to start poll! (%d)", result.status);
+	}
+}
+
+const static std::map<MacroActionTwitch::PollEndStatus, std::string>
+	pollEndStatusesTwitch = {
+		{MacroActionTwitch::PollEndStatus::TERMINATED, "TERMINATED"},
+		{MacroActionTwitch::PollEndStatus::ARCHIVED, "ARCHIVED"},
+};
+
+void MacroActionTwitch::EndPoll(const std::shared_ptr<TwitchToken> &token) const
+{
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
+	const auto channelId = _channel.GetUserID(*token);
+	const auto &broadcasterId = channelId.empty() ? *id : channelId;
+
+	auto getResult = SendGetRequest(
+		*token, "https://api.twitch.tv", "/helix/polls",
+		{{"broadcaster_id", broadcasterId}, {"status", "ACTIVE"}});
+	if (getResult.status != 200) {
+		blog(LOG_INFO, "Failed to get active poll! (%d)",
+		     getResult.status);
+		return;
+	}
+
+	OBSDataArrayAutoRelease array =
+		obs_data_get_array(getResult.data, "data");
+	if (obs_data_array_count(array) == 0) {
+		blog(LOG_INFO, "No active poll found!");
+		return;
+	}
+
+	OBSDataAutoRelease pollData = obs_data_array_item(array, 0);
+	const auto pollId = obs_data_get_string(pollData, "id");
+
+	OBSDataAutoRelease patchData = obs_data_create();
+	obs_data_set_string(patchData, "broadcaster_id", broadcasterId.c_str());
+	obs_data_set_string(patchData, "id", pollId);
+	obs_data_set_string(patchData, "status",
+			    pollEndStatusesTwitch.at(_pollEndStatus).c_str());
+
+	auto result = SendPatchRequest(*token, "https://api.twitch.tv",
+				       "/helix/polls", {}, patchData.Get());
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed to end poll! (%d)", result.status);
 	}
 }
 
@@ -774,6 +905,12 @@ bool MacroActionTwitch::PerformAction()
 		}
 		break;
 	}
+	case Action::POLL_START:
+		StartPoll(token);
+		break;
+	case Action::POLL_END:
+		EndPoll(token);
+		break;
 	case Action::SHIELD_MODE_START:
 	case Action::SHIELD_MODE_END: {
 		const auto id = token->GetUserID();
@@ -1100,6 +1237,10 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	_userLogin.Save(obj, "userLogin");
 	_userId.Save(obj, "userId");
 	_banReason.Save(obj, "banReason");
+	_pollTitle.Save(obj, "pollTitle");
+	_pollChoices.Save(obj, "pollChoices");
+	obs_data_set_int(obj, "pollEndStatus",
+			 static_cast<int>(_pollEndStatus));
 	_pointsReward.Save(obj);
 	obs_data_set_string(obj, "rewardVariable",
 			    GetWeakVariableName(_rewardVariable).c_str());
@@ -1138,6 +1279,10 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_userLogin.Load(obj, "userLogin");
 	_userId.Load(obj, "userId");
 	_banReason.Load(obj, "banReason");
+	_pollTitle.Load(obj, "pollTitle");
+	_pollChoices.Load(obj, "pollChoices");
+	_pollEndStatus = static_cast<PollEndStatus>(
+		obs_data_get_int(obj, "pollEndStatus"));
 	_pointsReward.Load(obj);
 	_rewardVariable = GetWeakVariableByName(
 		obs_data_get_string(obj, "rewardVariable"));
@@ -1180,6 +1325,7 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 			{Action::RAID_END, {{"channel:manage:raids"}}},
 			{Action::SHOUTOUT_SEND,
 			 {{"moderator:manage:shoutouts"}}},
+			{Action::POLL_START, {{"channel:manage:polls"}}},
 			{Action::POLL_END, {{"channel:manage:polls"}}},
 			{Action::PREDICTION_END,
 			 {{"channel:manage:predictions"}}},
@@ -1361,7 +1507,10 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	  _layout2(new QHBoxLayout()),
 	  _pointsReward(new TwitchPointsRewardWidget(this, false)),
 	  _rewardVariable(new VariableSelection(this)),
-	  _toggleRewardSelection(new QPushButton())
+	  _toggleRewardSelection(new QPushButton()),
+	  _pollTitle(new VariableLineEdit(this)),
+	  _pollChoices(new VariableTextEdit(this)),
+	  _pollEndStatus(new QComboBox(this))
 {
 	_layout2->setContentsMargins(0, 0, 0, 0);
 	_userModerationRow->setLayout(_layout2);
@@ -1377,6 +1526,8 @@ MacroActionTwitchEdit::MacroActionTwitchEdit(
 	mainLayout->addWidget(_userModerationRow);
 	mainLayout->addWidget(_announcementMessage);
 	mainLayout->addWidget(_chatMessage);
+	mainLayout->addWidget(_pollTitle);
+	mainLayout->addWidget(_pollChoices);
 	mainLayout->addWidget(_tags);
 	mainLayout->addWidget(_language);
 	mainLayout->addWidget(_contentClassification);
@@ -1546,8 +1697,23 @@ void MacroActionTwitchEdit::SetWidgetProperties()
 	_announcementMessage->setMaxLength(500);
 
 	auto durationSpinBox = _duration->SpinBox();
-	durationSpinBox->setMaximum(180);
+	durationSpinBox->setMaximum(1800);
 	durationSpinBox->setSuffix("s");
+
+	_pollTitle->setSizePolicy(QSizePolicy::MinimumExpanding,
+				  QSizePolicy::Preferred);
+	_pollTitle->setMaxLength(60);
+	_pollChoices->setToolTip(
+		obs_module_text("AdvSceneSwitcher.action.twitch.poll.choices"));
+
+	_pollEndStatus->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.action.twitch.poll.end.terminated"),
+		static_cast<int>(MacroActionTwitch::PollEndStatus::TERMINATED));
+	_pollEndStatus->addItem(
+		obs_module_text(
+			"AdvSceneSwitcher.action.twitch.poll.end.archived"),
+		static_cast<int>(MacroActionTwitch::PollEndStatus::ARCHIVED));
 
 	populateActionSelection(_actions);
 	populateAnnouncementColorSelection(_announcementColor);
@@ -1626,6 +1792,12 @@ void MacroActionTwitchEdit::SetWidgetSignalConnections()
 		this, SLOT(UserIdChanged(const NumberVariable<double> &)));
 	QWidget::connect(_banReason, SIGNAL(editingFinished()), this,
 			 SLOT(BanReasonChanged()));
+	QWidget::connect(_pollTitle, SIGNAL(editingFinished()), this,
+			 SLOT(PollTitleChanged()));
+	QWidget::connect(_pollChoices, SIGNAL(textChanged()), this,
+			 SLOT(PollChoicesChanged()));
+	QWidget::connect(_pollEndStatus, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(PollEndStatusChanged(int)));
 	QWidget::connect(
 		_pointsReward,
 		SIGNAL(PointsRewardChanged(const TwitchPointsReward &)), this,
@@ -1665,17 +1837,27 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		action == MacroActionTwitch::Action::SHOUTOUT_SEND ||
 		action == MacroActionTwitch::Action::SEND_CHAT_MESSAGE ||
 		action == MacroActionTwitch::Action::POINTS_REWARD_GET_INFO ||
+		action == MacroActionTwitch::Action::POLL_START ||
+		action == MacroActionTwitch::Action::POLL_END ||
 		isChannelModAction);
 	_duration->setVisible(
 		action == MacroActionTwitch::Action::COMMERCIAL_START ||
-		action == MacroActionTwitch::Action::USER_BAN);
+		action == MacroActionTwitch::Action::USER_BAN ||
+		action == MacroActionTwitch::Action::POLL_START);
+	_pollTitle->setVisible(action == MacroActionTwitch::Action::POLL_START);
+	_pollChoices->setVisible(action ==
+				 MacroActionTwitch::Action::POLL_START);
+	_pollEndStatus->setVisible(action ==
+				   MacroActionTwitch::Action::POLL_END);
 	_banReason->setVisible(action == MacroActionTwitch::Action::USER_BAN);
 	_userModerationRow->setVisible(
 		isChannelModAction ||
 		action == MacroActionTwitch::Action::USER_GET_INFO ||
 		action == MacroActionTwitch::Action::USER_BLOCK ||
 		action == MacroActionTwitch::Action::USER_UNBLOCK ||
-		action == MacroActionTwitch::Action::POINTS_REWARD_GET_INFO);
+		action == MacroActionTwitch::Action::POINTS_REWARD_GET_INFO ||
+		action == MacroActionTwitch::Action::POLL_START ||
+		action == MacroActionTwitch::Action::POLL_END);
 	_markerDescription->setVisible(
 		action == MacroActionTwitch::Action::MARKER_CREATE);
 	_clipHasDelay->setVisible(action ==
@@ -1787,6 +1969,28 @@ void MacroActionTwitchEdit::BanReasonChanged()
 	_entryData->_banReason = _banReason->text().toStdString();
 }
 
+void MacroActionTwitchEdit::PollTitleChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_pollTitle = _pollTitle->text().toStdString();
+}
+
+void MacroActionTwitchEdit::PollChoicesChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_pollChoices = _pollChoices->toPlainText().toStdString();
+	adjustSize();
+	updateGeometry();
+}
+
+void MacroActionTwitchEdit::PollEndStatusChanged(int idx)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_pollEndStatus =
+		static_cast<MacroActionTwitch::PollEndStatus>(
+			_pollEndStatus->itemData(idx).toInt());
+}
+
 void MacroActionTwitchEdit::PointsRewardChanged(const TwitchPointsReward &reward)
 {
 	GUARD_LOADING_AND_LOCK();
@@ -1811,7 +2015,8 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 					     _banReason,
 					     _pointsReward,
 					     _rewardVariable,
-					     _toggleRewardSelection};
+					     _toggleRewardSelection,
+					     _pollEndStatus};
 	for (auto widget : widgets) {
 		_layout->removeWidget(widget);
 		_layout2->removeWidget(widget);
@@ -1836,7 +2041,8 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 		{"{{banReason}}", _banReason},
 		{"{{pointsReward}}", _pointsReward},
 		{"{{rewardVariable}}", _rewardVariable},
-		{"{{toggleRewardSelection}}", _toggleRewardSelection}};
+		{"{{toggleRewardSelection}}", _toggleRewardSelection},
+		{"{{pollEndStatus}}", _pollEndStatus}};
 
 	const char *layoutText;
 	const char *layout2Text = nullptr;
@@ -1881,6 +2087,18 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 	case MacroActionTwitch::Action::CHANNEL_GET_INFO:
 		layoutText = obs_module_text(
 			"AdvSceneSwitcher.action.twitch.layout.channel.getInfo");
+		break;
+	case MacroActionTwitch::Action::POLL_START:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.poll.start.row1");
+		layout2Text = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.poll.start.row2");
+		break;
+	case MacroActionTwitch::Action::POLL_END:
+		layoutText = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.poll.end.row1");
+		layout2Text = obs_module_text(
+			"AdvSceneSwitcher.action.twitch.layout.poll.end.row2");
 		break;
 	default:
 		layoutText = obs_module_text(
@@ -1938,6 +2156,10 @@ void MacroActionTwitchEdit::UpdateEntryData()
 	_userLogin->setText(_entryData->_userLogin);
 	_userId->SetValue(_entryData->_userId);
 	_banReason->setText(_entryData->_banReason);
+	_pollTitle->setText(_entryData->_pollTitle);
+	_pollChoices->setPlainText(_entryData->_pollChoices);
+	_pollEndStatus->setCurrentIndex(_pollEndStatus->findData(
+		static_cast<int>(_entryData->_pollEndStatus)));
 	_pointsReward->SetToken(_entryData->_token);
 	_pointsReward->SetChannel(_entryData->_channel);
 	_pointsReward->SetPointsReward(_entryData->_pointsReward);
