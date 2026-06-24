@@ -1633,6 +1633,10 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		   MacroActionVariable::Action::TRUNCATE) {
 		layoutString = obs_module_text(
 			"AdvSceneSwitcher.action.variable.layout.truncate");
+	} else if (_entryData->_action ==
+		   MacroActionVariable::Action::COPY_VAR) {
+		layoutString = obs_module_text(
+			"AdvSceneSwitcher.action.variable.layout.copy");
 	} else {
 		layoutString = obs_module_text(
 			"AdvSceneSwitcher.action.variable.layout.other");
