@@ -447,7 +447,19 @@ bool MacroActionVariable::PerformAction()
 		if (!value.has_value()) {
 			return true;
 		}
-		var->SetValue(*value);
+
+		if (!_jsonQueryExtractSingle) {
+			var->SetValue(*value);
+			return true;
+		}
+
+		auto extracted = ExtractSingleJsonArrayElement(*value);
+		if (extracted.has_value()) {
+			var->SetValue(*extracted);
+		} else {
+			var->SetValue(*value);
+		}
+
 		return true;
 	}
 	case Action::ARRAY_JSON: {
@@ -551,6 +563,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "allowRepeatValues", _allowRepeatValues);
 	_jsonQuery.Save(obj, "jsonQuery");
 	_jsonIndex.Save(obj, "jsonIndex");
+	obs_data_set_bool(obj, "jsonQueryExtractSingle",
+			  _jsonQueryExtractSingle);
 
 	obs_data_set_int(obj, "version", 1);
 
@@ -611,6 +625,8 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_allowRepeatValues = obs_data_get_bool(obj, "allowRepeatValues");
 	_jsonQuery.Load(obj, "jsonQuery");
 	_jsonIndex.Load(obj, "jsonIndex");
+	_jsonQueryExtractSingle =
+		obs_data_get_bool(obj, "jsonQueryExtractSingle");
 
 	return true;
 }
@@ -904,6 +920,15 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			  "AdvSceneSwitcher.action.variable.type.queryJson.info"),
 		  this)),
 	  _jsonIndex(new VariableSpinBox(this)),
+	  _jsonExtractSingle(new QCheckBox(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.variable.type.queryJson.extractSingle"),
+		  this)),
+	  _jsonExtractSingleHelp(new HelpIcon(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.variable.type.queryJson.extractSingle.info"),
+		  this)),
+	  _jsonQueryLayout(new QVBoxLayout()),
 	  _entryLayout(new QHBoxLayout())
 {
 	_numValue->setMinimum(-9999999999);
@@ -935,6 +960,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	_randomNumberEnd->setMaximum(9999999999);
 	_randomValues->SetMaxStringSize(99999999);
 	_jsonIndex->setMaximum(999);
+	auto jsonExtractSingleLayout = new QHBoxLayout();
+	jsonExtractSingleLayout->addWidget(_jsonExtractSingle);
+	jsonExtractSingleLayout->addWidget(_jsonExtractSingleHelp);
+	jsonExtractSingleLayout->addStretch();
+	_jsonQueryLayout->addLayout(jsonExtractSingleLayout);
 
 	QWidget::connect(_variables, SIGNAL(SelectionChanged(const QString &)),
 			 this, SLOT(VariableChanged(const QString &)));
@@ -1033,6 +1063,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		_jsonIndex,
 		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
 		this, SLOT(JsonIndexChanged(const NumberVariable<int> &)));
+	QWidget::connect(_jsonExtractSingle, SIGNAL(stateChanged(int)), this,
+			 SLOT(JsonQueryExtractSingleChanged(int)));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{variables}}", _variables},
@@ -1109,6 +1141,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 
 	auto layout = new QVBoxLayout;
 	layout->addLayout(_entryLayout);
+	layout->addLayout(_jsonQueryLayout);
 	layout->addLayout(_substringLayout);
 	layout->addWidget(_segmentValueStatus);
 	layout->addWidget(_segmentValue);
@@ -1180,6 +1213,7 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_randomValues->SetStringList(_entryData->_randomValues);
 	_jsonQuery->setText(_entryData->_jsonQuery);
 	_jsonIndex->SetValue(_entryData->_jsonIndex);
+	_jsonExtractSingle->setChecked(_entryData->_jsonQueryExtractSingle);
 
 	SetWidgetVisibility();
 }
@@ -1545,6 +1579,12 @@ void MacroActionVariableEdit::JsonIndexChanged(const NumberVariable<int> &value)
 	_entryData->_jsonIndex = value;
 }
 
+void MacroActionVariableEdit::JsonQueryExtractSingleChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_jsonQueryExtractSingle = value;
+}
+
 void MacroActionVariableEdit::SetWidgetVisibility()
 {
 	if (!_entryData) {
@@ -1740,6 +1780,9 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 				   MacroActionVariable::Action::QUERY_JSON);
 	_jsonIndex->setVisible(_entryData->_action ==
 			       MacroActionVariable::Action::ARRAY_JSON);
+	SetLayoutVisible(_jsonQueryLayout,
+			 _entryData->_action ==
+				 MacroActionVariable::Action::QUERY_JSON);
 
 	adjustSize();
 	updateGeometry();

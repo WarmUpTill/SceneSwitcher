@@ -116,6 +116,7 @@ public:
 
 	StringVariable _jsonQuery = "$.some.nested.value";
 	IntVariable _jsonIndex = 0;
+	bool _jsonQueryExtractSingle = true;
 
 private:
 	void DecrementCurrentSegmentVariableRef();
@@ -187,6 +188,7 @@ private slots:
 	void AllowRepeatValuesChanged(int);
 	void JsonQueryChanged();
 	void JsonIndexChanged(const NumberVariable<int> &);
+	void JsonQueryExtractSingleChanged(int);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -239,8 +241,11 @@ private:
 	QCheckBox *_allowRepeatValues;
 	QVBoxLayout *_randomValueLayout;
 	VariableLineEdit *_jsonQuery;
-	QLabel *_jsonQueryHelp;
+	HelpIcon *_jsonQueryHelp;
 	VariableSpinBox *_jsonIndex;
+	QCheckBox *_jsonExtractSingle;
+	HelpIcon *_jsonExtractSingleHelp;
+	QVBoxLayout *_jsonQueryLayout;
 	QHBoxLayout *_entryLayout;
 
 	std::shared_ptr<MacroActionVariable> _entryData;

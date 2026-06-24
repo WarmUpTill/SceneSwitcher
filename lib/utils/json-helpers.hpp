@@ -17,5 +17,7 @@ EXPORT std::optional<std::string> QueryJson(const std::string &json,
 					    const std::string &query);
 EXPORT std::optional<std::string> AccessJsonArrayIndex(const std::string &json,
 						       const int index);
+EXPORT std::optional<std::string>
+ExtractSingleJsonArrayElement(const std::string &json);
 
 } // namespace advss

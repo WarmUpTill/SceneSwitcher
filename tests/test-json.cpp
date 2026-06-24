@@ -103,3 +103,27 @@ TEST_CASE("AccessJsonArrayIndex", "[json-helpers]")
 	result = advss::AccessJsonArrayIndex("[\"1\", \"2\"]", 1);
 	REQUIRE(*result == "2");
 }
+
+TEST_CASE("ExtractSingleJsonArrayElement", "[json-helpers]")
+{
+	auto result = advss::ExtractSingleJsonArrayElement("invalid json");
+	REQUIRE_FALSE(result);
+
+	result = advss::ExtractSingleJsonArrayElement("{}");
+	REQUIRE_FALSE(result);
+
+	result = advss::ExtractSingleJsonArrayElement("[]");
+	REQUIRE_FALSE(result);
+
+	result = advss::ExtractSingleJsonArrayElement("[1, 2]");
+	REQUIRE_FALSE(result);
+
+	result = advss::ExtractSingleJsonArrayElement("[42]");
+	REQUIRE(*result == "42");
+
+	result = advss::ExtractSingleJsonArrayElement("[\"hello\"]");
+	REQUIRE(*result == "hello");
+
+	result = advss::ExtractSingleJsonArrayElement("[{\"key\": 1}]");
+	REQUIRE(*result == "{\"key\":1}");
+}
