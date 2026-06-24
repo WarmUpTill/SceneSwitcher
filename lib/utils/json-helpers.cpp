@@ -99,4 +99,23 @@ std::optional<std::string> AccessJsonArrayIndex(const std::string &jsonStr,
 	return {};
 }
 
+std::optional<std::string>
+ExtractSingleJsonArrayElement(const std::string &jsonStr)
+{
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		if (!json.is_array() || json.size() != 1) {
+			return {};
+		}
+		auto result = json.at(0);
+		if (result.is_string()) {
+			return result.get<std::string>();
+		}
+		return result.dump();
+	} catch (const nlohmann::json::exception &) {
+		return {};
+	}
+	return {};
+}
+
 } // namespace advss
