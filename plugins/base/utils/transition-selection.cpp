@@ -133,8 +133,13 @@ void TransitionSelectionWidget::EnableAnyEntry(bool enable)
 
 void TransitionSelectionWidget::EnableNoneEntry(bool enable)
 {
+	if (_addNone == enable) {
+		return;
+	}
+	const auto selection = GetCurrentSelection();
 	_addNone = enable;
 	Populate();
+	SetTransition(selection);
 }
 
 void TransitionSelectionWidget::showEvent(QShowEvent *event)
