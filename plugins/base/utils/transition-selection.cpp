@@ -48,6 +48,8 @@ OBSWeakSource TransitionSelection::GetTransition() const
 		obs_source_release(source);
 		return weakSource;
 	}
+	case Type::NONE:
+		return nullptr;
 	default:
 		break;
 	}
@@ -63,6 +65,8 @@ std::string TransitionSelection::ToString() const
 		return obs_module_text("AdvSceneSwitcher.currentTransition");
 	case Type::ANY:
 		return obs_module_text("AdvSceneSwitcher.anyTransition");
+	case Type::NONE:
+		return obs_module_text("AdvSceneSwitcher.noneTransition");
 	default:
 		break;
 	}
@@ -70,14 +74,16 @@ std::string TransitionSelection::ToString() const
 }
 
 TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
-						     bool current, bool any)
+						     bool current, bool any,
+						     bool none)
 	: FilterComboBox(parent,
 			 obs_module_text("AdvSceneSwitcher.selectTransition")),
 	  _addCurrent(current),
-	  _addAny(any)
+	  _addAny(any),
+	  _addNone(none)
 {
 	setDuplicatesEnabled(true);
-	PopulateTransitionSelection(this, current, any, false);
+	PopulateTransitionSelection(this, current, any, false, none);
 
 	QWidget::connect(this, SIGNAL(currentTextChanged(const QString &)),
 			 this, SLOT(SelectionChanged(const QString &)));
@@ -86,8 +92,9 @@ TransitionSelectionWidget::TransitionSelectionWidget(QWidget *parent,
 void TransitionSelectionWidget::SetTransition(const TransitionSelection &t)
 {
 	// Order of entries
-	// 1. Any transition
-	// 2. Current transition
+	// 1. None transition
+	// 2. Any transition
+	// 3. Current transition
 	// 4. Transitions
 
 	switch (t.GetType()) {
@@ -101,6 +108,10 @@ void TransitionSelectionWidget::SetTransition(const TransitionSelection &t)
 	case TransitionSelection::Type::ANY:
 		setCurrentIndex(findText(QString::fromStdString(
 			obs_module_text("AdvSceneSwitcher.anyTransition"))));
+		break;
+	case TransitionSelection::Type::NONE:
+		setCurrentIndex(findText(QString::fromStdString(
+			obs_module_text("AdvSceneSwitcher.noneTransition"))));
 		break;
 	default:
 		setCurrentIndex(-1);
@@ -120,6 +131,12 @@ void TransitionSelectionWidget::EnableAnyEntry(bool enable)
 	Populate();
 }
 
+void TransitionSelectionWidget::EnableNoneEntry(bool enable)
+{
+	_addNone = enable;
+	Populate();
+}
+
 void TransitionSelectionWidget::showEvent(QShowEvent *event)
 {
 	FilterComboBox::showEvent(event);
@@ -133,7 +150,7 @@ void TransitionSelectionWidget::Populate()
 {
 	const QSignalBlocker blocker(this);
 	clear();
-	PopulateTransitionSelection(this, _addCurrent, _addAny);
+	PopulateTransitionSelection(this, _addCurrent, _addAny, true, _addNone);
 }
 
 static bool isFirstEntry(const QComboBox *l, QString name, int idx)
@@ -163,6 +180,9 @@ TransitionSelection TransitionSelectionWidget::GetCurrentSelection() const
 		if (IsAnyTransitionSelected(text)) {
 			result._type = TransitionSelection::Type::ANY;
 		}
+		if (IsNoneTransitionSelected(text)) {
+			result._type = TransitionSelection::Type::NONE;
+		}
 	}
 	return result;
 }
@@ -182,6 +202,16 @@ bool TransitionSelectionWidget::IsAnyTransitionSelected(
 {
 	if (name == QString::fromStdString((obs_module_text(
 			    "AdvSceneSwitcher.anyTransition")))) {
+		return isFirstEntry(this, name, currentIndex());
+	}
+	return false;
+}
+
+bool TransitionSelectionWidget::IsNoneTransitionSelected(
+	const QString &name) const
+{
+	if (name == QString::fromStdString((obs_module_text(
+			    "AdvSceneSwitcher.noneTransition")))) {
 		return isFirstEntry(this, name, currentIndex());
 	}
 	return false;

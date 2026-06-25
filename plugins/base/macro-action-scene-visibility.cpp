@@ -348,7 +348,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 		  },
 		  SceneItemSelectionWidget::NameClashMode::ALL)),
 	  _updateTransition(new QCheckBox(this)),
-	  _transitions(new TransitionSelectionWidget(this, true, false)),
+	  _transitions(new TransitionSelectionWidget(this, true, false, true)),
 	  _updateDuration(new QCheckBox(this)),
 	  _duration(new DurationSelection(this, false)),
 	  _durationLayout(new QHBoxLayout),
@@ -482,10 +482,11 @@ void MacroActionSceneVisibilityEdit::ActionChanged(int value)
 
 void MacroActionSceneVisibilityEdit::SetWidgetVisibility()
 {
+	const auto transitionType = _entryData->_transition.GetType();
 	const bool hideDurationSelection =
 		_entryData->_updateTransition &&
-		_entryData->_transition.GetType() !=
-			TransitionSelection::Type::CURRENT &&
+		transitionType != TransitionSelection::Type::CURRENT &&
+		transitionType != TransitionSelection::Type::NONE &&
 		IsFixedLengthTransition(
 			_entryData->_transition.GetTransition());
 

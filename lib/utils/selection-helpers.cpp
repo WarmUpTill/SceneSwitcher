@@ -135,7 +135,7 @@ QStringList GetSourceNames()
 }
 
 void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny,
-				 bool addSelect)
+				 bool addSelect, bool addNone)
 {
 
 	obs_frontend_source_list *transitions = new obs_frontend_source_list();
@@ -167,6 +167,11 @@ void PopulateTransitionSelection(QComboBox *sel, bool addCurrent, bool addAny,
 		sel->insertItem(
 			addSelect ? 1 : 0,
 			obs_module_text("AdvSceneSwitcher.anyTransition"));
+	}
+	if (addNone) {
+		sel->insertItem(
+			addSelect ? 1 : 0,
+			obs_module_text("AdvSceneSwitcher.noneTransition"));
 	}
 }
 
