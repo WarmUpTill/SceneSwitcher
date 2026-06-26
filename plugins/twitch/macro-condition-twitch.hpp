@@ -114,6 +114,7 @@ public:
 private:
 	bool CheckChannelGenericEvents();
 	bool CheckChannelLiveEvents();
+	bool CheckChannelSubscriptionMessageEvent();
 	bool CheckChannelRewardChangeEvents();
 	bool CheckChannelRewardRedemptionEvents();
 	bool HandleMatchingSubscriptionEvents(
