@@ -1,6 +1,8 @@
 #include "macro-action-scene-visibility.hpp"
 #include "layout-helpers.hpp"
+#include "macro-helpers.hpp"
 #include "plugin-state-helpers.hpp"
+#include "sync-helpers.hpp"
 #include "transition-helpers.hpp"
 
 #include <obs-frontend-api.h>
@@ -158,12 +160,11 @@ static void attachRestoreContext(obs_sceneitem_t *item,
 	signal_handler_connect(sh, "destroy", handleSourceDestroyed, ctx);
 }
 
-static void setSceneItemVisibility(obs_sceneitem_t *item,
-				   const bool setTransition,
-				   const OBSWeakSource &transitionWeak,
-				   const bool setDuration,
-				   const Duration &duration,
-				   MacroActionSceneVisibility::Action action)
+static obs_source_t *
+setSceneItemVisibility(obs_sceneitem_t *item, const bool setTransition,
+		       const OBSWeakSource &transitionWeak,
+		       const bool setDuration, const Duration &duration,
+		       MacroActionSceneVisibility::Action action)
 {
 	const OBSSourceAutoRelease transition = OBSGetStrongRef(transitionWeak);
 	const bool itemIsVisible = obs_sceneitem_visible(item);
@@ -200,7 +201,7 @@ static void setSceneItemVisibility(obs_sceneitem_t *item,
 	}
 
 	if (!setTransition && !setDuration) {
-		return;
+		return privateTransitionSource;
 	}
 
 	if (!privateTransitionSource) {
@@ -213,27 +214,151 @@ static void setSceneItemVisibility(obs_sceneitem_t *item,
 				item, !itemIsVisible,
 				currentTransitionDuration);
 		}
-		return;
+		return nullptr;
 	}
 
 	auto sh = obs_source_get_signal_handler(privateTransitionSource);
 	if (!sh) {
-		return;
+		return nullptr;
 	}
 
 	attachRestoreContext(item, privateTransitionSource, itemIsVisible,
 			     currentTransition, currentTransitionDuration);
+
+	return privateTransitionSource;
+}
+
+namespace {
+
+struct TransitionWaitItem {
+	obs_sceneitem_t *sceneItem;
+	obs_source_t *expectedSource;
+	bool show;
+	std::atomic<int> *pendingCount;
+	std::atomic<bool> done{false};
+
+	void markDone()
+	{
+		bool expected = false;
+		if (done.compare_exchange_strong(expected, true)) {
+			(*pendingCount)--;
+			GetMacroTransitionCV().notify_all();
+		}
+	}
+};
+
+} // namespace
+
+static void onTransitionDone(void *data, calldata_t *)
+{
+	static_cast<TransitionWaitItem *>(data)->markDone();
+}
+
+static void waitForSceneItemTransitions(
+	std::atomic<int> &pendingCount,
+	const std::vector<std::unique_ptr<TransitionWaitItem>> &waitItems,
+	Macro *macro)
+{
+	using namespace std::chrono_literals;
+	SetMacroAbortWait(false);
+	std::unique_lock<std::mutex> lock(*GetMutex());
+	while (pendingCount > 0 && !MacroWaitShouldAbort() &&
+	       !MacroIsStopped(macro) && !OBSIsShuttingDown()) {
+		GetMacroTransitionCV().wait_for(lock, 100ms);
+		// Detect transitions replaced mid-wait (e.g. user sets
+		// transition to "None" via OBS context menu). In that
+		// case transition_stop never fires, so we poll.
+		for (const auto &wi : waitItems) {
+			if (wi->done) {
+				continue;
+			}
+			obs_source_t *current = obs_sceneitem_get_transition(
+				wi->sceneItem, wi->show);
+			if (current != wi->expectedSource) {
+				wi->markDone();
+			}
+		}
+	}
 }
 
 bool MacroActionSceneVisibility::PerformAction()
 {
 	auto items = _source.GetSceneItems(_scene);
-	for (const auto &item : items) {
-		setSceneItemVisibility(item, _updateTransition,
-				       _transition.GetTransition(),
-				       _updateDuration, _duration, _action);
+
+	if (!_blockUntilTransitionDone) {
+		for (const auto &item : items) {
+			setSceneItemVisibility(item, _updateTransition,
+					       _transition.GetTransition(),
+					       _updateDuration, _duration,
+					       _action);
+		}
+		return true;
 	}
-	return true;
+
+	std::atomic<int> pendingCount(0);
+	std::vector<OBSSourceAutoRelease> transitionSources;
+	std::vector<std::unique_ptr<TransitionWaitItem>> waitItems;
+	std::vector<OBSSignal> signalConnections;
+
+	for (const auto &item : items) {
+		const bool itemWasVisible = obs_sceneitem_visible(item);
+
+		bool targetVisible;
+		switch (_action) {
+		case Action::SHOW:
+			targetVisible = true;
+			break;
+		case Action::HIDE:
+			targetVisible = false;
+			break;
+		case Action::TOGGLE:
+			targetVisible = !itemWasVisible;
+			break;
+		default:
+			continue;
+		}
+
+		if (itemWasVisible == targetVisible) {
+			// No-op: visibility won't change, no transition will play
+			setSceneItemVisibility(item, _updateTransition,
+					       _transition.GetTransition(),
+					       _updateDuration, _duration,
+					       _action);
+			continue;
+		}
+
+		auto *source = setSceneItemVisibility(
+			item, _updateTransition, _transition.GetTransition(),
+			_updateDuration, _duration, _action);
+		if (!source) {
+			continue;
+		}
+
+		auto *sh = obs_source_get_signal_handler(source);
+		if (!sh) {
+			continue;
+		}
+
+		transitionSources.emplace_back(obs_source_get_ref(source));
+		++pendingCount;
+
+		auto wi = std::make_unique<TransitionWaitItem>();
+		wi->sceneItem = item;
+		wi->expectedSource = source;
+		wi->show = !itemWasVisible;
+		wi->pendingCount = &pendingCount;
+
+		signalConnections.emplace_back(sh, "transition_stop",
+					       onTransitionDone, wi.get());
+		waitItems.push_back(std::move(wi));
+	}
+
+	if (pendingCount == 0) {
+		return true;
+	}
+
+	waitForSceneItemTransitions(pendingCount, waitItems, GetMacro());
+	return !MacroWaitShouldAbort();
 }
 
 void MacroActionSceneVisibility::LogAction() const
@@ -261,6 +386,8 @@ bool MacroActionSceneVisibility::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "updateDuration", _updateDuration);
 	_duration.Save(obj);
 	obs_data_set_int(obj, "action", static_cast<int>(_action));
+	obs_data_set_bool(obj, "blockUntilTransitionDone",
+			  _blockUntilTransitionDone);
 	return true;
 }
 
@@ -282,6 +409,8 @@ bool MacroActionSceneVisibility::Load(obs_data_t *obj)
 	_duration.Load(obj);
 	_action = static_cast<MacroActionSceneVisibility::Action>(
 		obs_data_get_int(obj, "action"));
+	_blockUntilTransitionDone =
+		obs_data_get_bool(obj, "blockUntilTransitionDone");
 
 	// TODO: Remove in future version
 	if (obs_data_get_int(obj, "sourceType") != 0) {
@@ -344,6 +473,10 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	  _updateDuration(new QCheckBox(this)),
 	  _duration(new DurationSelection(this, false)),
 	  _durationLayout(new QHBoxLayout),
+	  _blockUntilTransitionDone(new QCheckBox(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.sceneVisibility.blockUntilTransitionDone"),
+		  this)),
 	  _actions(new QComboBox())
 {
 	populateActionSelection(_actions);
@@ -369,6 +502,8 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 			 SLOT(UpdateDurationChanged(int)));
 	QWidget::connect(_duration, SIGNAL(DurationChanged(const Duration &)),
 			 this, SLOT(DurationChanged(const Duration &)));
+	QWidget::connect(_blockUntilTransitionDone, SIGNAL(stateChanged(int)),
+			 this, SLOT(BlockUntilTransitionDoneChanged(int)));
 
 	auto sceneItemLayout = new QHBoxLayout;
 	PlaceWidgets(obs_module_text(
@@ -397,6 +532,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 	layout->addLayout(sceneItemLayout);
 	layout->addLayout(transitionLayout);
 	layout->addLayout(_durationLayout);
+	layout->addWidget(_blockUntilTransitionDone);
 	setLayout(layout);
 
 	_entryData = entryData;
@@ -418,6 +554,8 @@ void MacroActionSceneVisibilityEdit::UpdateEntryData()
 	_transitions->SetTransition(_entryData->_transition);
 	_updateDuration->setChecked(_entryData->_updateDuration);
 	_duration->SetDuration(_entryData->_duration);
+	_blockUntilTransitionDone->setChecked(
+		_entryData->_blockUntilTransitionDone);
 }
 
 void MacroActionSceneVisibilityEdit::SceneChanged(const SceneSelection &s)
@@ -470,6 +608,12 @@ void MacroActionSceneVisibilityEdit::ActionChanged(int value)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_action =
 		static_cast<MacroActionSceneVisibility::Action>(value);
+}
+
+void MacroActionSceneVisibilityEdit::BlockUntilTransitionDoneChanged(int state)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_blockUntilTransitionDone = state;
 }
 
 void MacroActionSceneVisibilityEdit::SetWidgetVisibility()
