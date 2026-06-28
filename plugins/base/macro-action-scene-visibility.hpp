@@ -26,6 +26,7 @@ public:
 	TransitionSelection _transition;
 	bool _updateDuration = false;
 	Duration _duration;
+	bool _blockUntilTransitionDone = true;
 
 	enum class Action {
 		SHOW,
@@ -64,6 +65,7 @@ private slots:
 	void UpdateDurationChanged(int);
 	void DurationChanged(const Duration &seconds);
 	void ActionChanged(int value);
+	void BlockUntilTransitionDoneChanged(int state);
 signals:
 	void HeaderInfoChanged(const QString &);
 
@@ -77,6 +79,7 @@ private:
 	QCheckBox *_updateDuration;
 	DurationSelection *_duration;
 	QHBoxLayout *_durationLayout;
+	QCheckBox *_blockUntilTransitionDone;
 	QComboBox *_actions;
 
 	std::shared_ptr<MacroActionSceneVisibility> _entryData;
