@@ -67,8 +67,8 @@ private slots:
 
 protected:
 	QComboBox *_actions;
-	QLabel *_pauseHint;
-	QLabel *_splitHint;
+	HelpIcon *_pauseHint;
+	HelpIcon *_splitHint;
 	FileSelection *_recordFolder;
 	VariableLineEdit *_recordFileFormat;
 	HelpIcon *_outputNotActiveHelp;

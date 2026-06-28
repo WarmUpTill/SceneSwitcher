@@ -165,10 +165,14 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 	QWidget *parent, std::shared_ptr<MacroActionRecord> entryData)
 	: QWidget(parent),
 	  _actions(new QComboBox()),
-	  _pauseHint(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.action.recording.pause.hint"))),
-	  _splitHint(new QLabel(obs_module_text(
-		  "AdvSceneSwitcher.action.recording.split.hint"))),
+	  _pauseHint(new HelpIcon(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.recording.pause.hint"),
+		  this)),
+	  _splitHint(new HelpIcon(
+		  obs_module_text(
+			  "AdvSceneSwitcher.action.recording.split.hint"),
+		  this)),
 	  _recordFolder(new FileSelection(FileSelection::Type::FOLDER, this)),
 	  _recordFileFormat(new VariableLineEdit(this)),
 	  _outputNotActiveHelp(new HelpIcon(
