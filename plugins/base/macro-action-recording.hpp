@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-action-edit.hpp"
 #include "file-selection.hpp"
+#include "help-icon.hpp"
 #include "variable-line-edit.hpp"
 
 #include <QDir>
@@ -70,6 +71,7 @@ protected:
 	QLabel *_splitHint;
 	FileSelection *_recordFolder;
 	VariableLineEdit *_recordFileFormat;
+	HelpIcon *_outputNotActiveHelp;
 	VariableLineEdit *_chapterName;
 	std::shared_ptr<MacroActionRecord> _entryData;
 
