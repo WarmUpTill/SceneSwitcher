@@ -65,7 +65,9 @@ private slots:
 	void FormatStringChanged();
 	void ChapterNameChanged();
 
-protected:
+private:
+	void SetWidgetVisibility();
+
 	QComboBox *_actions;
 	HelpIcon *_pauseHint;
 	HelpIcon *_splitHint;
@@ -74,11 +76,8 @@ protected:
 	HelpIcon *_outputNotActiveHelp;
 	VariableLineEdit *_chapterName;
 	std::shared_ptr<MacroActionRecord> _entryData;
-
-private:
-	void SetWidgetVisibility();
-
 	QHBoxLayout *_mainLayout;
+
 	bool _loading = true;
 };
 

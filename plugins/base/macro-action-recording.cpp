@@ -192,10 +192,10 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 	QWidget::connect(_chapterName, SIGNAL(editingFinished()), this,
 			 SLOT(ChapterNameChanged()));
 
-	auto mainLayout = new QHBoxLayout;
+	_mainLayout = new QHBoxLayout;
 	PlaceWidgets(
 		obs_module_text("AdvSceneSwitcher.action.recording.layout"),
-		mainLayout,
+		_mainLayout,
 		{{"{{actions}}", _actions},
 		 {"{{pauseHint}}", _pauseHint},
 		 {"{{splitHint}}", _splitHint},
@@ -203,7 +203,7 @@ MacroActionRecordEdit::MacroActionRecordEdit(
 		 {"{{recordFileFormat}}", _recordFileFormat},
 		 {"{{outputNotActiveHelp}}", _outputNotActiveHelp},
 		 {"{{chapterName}}", _chapterName}});
-	setLayout(mainLayout);
+	setLayout(_mainLayout);
 
 	_entryData = entryData;
 	UpdateEntryData();
@@ -260,6 +260,15 @@ void MacroActionRecordEdit::SetWidgetVisibility()
 		_entryData->_action == MacroActionRecord::Action::FILE_FORMAT);
 	_chapterName->setVisible(_entryData->_action ==
 				 MacroActionRecord::Action::ADD_CHAPTER);
+	const bool hasExtraWidget =
+		_entryData->_action == MacroActionRecord::Action::FOLDER ||
+		_entryData->_action == MacroActionRecord::Action::FILE_FORMAT ||
+		_entryData->_action == MacroActionRecord::Action::ADD_CHAPTER;
+	if (hasExtraWidget) {
+		RemoveStretchIfPresent(_mainLayout);
+	} else {
+		AddStretchIfNecessary(_mainLayout);
+	}
 }
 
 void MacroActionRecordEdit::ActionChanged(int value)
