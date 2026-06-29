@@ -10,6 +10,7 @@
 #include <screenshot-helper.hpp>
 #include <slider-spinbox.hpp>
 #include <source-helpers.hpp>
+#include <variable-color-button.hpp>
 #include <variable-line-edit.hpp>
 #include <variable-text-edit.hpp>
 
@@ -143,7 +144,7 @@ public:
 		const std::shared_ptr<MacroConditionVideo> &);
 
 private slots:
-	void SelectColorClicked();
+	void ColorChanged(const ColorVariable &);
 	void ColorThresholdChanged(const NumberVariable<double> &);
 	void MatchTextChanged();
 	void RegexChanged(const RegexConfig &conf);
@@ -154,12 +155,9 @@ private slots:
 	void ConfigFileChanged(const QString &);
 
 private:
-	void SetupColorLabel(const QColor &);
-
 	VariableTextEdit *_matchText;
 	RegexConfigWidget *_regex;
-	QLabel *_textColor;
-	QPushButton *_selectColor;
+	VariableColorButton *_colorButton;
 	SliderSpinBox *_colorThreshold;
 	QComboBox *_pageSegMode;
 	FileSelection *_tesseractBaseDir;
@@ -212,17 +210,14 @@ public:
 		  const std::shared_ptr<MacroConditionVideo> &);
 
 private slots:
-	void SelectColorClicked();
+	void ColorChanged(const ColorVariable &);
 	void MatchThresholdChanged(const NumberVariable<double> &);
 	void ColorThresholdChanged(const NumberVariable<double> &);
 
 private:
-	void SetupColorLabel(const QColor &);
-
 	SliderSpinBox *_matchThreshold;
 	SliderSpinBox *_colorThreshold;
-	QLabel *_color;
-	QPushButton *_selectColor;
+	VariableColorButton *_colorButton;
 
 	std::shared_ptr<MacroConditionVideo> _entryData;
 	bool _loading = true;

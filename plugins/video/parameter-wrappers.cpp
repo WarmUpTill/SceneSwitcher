@@ -273,27 +273,6 @@ OBSWeakSource VideoInput::GetVideo() const
 	return nullptr;
 }
 
-static void SaveColor(obs_data_t *obj, const char *name, const QColor &color)
-{
-	auto data = obs_data_create();
-	obs_data_set_int(data, "red", color.red());
-	obs_data_set_int(data, "green", color.green());
-	obs_data_set_int(data, "blue", color.blue());
-	obs_data_set_obj(obj, name, data);
-	obs_data_release(data);
-}
-
-static QColor LoadColor(obs_data_t *obj, const char *name)
-{
-	QColor color = Qt::black;
-	auto data = obs_data_get_obj(obj, name);
-	color.setRed(obs_data_get_int(data, "red"));
-	color.setGreen(obs_data_get_int(data, "green"));
-	color.setBlue(obs_data_get_int(data, "blue"));
-	obs_data_release(data);
-	return color;
-}
-
 OCRParameters::OCRParameters()
 {
 	Setup();
@@ -344,7 +323,7 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	languageCode.Save(data, "language");
 	obs_data_set_bool(data, "useConfig", useConfig);
 	obs_data_set_string(data, "configFile", configFile.c_str());
-	SaveColor(data, "textColor", color);
+	color.Save(data, "textColor");
 	colorThreshold.Save(data, "colorThreshold");
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
 	obs_data_set_int(data, "version", 3);
@@ -387,7 +366,7 @@ bool OCRParameters::Load(obs_data_t *obj)
 	useConfig = obs_data_get_bool(data, "useConfig");
 	configFile = obs_data_get_string(data, "configFile");
 
-	color = LoadColor(data, "textColor");
+	color.Load(data, "textColor");
 	if (obs_data_has_user_value(data, "version")) {
 		colorThreshold.Load(data, "colorThreshold");
 	}
@@ -516,7 +495,7 @@ void OCRParameters::Setup()
 bool ColorParameters::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
-	SaveColor(data, "color", color);
+	color.Save(data, "color");
 	colorThreshold.Save(data, "colorThreshold");
 	matchThreshold.Save(data, "matchThreshold");
 	obs_data_set_obj(obj, "colorData", data);
@@ -527,7 +506,7 @@ bool ColorParameters::Save(obs_data_t *obj) const
 bool ColorParameters::Load(obs_data_t *obj)
 {
 	auto data = obs_data_get_obj(obj, "colorData");
-	color = LoadColor(data, "color");
+	color.Load(data, "color");
 	colorThreshold.Load(data, "colorThreshold");
 	matchThreshold.Load(data, "matchThreshold");
 	obs_data_release(data);
