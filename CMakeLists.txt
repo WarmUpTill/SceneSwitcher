@@ -291,6 +291,10 @@ target_sources(
           lib/utils/volume-control.hpp
           lib/utils/websocket-api.cpp
           lib/utils/websocket-api.hpp
+          lib/variables/variable-color-button.cpp
+          lib/variables/variable-color-button.hpp
+          lib/variables/variable-color.cpp
+          lib/variables/variable-color.hpp
           lib/variables/variable-line-edit.cpp
           lib/variables/variable-line-edit.hpp
           lib/variables/variable-number.hpp
