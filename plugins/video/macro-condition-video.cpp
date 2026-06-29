@@ -5,7 +5,6 @@
 #include <macro-condition-edit.hpp>
 #include <plugin-state-helpers.hpp>
 #include <QBuffer>
-#include <QColorDialog>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -409,7 +408,8 @@ bool MacroConditionVideo::CheckOCR()
 	}
 
 	auto text = RunOCR(ocr, _screenshotData.GetImage(),
-			   _ocrParameters.color, _ocrParameters.colorThreshold);
+			   _ocrParameters.color.GetValue(),
+			   _ocrParameters.colorThreshold);
 	if (!text) {
 		return false;
 	}
@@ -425,7 +425,7 @@ bool MacroConditionVideo::CheckOCR()
 bool MacroConditionVideo::CheckColor()
 {
 	const bool ret = ContainsPixelsInColorRange(
-		_screenshotData.GetImage(), _colorParameters.color,
+		_screenshotData.GetImage(), _colorParameters.color.GetValue(),
 		_colorParameters.colorThreshold,
 		_colorParameters.matchThreshold);
 
@@ -677,9 +677,10 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	: QWidget(parent),
 	  _matchText(new VariableTextEdit(this)),
 	  _regex(new RegexConfigWidget(this)),
-	  _textColor(new QLabel),
-	  _selectColor(new QPushButton(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.selectColor"))),
+	  _colorButton(new VariableColorButton(
+		  this,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.selectColor"))),
 	  _colorThreshold(new SliderSpinBox(
 		  0., 1.,
 		  obs_module_text(
@@ -709,8 +710,9 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	_reloadConfig->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.condition.video.ocrConfigReload"));
 
-	QWidget::connect(_selectColor, SIGNAL(clicked()), this,
-			 SLOT(SelectColorClicked()));
+	QWidget::connect(_colorButton,
+			 SIGNAL(ColorVariableChanged(const ColorVariable &)),
+			 this, SLOT(ColorChanged(const ColorVariable &)));
 	QWidget::connect(
 		_colorThreshold,
 		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
@@ -754,8 +756,7 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 		"AdvSceneSwitcher.condition.video.ocrConfigHint"));
 
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{textColor}}", _textColor},
-		{"{{selectColor}}", _selectColor},
+		{"{{color}}", _colorButton},
 		{"{{textType}}", _pageSegMode},
 		{"{{tesseractBaseDir}}", _tesseractBaseDir},
 		{"{{languageCode}}", _languageCode},
@@ -807,7 +808,7 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 
 	_matchText->setPlainText(_entryData->_ocrParameters.text);
 	_regex->SetRegexConfig(_entryData->_ocrParameters.regex);
-	SetupColorLabel(_entryData->_ocrParameters.color);
+	_colorButton->SetValue(_entryData->_ocrParameters.color);
 	_colorThreshold->SetDoubleValue(
 		_entryData->_ocrParameters.colorThreshold);
 	_pageSegMode->setCurrentIndex(_pageSegMode->findData(
@@ -823,31 +824,10 @@ OCREdit::OCREdit(QWidget *parent, PreviewDialog *previewDialog,
 	_loading = false;
 }
 
-void OCREdit::SetupColorLabel(const QColor &color)
+void OCREdit::ColorChanged(const ColorVariable &value)
 {
-	_textColor->setText(color.name());
-	_textColor->setPalette(QPalette(color));
-	_textColor->setAutoFillBackground(true);
-}
-
-void OCREdit::SelectColorClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	const QColor color = QColorDialog::getColor(
-		_entryData->_ocrParameters.color, this,
-		obs_module_text("AdvSceneSwitcher.condition.video.selectColor"),
-		QColorDialog::ColorDialogOption());
-
-	if (!color.isValid()) {
-		return;
-	}
-
-	SetupColorLabel(color);
-	auto lock = LockContext();
-	_entryData->_ocrParameters.color = color;
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_ocrParameters.color = value;
 
 	_previewDialog->OCRParametersChanged(_entryData->_ocrParameters);
 }
@@ -1106,13 +1086,15 @@ ColorEdit::ColorEdit(QWidget *parent,
 		  obs_module_text(
 			  "AdvSceneSwitcher.condition.video.colorDeviationThresholdDescription"),
 		  true)),
-	  _color(new QLabel),
-	  _selectColor(new QPushButton(obs_module_text(
-		  "AdvSceneSwitcher.condition.video.selectColor"))),
+	  _colorButton(new VariableColorButton(
+		  this,
+		  obs_module_text(
+			  "AdvSceneSwitcher.condition.video.selectColor"))),
 	  _entryData(data)
 {
-	QWidget::connect(_selectColor, SIGNAL(clicked()), this,
-			 SLOT(SelectColorClicked()));
+	QWidget::connect(_colorButton,
+			 SIGNAL(ColorVariableChanged(const ColorVariable &)),
+			 this, SLOT(ColorChanged(const ColorVariable &)));
 	QWidget::connect(
 		_matchThreshold,
 		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
@@ -1125,8 +1107,7 @@ ColorEdit::ColorEdit(QWidget *parent,
 		SLOT(ColorThresholdChanged(const NumberVariable<double> &)));
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{color}}", _color},
-		{"{{selectColor}}", _selectColor},
+		{"{{color}}", _colorButton},
 	};
 
 	auto colorLayout = new QHBoxLayout;
@@ -1145,15 +1126,14 @@ ColorEdit::ColorEdit(QWidget *parent,
 		_entryData->_colorParameters.matchThreshold);
 	_colorThreshold->SetDoubleValue(
 		_entryData->_colorParameters.colorThreshold);
-	SetupColorLabel(_entryData->_colorParameters.color);
+	_colorButton->SetValue(_entryData->_colorParameters.color);
 	_loading = false;
 }
 
-void ColorEdit::SetupColorLabel(const QColor &color)
+void ColorEdit::ColorChanged(const ColorVariable &value)
 {
-	_color->setText(color.name());
-	_color->setPalette(QPalette(color));
-	_color->setAutoFillBackground(true);
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_colorParameters.color = value;
 }
 
 void ColorEdit::MatchThresholdChanged(const DoubleVariable &value)
@@ -1166,26 +1146,6 @@ void ColorEdit::ColorThresholdChanged(const DoubleVariable &value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_colorParameters.colorThreshold = value;
-}
-
-void ColorEdit::SelectColorClicked()
-{
-	if (_loading || !_entryData) {
-		return;
-	}
-
-	const QColor color = QColorDialog::getColor(
-		_entryData->_colorParameters.color, this,
-		obs_module_text("AdvSceneSwitcher.condition.video.selectColor"),
-		QColorDialog::ColorDialogOption());
-
-	if (!color.isValid()) {
-		return;
-	}
-
-	SetupColorLabel(color);
-	auto lock = LockContext();
-	_entryData->_colorParameters.color = color;
 }
 
 AreaEdit::AreaEdit(QWidget *parent, PreviewDialog *previewDialog,

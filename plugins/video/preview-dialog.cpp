@@ -385,7 +385,8 @@ void PreviewImage::MarkOCRMatch(QImage &screenshot,
 			"AdvSceneSwitcher.condition.video.ocrMatchFail"));
 		return;
 	}
-	auto text = RunOCR(ocrParams->GetOCR(), screenshot, ocrParams->color,
+	auto text = RunOCR(ocrParams->GetOCR(), screenshot,
+			   ocrParams->color.GetValue(),
 			   ocrParams->colorThreshold);
 
 	if (!text) {

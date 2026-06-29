@@ -6,6 +6,7 @@
 #include <source-selection.hpp>
 #include <scene-selection.hpp>
 #include <regex-config.hpp>
+#include <variable-color.hpp>
 #include <variable-string.hpp>
 #include <variable-number.hpp>
 #include <obs.hpp>
@@ -112,7 +113,7 @@ public:
 
 	StringVariable text = obs_module_text("AdvSceneSwitcher.enterText");
 	RegexConfig regex = RegexConfig::PartialMatchRegexConfig();
-	QColor color = Qt::black;
+	ColorVariable color;
 	DoubleVariable colorThreshold = 0.3;
 
 private:
@@ -134,7 +135,7 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 
-	QColor color = Qt::black;
+	ColorVariable color;
 	DoubleVariable colorThreshold = 0.1;
 	DoubleVariable matchThreshold = 0.8;
 };
