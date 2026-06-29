@@ -33,7 +33,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Recommended layout - used when installing to %ProgramData%\obs-studio\plugins\
 Source: "..\release\Package\recommended\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsRecommendedLayout
 ; Legacy layout - used when installing to the OBS installation directory
-Source: "..\release\Package\legacy\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsLegacyLayout
+Source: "..\release\Package\portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsLegacyLayout
 Source: "..\LICENSE"; Flags: dontcopy
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -88,9 +88,9 @@ begin
     Result := PrevPath;
 end;
 
-// Remove files placed by the legacy installer (obs-plugins/64bit and
+// Remove files placed by the portable installer (obs-plugins/64bit and
 // data/obs-plugins layout) so the plugin is not loaded twice by OBS.
-// Only runs when upgrading from a legacy location to the recommended one.
+// Only runs when upgrading from a portable location to the recommended one.
 procedure RemoveLegacyFiles();
 var
   OldInstallPath: string;

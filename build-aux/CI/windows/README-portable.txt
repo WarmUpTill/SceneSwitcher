@@ -1,11 +1,11 @@
-Advanced Scene Switcher - Windows Installation (Legacy)
-========================================================
+Advanced Scene Switcher - Windows Installation (Portable)
+==========================================================
 
 For full installation instructions visit:
 https://github.com/WarmUpTill/SceneSwitcher/wiki/Installation
 
 
-This archive uses the legacy plugin layout for older OBS versions,
+This archive uses the portable plugin layout for older OBS versions,
 portable OBS installs, and Steam.
 
 Extract the CONTENTS of this archive into your OBS installation directory,
