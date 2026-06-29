@@ -17,5 +17,5 @@ After extracting, the path should look like:
     C:\ProgramData\obs-studio\plugins\advanced-scene-switcher\bin\64bit\advanced-scene-switcher.dll
 
 
-If the plugin does not appear in OBS, try the legacy archive instead:
-    advanced-scene-switcher-<version>-windows-x64-legacy.zip
+If the plugin does not appear in OBS, try the portable archive instead:
+    advanced-scene-switcher-<version>-windows-x64-portable.zip

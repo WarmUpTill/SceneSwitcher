@@ -96,25 +96,25 @@ function Package {
     Log-Group
 
     # --- Legacy zip (old layout, extract to OBS install directory) ---
-    Log-Group "Archiving ${ProductName} (legacy)..."
-    $LegStaging = "${ProjectRoot}/release/zip-staging-leg"
-    Remove-Item -Path $LegStaging -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $LegStaging | Out-Null
-    Copy-Item -Path "${CIWindowsDir}/README-legacy.txt" -Destination "${LegStaging}/README.txt"
+    Log-Group "Archiving ${ProductName} (portable)..."
+    $PortableStaging = "${ProjectRoot}/release/zip-staging-portable"
+    Remove-Item -Path $PortableStaging -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $PortableStaging | Out-Null
+    Copy-Item -Path "${CIWindowsDir}/README-portable.txt" -Destination "${PortableStaging}/README.txt"
     if ( Test-Path -Path $NewBinPath ) {
-        $LegBinPath = "${LegStaging}/obs-plugins/64bit"
-        New-Item -ItemType Directory -Force -Path $LegBinPath | Out-Null
-        Copy-Item -Path "${NewBinPath}/*" -Destination $LegBinPath -Recurse -Force
+        $PortableBinPath = "${PortableStaging}/obs-plugins/64bit"
+        New-Item -ItemType Directory -Force -Path $PortableBinPath | Out-Null
+        Copy-Item -Path "${NewBinPath}/*" -Destination $PortableBinPath -Recurse -Force
     }
     if ( Test-Path -Path $NewDataPath ) {
-        $LegDataPath = "${LegStaging}/data/obs-plugins/${ProductName}"
-        New-Item -ItemType Directory -Force -Path $LegDataPath | Out-Null
-        Copy-Item -Path "${NewDataPath}/*" -Destination $LegDataPath -Recurse -Force
+        $PortableDataPath = "${PortableStaging}/data/obs-plugins/${ProductName}"
+        New-Item -ItemType Directory -Force -Path $PortableDataPath | Out-Null
+        Copy-Item -Path "${NewDataPath}/*" -Destination $PortableDataPath -Recurse -Force
     }
-    Compress-Archive -Force -Path (Get-ChildItem -Path $LegStaging) `
+    Compress-Archive -Force -Path (Get-ChildItem -Path $PortableStaging) `
         -CompressionLevel Optimal `
-        -DestinationPath "${ProjectRoot}/release/${OutputName}-legacy.zip"
-    Remove-Item -Path $LegStaging -Recurse -Force
+        -DestinationPath "${ProjectRoot}/release/${OutputName}-portable.zip"
+    Remove-Item -Path $PortableStaging -Recurse -Force
     Log-Group
 
     if ( ( $BuildInstaller ) ) {
@@ -137,12 +137,12 @@ function Package {
 
         # Legacy layout (for OBS installation directory)
         if ( Test-Path "${Configuration}/${ProductName}/bin/64bit" ) {
-            $PkgLegBin = "Package/legacy/obs-plugins/64bit"
+            $PkgLegBin = "Package/portable/obs-plugins/64bit"
             New-Item -ItemType Directory -Force -Path $PkgLegBin | Out-Null
             Copy-Item -Path "${Configuration}/${ProductName}/bin/64bit/*" -Destination $PkgLegBin -Recurse -Force
         }
         if ( Test-Path "${Configuration}/${ProductName}/data" ) {
-            $PkgLegData = "Package/legacy/data/obs-plugins/${ProductName}"
+            $PkgLegData = "Package/portable/data/obs-plugins/${ProductName}"
             New-Item -ItemType Directory -Force -Path $PkgLegData | Out-Null
             Copy-Item -Path "${Configuration}/${ProductName}/data/*" -Destination $PkgLegData -Recurse -Force
         }
