@@ -160,12 +160,11 @@ static void attachRestoreContext(obs_sceneitem_t *item,
 
 static void setSceneItemVisibility(obs_sceneitem_t *item,
 				   const bool setTransition,
-				   const OBSWeakSource &transitionWeak,
+				   const TransitionSelection &transitionSel,
 				   const bool setDuration,
 				   const Duration &duration,
 				   MacroActionSceneVisibility::Action action)
 {
-	const OBSSourceAutoRelease transition = OBSGetStrongRef(transitionWeak);
 	const bool itemIsVisible = obs_sceneitem_visible(item);
 
 	const OBSSource currentTransition =
@@ -175,6 +174,16 @@ static void setSceneItemVisibility(obs_sceneitem_t *item,
 
 	OBSSource privateTransitionSource = nullptr;
 	if (setTransition) {
+		OBSSourceAutoRelease transition;
+		if (transitionSel.GetType() ==
+		    TransitionSelection::Type::CURRENT) {
+			transition = obs_source_get_ref(
+				obs_sceneitem_get_transition(item,
+							     !itemIsVisible));
+		} else {
+			transition =
+				OBSGetStrongRef(transitionSel.GetTransition());
+		}
 		privateTransitionSource = SetSceneItemTransition(
 			item, transition, !itemIsVisible);
 	} else {
@@ -229,8 +238,7 @@ bool MacroActionSceneVisibility::PerformAction()
 {
 	auto items = _source.GetSceneItems(_scene);
 	for (const auto &item : items) {
-		setSceneItemVisibility(item, _updateTransition,
-				       _transition.GetTransition(),
+		setSceneItemVisibility(item, _updateTransition, _transition,
 				       _updateDuration, _duration, _action);
 	}
 	return true;
@@ -340,7 +348,7 @@ MacroActionSceneVisibilityEdit::MacroActionSceneVisibilityEdit(
 		  },
 		  SceneItemSelectionWidget::NameClashMode::ALL)),
 	  _updateTransition(new QCheckBox(this)),
-	  _transitions(new TransitionSelectionWidget(this, false, false)),
+	  _transitions(new TransitionSelectionWidget(this, true, false, true)),
 	  _updateDuration(new QCheckBox(this)),
 	  _duration(new DurationSelection(this, false)),
 	  _durationLayout(new QHBoxLayout),
@@ -474,8 +482,11 @@ void MacroActionSceneVisibilityEdit::ActionChanged(int value)
 
 void MacroActionSceneVisibilityEdit::SetWidgetVisibility()
 {
+	const auto transitionType = _entryData->_transition.GetType();
 	const bool hideDurationSelection =
 		_entryData->_updateTransition &&
+		transitionType != TransitionSelection::Type::CURRENT &&
+		transitionType != TransitionSelection::Type::NONE &&
 		IsFixedLengthTransition(
 			_entryData->_transition.GetTransition());
 

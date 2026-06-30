@@ -16,6 +16,7 @@ public:
 		TRANSITION,
 		CURRENT,
 		ANY,
+		NONE,
 	};
 
 	Type GetType() const { return _type; }
@@ -33,10 +34,11 @@ class TransitionSelectionWidget : public FilterComboBox {
 
 public:
 	TransitionSelectionWidget(QWidget *parent, bool current = true,
-				  bool any = false);
+				  bool any = false, bool none = false);
 	void SetTransition(const TransitionSelection &);
 	void EnableCurrentEntry(bool enable);
 	void EnableAnyEntry(bool enable);
+	void EnableNoneEntry(bool enable);
 
 protected:
 	void showEvent(QShowEvent *event) override;
@@ -52,9 +54,11 @@ private:
 	TransitionSelection GetCurrentSelection() const;
 	bool IsCurrentTransitionSelected(const QString &name) const;
 	bool IsAnyTransitionSelected(const QString &name) const;
+	bool IsNoneTransitionSelected(const QString &name) const;
 
 	bool _addCurrent;
 	bool _addAny;
+	bool _addNone;
 };
 
 } // namespace advss

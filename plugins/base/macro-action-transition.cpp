@@ -406,15 +406,17 @@ void MacroActionTransitionEdit::SetWidgetVisibility()
 			    MacroActionTransition::Type::TBAR;
 	const bool isReleaseTbar = _entryData->_type ==
 				   MacroActionTransition::Type::RELEASE_TBAR;
-	_sources->setVisible(
-		_entryData->_type == MacroActionTransition::Type::SOURCE_HIDE ||
-		_entryData->_type == MacroActionTransition::Type::SOURCE_SHOW);
+	const bool isSourceTransition =
+		_entryData->_type == MacroActionTransition::Type::SOURCE_SHOW ||
+		_entryData->_type == MacroActionTransition::Type::SOURCE_HIDE;
+	_sources->setVisible(isSourceTransition);
 	_scenes->setVisible(_entryData->_type !=
 				    MacroActionTransition::Type::SCENE &&
 			    !isTbar && !isReleaseTbar);
 	SetLayoutVisible(_transitionLayout, !isTbar && !isReleaseTbar);
 	SetLayoutVisible(_durationLayout, !isTbar && !isReleaseTbar);
 	SetLayoutVisible(_tbarLayout, isTbar);
+	_transitions->EnableNoneEntry(isSourceTransition);
 	adjustSize();
 }
 
