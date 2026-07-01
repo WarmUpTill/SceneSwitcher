@@ -136,6 +136,8 @@ const static std::map<MacroActionTwitch::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.twitch.type.reward.getInfo"},
 	{MacroActionTwitch::Action::CHANNEL_GET_INFO,
 	 "AdvSceneSwitcher.action.twitch.type.channel.getInfo"},
+	{MacroActionTwitch::Action::CHANNEL_ADS_GET_INFO,
+	 "AdvSceneSwitcher.action.twitch.type.channel.ads.getInfo"},
 };
 
 const static std::map<MacroActionTwitch::AnnouncementColor, std::string>
@@ -450,6 +452,43 @@ void MacroActionTwitch::GetChannelInfo(const std::shared_ptr<TwitchToken> &token
 			info->is_branded_content ? "true" : "false");
 }
 
+void MacroActionTwitch::GetAdsInfo(const std::shared_ptr<TwitchToken> &token)
+{
+	const auto id = token->GetUserID();
+	if (!id) {
+		vblog(LOG_INFO, "%s skip - invalid user id", __func__);
+		return;
+	}
+
+	auto result = SendGetRequest(*token, "https://api.twitch.tv",
+				     "/helix/channels/ads",
+				     {{"broadcaster_id", *id}});
+
+	if (result.status != 200) {
+		blog(LOG_INFO, "Failed to get ads info! (%d)", result.status);
+		return;
+	}
+
+	OBSDataArrayAutoRelease array = obs_data_get_array(result.data, "data");
+	if (obs_data_array_count(array) == 0) {
+		blog(LOG_WARNING, "%s did not return any data!", __func__);
+		return;
+	}
+
+	OBSDataAutoRelease data = obs_data_array_item(array, 0);
+	SetTempVarValue("snooze_count",
+			std::to_string(obs_data_get_int(data, "snooze_count")));
+	SetTempVarValue("snooze_refresh_at",
+			obs_data_get_string(data, "snooze_refresh_at"));
+	SetTempVarValue("next_ad_at", obs_data_get_string(data, "next_ad_at"));
+	SetTempVarValue("duration",
+			std::to_string(obs_data_get_int(data, "duration")));
+	SetTempVarValue("last_ad_at", obs_data_get_string(data, "last_ad_at"));
+	SetTempVarValue(
+		"preroll_free_time",
+		std::to_string(obs_data_get_int(data, "preroll_free_time")));
+}
+
 std::optional<std::string> MacroActionTwitch::GetTargetUserID(
 	const std::shared_ptr<TwitchToken> &token) const
 {
@@ -687,6 +726,14 @@ void MacroActionTwitch::SetupTempVars()
 		setupTempVarHelper("tags");
 		setupTempVarHelper("content_classification_labels");
 		setupTempVarHelper("is_branded_content");
+		break;
+	case Action::CHANNEL_ADS_GET_INFO:
+		setupTempVarHelper("snooze_count", ".ads");
+		setupTempVarHelper("snooze_refresh_at", ".ads");
+		setupTempVarHelper("next_ad_at", ".ads");
+		setupTempVarHelper("duration", ".ads");
+		setupTempVarHelper("last_ad_at", ".ads");
+		setupTempVarHelper("preroll_free_time", ".ads");
 		break;
 	default:
 		break;
@@ -1054,6 +1101,9 @@ bool MacroActionTwitch::PerformAction()
 	case MacroActionTwitch::Action::CHANNEL_GET_INFO:
 		GetChannelInfo(token);
 		break;
+	case MacroActionTwitch::Action::CHANNEL_ADS_GET_INFO:
+		GetAdsInfo(token);
+		break;
 	default:
 		break;
 	}
@@ -1273,6 +1323,7 @@ bool MacroActionTwitch::ActionIsSupportedByToken()
 			{Action::SEND_CHAT_MESSAGE, {{"chat:edit"}}},
 			{Action::USER_GET_INFO, {}},
 			{Action::CHANNEL_GET_INFO, {}},
+			{Action::CHANNEL_ADS_GET_INFO, {{"channel:read:ads"}}},
 			{Action::POINTS_REWARD_GET_INFO,
 			 {{"channel:read:redemptions"},
 			  {"channel:manage:redemptions"}}}};
@@ -1660,6 +1711,7 @@ void MacroActionTwitchEdit::SetWidgetVisibility()
 		action == MacroActionTwitch::Action::USER_VIP_DELETE;
 	_channel->setVisible(
 		action == MacroActionTwitch::Action::CHANNEL_GET_INFO ||
+		action == MacroActionTwitch::Action::CHANNEL_ADS_GET_INFO ||
 		action == MacroActionTwitch::Action::RAID_START ||
 		action == MacroActionTwitch::Action::RAID_END ||
 		action == MacroActionTwitch::Action::SHOUTOUT_SEND ||
@@ -1879,6 +1931,7 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 			"AdvSceneSwitcher.action.twitch.layout.reward.getInfo.row2");
 		break;
 	case MacroActionTwitch::Action::CHANNEL_GET_INFO:
+	case MacroActionTwitch::Action::CHANNEL_ADS_GET_INFO:
 		layoutText = obs_module_text(
 			"AdvSceneSwitcher.action.twitch.layout.channel.getInfo");
 		break;
@@ -1898,6 +1951,7 @@ void MacroActionTwitchEdit::SetWidgetLayout()
 
 	const bool showVariableMapping =
 		action == MacroActionTwitch::Action::CHANNEL_GET_INFO ||
+		action == MacroActionTwitch::Action::CHANNEL_ADS_GET_INFO ||
 		action == MacroActionTwitch::Action::USER_GET_INFO ||
 		action == MacroActionTwitch::Action::POINTS_REWARD_GET_INFO;
 	emit ShowVariableMappings(showVariableMapping);

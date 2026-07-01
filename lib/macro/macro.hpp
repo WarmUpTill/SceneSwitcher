@@ -61,7 +61,7 @@ public:
 	PauseStateSaveBehavior GetPauseStateSaveBehavior() const;
 
 	void Stop();
-	void SignalStop() { _stop = true; }
+	void SignalStop();
 	bool GetStop() const { return _stop; }
 	void ResetTimers();
 
