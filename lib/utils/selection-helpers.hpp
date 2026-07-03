@@ -19,7 +19,8 @@ EXPORT QStringList GetSourceNames();
 
 EXPORT void PopulateTransitionSelection(QComboBox *sel, bool addCurrent = true,
 					bool addAny = false,
-					bool addSelect = true);
+					bool addSelect = true,
+					bool addNone = false);
 EXPORT void PopulateWindowSelection(QComboBox *sel, bool addSelect = true);
 void PopulateAudioSelection(QComboBox *sel, bool addSelect = true);
 void PopulateVideoSelection(QComboBox *sel, bool addMainOutput = false,
