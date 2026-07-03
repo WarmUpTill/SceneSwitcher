@@ -202,6 +202,16 @@ target_sources(
           ${ADVSS_SOURCE_DIR}/plugins/base/macro-condition-window.cpp
           ${ADVSS_SOURCE_DIR}/plugins/base/utils/window-selection.cpp)
 
+# --- twitch timestamp --- #
+
+set(TWITCH_PLUGIN_DIR
+    "${ADVSS_SOURCE_DIR}/plugins/twitch"
+    CACHE INTERNAL "")
+target_include_directories(${PROJECT_NAME} PRIVATE "${TWITCH_PLUGIN_DIR}")
+target_sources(
+  ${PROJECT_NAME} PRIVATE test-twitch-timestamp.cpp
+                          "${TWITCH_PLUGIN_DIR}/twitch-timestamp.cpp")
+
 # --- Testing --- #
 
 enable_testing()

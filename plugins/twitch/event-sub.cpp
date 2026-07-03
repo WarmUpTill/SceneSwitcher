@@ -4,10 +4,7 @@
 
 #include <log-helper.hpp>
 #include <plugin-state-helpers.hpp>
-
-#ifdef VERIFY_TIMESTAMPS
-#include "date/tz.h"
-#endif
+#include "twitch-timestamp.hpp"
 
 using namespace std::chrono_literals;
 
@@ -357,46 +354,6 @@ void EventSub::OnOpen(connection_hdl)
 	_connected = true;
 }
 
-static bool isValidTimestamp(const std::string &timestamp)
-{
-#ifdef VERIFY_TIMESTAMPS
-	// Example input: 2023-07-19T14:56:51.634234626Z
-	try {
-		// Discard the nanosecond part
-		static constexpr size_t dotPos = 19;
-		std::string trimmed = timestamp.substr(0, dotPos);
-		auto tzStart = timestamp.find_first_of("Z+-", dotPos);
-		trimmed = timestamp.substr(0, dotPos);
-		if (tzStart != std::string::npos) {
-			trimmed += timestamp.substr(tzStart);
-		}
-
-		std::istringstream in(trimmed);
-		date::sys_time<std::chrono::seconds> parsedTime;
-		in >> date::parse("%FT%TZ", parsedTime);
-		if (in.fail()) {
-			blog(LOG_WARNING, "failed to parse timestamp %s",
-			     timestamp.c_str());
-			return false;
-		}
-
-		auto now = date::zoned_time{date::current_zone(),
-					    std::chrono::system_clock::now()}
-				   .get_sys_time();
-
-		auto duration = now - parsedTime;
-		// Clocks might be off by a bit, so allow negative values also
-		return duration <= 10min && duration >= -1min;
-	} catch (const std::exception &e) {
-		blog(LOG_WARNING, "%s: %s", __func__, e.what());
-		return false;
-	}
-#else
-	// Just assume timestamps are always valid
-	return true;
-#endif
-}
-
 bool EventSub::IsValidMessageID(const std::string &id)
 {
 	auto it = std::find(_messageIDs.begin(), _messageIDs.end(), id);
@@ -436,7 +393,7 @@ EventSub::ParseWebSocketMessage(const EventSubWSClient::message_ptr &message)
 	OBSDataAutoRelease metadata = obs_data_get_obj(json, "metadata");
 	std::string timestamp =
 		obs_data_get_string(metadata, "message_timestamp");
-	if (_validateTimestamps && !isValidTimestamp(timestamp)) {
+	if (_validateTimestamps && !IsValidEventSubTimestamp(timestamp)) {
 		blog(LOG_WARNING,
 		     "discarding Twitch EventSub with invalid timestamp %s",
 		     timestamp.c_str());
