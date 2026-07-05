@@ -255,39 +255,100 @@ static std::string preprocessScriptText(const std::string &text,
 					const std::string &id)
 {
 	const std::string footerPython =
-		std::string("\n\n"
-			    "## AUTO GENERATED ##\n"
-			    "def script_load(settings):\n"
-			    "    def run_wrapper(data):\n"
-			    "        id = obs.calldata_string(data, \"id\")\n"
-			    "        if id == \"") +
+		R"(
+
+## AUTO GENERATED ##
+def advss_get_variable_value(name):
+    proc_handler = obs.obs_get_proc_handler()
+    data = obs.calldata_create()
+    obs.calldata_set_string(data, "name", name)
+    obs.proc_handler_call(proc_handler, "advss_get_variable_value", data)
+    success = obs.calldata_bool(data, "success")
+    if success is False:
+        obs.script_log(obs.LOG_WARNING, f'failed to get value for variable "{name}"')
+        obs.calldata_destroy(data)
+        return None
+    value = obs.calldata_string(data, "value")
+    obs.calldata_destroy(data)
+    return value
+
+def advss_set_variable_value(name, value):
+    proc_handler = obs.obs_get_proc_handler()
+    data = obs.calldata_create()
+    obs.calldata_set_string(data, "name", name)
+    obs.calldata_set_string(data, "value", value)
+    obs.proc_handler_call(proc_handler, "advss_set_variable_value", data)
+    success = obs.calldata_bool(data, "success")
+    if success is False:
+        obs.script_log(obs.LOG_WARNING, f'failed to set value for variable "{name}"')
+    obs.calldata_destroy(data)
+    return success
+
+def script_load(settings):
+    def run_wrapper(data):
+        id = obs.calldata_string(data, "id")
+        if id == ")" +
 		id +
-		"\":\n"
-		"            ret = run()\n"
-		"            obs.calldata_set_bool(data, \"result\", ret)\n"
-		"    sh = obs.obs_get_signal_handler()\n"
-		"    obs.signal_handler_connect(sh, \"" +
-		signalName.data() + "\", run_wrapper)\n\n";
+		R"(":
+            ret = run()
+            obs.calldata_set_bool(data, "result", ret)
+    sh = obs.obs_get_signal_handler()
+    obs.signal_handler_connect(sh, ")" +
+		std::string(signalName) +
+		R"(", run_wrapper)
+
+)";
 
 	const std::string footerLUA =
-		std::string(
-			"\n\n"
-			"-- AUTO GENERATED --\n"
-			"function script_load(settings)\n"
-			"    local run_wrapper = (function(data)\n"
-			"        local id = obs.calldata_string(data, \"id\")\n"
-			"        if id == \"") +
+		R"(
+
+-- AUTO GENERATED --
+function advss_get_variable_value(name)
+    local proc_handler = obs.obs_get_proc_handler()
+    local data = obs.calldata_create()
+    obs.calldata_set_string(data, "name", name)
+    obs.proc_handler_call(proc_handler, "advss_get_variable_value", data)
+    local success = obs.calldata_bool(data, "success")
+    if success == false then
+        obs.script_log(obs.LOG_WARNING, string.format("failed to get value for variable \"%s\"", name))
+        obs.calldata_destroy(data)
+        return nil
+    end
+    local value = obs.calldata_string(data, "value")
+    obs.calldata_destroy(data)
+    return value
+end
+
+function advss_set_variable_value(name, value)
+    local proc_handler = obs.obs_get_proc_handler()
+    local data = obs.calldata_create()
+    obs.calldata_set_string(data, "name", name)
+    obs.calldata_set_string(data, "value", value)
+    obs.proc_handler_call(proc_handler, "advss_set_variable_value", data)
+    local success = obs.calldata_bool(data, "success")
+    if success == false then
+        obs.script_log(obs.LOG_WARNING, string.format("failed to set value for variable \"%s\"", name))
+    end
+    obs.calldata_destroy(data)
+    return success
+end
+
+function script_load(settings)
+    local run_wrapper = (function(data)
+        local id = obs.calldata_string(data, "id")
+        if id == ")" +
 		id +
-		"\" then\n"
-		"            local ret = run()\n"
-		"            obs.calldata_set_bool(data, \"result\", ret)\n"
-		"        end\n"
-		"    end)\n"
-		"    local sh = obs.obs_get_signal_handler()\n"
-		"    obs.signal_handler_connect(sh, \"" +
-		signalName.data() +
-		"\" , run_wrapper)\n"
-		"end\n";
+		R"(" then
+            local ret = run()
+            obs.calldata_set_bool(data, "result", ret)
+        end
+    end)
+    local sh = obs.obs_get_signal_handler()
+    obs.signal_handler_connect(sh, ")" +
+		std::string(signalName) +
+		R"(" , run_wrapper)
+end
+)";
 
 	std::string scriptText =
 		language == OBS_SCRIPT_LANG_PYTHON ? footerPython : footerLUA;
