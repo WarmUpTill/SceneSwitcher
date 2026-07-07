@@ -1,6 +1,9 @@
 #include "macro-condition-macro.hpp"
+
 #include "layout-helpers.hpp"
 #include "macro-action-edit.hpp"
+#include "macro-helpers.hpp"
+#include "macro-ref.hpp"
 #include "macro-signals.hpp"
 #include "macro.hpp"
 

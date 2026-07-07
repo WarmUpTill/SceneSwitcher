@@ -1,5 +1,7 @@
 #include "macro-condition.hpp"
 
+#include "condition-logic.hpp"
+
 namespace advss {
 
 MacroCondition::MacroCondition(Macro *m, bool supportsVariableValue)

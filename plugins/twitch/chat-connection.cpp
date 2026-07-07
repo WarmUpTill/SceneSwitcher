@@ -1,4 +1,6 @@
 #include "chat-connection.hpp"
+
+#include "log-helper.hpp"
 #include "token.hpp"
 #include "twitch-helpers.hpp"
 

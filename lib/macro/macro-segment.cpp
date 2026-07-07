@@ -1,4 +1,5 @@
 #include "macro-segment.hpp"
+
 #include "macro.hpp"
 #include "mouse-wheel-guard.hpp"
 #include "path-helpers.hpp"
@@ -8,10 +9,13 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QFrame>
 #include <QGraphicsOpacityEffect>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPushButton>
 #include <QScrollBar>
+#include <QVBoxLayout>
 
 namespace advss {
 

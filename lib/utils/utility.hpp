@@ -1,13 +1,14 @@
 #pragma once
+
 #include "export-symbol-helper.hpp"
 
-#include <optional>
-#include <QListWidget>
-#include <QMetaObject>
-#include <QPushButton>
 #include <QString>
-#include <QWidget>
+
 #include <string>
+
+class QListWidget;
+class QObject;
+class QWidget;
 
 namespace advss {
 

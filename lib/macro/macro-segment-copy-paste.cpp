@@ -1,5 +1,7 @@
 #include "macro-segment-copy-paste.hpp"
+
 #include "advanced-scene-switcher.hpp"
+#include "condition-logic.hpp"
 #include "macro.hpp"
 
 #include <QShortcut>

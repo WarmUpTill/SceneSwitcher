@@ -7,15 +7,17 @@
 #include "sync-helpers.hpp"
 #include "temp-variable.hpp"
 
-#include <QWidget>
-#include <QFrame>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QTimer>
 #include <obs-data.h>
+
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QWidget>
+
 #include <memory>
 
+class QFrame;
 class QLabel;
+class QVBoxLayout;
 
 namespace advss {
 

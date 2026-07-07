@@ -1,8 +1,9 @@
 #include "macro-script-handler.hpp"
+
+#include "log-helper.hpp"
 #include "macro-action-script.hpp"
 #include "macro-condition-script.hpp"
 #include "plugin-state-helpers.hpp"
-#include "log-helper.hpp"
 #include "variable.hpp"
 
 #include <obs-properties.h>

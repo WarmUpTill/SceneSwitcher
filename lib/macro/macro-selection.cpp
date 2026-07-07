@@ -1,8 +1,11 @@
 #include "macro-selection.hpp"
+
 #include "advanced-scene-switcher.hpp"
 #include "layout-helpers.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
+#include "macro-ref.hpp"
 #include "macro-signals.hpp"
+#include "macro.hpp"
 #include "ui-helpers.hpp"
 
 #include <QDialogButtonBox>

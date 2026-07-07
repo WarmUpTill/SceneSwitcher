@@ -1,4 +1,6 @@
 #include "twitch-helpers.hpp"
+
+#include "log-helper.hpp"
 #include "plugin-state-helpers.hpp"
 #include "token.hpp"
 
