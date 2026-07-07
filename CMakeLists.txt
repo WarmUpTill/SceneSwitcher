@@ -374,6 +374,9 @@ set_target_properties(${LIB_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_17)
 
+target_precompile_headers(${LIB_NAME} PRIVATE
+                          "${CMAKE_CURRENT_SOURCE_DIR}/lib/pch.hpp")
+
 target_include_directories(
   ${LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
                      "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
