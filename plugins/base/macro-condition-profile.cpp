@@ -15,6 +15,9 @@ bool MacroConditionProfile::_registered = MacroConditionFactory::Register(
 bool MacroConditionProfile::CheckCondition()
 {
 	auto currentProfile = obs_frontend_get_current_profile();
+	if (!currentProfile) {
+		return false;
+	}
 	const bool match = _profile == currentProfile;
 	bfree(currentProfile);
 	return match;
