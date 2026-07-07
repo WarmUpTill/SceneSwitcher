@@ -1,6 +1,9 @@
 #include "utility.hpp"
 
+#include <QCursor>
+#include <QListWidget>
 #include <QTextStream>
+
 #include <sstream>
 
 namespace advss {

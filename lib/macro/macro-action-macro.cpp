@@ -1,8 +1,11 @@
 #include "macro-action-macro.hpp"
+
+#include "condition-logic.hpp"
 #include "help-icon.hpp"
 #include "layout-helpers.hpp"
-#include "macro.hpp"
 #include "macro-action-factory.hpp"
+#include "macro-helpers.hpp"
+#include "macro.hpp"
 
 #include <chrono>
 

@@ -1,14 +1,17 @@
 #pragma once
+
 #include "export-symbol-helper.hpp"
 
-#include <QAbstractButton>
 #include <QColor>
-#include <QComboBox>
 #include <QIcon>
-#include <QListWidget>
 #include <QString>
-#include <QWidget>
+
 #include <string>
+
+class QAbstractButton;
+class QComboBox;
+class QListWidget;
+class QWidget;
 
 namespace advss {
 

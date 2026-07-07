@@ -1,21 +1,20 @@
 #pragma once
+
 #include "macro-action.hpp"
 #include "macro-condition.hpp"
 #include "macro-dock-settings.hpp"
-#include "macro-helpers.hpp"
 #include "macro-input.hpp"
-#include "macro-ref.hpp"
-#include "variable-string.hpp"
 #include "temp-variable.hpp"
 
-#include <future>
-#include <string>
-#include <deque>
-#include <memory>
-#include <map>
-#include <thread>
 #include <obs.hpp>
-#include <obs-module-helper.hpp>
+
+#include <QList>
+
+#include <deque>
+#include <future>
+#include <memory>
+#include <string>
+#include <thread>
 
 namespace advss {
 
@@ -225,12 +224,7 @@ private:
 	MacroDockSettings _dockSettings;
 };
 
-void LoadMacros(obs_data_t *obj);
-void SaveMacros(obs_data_t *obj);
-bool CheckMacros();
-bool RunMacros();
 void WaitForAllMacros();
-void InvalidateMacroTempVarValues();
 std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval();
 
 } // namespace advss

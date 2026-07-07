@@ -3,6 +3,9 @@
 #include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
 
+#include <QGridLayout>
+#include <QHBoxLayout>
+
 namespace advss {
 
 static std::deque<std::shared_ptr<Item>> queues;

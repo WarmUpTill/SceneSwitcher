@@ -4,9 +4,10 @@
 #include "filter-combo-box.hpp"
 #include "first-run-wizard.hpp"
 #include "layout-helpers.hpp"
-#include "macro.hpp"
+#include "macro-helpers.hpp"
 #include "macro-search.hpp"
 #include "macro-settings.hpp"
+#include "macro.hpp"
 #include "path-helpers.hpp"
 #include "source-helpers.hpp"
 #include "splitter-helpers.hpp"
@@ -18,6 +19,7 @@
 #include "version.h"
 
 #include <obs-frontend-api.h>
+
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>

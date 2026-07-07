@@ -1,6 +1,8 @@
 #include "priority-helper.hpp"
-#include "switcher-data.hpp"
+
 #include "advanced-scene-switcher.hpp"
+#include "macro-helpers.hpp"
+#include "macro.hpp"
 #include "scene-group.hpp"
 #include "switch-audio.hpp"
 #include "switch-executable.hpp"
@@ -10,15 +12,16 @@
 #include "switch-pause.hpp"
 #include "switch-random.hpp"
 #include "switch-screen-region.hpp"
+#include "switch-sequence.hpp"
 #include "switch-time.hpp"
 #include "switch-transitions.hpp"
-#include "switch-window.hpp"
-#include "switch-sequence.hpp"
 #include "switch-video.hpp"
-#include "macro.hpp"
+#include "switch-window.hpp"
+#include "switcher-data.hpp"
+
+#include <QThread>
 
 #include <algorithm>
-#include <QThread>
 
 namespace advss {
 

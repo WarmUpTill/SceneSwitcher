@@ -1,21 +1,25 @@
 #include "macro-tree.hpp"
-#include "macro.hpp"
+
+#include "macro-helpers.hpp"
 #include "macro-search.hpp"
 #include "macro-signals.hpp"
+#include "macro.hpp"
 #include "path-helpers.hpp"
 #include "sync-helpers.hpp"
 #include "ui-helpers.hpp"
 
 #include <obs.h>
-#include <string>
+
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QSpacerItem>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QSpacerItem>
 #include <QStylePainter>
 #include <QToolTip>
+#include <QVBoxLayout>
+
+#include <string>
 
 Q_DECLARE_METATYPE(std::shared_ptr<advss::Macro>);
 

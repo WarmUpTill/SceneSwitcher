@@ -1,4 +1,6 @@
 #include "macro.hpp"
+
+#include "condition-logic.hpp"
 #include "macro-action-factory.hpp"
 #include "macro-condition-factory.hpp"
 #include "macro-helpers.hpp"
@@ -7,12 +9,14 @@
 #include "splitter-helpers.hpp"
 #include "sync-helpers.hpp"
 
+#include <obs-frontend-api.h>
+
+#include <QAction>
+#include <QMainWindow>
+
 #include <chrono>
 #include <limits>
 #undef max
-#include <obs-frontend-api.h>
-#include <QAction>
-#include <QMainWindow>
 #include <unordered_map>
 
 namespace advss {

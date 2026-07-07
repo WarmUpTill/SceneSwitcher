@@ -2,8 +2,9 @@
 #include "macro-action-edit.hpp"
 #include "macro-condition-edit.hpp"
 #include "macro-export-import-dialog.hpp"
-#include "macro-settings.hpp"
+#include "macro-helpers.hpp"
 #include "macro-search.hpp"
+#include "macro-settings.hpp"
 #include "macro-signals.hpp"
 #include "macro-tree.hpp"
 #include "macro.hpp"
@@ -17,6 +18,7 @@
 #include "version.h"
 
 #include <obs-frontend-api.h>
+
 #include <QColor>
 #include <QMenu>
 

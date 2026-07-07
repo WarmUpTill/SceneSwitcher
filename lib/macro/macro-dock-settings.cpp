@@ -1,8 +1,11 @@
 #include "macro-dock-settings.hpp"
-#include "macro-dock.hpp"
+
 #include "macro-dock-window.hpp"
+#include "macro-dock.hpp"
+#include "macro-helpers.hpp"
 #include "macro.hpp"
 #include "plugin-state-helpers.hpp"
+#include "variable-string.hpp"
 
 #include <obs-frontend-api.h>
 #include <util/platform.h>

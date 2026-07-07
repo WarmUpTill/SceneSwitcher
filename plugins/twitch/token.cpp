@@ -1,16 +1,20 @@
 #include "token.hpp"
+
+#include "log-helper.hpp"
 #include "twitch-helpers.hpp"
+
+#include <obs-module-helper.hpp>
+
+#include <QDesktopServices>
+#include <QGroupBox>
+#include <QScrollArea>
+#include <QUrl>
 
 #include <help-icon.hpp>
 #include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <macro-export-extensions.hpp>
-#include <obs-module-helper.hpp>
 #include <plugin-state-helpers.hpp>
-#include <QDesktopServices>
-#include <QGroupBox>
-#include <QScrollArea>
-#include <QUrl>
 #include <ui-helpers.hpp>
 
 namespace advss {

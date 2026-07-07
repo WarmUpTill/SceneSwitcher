@@ -1,10 +1,12 @@
 #include "event-sub.hpp"
+
+#include "log-helper.hpp"
 #include "token.hpp"
 #include "twitch-helpers.hpp"
+#include "twitch-timestamp.hpp"
 
 #include <log-helper.hpp>
 #include <plugin-state-helpers.hpp>
-#include "twitch-timestamp.hpp"
 
 using namespace std::chrono_literals;
 

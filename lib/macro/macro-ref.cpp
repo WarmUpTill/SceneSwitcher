@@ -1,6 +1,7 @@
 #include "macro-ref.hpp"
-#include "macro.hpp"
 
+#include "macro-helpers.hpp"
+#include "macro.hpp"
 #include "plugin-state-helpers.hpp"
 
 namespace advss {

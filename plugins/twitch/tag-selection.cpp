@@ -1,16 +1,18 @@
 #include "tag-selection.hpp"
+
 #include "channel-selection.hpp"
 #include "log-helper.hpp"
 #include "obs-module-helper.hpp"
 #include "twitch-helpers.hpp"
 
-#include <nlohmann/json.hpp>
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QVBoxLayout>
+
+#include <nlohmann/json.hpp>
 
 namespace advss {
 
