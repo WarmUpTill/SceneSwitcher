@@ -107,6 +107,8 @@ target_sources(
           lib/macro/macro-action-edit.hpp
           lib/macro/macro-action-factory.cpp
           lib/macro/macro-action-factory.hpp
+          lib/macro/macro-action-loop.cpp
+          lib/macro/macro-action-loop.hpp
           lib/macro/macro-action-macro.cpp
           lib/macro/macro-action-macro.hpp
           lib/macro/macro-action-queue.cpp
