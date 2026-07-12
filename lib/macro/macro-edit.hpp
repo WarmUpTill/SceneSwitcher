@@ -34,6 +34,7 @@ public:
 	void PasteMacroSegment();
 	bool IsEmpty() const;
 	void ShowAllMacroSections();
+	void HideElseSection() const;
 
 private slots:
 	void on_conditionAdd_clicked();
