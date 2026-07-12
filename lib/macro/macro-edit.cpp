@@ -1853,6 +1853,13 @@ bool MacroEdit::IsEmpty() const
 	       ui->elseActionsList->IsEmpty();
 }
 
+void MacroEdit::HideElseSection() const
+{
+	ui->toggleElseActions->setVisible(false);
+	ui->macroElseActions->setMaximumHeight(0);
+	ui->macroElseActionSplitter->handle(1)->setCursor(Qt::ArrowCursor);
+}
+
 void MacroEdit::ShowAllMacroSections()
 {
 	if (!ElseSectionIsVisible()) {
