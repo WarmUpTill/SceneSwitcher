@@ -8,6 +8,7 @@
 #include <obs-data.h>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <QStringList>
 
 namespace advss {
@@ -115,6 +116,10 @@ signals:
 	void Add(const QString &);
 	void Remove(const QString &);
 };
+
+using VariableContext = std::unordered_map<std::string, std::string>;
+VariableContext CreateVariableContext();
+void SetActiveVariableContext(VariableContext *context);
 
 std::deque<std::shared_ptr<Item>> &GetVariables();
 EXPORT Variable *GetVariableByName(const std::string &name);
