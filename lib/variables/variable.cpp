@@ -18,6 +18,30 @@ static std::deque<std::shared_ptr<Item>> variables;
 static std::mutex lastVariableChangeMutex;
 static std::chrono::high_resolution_clock::time_point lastVariableChange{};
 
+// When set, Variable::Value() and Variable::SetValue() operate on this context
+// instead of the global variable state. Used by action queues to isolate
+// variable reads and writes to a snapshot taken at the time the action was
+// added to the queue, so that actions can modify variables without affecting
+// the global state or other queue entries.
+thread_local static VariableContext *activeVarContext = nullptr;
+
+VariableContext CreateVariableContext()
+{
+	VariableContext context;
+	for (const auto &v : variables) {
+		const auto &var = std::dynamic_pointer_cast<Variable>(v);
+		if (var) {
+			context[var->Name()] = var->Value(false);
+		}
+	}
+	return context;
+}
+
+void SetActiveVariableContext(VariableContext *context)
+{
+	activeVarContext = context;
+}
+
 static bool setup()
 {
 	AddEarlySaveStep(SaveVariables);
@@ -76,6 +100,14 @@ void Variable::Save(obs_data_t *obj) const
 
 std::string Variable::Value(bool updateLastUsed) const
 {
+	if (activeVarContext) {
+		auto it = activeVarContext->find(Name());
+		if (it == activeVarContext->end()) {
+			return "";
+		}
+		return it->second;
+	}
+
 	std::lock_guard<std::mutex> lock(_mutex);
 	if (updateLastUsed) {
 		UpdateLastUsed();
@@ -108,6 +140,16 @@ std::optional<int> Variable::IntValue() const
 
 void Variable::SetValue(const std::string &value)
 {
+	if (activeVarContext) {
+		auto it = activeVarContext->find(Name());
+		if (it == activeVarContext->end()) {
+			return;
+		}
+		it->second = value;
+		setLastVariableChangeTime();
+		return;
+	}
+
 	{
 		std::lock_guard<std::mutex> lock(_mutex);
 		_previousValue = _value;
@@ -121,6 +163,7 @@ void Variable::SetValue(const std::string &value)
 		}
 		setLastVariableChangeTime();
 	}
+
 	_cv.notify_all();
 }
 

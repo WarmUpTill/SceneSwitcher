@@ -1,11 +1,13 @@
 #pragma once
 #include "item-selection-helpers.hpp"
 #include "macro-action.hpp"
+#include "variable.hpp"
 
 #include <chrono>
 #include <condition_variable>
 #include <deque>
 #include <obs-data.h>
+#include <optional>
 #include <QCheckBox>
 #include <thread>
 
@@ -16,6 +18,11 @@ class ActionQueueSettingsDialog;
 
 class ActionQueue : public Item {
 	using TimePoint = std::chrono::high_resolution_clock::time_point;
+
+	struct QueueEntry {
+		std::shared_ptr<MacroAction> action;
+		std::optional<VariableContext> context;
+	};
 
 public:
 	ActionQueue();
@@ -43,11 +50,12 @@ private:
 
 	bool _runOnStartup = true;
 	bool _resolveVariablesOnAdd = true;
+	bool _cloneVariableContext = false;
 	std::atomic_bool _stop = {true};
 	std::mutex _mutex;
 	std::condition_variable _cv;
 	std::thread _thread;
-	std::deque<std::shared_ptr<MacroAction>> _actions;
+	std::deque<QueueEntry> _actions;
 	TimePoint _lastEmpty;
 
 	friend ActionQueueSelection;
@@ -73,6 +81,7 @@ private:
 	QPushButton *_clear;
 	QCheckBox *_runOnStartup;
 	QCheckBox *_resolveVariablesOnAdd;
+	QCheckBox *_cloneVariableContext;
 
 	ActionQueue &_queue;
 };
