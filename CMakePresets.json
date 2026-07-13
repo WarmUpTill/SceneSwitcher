@@ -75,6 +75,35 @@
       }
     },
     {
+      "name": "windows-arm64",
+      "displayName": "Windows ARM64",
+      "description": "Build for Windows ARM64",
+      "inherits": ["template"],
+      "binaryDir": "${sourceDir}/build_arm64",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "ARM64",
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "QT_VERSION": "6",
+        "CMAKE_SYSTEM_VERSION": "10.0.18363.657"
+      }
+    },
+    {
+      "name": "windows-ci-arm64",
+      "inherits": ["windows-arm64"],
+      "displayName": "Windows ARM64 CI build",
+      "description": "Build for Windows ARM64 on CI",
+      "cacheVariables": {
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ADVSS_ENABLE_TESTS": true
+      }
+    },
+    {
       "name": "linux-x86_64",
       "displayName": "Linux x86_64",
       "description": "Build for Linux x86_64",
@@ -160,6 +189,20 @@
       "configurePreset": "windows-ci-x64",
       "displayName": "Windows x64 CI",
       "description": "Windows CI build for x64 (RelWithDebInfo configuration)",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64",
+      "displayName": "Windows ARM64",
+      "description": "Windows build for ARM64",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "windows-ci-arm64",
+      "configurePreset": "windows-ci-arm64",
+      "displayName": "Windows ARM64 CI",
+      "description": "Windows CI build for ARM64 (RelWithDebInfo configuration)",
       "configuration": "RelWithDebInfo"
     },
     {
