@@ -38,3 +38,11 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+
+// ARM64 libobs pulls in windows.h, whose macros collide with our identifiers
+#ifdef _WIN32
+#undef DELETE
+#undef DispatchMessage
+#undef SendMessage
+#undef GetObject
+#endif

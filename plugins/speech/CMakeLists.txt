@@ -12,6 +12,16 @@ if(NOT EXISTS "${WHISPER_DIR}/CMakeLists.txt")
   return()
 endif()
 
+# whisper.cpp's ggml CPU backend requires clang on Windows ARM64 and fails with
+# MSVC
+if(OS_WINDOWS AND CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
+  message(
+    WARNING
+      "Speech plugin is not supported on Windows ARM64 (requires clang)!\n"
+      "Speech condition will be disabled!")
+  return()
+endif()
+
 set(WHISPER_BUILD_TESTS
     OFF
     CACHE BOOL "" FORCE)
