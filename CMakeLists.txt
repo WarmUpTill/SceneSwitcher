@@ -16,6 +16,14 @@ if(BUILD_OUT_OF_TREE)
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake"
           NO_POLICY_SCOPE)
   include(compilerconfig)
+  # OPENSSL_USE_STATIC_LIBS here ensures FindOpenSSL picks up the static libs
+  # preventing DLL name collisions with other plugins (e.g.NVIDIA AR SDK).
+  if(OS_WINDOWS)
+    set(OPENSSL_USE_STATIC_LIBS
+        ON
+        CACHE BOOL "Use static OpenSSL" FORCE)
+    include(cmake/windows/wingetssl.cmake)
+  endif()
   include(defaults)
   include(helpers)
 endif()
@@ -33,11 +41,6 @@ add_library(${LIB_NAME} SHARED)
 include(cmake/common/get_git_revision_description.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 git_describe(GIT_TAG)
-
-# Helper for OpenSSL
-if(OS_WINDOWS)
-  include(cmake/windows/wingetssl.cmake)
-endif()
 
 if(${GIT_TAG} STREQUAL "GIT-NOTFOUND")
   set(GIT_TAG ${PROJECT_VERSION})
