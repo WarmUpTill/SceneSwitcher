@@ -40,19 +40,27 @@ if(WIN32 AND (NOT OpenSSL_FOUND))
   message(STATUS "Looking for OpenSSL built with CRT variant: ${_crt_kind}")
 
   # Try to find the root and corresponding lib path
+  if(OPENSSL_USE_STATIC_LIBS)
+    set(_crypto_lib_name "libcrypto_static.lib")
+    set(_ssl_lib_name "libssl_static.lib")
+  else()
+    set(_crypto_lib_name "libcrypto.lib")
+    set(_ssl_lib_name "libssl.lib")
+  endif()
+
   foreach(_root ${_openssl_roots})
     if(EXISTS "${_root}/include/openssl/ssl.h")
       foreach(_suffix ${_openssl_lib_suffixes})
         if(_suffix MATCHES "${_crt_kind}$"
-           AND EXISTS "${_root}/${_suffix}/libcrypto.lib")
+           AND EXISTS "${_root}/${_suffix}/${_crypto_lib_name}")
           set(OPENSSL_ROOT_DIR
               "${_root}"
               CACHE PATH "Path to OpenSSL root")
           set(OPENSSL_CRYPTO_LIBRARY
-              "${_root}/${_suffix}/libcrypto.lib"
+              "${_root}/${_suffix}/${_crypto_lib_name}"
               CACHE FILEPATH "OpenSSL crypto lib")
           set(OPENSSL_SSL_LIBRARY
-              "${_root}/${_suffix}/libssl.lib"
+              "${_root}/${_suffix}/${_ssl_lib_name}"
               CACHE FILEPATH "OpenSSL ssl lib")
           set(OPENSSL_INCLUDE_DIR
               "${_root}/include"

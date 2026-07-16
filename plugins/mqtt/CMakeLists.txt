@@ -3,12 +3,21 @@ project(advanced-scene-switcher-mqtt)
 
 # --- Check paho.mqtt.cpp requirements ---
 
-if(OS_MACOS)
+if(OS_MACOS OR OS_WINDOWS)
   set(OPENSSL_USE_STATIC_LIBS
       ON
       CACHE BOOL "Use static OpenSSL" FORCE)
 endif()
 find_package(OpenSSL)
+if(OS_WINDOWS
+   AND OPENSSL_FOUND
+   AND NOT OPENSSL_CRYPTO_LIBRARY MATCHES "_static\\.lib$")
+  message(
+    WARNING
+      "Static OpenSSL libraries (libcrypto_static.lib / libssl_static.lib) not found!\n"
+      "MQTT may fail at runtime due to OpenSSL DLL name collisions with other plugins.\n\n"
+  )
+endif()
 
 find_package(PahoMqttCpp)
 if(NOT PahoMqttCpp_FOUND)
@@ -50,5 +59,8 @@ if(OS_LINUX)
 else()
   target_link_libraries(${PROJECT_NAME}
                         PRIVATE PahoMqttCpp::paho-mqttpp3-static)
+endif()
+if(OS_WINDOWS)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32 crypt32 bcrypt)
 endif()
 install_advss_plugin(${PROJECT_NAME})
