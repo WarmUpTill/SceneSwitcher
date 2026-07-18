@@ -1,8 +1,9 @@
 #include "area-selection.hpp"
+#include "obs-module-helper.hpp"
+
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QLabel>
-#include <obs-module-helper.hpp>
+#include <QVBoxLayout>
 
 namespace advss {
 
