@@ -131,10 +131,11 @@ void PreviewDialog::PatternMatchParametersChanged(
 	_patternImageData = CreatePatternData(_patternMatchParams.image);
 }
 
-void PreviewDialog::ObjDetectParametersChanged(const ObjDetectParameters &params)
+void PreviewDialog::CascadeClassifierParametersChanged(
+	const CascadeClassifierParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
-	_objDetectParams = std::make_shared<ObjDetectParameters>(params);
+	_cascadeParams = std::make_shared<CascadeClassifierParameters>(params);
 }
 
 void PreviewDialog::OCRParametersChanged(const OCRParameters &params)
@@ -185,7 +186,7 @@ void PreviewDialog::UpdateImage(const QPixmap &image)
 		DrawFrame();
 	}
 	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
-		       _objDetectParams, _ocrParams, _areaParams, _condition);
+		       _cascadeParams, _ocrParams, _areaParams, _condition);
 }
 
 void PreviewDialog::Start()
@@ -215,7 +216,7 @@ void PreviewDialog::Start()
 	_thread.start();
 
 	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
-		       _objDetectParams, _ocrParams, _areaParams, _condition);
+		       _cascadeParams, _ocrParams, _areaParams, _condition);
 }
 
 void PreviewDialog::DrawFrame()
@@ -266,7 +267,7 @@ void PreviewImage::CreateImage(
 	const VideoInput &video, PreviewType type,
 	const PatternMatchParameters &patternMatchParams,
 	const PatternImageData &patternImageData,
-	std::shared_ptr<ObjDetectParameters> objDetectParams,
+	std::shared_ptr<CascadeClassifierParameters> cascadeParams,
 	std::shared_ptr<OCRParameters> ocrParams,
 	const AreaParameters &areaParams, VideoCondition condition)
 {
@@ -299,7 +300,7 @@ void PreviewImage::CreateImage(
 		std::unique_lock<std::mutex> lock(_mtx);
 		// Will emit status label update
 		MarkMatch(screenshot.GetImage(), patternMatchParams,
-			  patternImageData, objDetectParams, ocrParams,
+			  patternImageData, cascadeParams, ocrParams,
 			  condition);
 	} else {
 		emit StatusUpdate(obs_module_text(
@@ -311,14 +312,16 @@ void PreviewImage::CreateImage(
 void PreviewImage::MarkMatch(
 	QImage &screenshot, const PatternMatchParameters &patternMatchParams,
 	const PatternImageData &patternImageData,
-	std::shared_ptr<ObjDetectParameters> objDetectParams,
+	std::shared_ptr<CascadeClassifierParameters> cascadeParams,
 	std::shared_ptr<OCRParameters> ocrParams, VideoCondition condition)
 {
 	if (condition == VideoCondition::PATTERN) {
 		MarkPatternMatch(screenshot, patternMatchParams,
 				 patternImageData);
-	} else if (condition == VideoCondition::OBJECT) {
-		MarkObjectMatch(screenshot, objDetectParams);
+	} else if (condition == VideoCondition::OBJECT_CASCADE) {
+		MarkObjectsFromDetector(
+			screenshot,
+			cascadeParams ? cascadeParams->GetDetector() : nullptr);
 	} else if (condition == VideoCondition::OCR) {
 		MarkOCRMatch(screenshot, ocrParams);
 	}
@@ -347,26 +350,15 @@ void PreviewImage::MarkPatternMatch(
 	}
 }
 
-void PreviewImage::MarkObjectMatch(
-	QImage &screenshot,
-	const std::shared_ptr<ObjDetectParameters> &objDetectParams)
+void PreviewImage::MarkObjectsFromDetector(QImage &screenshot,
+					   ObjectDetector *detector)
 {
-	if (!objDetectParams) {
+	if (!detector) {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.objectMatchFail"));
 		return;
 	}
-	auto model = objDetectParams->GetModel();
-	if (!model) {
-		emit StatusUpdate(obs_module_text(
-			"AdvSceneSwitcher.condition.video.objectMatchFail"));
-		return;
-	}
-	auto objects = MatchObject(screenshot, *model,
-				   objDetectParams->scaleFactor,
-				   objDetectParams->minNeighbors,
-				   objDetectParams->minSize.CV(),
-				   objDetectParams->maxSize.CV());
+	auto objects = detector->Detect(screenshot);
 	if (objects.empty()) {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.objectMatchFail"));

@@ -70,7 +70,7 @@ public:
 	bool _blockUntilScreenshotDone = true;
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
-	ObjDetectParameters _objMatchParameters;
+	CascadeClassifierParameters _cascadeMatchParameters;
 	OCRParameters _ocrParameters;
 	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
@@ -174,12 +174,12 @@ private:
 	bool _loading = true;
 };
 
-class ObjectDetectEdit : public QWidget {
+class CascadeClassifierEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	ObjectDetectEdit(QWidget *parent, PreviewDialog *,
-			 const std::shared_ptr<MacroConditionVideo> &);
+	CascadeClassifierEdit(QWidget *parent, PreviewDialog *,
+			      const std::shared_ptr<MacroConditionVideo> &);
 
 private slots:
 	void ModelPathChanged(const QString &text);
@@ -320,7 +320,7 @@ private:
 
 	BrightnessEdit *_brightness;
 	OCREdit *_ocr;
-	ObjectDetectEdit *_objectDetect;
+	CascadeClassifierEdit *_cascadeClassifierEdit;
 	ColorEdit *_color;
 	AreaEdit *_area;
 

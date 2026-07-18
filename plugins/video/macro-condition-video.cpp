@@ -34,8 +34,10 @@ const static std::map<VideoCondition, std::string> conditionTypes = {
 	 "AdvSceneSwitcher.condition.video.condition.noImage"},
 	{VideoCondition::PATTERN,
 	 "AdvSceneSwitcher.condition.video.condition.pattern"},
-	{VideoCondition::OBJECT,
-	 "AdvSceneSwitcher.condition.video.condition.object"},
+#if CV_VERSION_MAJOR < 5
+	{VideoCondition::OBJECT_CASCADE,
+	 "AdvSceneSwitcher.condition.video.condition.objectCascade"},
+#endif
 	{VideoCondition::BRIGHTNESS,
 	 "AdvSceneSwitcher.condition.video.condition.brightness"},
 #ifdef OCR_SUPPORT
@@ -72,7 +74,7 @@ static bool requiresFileInput(VideoCondition t)
 bool MacroConditionVideo::CheckShouldBeSkipped()
 {
 	if (_condition != VideoCondition::PATTERN &&
-	    _condition != VideoCondition::OBJECT &&
+	    _condition != VideoCondition::OBJECT_CASCADE &&
 	    _condition != VideoCondition::HAS_CHANGED &&
 	    _condition != VideoCondition::HAS_NOT_CHANGED) {
 		return false;
@@ -163,7 +165,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 			  _blockUntilScreenshotDone);
 	_brightnessThreshold.Save(obj, "brightnessThreshold");
 	_patternMatchParameters.Save(obj);
-	_objMatchParameters.Save(obj);
+	_cascadeMatchParameters.Save(obj);
 	_ocrParameters.Save(obj);
 	_colorParameters.Save(obj);
 	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
@@ -189,7 +191,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 		_brightnessThreshold.Load(obj, "brightnessThreshold");
 	}
 	_patternMatchParameters.Load(obj);
-	_objMatchParameters.Load(obj);
+	_cascadeMatchParameters.Load(obj);
 	_ocrParameters.Load(obj);
 	_colorParameters.Load(obj);
 	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
@@ -356,15 +358,11 @@ bool MacroConditionVideo::OutputChanged()
 
 bool MacroConditionVideo::ScreenshotContainsObject()
 {
-	auto model = _objMatchParameters.GetModel();
-	if (!model) {
+	auto *detector = _cascadeMatchParameters.GetDetector();
+	if (!detector) {
 		return false;
 	}
-	auto objects = MatchObject(_screenshotData.GetImage(), *model,
-				   _objMatchParameters.scaleFactor,
-				   _objMatchParameters.minNeighbors,
-				   _objMatchParameters.minSize.CV(),
-				   _objMatchParameters.maxSize.CV());
+	auto objects = detector->Detect(_screenshotData.GetImage());
 	const auto count = objects.size();
 	SetTempVarValue("objectCount", std::to_string(count));
 	return count > 0;
@@ -441,7 +439,7 @@ bool MacroConditionVideo::Compare()
 		return _screenshotData.GetImage().isNull();
 	case VideoCondition::PATTERN:
 		return ScreenshotContainsPattern();
-	case VideoCondition::OBJECT:
+	case VideoCondition::OBJECT_CASCADE:
 		return ScreenshotContainsObject();
 	case VideoCondition::BRIGHTNESS:
 		return CheckBrightnessThreshold();
@@ -509,7 +507,7 @@ void MacroConditionVideo::SetupTempVars()
 			obs_module_text(
 				"AdvSceneSwitcher.tempVar.video.matchHeight.description"));
 		break;
-	case VideoCondition::OBJECT:
+	case VideoCondition::OBJECT_CASCADE:
 		AddTempvar(
 			"objectCount",
 			obs_module_text(
@@ -611,7 +609,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _previewDialog(this),
 	  _brightness(new BrightnessEdit(this, entryData)),
 	  _ocr(new OCREdit(this, &_previewDialog, entryData)),
-	  _objectDetect(new ObjectDetectEdit(this, &_previewDialog, entryData)),
+	  _cascadeClassifierEdit(
+		  new CascadeClassifierEdit(this, &_previewDialog, entryData)),
 	  _color(new ColorEdit(this, entryData)),
 	  _area(new AreaEdit(this, &_previewDialog, entryData)),
 	  _throttleControlLayout(new QHBoxLayout),
@@ -640,8 +639,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 				   QSizePolicy::Preferred);
 	_ocr->setSizePolicy(QSizePolicy::MinimumExpanding,
 			    QSizePolicy::Preferred);
-	_objectDetect->setSizePolicy(QSizePolicy::MinimumExpanding,
-				     QSizePolicy::Preferred);
+	_cascadeClassifierEdit->setSizePolicy(QSizePolicy::MinimumExpanding,
+					      QSizePolicy::Preferred);
 	_color->setSizePolicy(QSizePolicy::MinimumExpanding,
 			      QSizePolicy::Preferred);
 	_area->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -740,7 +739,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addLayout(_patternMatchModeLayout);
 	mainLayout->addWidget(_brightness);
 	mainLayout->addWidget(_ocr);
-	mainLayout->addWidget(_objectDetect);
+	mainLayout->addWidget(_cascadeClassifierEdit);
 	mainLayout->addWidget(_color);
 	mainLayout->addLayout(_throttleControlLayout);
 	mainLayout->addWidget(_area);
@@ -982,13 +981,14 @@ void MacroConditionVideoEdit::ShowMatchClicked()
 static bool needsShowMatch(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN ||
-	       cond == VideoCondition::OBJECT || cond == VideoCondition::OCR;
+	       cond == VideoCondition::OBJECT_CASCADE ||
+	       cond == VideoCondition::OCR;
 }
 
 static bool needsThrottleControls(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN ||
-	       cond == VideoCondition::OBJECT ||
+	       cond == VideoCondition::OBJECT_CASCADE ||
 	       cond == VideoCondition::HAS_CHANGED ||
 	       cond == VideoCondition::HAS_NOT_CHANGED;
 }
@@ -1029,8 +1029,8 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 				VideoCondition::BRIGHTNESS);
 	_showMatch->setVisible(needsShowMatch(_entryData->GetCondition()));
 	_ocr->setVisible(_entryData->GetCondition() == VideoCondition::OCR);
-	_objectDetect->setVisible(_entryData->GetCondition() ==
-				  VideoCondition::OBJECT);
+	_cascadeClassifierEdit->setVisible(_entryData->GetCondition() ==
+					   VideoCondition::OBJECT_CASCADE);
 	_color->setVisible(_entryData->GetCondition() == VideoCondition::COLOR);
 	SetLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->GetCondition()));
@@ -1073,8 +1073,8 @@ void MacroConditionVideoEdit::SetupPreviewDialogParams()
 {
 	_previewDialog.PatternMatchParametersChanged(
 		_entryData->_patternMatchParameters);
-	_previewDialog.ObjDetectParametersChanged(
-		_entryData->_objMatchParameters);
+	_previewDialog.CascadeClassifierParametersChanged(
+		_entryData->_cascadeMatchParameters);
 	_previewDialog.OCRParametersChanged(_entryData->_ocrParameters);
 	_previewDialog.VideoSelectionChanged(_entryData->_video);
 	_previewDialog.AreaParametersChanged(_entryData->_areaParameters);

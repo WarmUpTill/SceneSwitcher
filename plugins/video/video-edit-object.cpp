@@ -9,7 +9,7 @@
 
 namespace advss {
 
-ObjectDetectEdit::ObjectDetectEdit(
+CascadeClassifierEdit::CascadeClassifierEdit(
 	QWidget *parent, PreviewDialog *previewDialog,
 	const std::shared_ptr<MacroConditionVideo> &data)
 	: QWidget(parent),
@@ -90,48 +90,51 @@ ObjectDetectEdit::ObjectDetectEdit(
 	layout->addLayout(sizeLayout);
 	setLayout(layout);
 
-	_modelDataPath->SetPath(_entryData->_objMatchParameters.GetModelPath());
+	_modelDataPath->SetPath(
+		_entryData->_cascadeMatchParameters.GetModelPath());
 	_objectScaleThreshold->SetDoubleValue(
-		_entryData->_objMatchParameters.scaleFactor);
-	_minNeighbors->setValue(_entryData->_objMatchParameters.minNeighbors);
-	_minSize->SetSize(_entryData->_objMatchParameters.minSize);
-	_maxSize->SetSize(_entryData->_objMatchParameters.maxSize);
+		_entryData->_cascadeMatchParameters.scaleFactor);
+	_minNeighbors->setValue(
+		_entryData->_cascadeMatchParameters.minNeighbors);
+	_minSize->SetSize(_entryData->_cascadeMatchParameters.minSize);
+	_maxSize->SetSize(_entryData->_cascadeMatchParameters.maxSize);
 	_loading = false;
 }
 
-void ObjectDetectEdit::ObjectScaleThresholdChanged(const DoubleVariable &value)
+void CascadeClassifierEdit::ObjectScaleThresholdChanged(
+	const DoubleVariable &value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_objMatchParameters.scaleFactor = value;
-	_previewDialog->ObjDetectParametersChanged(
-		_entryData->_objMatchParameters);
+	_entryData->_cascadeMatchParameters.scaleFactor = value;
+	_previewDialog->CascadeClassifierParametersChanged(
+		_entryData->_cascadeMatchParameters);
 }
 
-void ObjectDetectEdit::MinNeighborsChanged(int value)
+void CascadeClassifierEdit::MinNeighborsChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_objMatchParameters.minNeighbors = value;
-	_previewDialog->ObjDetectParametersChanged(
-		_entryData->_objMatchParameters);
+	_entryData->_cascadeMatchParameters.minNeighbors = value;
+	_previewDialog->CascadeClassifierParametersChanged(
+		_entryData->_cascadeMatchParameters);
 }
 
-void ObjectDetectEdit::MinSizeChanged(advss::Size value)
+void CascadeClassifierEdit::MinSizeChanged(advss::Size value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_objMatchParameters.minSize = value;
-	_previewDialog->ObjDetectParametersChanged(
-		_entryData->_objMatchParameters);
+	_entryData->_cascadeMatchParameters.minSize = value;
+	_previewDialog->CascadeClassifierParametersChanged(
+		_entryData->_cascadeMatchParameters);
 }
 
-void ObjectDetectEdit::MaxSizeChanged(advss::Size value)
+void CascadeClassifierEdit::MaxSizeChanged(advss::Size value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_objMatchParameters.maxSize = value;
-	_previewDialog->ObjDetectParametersChanged(
-		_entryData->_objMatchParameters);
+	_entryData->_cascadeMatchParameters.maxSize = value;
+	_previewDialog->CascadeClassifierParametersChanged(
+		_entryData->_cascadeMatchParameters);
 }
 
-void ObjectDetectEdit::ModelPathChanged(const QString &text)
+void CascadeClassifierEdit::ModelPathChanged(const QString &text)
 {
 	if (_loading || !_entryData) {
 		return;
@@ -141,14 +144,15 @@ void ObjectDetectEdit::ModelPathChanged(const QString &text)
 	{
 		auto lock = LockContext();
 		std::string path = text.toStdString();
-		dataLoaded = _entryData->_objMatchParameters.SetModelPath(path);
+		dataLoaded =
+			_entryData->_cascadeMatchParameters.SetModelPath(path);
 	}
 	if (!dataLoaded) {
 		DisplayMessage(obs_module_text(
 			"AdvSceneSwitcher.condition.video.modelLoadFail"));
 	}
-	_previewDialog->ObjDetectParametersChanged(
-		_entryData->_objMatchParameters);
+	_previewDialog->CascadeClassifierParametersChanged(
+		_entryData->_cascadeMatchParameters);
 }
 
 } // namespace advss

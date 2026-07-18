@@ -1,4 +1,5 @@
 #pragma once
+#include "object-detector.hpp"
 #include "opencv-helpers.hpp"
 #include "obs-module-helper.hpp"
 #include "area-selection.hpp"
@@ -27,7 +28,7 @@ enum class VideoCondition {
 	HAS_CHANGED,
 	NO_IMAGE,
 	PATTERN,
-	OBJECT,
+	OBJECT_CASCADE,
 	BRIGHTNESS,
 	OCR,
 	COLOR,
@@ -64,14 +65,37 @@ public:
 	NumberVariable<double> threshold = 0.999;
 };
 
-class ObjDetectParameters {
+class CascadeClassifierParameters {
 public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 
+	CascadeClassifierParameters() = default;
+	CascadeClassifierParameters(const CascadeClassifierParameters &other)
+		: scaleFactor(other.scaleFactor),
+		  minNeighbors(other.minNeighbors),
+		  minSize(other.minSize),
+		  maxSize(other.maxSize),
+		  _modelPath(other._modelPath)
+	{
+	}
+	CascadeClassifierParameters &
+	operator=(const CascadeClassifierParameters &other)
+	{
+		if (this != &other) {
+			scaleFactor = other.scaleFactor;
+			minNeighbors = other.minNeighbors;
+			minSize = other.minSize;
+			maxSize = other.maxSize;
+			_modelPath = other._modelPath;
+			_detector.reset();
+		}
+		return *this;
+	}
+
 	bool SetModelPath(const std::string &path);
-	const std::string &GetModelPath() const { return modelPath; }
-	std::shared_ptr<cv::CascadeClassifier> GetModel();
+	const std::string &GetModelPath() const { return _modelPath; }
+	ObjectDetector *GetDetector();
 
 	NumberVariable<double> scaleFactor = defaultScaleFactor;
 	int minNeighbors = minMinNeighbors;
@@ -81,8 +105,8 @@ public:
 private:
 	bool LoadModelData();
 
-	std::shared_ptr<cv::CascadeClassifier> cascade;
-	std::string modelPath =
+	std::unique_ptr<ObjectDetector> _detector;
+	std::string _modelPath =
 		obs_get_module_data_path(obs_current_module()) +
 		std::string(
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");

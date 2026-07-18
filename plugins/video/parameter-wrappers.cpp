@@ -1,4 +1,5 @@
 #include "parameter-wrappers.hpp"
+#include "cascade-classifier-detector.hpp"
 #include "log-helper.hpp"
 
 #include <QFileInfo>
@@ -48,45 +49,6 @@ bool PatternMatchParameters::Load(obs_data_t *obj)
 	return true;
 }
 
-static std::shared_ptr<cv::CascadeClassifier>
-initObjectCascade(std::string &path)
-{
-	auto cascade = std::make_shared<cv::CascadeClassifier>();
-	try {
-		cascade->load(path);
-	} catch (...) {
-		blog(LOG_WARNING, "failed to load model data \"%s\"",
-		     path.c_str());
-	}
-	return cascade;
-}
-
-bool ObjDetectParameters::LoadModelData()
-{
-	const auto path = QString::fromStdString(modelPath);
-	if (!QFileInfo(path).exists(path)) {
-		cascade.reset();
-		return false;
-	}
-
-	cascade = initObjectCascade(modelPath);
-	return !cascade->empty();
-}
-
-bool ObjDetectParameters::Save(obs_data_t *obj) const
-{
-	auto data = obs_data_create();
-	obs_data_set_string(data, "modelPath", modelPath.c_str());
-	scaleFactor.Save(data, "scaleFactor");
-	obs_data_set_int(data, "minNeighbors", minNeighbors);
-	minSize.Save(data, "minSize");
-	maxSize.Save(data, "maxSize");
-	obs_data_set_obj(obj, "objectMatchData", data);
-	obs_data_set_int(data, "version", 2);
-	obs_data_release(data);
-	return true;
-}
-
 static bool isScaleFactorValid(double scaleFactor)
 {
 	return scaleFactor > 1.;
@@ -98,11 +60,45 @@ static bool isMinNeighborsValid(int minNeighbors)
 	       minNeighbors <= maxMinNeighbors;
 }
 
-bool ObjDetectParameters::Load(obs_data_t *obj)
+bool CascadeClassifierParameters::LoadModelData()
+{
+#if CV_VERSION_MAJOR < 5
+	const auto path = QString::fromStdString(_modelPath);
+	if (!QFileInfo(path).exists(path)) {
+		_detector.reset();
+		return false;
+	}
+	auto det = std::make_unique<CascadeClassifierDetector>();
+	if (!det->Load(_modelPath)) {
+		_detector.reset();
+		return false;
+	}
+	_detector = std::move(det);
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool CascadeClassifierParameters::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	obs_data_set_string(data, "modelPath", _modelPath.c_str());
+	scaleFactor.Save(data, "scaleFactor");
+	obs_data_set_int(data, "minNeighbors", minNeighbors);
+	minSize.Save(data, "minSize");
+	maxSize.Save(data, "maxSize");
+	obs_data_set_int(data, "version", 2);
+	obs_data_set_obj(obj, "objectMatchData", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool CascadeClassifierParameters::Load(obs_data_t *obj)
 {
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(obj, "patternMatchData")) {
-		modelPath = obs_data_get_string(obj, "modelDataPath");
+		_modelPath = obs_data_get_string(obj, "modelDataPath");
 		scaleFactor = obs_data_get_double(obj, "scaleFactor");
 		if (!isScaleFactorValid(scaleFactor)) {
 			scaleFactor = 1.1;
@@ -116,7 +112,7 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 		return true;
 	}
 	auto data = obs_data_get_obj(obj, "objectMatchData");
-	modelPath = obs_data_get_string(data, "modelPath");
+	_modelPath = obs_data_get_string(data, "modelPath");
 	scaleFactor.Load(data, "scaleFactor");
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(data, "version")) {
@@ -129,11 +125,11 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 		// which invalidates previously saved default model paths.
 		const std::string oldPrefix =
 			"../../data/obs-plugins/advanced-scene-switcher/res/cascadeClassifiers/";
-		if (modelPath.substr(0, oldPrefix.size()) == oldPrefix) {
-			modelPath = std::string(obs_get_module_data_path(
-					    obs_current_module())) +
-				    "/res/cascadeClassifiers/" +
-				    modelPath.substr(oldPrefix.size());
+		if (_modelPath.substr(0, oldPrefix.size()) == oldPrefix) {
+			_modelPath = std::string(obs_get_module_data_path(
+					     obs_current_module())) +
+				     "/res/cascadeClassifiers/" +
+				     _modelPath.substr(oldPrefix.size());
 		}
 #endif
 	}
@@ -147,27 +143,31 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 	minSize.Load(data, "minSize");
 	maxSize.Load(data, "maxSize");
 	obs_data_release(data);
-
 	return true;
 }
 
-bool ObjDetectParameters::SetModelPath(const std::string &path)
+bool CascadeClassifierParameters::SetModelPath(const std::string &path)
 {
-	modelPath = path;
+	_modelPath = path;
 	return LoadModelData();
 }
 
-std::shared_ptr<cv::CascadeClassifier> ObjDetectParameters::GetModel()
+ObjectDetector *CascadeClassifierParameters::GetDetector()
 {
-	if (cascade && !cascade->empty()) {
-		return cascade;
+	if (!_detector || !_detector->IsLoaded()) {
+		if (!LoadModelData()) {
+			return nullptr;
+		}
 	}
-
-	if (!LoadModelData()) {
-		return {};
-	}
-
-	return cascade;
+#if CV_VERSION_MAJOR < 5
+	auto *cascade =
+		static_cast<CascadeClassifierDetector *>(_detector.get());
+	cascade->scaleFactor = scaleFactor;
+	cascade->minNeighbors = minNeighbors;
+	cascade->minSize = minSize.CV();
+	cascade->maxSize = maxSize.CV();
+#endif
+	return _detector.get();
 }
 
 bool AreaParameters::Save(obs_data_t *obj) const

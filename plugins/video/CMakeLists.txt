@@ -54,8 +54,11 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE area-selection.cpp
           area-selection.hpp
+          cascade-classifier-detector.cpp
+          cascade-classifier-detector.hpp
           macro-condition-video.cpp
           macro-condition-video.hpp
+          object-detector.hpp
           opencv-helpers.cpp
           opencv-helpers.hpp
           parameter-wrappers.cpp
