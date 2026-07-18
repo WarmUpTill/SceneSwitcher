@@ -63,7 +63,12 @@ target_sources(
           preview-dialog.cpp
           preview-dialog.hpp
           screenshot-dialog.cpp
-          screenshot-dialog.hpp)
+          screenshot-dialog.hpp
+          video-edit-area.cpp
+          video-edit-brightness.cpp
+          video-edit-color.cpp
+          video-edit-object.cpp
+          video-edit-ocr.cpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
