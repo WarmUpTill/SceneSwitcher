@@ -302,6 +302,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         log_info "Configure OpenCV (x86_64) ..."
         cmake -S . -B build_x86_64 ${opencv_cmake_args_common} \
           -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+          -DCMAKE_PROJECT_INCLUDE="${SCRIPT_HOME}/opencv-force-processor-x86_64.cmake" \
           -DCMAKE_INSTALL_PREFIX="${opencv_install_x86}" \
           -DWITH_IPP=OFF
 
@@ -344,7 +345,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DSW_BUILD=OFF
           -DOPENJPEG_SUPPORT=OFF
-          -DLIBWEBP_SUPPORT=OFF
+          -DENABLE_WEBP=OFF
           -DCMAKE_DISABLE_FIND_PACKAGE_GIF=TRUE
           -DCMAKE_DISABLE_FIND_PACKAGE_JPEG=TRUE
           -DCMAKE_DISABLE_FIND_PACKAGE_TIFF=TRUE

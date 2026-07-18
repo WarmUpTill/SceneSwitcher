@@ -30,9 +30,28 @@ if(OS_LINUX AND NOT Leptonica_FOUND)
   endif()
 endif()
 
+# --- Check cascade classifier availability ---
+# CascadeClassifier was moved to the xobjdetect contrib module in OpenCV 5
+if(OpenCV_VERSION_MAJOR LESS 5
+   OR OpenCV_xobjdetect_FOUND
+   OR "opencv_xobjdetect" IN_LIST OpenCV_LIBS)
+  set(ADVSS_CASCADE_SUPPORT ON)
+else()
+  message(
+    WARNING
+      "Cascade classifier support disabled!\n"
+      "OpenCV 5+ requires the opencv_xobjdetect contrib module.\n\n"
+      "Rebuild OpenCV with -DBUILD_LIST=...,xobjdetect and -DOPENCV_EXTRA_MODULES_PATH=<opencv_contrib>/modules"
+  )
+endif()
+
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
+
+if(ADVSS_CASCADE_SUPPORT)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE ADVSS_CASCADE_SUPPORT)
+endif()
 
 if(Leptonica_FOUND AND Tesseract_FOUND)
   target_compile_definitions(${PROJECT_NAME} PRIVATE OCR_SUPPORT)
@@ -54,8 +73,11 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE area-selection.cpp
           area-selection.hpp
+          cascade-classifier-detector.cpp
+          cascade-classifier-detector.hpp
           macro-condition-video.cpp
           macro-condition-video.hpp
+          object-detector.hpp
           opencv-helpers.cpp
           opencv-helpers.hpp
           parameter-wrappers.cpp
@@ -63,7 +85,12 @@ target_sources(
           preview-dialog.cpp
           preview-dialog.hpp
           screenshot-dialog.cpp
-          screenshot-dialog.hpp)
+          screenshot-dialog.hpp
+          video-edit-area.cpp
+          video-edit-brightness.cpp
+          video-edit-color.cpp
+          video-edit-object.cpp
+          video-edit-ocr.cpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

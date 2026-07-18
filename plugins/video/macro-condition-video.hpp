@@ -4,18 +4,21 @@
 #include "parameter-wrappers.hpp"
 #include "preview-dialog.hpp"
 
-#include <help-icon.hpp>
-#include <macro-condition-edit.hpp>
-#include <file-selection.hpp>
-#include <screenshot-helper.hpp>
-#include <slider-spinbox.hpp>
-#include <source-helpers.hpp>
-#include <variable-color-button.hpp>
-#include <variable-line-edit.hpp>
-#include <variable-text-edit.hpp>
+#include "help-icon.hpp"
+#include "section.hpp"
+#include "macro-condition-edit.hpp"
+#include "file-selection.hpp"
+#include "screenshot-helper.hpp"
+#include "slider-spinbox.hpp"
+#include "source-helpers.hpp"
+#include "variable-color-button.hpp"
+#include "variable-line-edit.hpp"
+#include "variable-text-edit.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QLineEdit>
 #include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -70,7 +73,7 @@ public:
 	bool _blockUntilScreenshotDone = true;
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
-	ObjDetectParameters _objMatchParameters;
+	CascadeClassifierParameters _cascadeMatchParameters;
 	OCRParameters _ocrParameters;
 	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
@@ -174,12 +177,12 @@ private:
 	bool _loading = true;
 };
 
-class ObjectDetectEdit : public QWidget {
+class CascadeClassifierEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	ObjectDetectEdit(QWidget *parent, PreviewDialog *,
-			 const std::shared_ptr<MacroConditionVideo> &);
+	CascadeClassifierEdit(QWidget *parent, PreviewDialog *,
+			      const std::shared_ptr<MacroConditionVideo> &);
 
 private slots:
 	void ModelPathChanged(const QString &text);
@@ -320,7 +323,7 @@ private:
 
 	BrightnessEdit *_brightness;
 	OCREdit *_ocr;
-	ObjectDetectEdit *_objectDetect;
+	CascadeClassifierEdit *_cascadeClassifierEdit;
 	ColorEdit *_color;
 	AreaEdit *_area;
 

@@ -1,15 +1,17 @@
 #pragma once
-#include "screenshot-helper.hpp"
 #include "parameter-wrappers.hpp"
+#include "screenshot-helper.hpp"
 
-#include <optional>
 #include <obs.h>
+
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QImage>
 #include <QLabel>
 #include <QRubberBand>
 #include <QScrollArea>
+
+#include <optional>
 
 namespace advss {
 

@@ -1,9 +1,10 @@
 #pragma once
-#include <variable-spinbox.hpp>
+#include "variable-spinbox.hpp"
 
-#include <QWidget>
 #include <obs-data.h>
 #include <opencv2/opencv.hpp>
+
+#include <QWidget>
 
 namespace advss {
 
