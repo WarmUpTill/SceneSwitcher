@@ -2,7 +2,7 @@
 param(
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
     [string] $Configuration = 'RelWithDebInfo',
-    [ValidateSet('x86', 'x64')]
+    [ValidateSet('x86', 'x64', 'arm64')]
     [string] $Target,
     [ValidateSet('Visual Studio 17 2022', 'Visual Studio 16 2019')]
     [string] $CMakeGenerator,
@@ -69,7 +69,7 @@ function Build {
             $CmakeArgs += ('--debug-output')
         }
 
-        $Preset = "windows-$(if ( $Env:CI -ne $null ) { 'ci-' })${Target}"
+        $Preset = "windows-$(if ( $null -ne $Env:CI ) { 'ci-' })${Target}"
 
         $CmakeArgs += @(
             '--preset', $Preset
@@ -209,13 +209,14 @@ function Build {
     $msbuildExe = vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
 
     if ($msbuildExe) {
+        $LibusbPlatform = if ($Target -eq 'arm64') { 'arm64' } else { 'x64' }
         $env:CL="/wd5287"
-        Invoke-External $msbuildExe "${LibusbPath}/msvc/libusb.sln" /property:Configuration=Release /property:Platform=x64
+        Invoke-External $msbuildExe "${LibusbPath}/msvc/libusb.sln" /property:Configuration=Release /property:Platform=$LibusbPlatform
         Remove-Item Env:CL
 
-        $libusbBuildResultDirectory = "${LibusbPath}/build/v143/x64/Release"
+        $libusbBuildResultDirectory = "${LibusbPath}/build/v143/${LibusbPlatform}/Release"
         if (-not (Test-Path -Path $libusbBuildResultDirectory)) {
-            $libusbBuildResultDirectory = "${LibusbPath}/x64/Release/dll"
+            $libusbBuildResultDirectory = "${LibusbPath}/${LibusbPlatform}/Release/dll"
         }
         Copy-Item -Path "${libusbBuildResultDirectory}/*" -Destination ${ADVSSDepPath} -Recurse -Force
     } else {
@@ -245,9 +246,10 @@ function Build {
 
     if ($opensslDir) {
         Write-Host "Detected OpenSSL at: $opensslDir"
+        $OpenSSLArch = if ($Target -eq 'arm64') { 'arm64' } else { 'x64' }
         $MqttCmakeArgs += "-DOPENSSL_ROOT_DIR=$opensslDir"
-        $MqttCmakeArgs += "-DOPENSSL_CRYPTO_LIBRARY=$opensslDir\lib\VC\x64\MD\libcrypto.lib"
-        $MqttCmakeArgs += "-DOPENSSL_SSL_LIBRARY=$opensslDir\lib\VC\x64\MD\libssl.lib"
+        $MqttCmakeArgs += "-DOPENSSL_CRYPTO_LIBRARY=$opensslDir\lib\VC\$OpenSSLArch\MD\libcrypto.lib"
+        $MqttCmakeArgs += "-DOPENSSL_SSL_LIBRARY=$opensslDir\lib\VC\$OpenSSLArch\MD\libssl.lib"
     } else {
         Write-Warning "OpenSSL not found - maybe cmake will find it ..."
     }
