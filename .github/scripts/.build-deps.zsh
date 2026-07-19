@@ -284,11 +284,13 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   case ${host_os} {
     macos)
         local opencv_dir="${project_root}/deps/opencv"
+        local opencv_contrib_dir="${project_root}/deps/opencv_contrib"
         local opencv_build_dir="${opencv_dir}/build_${target##*-}"
 
         local -a opencv_cmake_args=(
           -DCMAKE_BUILD_TYPE=Release
-          -DBUILD_LIST=core,imgproc,objdetect
+          -DBUILD_LIST=core,imgproc,objdetect,xobjdetect
+          -DOPENCV_EXTRA_MODULES_PATH="${opencv_contrib_dir}/modules"
           -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
