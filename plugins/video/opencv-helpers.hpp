@@ -3,6 +3,9 @@
 #undef NO // MacOS macro that can conflict with OpenCV
 #include <cstddef>
 #include <opencv2/opencv.hpp>
+#if CV_VERSION_MAJOR >= 5
+#include <opencv2/xobjdetect.hpp>
+#endif
 
 #ifdef OCR_SUPPORT
 #include <tesseract/baseapi.h>
