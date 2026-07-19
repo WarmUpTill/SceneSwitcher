@@ -106,6 +106,7 @@ function Build {
     $ADVSSDepPath = "$(Resolve-Path -Path ${ProjectRoot}/${OutDirName})"
 
     $OpenCVPath = "${ProjectRoot}/deps/opencv"
+    $OpenCVContribPath = "${ProjectRoot}/deps/opencv_contrib"
     $OpenCVBuildPath = "${OpenCVPath}/build"
 
     Push-Location -Stack BuildOpenCVTemp
@@ -115,7 +116,8 @@ function Build {
         "-DCMAKE_BUILD_TYPE=Release"
         "-DCMAKE_PREFIX_PATH:PATH=${OBSDepPath}"
         "-DCMAKE_INSTALL_PREFIX:PATH=${ADVSSDepPath}"
-        "-DBUILD_LIST=core,imgproc,objdetect"
+        "-DBUILD_LIST=core,imgproc,objdetect,xobjdetect"
+        "-DOPENCV_EXTRA_MODULES_PATH:PATH=${OpenCVContribPath}/modules"
     )
 
     Log-Information "Configuring OpenCV..."
