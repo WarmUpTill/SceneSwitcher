@@ -34,3 +34,6 @@
 [submodule "deps/paho.mqtt.cpp"]
 	path = deps/paho.mqtt.cpp
 	url = https://github.com/eclipse-paho/paho.mqtt.cpp.git
+[submodule "deps/opencv_contrib"]
+	path = deps/opencv_contrib
+	url = https://github.com/opencv/opencv_contrib.git
