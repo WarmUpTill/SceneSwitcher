@@ -16,6 +16,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -71,6 +72,7 @@ public:
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
 	CascadeClassifierParameters _cascadeMatchParameters;
+	DnnDetectParameters _dnnMatchParameters;
 	OCRParameters _ocrParameters;
 	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
@@ -89,6 +91,7 @@ private:
 	bool OutputChanged();
 	bool ScreenshotContainsPattern();
 	bool ScreenshotContainsObject();
+	bool ScreenshotContainsDnnObject();
 	bool CheckBrightnessThreshold();
 	bool CheckOCR();
 	bool CheckColor();
@@ -195,6 +198,41 @@ private:
 	QLabel *_minNeighborsDescription;
 	SizeSelection *_minSize;
 	SizeSelection *_maxSize;
+
+	PreviewDialog *_previewDialog;
+
+	std::shared_ptr<MacroConditionVideo> _entryData;
+	bool _loading = true;
+};
+
+class DnnObjectDetectEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	DnnObjectDetectEdit(QWidget *parent, PreviewDialog *,
+			    const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void ModelPathChanged(const QString &text);
+	void ConfidenceThresholdChanged(const NumberVariable<double> &);
+	void NmsThresholdChanged(const NumberVariable<double> &);
+	void InputSizeChanged(Size value);
+	void ScaleFactorChanged(double value);
+	void MeanRChanged(double value);
+	void MeanGChanged(double value);
+	void MeanBChanged(double value);
+	void SwapRBChanged(int value);
+
+private:
+	FileSelection *_modelDataPath;
+	SliderSpinBox *_confidenceThreshold;
+	SliderSpinBox *_nmsThreshold;
+	SizeSelection *_inputSize;
+	QDoubleSpinBox *_scaleFactor;
+	QDoubleSpinBox *_meanR;
+	QDoubleSpinBox *_meanG;
+	QDoubleSpinBox *_meanB;
+	QCheckBox *_swapRB;
 
 	PreviewDialog *_previewDialog;
 
@@ -321,6 +359,7 @@ private:
 	BrightnessEdit *_brightness;
 	OCREdit *_ocr;
 	CascadeClassifierEdit *_cascadeClassifierEdit;
+	DnnObjectDetectEdit *_dnnObjectDetect;
 	ColorEdit *_color;
 	AreaEdit *_area;
 

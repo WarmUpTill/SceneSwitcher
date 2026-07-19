@@ -1,5 +1,6 @@
 #include "parameter-wrappers.hpp"
 #include "cascade-classifier-detector.hpp"
+#include "dnn-detector.hpp" // guarded internally with HAVE_OPENCV_DNN
 #include "log-helper.hpp"
 
 #include <QFileInfo>
@@ -166,6 +167,96 @@ ObjectDetector *CascadeClassifierParameters::GetDetector()
 	cascade->minNeighbors = minNeighbors;
 	cascade->minSize = minSize.CV();
 	cascade->maxSize = maxSize.CV();
+#endif
+	return _detector.get();
+}
+
+bool DnnDetectParameters::LoadModelData()
+{
+#ifdef HAVE_OPENCV_DNN
+	const auto path = QString::fromStdString(_modelPath);
+	if (!QFileInfo(path).exists(path)) {
+		_detector.reset();
+		return false;
+	}
+	auto det = std::make_unique<DnnDetector>();
+	if (!det->Load(_modelPath)) {
+		_detector.reset();
+		return false;
+	}
+	_detector = std::move(det);
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool DnnDetectParameters::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	obs_data_set_string(data, "modelPath", _modelPath.c_str());
+	confidenceThreshold.Save(data, "confidenceThreshold");
+	nmsThreshold.Save(data, "nmsThreshold");
+	inputSize.Save(data, "inputSize");
+	obs_data_set_double(data, "scaleFactor", scaleFactor);
+	obs_data_set_double(data, "meanR", meanR);
+	obs_data_set_double(data, "meanG", meanG);
+	obs_data_set_double(data, "meanB", meanB);
+	obs_data_set_bool(data, "swapRB", swapRB);
+	obs_data_set_obj(obj, "dnnObjectMatchData", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool DnnDetectParameters::Load(obs_data_t *obj)
+{
+	auto data = obs_data_get_obj(obj, "dnnObjectMatchData");
+	if (!data) {
+		return true;
+	}
+	_modelPath = obs_data_get_string(data, "modelPath");
+	confidenceThreshold.Load(data, "confidenceThreshold");
+	nmsThreshold.Load(data, "nmsThreshold");
+	inputSize.Load(data, "inputSize");
+	obs_data_set_default_double(data, "scaleFactor", 1.0 / 127.5);
+	obs_data_set_default_double(data, "meanR", 127.5);
+	obs_data_set_default_double(data, "meanG", 127.5);
+	obs_data_set_default_double(data, "meanB", 127.5);
+	obs_data_set_default_bool(data, "swapRB", true);
+	scaleFactor = obs_data_get_double(data, "scaleFactor");
+	meanR = obs_data_get_double(data, "meanR");
+	meanG = obs_data_get_double(data, "meanG");
+	meanB = obs_data_get_double(data, "meanB");
+	swapRB = obs_data_get_bool(data, "swapRB");
+	obs_data_release(data);
+	return true;
+}
+
+bool DnnDetectParameters::SetModelPath(const std::string &path)
+{
+	_modelPath = path;
+	return LoadModelData();
+}
+
+ObjectDetector *DnnDetectParameters::GetDetector()
+{
+	if (!_detector || !_detector->IsLoaded()) {
+		if (!LoadModelData()) {
+			return nullptr;
+		}
+	}
+#ifdef HAVE_OPENCV_DNN
+	auto *dnn = static_cast<DnnDetector *>(_detector.get());
+	dnn->confidenceThreshold = confidenceThreshold;
+	dnn->nmsThreshold = nmsThreshold;
+	auto sz = inputSize.CV();
+	dnn->inputWidth = sz.width;
+	dnn->inputHeight = sz.height;
+	dnn->scaleFactor = scaleFactor;
+	dnn->meanR = meanR;
+	dnn->meanG = meanG;
+	dnn->meanB = meanB;
+	dnn->swapRB = swapRB;
 #endif
 	return _detector.get();
 }

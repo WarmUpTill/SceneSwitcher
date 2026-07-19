@@ -32,6 +32,7 @@ enum class VideoCondition {
 	BRIGHTNESS,
 	OCR,
 	COLOR,
+	OBJECT_DNN,
 };
 
 class VideoInput {
@@ -110,6 +111,61 @@ private:
 		obs_get_module_data_path(obs_current_module()) +
 		std::string(
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
+};
+
+class DnnDetectParameters {
+public:
+	bool Save(obs_data_t *obj) const;
+	bool Load(obs_data_t *obj);
+
+	DnnDetectParameters() = default;
+	DnnDetectParameters(const DnnDetectParameters &other)
+		: confidenceThreshold(other.confidenceThreshold),
+		  nmsThreshold(other.nmsThreshold),
+		  inputSize(other.inputSize),
+		  scaleFactor(other.scaleFactor),
+		  meanR(other.meanR),
+		  meanG(other.meanG),
+		  meanB(other.meanB),
+		  swapRB(other.swapRB),
+		  _modelPath(other._modelPath)
+	{
+	}
+	DnnDetectParameters &operator=(const DnnDetectParameters &other)
+	{
+		if (this != &other) {
+			confidenceThreshold = other.confidenceThreshold;
+			nmsThreshold = other.nmsThreshold;
+			inputSize = other.inputSize;
+			scaleFactor = other.scaleFactor;
+			meanR = other.meanR;
+			meanG = other.meanG;
+			meanB = other.meanB;
+			swapRB = other.swapRB;
+			_modelPath = other._modelPath;
+			_detector.reset();
+		}
+		return *this;
+	}
+
+	bool SetModelPath(const std::string &path);
+	const std::string &GetModelPath() const { return _modelPath; }
+	ObjectDetector *GetDetector();
+
+	NumberVariable<double> confidenceThreshold = 0.5;
+	NumberVariable<double> nmsThreshold = 0.4;
+	Size inputSize = {300, 300};
+	double scaleFactor = 1.0 / 127.5;
+	double meanR = 127.5;
+	double meanG = 127.5;
+	double meanB = 127.5;
+	bool swapRB = true;
+
+private:
+	bool LoadModelData();
+
+	std::unique_ptr<ObjectDetector> _detector;
+	std::string _modelPath;
 };
 
 class OCRParameters {

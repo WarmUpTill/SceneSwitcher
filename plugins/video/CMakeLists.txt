@@ -56,6 +56,8 @@ target_sources(
           area-selection.hpp
           cascade-classifier-detector.cpp
           cascade-classifier-detector.hpp
+          dnn-detector.cpp
+          dnn-detector.hpp
           macro-condition-video.cpp
           macro-condition-video.hpp
           object-detector.hpp
@@ -71,6 +73,7 @@ target_sources(
           video-edit-brightness.cpp
           video-edit-color.cpp
           video-edit-object.cpp
+          video-edit-object-dnn.cpp
           video-edit-ocr.cpp)
 
 setup_advss_plugin(${PROJECT_NAME})

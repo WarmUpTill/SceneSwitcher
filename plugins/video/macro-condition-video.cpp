@@ -45,6 +45,10 @@ const static std::map<VideoCondition, std::string> conditionTypes = {
 #endif
 	{VideoCondition::COLOR,
 	 "AdvSceneSwitcher.condition.video.condition.color"},
+#ifdef HAVE_OPENCV_DNN
+	{VideoCondition::OBJECT_DNN,
+	 "AdvSceneSwitcher.condition.video.condition.objectDnn"},
+#endif
 };
 
 const static std::map<VideoInput::Type, std::string> videoInputTypes = {
@@ -75,6 +79,7 @@ bool MacroConditionVideo::CheckShouldBeSkipped()
 {
 	if (_condition != VideoCondition::PATTERN &&
 	    _condition != VideoCondition::OBJECT_CASCADE &&
+	    _condition != VideoCondition::OBJECT_DNN &&
 	    _condition != VideoCondition::HAS_CHANGED &&
 	    _condition != VideoCondition::HAS_NOT_CHANGED) {
 		return false;
@@ -166,6 +171,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 	_brightnessThreshold.Save(obj, "brightnessThreshold");
 	_patternMatchParameters.Save(obj);
 	_cascadeMatchParameters.Save(obj);
+	_dnnMatchParameters.Save(obj);
 	_ocrParameters.Save(obj);
 	_colorParameters.Save(obj);
 	obs_data_set_bool(obj, "throttleEnabled", _throttleEnabled);
@@ -192,6 +198,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	}
 	_patternMatchParameters.Load(obj);
 	_cascadeMatchParameters.Load(obj);
+	_dnnMatchParameters.Load(obj);
 	_ocrParameters.Load(obj);
 	_colorParameters.Load(obj);
 	_throttleEnabled = obs_data_get_bool(obj, "throttleEnabled");
@@ -368,6 +375,18 @@ bool MacroConditionVideo::ScreenshotContainsObject()
 	return count > 0;
 }
 
+bool MacroConditionVideo::ScreenshotContainsDnnObject()
+{
+	auto *detector = _dnnMatchParameters.GetDetector();
+	if (!detector) {
+		return false;
+	}
+	auto objects = detector->Detect(_screenshotData.GetImage());
+	const auto count = objects.size();
+	SetTempVarValue("objectCount", std::to_string(count));
+	return count > 0;
+}
+
 bool MacroConditionVideo::CheckBrightnessThreshold()
 {
 	_currentBrightness =
@@ -441,6 +460,8 @@ bool MacroConditionVideo::Compare()
 		return ScreenshotContainsPattern();
 	case VideoCondition::OBJECT_CASCADE:
 		return ScreenshotContainsObject();
+	case VideoCondition::OBJECT_DNN:
+		return ScreenshotContainsDnnObject();
 	case VideoCondition::BRIGHTNESS:
 		return CheckBrightnessThreshold();
 	case VideoCondition::OCR:
@@ -508,6 +529,7 @@ void MacroConditionVideo::SetupTempVars()
 				"AdvSceneSwitcher.tempVar.video.matchHeight.description"));
 		break;
 	case VideoCondition::OBJECT_CASCADE:
+	case VideoCondition::OBJECT_DNN:
 		AddTempvar(
 			"objectCount",
 			obs_module_text(
@@ -611,6 +633,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	  _ocr(new OCREdit(this, &_previewDialog, entryData)),
 	  _cascadeClassifierEdit(
 		  new CascadeClassifierEdit(this, &_previewDialog, entryData)),
+	  _dnnObjectDetect(
+		  new DnnObjectDetectEdit(this, &_previewDialog, entryData)),
 	  _color(new ColorEdit(this, entryData)),
 	  _area(new AreaEdit(this, &_previewDialog, entryData)),
 	  _throttleControlLayout(new QHBoxLayout),
@@ -641,6 +665,8 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 			    QSizePolicy::Preferred);
 	_cascadeClassifierEdit->setSizePolicy(QSizePolicy::MinimumExpanding,
 					      QSizePolicy::Preferred);
+	_dnnObjectDetect->setSizePolicy(QSizePolicy::MinimumExpanding,
+					QSizePolicy::Preferred);
 	_color->setSizePolicy(QSizePolicy::MinimumExpanding,
 			      QSizePolicy::Preferred);
 	_area->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -740,6 +766,7 @@ MacroConditionVideoEdit::MacroConditionVideoEdit(
 	mainLayout->addWidget(_brightness);
 	mainLayout->addWidget(_ocr);
 	mainLayout->addWidget(_cascadeClassifierEdit);
+	mainLayout->addWidget(_dnnObjectDetect);
 	mainLayout->addWidget(_color);
 	mainLayout->addLayout(_throttleControlLayout);
 	mainLayout->addWidget(_area);
@@ -982,6 +1009,7 @@ static bool needsShowMatch(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN ||
 	       cond == VideoCondition::OBJECT_CASCADE ||
+	       cond == VideoCondition::OBJECT_DNN ||
 	       cond == VideoCondition::OCR;
 }
 
@@ -989,6 +1017,7 @@ static bool needsThrottleControls(VideoCondition cond)
 {
 	return cond == VideoCondition::PATTERN ||
 	       cond == VideoCondition::OBJECT_CASCADE ||
+	       cond == VideoCondition::OBJECT_DNN ||
 	       cond == VideoCondition::HAS_CHANGED ||
 	       cond == VideoCondition::HAS_NOT_CHANGED;
 }
@@ -1031,6 +1060,8 @@ void MacroConditionVideoEdit::SetWidgetVisibility()
 	_ocr->setVisible(_entryData->GetCondition() == VideoCondition::OCR);
 	_cascadeClassifierEdit->setVisible(_entryData->GetCondition() ==
 					   VideoCondition::OBJECT_CASCADE);
+	_dnnObjectDetect->setVisible(_entryData->GetCondition() ==
+				     VideoCondition::OBJECT_DNN);
 	_color->setVisible(_entryData->GetCondition() == VideoCondition::COLOR);
 	SetLayoutVisible(_throttleControlLayout,
 			 needsThrottleControls(_entryData->GetCondition()));
@@ -1075,6 +1106,8 @@ void MacroConditionVideoEdit::SetupPreviewDialogParams()
 		_entryData->_patternMatchParameters);
 	_previewDialog.CascadeClassifierParametersChanged(
 		_entryData->_cascadeMatchParameters);
+	_previewDialog.DnnDetectParametersChanged(
+		_entryData->_dnnMatchParameters);
 	_previewDialog.OCRParametersChanged(_entryData->_ocrParameters);
 	_previewDialog.VideoSelectionChanged(_entryData->_video);
 	_previewDialog.AreaParametersChanged(_entryData->_areaParameters);

@@ -138,6 +138,12 @@ void PreviewDialog::CascadeClassifierParametersChanged(
 	_cascadeParams = std::make_shared<CascadeClassifierParameters>(params);
 }
 
+void PreviewDialog::DnnDetectParametersChanged(const DnnDetectParameters &params)
+{
+	std::unique_lock<std::mutex> lock(_mtx);
+	_dnnDetectParams = std::make_shared<DnnDetectParameters>(params);
+}
+
 void PreviewDialog::OCRParametersChanged(const OCRParameters &params)
 {
 	std::unique_lock<std::mutex> lock(_mtx);
@@ -186,7 +192,8 @@ void PreviewDialog::UpdateImage(const QPixmap &image)
 		DrawFrame();
 	}
 	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
-		       _cascadeParams, _ocrParams, _areaParams, _condition);
+		       _cascadeParams, _dnnDetectParams, _ocrParams,
+		       _areaParams, _condition);
 }
 
 void PreviewDialog::Start()
@@ -216,7 +223,8 @@ void PreviewDialog::Start()
 	_thread.start();
 
 	emit NeedImage(_video, _type, _patternMatchParams, _patternImageData,
-		       _cascadeParams, _ocrParams, _areaParams, _condition);
+		       _cascadeParams, _dnnDetectParams, _ocrParams,
+		       _areaParams, _condition);
 }
 
 void PreviewDialog::DrawFrame()
@@ -268,6 +276,7 @@ void PreviewImage::CreateImage(
 	const PatternMatchParameters &patternMatchParams,
 	const PatternImageData &patternImageData,
 	std::shared_ptr<CascadeClassifierParameters> cascadeParams,
+	std::shared_ptr<DnnDetectParameters> dnnDetectParams,
 	std::shared_ptr<OCRParameters> ocrParams,
 	const AreaParameters &areaParams, VideoCondition condition)
 {
@@ -300,8 +309,8 @@ void PreviewImage::CreateImage(
 		std::unique_lock<std::mutex> lock(_mtx);
 		// Will emit status label update
 		MarkMatch(screenshot.GetImage(), patternMatchParams,
-			  patternImageData, cascadeParams, ocrParams,
-			  condition);
+			  patternImageData, cascadeParams, dnnDetectParams,
+			  ocrParams, condition);
 	} else {
 		emit StatusUpdate(obs_module_text(
 			"AdvSceneSwitcher.condition.video.selectArea.status"));
@@ -313,6 +322,7 @@ void PreviewImage::MarkMatch(
 	QImage &screenshot, const PatternMatchParameters &patternMatchParams,
 	const PatternImageData &patternImageData,
 	std::shared_ptr<CascadeClassifierParameters> cascadeParams,
+	std::shared_ptr<DnnDetectParameters> dnnDetectParams,
 	std::shared_ptr<OCRParameters> ocrParams, VideoCondition condition)
 {
 	if (condition == VideoCondition::PATTERN) {
@@ -322,6 +332,11 @@ void PreviewImage::MarkMatch(
 		MarkObjectsFromDetector(
 			screenshot,
 			cascadeParams ? cascadeParams->GetDetector() : nullptr);
+	} else if (condition == VideoCondition::OBJECT_DNN) {
+		MarkObjectsFromDetector(screenshot,
+					dnnDetectParams
+						? dnnDetectParams->GetDetector()
+						: nullptr);
 	} else if (condition == VideoCondition::OCR) {
 		MarkOCRMatch(screenshot, ocrParams);
 	}

@@ -28,6 +28,7 @@ public slots:
 			 const PatternMatchParameters &,
 			 const PatternImageData &,
 			 std::shared_ptr<CascadeClassifierParameters>,
+			 std::shared_ptr<DnnDetectParameters>,
 			 std::shared_ptr<OCRParameters>, const AreaParameters &,
 			 VideoCondition);
 signals:
@@ -39,6 +40,7 @@ private:
 	void MarkMatch(QImage &screenshot, const PatternMatchParameters &,
 		       const PatternImageData &,
 		       std::shared_ptr<CascadeClassifierParameters>,
+		       std::shared_ptr<DnnDetectParameters>,
 		       std::shared_ptr<OCRParameters>, VideoCondition);
 	void MarkPatternMatch(QImage &, const PatternMatchParameters &,
 			      const PatternImageData &);
@@ -63,6 +65,7 @@ public slots:
 	void PatternMatchParametersChanged(const PatternMatchParameters &);
 	void
 	CascadeClassifierParametersChanged(const CascadeClassifierParameters &);
+	void DnnDetectParametersChanged(const DnnDetectParameters &);
 	void OCRParametersChanged(const OCRParameters &);
 	void VideoSelectionChanged(const VideoInput &);
 	void AreaParametersChanged(const AreaParameters &);
@@ -76,6 +79,7 @@ signals:
 	void NeedImage(const VideoInput &, PreviewType,
 		       const PatternMatchParameters &, const PatternImageData &,
 		       std::shared_ptr<CascadeClassifierParameters>,
+		       std::shared_ptr<DnnDetectParameters>,
 		       std::shared_ptr<OCRParameters>, const AreaParameters &,
 		       VideoCondition);
 
@@ -91,6 +95,7 @@ private:
 	PatternMatchParameters _patternMatchParams;
 	PatternImageData _patternImageData;
 	std::shared_ptr<CascadeClassifierParameters> _cascadeParams;
+	std::shared_ptr<DnnDetectParameters> _dnnDetectParams;
 	std::shared_ptr<OCRParameters> _ocrParams;
 	AreaParameters _areaParams;
 
