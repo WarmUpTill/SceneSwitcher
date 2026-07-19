@@ -34,10 +34,8 @@ const static std::map<VideoCondition, std::string> conditionTypes = {
 	 "AdvSceneSwitcher.condition.video.condition.noImage"},
 	{VideoCondition::PATTERN,
 	 "AdvSceneSwitcher.condition.video.condition.pattern"},
-#if CV_VERSION_MAJOR < 5
 	{VideoCondition::OBJECT_CASCADE,
 	 "AdvSceneSwitcher.condition.video.condition.objectCascade"},
-#endif
 	{VideoCondition::BRIGHTNESS,
 	 "AdvSceneSwitcher.condition.video.condition.brightness"},
 #ifdef OCR_SUPPORT

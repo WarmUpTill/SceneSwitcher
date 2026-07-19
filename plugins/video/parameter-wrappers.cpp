@@ -63,7 +63,6 @@ static bool isMinNeighborsValid(int minNeighbors)
 
 bool CascadeClassifierParameters::LoadModelData()
 {
-#if CV_VERSION_MAJOR < 5
 	const auto path = QString::fromStdString(_modelPath);
 	if (!QFileInfo(path).exists(path)) {
 		_detector.reset();
@@ -76,9 +75,6 @@ bool CascadeClassifierParameters::LoadModelData()
 	}
 	_detector = std::move(det);
 	return true;
-#else
-	return false;
-#endif
 }
 
 bool CascadeClassifierParameters::Save(obs_data_t *obj) const
@@ -160,14 +156,12 @@ ObjectDetector *CascadeClassifierParameters::GetDetector()
 			return nullptr;
 		}
 	}
-#if CV_VERSION_MAJOR < 5
 	auto *cascade =
 		static_cast<CascadeClassifierDetector *>(_detector.get());
 	cascade->scaleFactor = scaleFactor;
 	cascade->minNeighbors = minNeighbors;
 	cascade->minSize = minSize.CV();
 	cascade->maxSize = maxSize.CV();
-#endif
 	return _detector.get();
 }
 

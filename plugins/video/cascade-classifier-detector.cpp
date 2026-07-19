@@ -1,6 +1,4 @@
 #include "cascade-classifier-detector.hpp"
-#if CV_VERSION_MAJOR < 5
-
 #include "opencv-helpers.hpp"
 
 #include <log-helper.hpp>
@@ -50,4 +48,3 @@ std::vector<cv::Rect> CascadeClassifierDetector::Detect(QImage &img)
 }
 
 } // namespace advss
-#endif

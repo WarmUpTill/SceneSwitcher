@@ -1,7 +1,10 @@
 #pragma once
-#if CV_VERSION_MAJOR < 5
 #include "object-detector.hpp"
+#if CV_VERSION_MAJOR < 5
 #include <opencv2/objdetect.hpp>
+#else
+#include <opencv2/xobjdetect.hpp>
+#endif
 
 namespace advss {
 
@@ -21,4 +24,3 @@ private:
 };
 
 } // namespace advss
-#endif
