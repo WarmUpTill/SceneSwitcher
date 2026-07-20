@@ -28,6 +28,8 @@ public:
 	bool IsLoaded() const override;
 	std::vector<cv::Rect> Detect(QImage &img) override;
 
+	std::string configPath;
+
 	double confidenceThreshold = 0.5;
 	double nmsThreshold = 0.4;
 	int inputWidth = 300;

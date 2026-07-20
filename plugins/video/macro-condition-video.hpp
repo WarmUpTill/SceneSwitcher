@@ -214,6 +214,7 @@ public:
 
 private slots:
 	void ModelPathChanged(const QString &text);
+	void ConfigPathChanged(const QString &text);
 	void ConfidenceThresholdChanged(const NumberVariable<double> &);
 	void NmsThresholdChanged(const NumberVariable<double> &);
 	void InputSizeChanged(Size value);
@@ -225,6 +226,7 @@ private slots:
 
 private:
 	FileSelection *_modelDataPath;
+	FileSelection *_configPath;
 	SliderSpinBox *_confidenceThreshold;
 	SliderSpinBox *_nmsThreshold;
 	SizeSelection *_inputSize;

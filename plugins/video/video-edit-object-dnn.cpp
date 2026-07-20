@@ -28,6 +28,7 @@ DnnObjectDetectEdit::DnnObjectDetectEdit(
 	const std::shared_ptr<MacroConditionVideo> &data)
 	: QWidget(parent),
 	  _modelDataPath(new FileSelection()),
+	  _configPath(new FileSelection()),
 	  _confidenceThreshold(new SliderSpinBox(
 		  0., 1.,
 		  obs_module_text(
@@ -57,6 +58,8 @@ DnnObjectDetectEdit::DnnObjectDetectEdit(
 {
 	QWidget::connect(_modelDataPath, SIGNAL(PathChanged(const QString &)),
 			 this, SLOT(ModelPathChanged(const QString &)));
+	QWidget::connect(_configPath, SIGNAL(PathChanged(const QString &)),
+			 this, SLOT(ConfigPathChanged(const QString &)));
 	QWidget::connect(
 		_confidenceThreshold,
 		SIGNAL(DoubleValueChanged(const NumberVariable<double> &)),
@@ -83,6 +86,7 @@ DnnObjectDetectEdit::DnnObjectDetectEdit(
 
 	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{modelDataPath}}", _modelDataPath},
+		{"{{configPath}}", _configPath},
 	};
 
 	auto pathLayout = new QHBoxLayout;
@@ -91,6 +95,13 @@ DnnObjectDetectEdit::DnnObjectDetectEdit(
 		obs_module_text(
 			"AdvSceneSwitcher.condition.video.layout.dnnModelPath"),
 		pathLayout, widgetPlaceholders);
+
+	auto configPathLayout = new QHBoxLayout;
+	configPathLayout->setContentsMargins(0, 0, 0, 0);
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.condition.video.layout.dnnConfigPath"),
+		configPathLayout, widgetPlaceholders);
 
 	auto inputSizeLayout = new QHBoxLayout;
 	inputSizeLayout->setContentsMargins(0, 0, 0, 0);
@@ -118,6 +129,7 @@ DnnObjectDetectEdit::DnnObjectDetectEdit(
 	auto layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->addLayout(pathLayout);
+	layout->addLayout(configPathLayout);
 	layout->addWidget(_confidenceThreshold);
 	layout->addWidget(_nmsThreshold);
 	layout->addLayout(inputSizeLayout);
@@ -127,6 +139,7 @@ DnnObjectDetectEdit::DnnObjectDetectEdit(
 	setLayout(layout);
 
 	_modelDataPath->SetPath(_entryData->_dnnMatchParameters.GetModelPath());
+	_configPath->SetPath(_entryData->_dnnMatchParameters.GetConfigPath());
 	_confidenceThreshold->SetDoubleValue(
 		_entryData->_dnnMatchParameters.confidenceThreshold);
 	_nmsThreshold->SetDoubleValue(
@@ -147,6 +160,27 @@ void DnnObjectDetectEdit::ModelPathChanged(const QString &text)
 		auto lock = LockContext();
 		std::string path = text.toStdString();
 		dataLoaded = _entryData->_dnnMatchParameters.SetModelPath(path);
+	}
+	if (!dataLoaded) {
+		DisplayMessage(obs_module_text(
+			"AdvSceneSwitcher.condition.video.modelLoadFail"));
+	}
+	_previewDialog->DnnDetectParametersChanged(
+		_entryData->_dnnMatchParameters);
+}
+
+void DnnObjectDetectEdit::ConfigPathChanged(const QString &text)
+{
+	if (_loading || !_entryData) {
+		return;
+	}
+
+	bool dataLoaded = false;
+	{
+		auto lock = LockContext();
+		std::string path = text.toStdString();
+		dataLoaded =
+			_entryData->_dnnMatchParameters.SetConfigPath(path);
 	}
 	if (!dataLoaded) {
 		DisplayMessage(obs_module_text(

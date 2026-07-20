@@ -128,7 +128,8 @@ public:
 		  meanG(other.meanG),
 		  meanB(other.meanB),
 		  swapRB(other.swapRB),
-		  _modelPath(other._modelPath)
+		  _modelPath(other._modelPath),
+		  _configPath(other._configPath)
 	{
 	}
 	DnnDetectParameters &operator=(const DnnDetectParameters &other)
@@ -143,6 +144,7 @@ public:
 			meanB = other.meanB;
 			swapRB = other.swapRB;
 			_modelPath = other._modelPath;
+			_configPath = other._configPath;
 			_detector.reset();
 		}
 		return *this;
@@ -150,6 +152,8 @@ public:
 
 	bool SetModelPath(const std::string &path);
 	const std::string &GetModelPath() const { return _modelPath; }
+	bool SetConfigPath(const std::string &path);
+	const std::string &GetConfigPath() const { return _configPath; }
 	ObjectDetector *GetDetector();
 
 	NumberVariable<double> confidenceThreshold = 0.5;
@@ -166,6 +170,7 @@ private:
 
 	std::unique_ptr<ObjectDetector> _detector;
 	std::string _modelPath;
+	std::string _configPath;
 };
 
 class OCRParameters {

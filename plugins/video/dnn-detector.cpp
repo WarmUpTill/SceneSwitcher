@@ -11,7 +11,7 @@ namespace advss {
 bool DnnDetector::Load(const std::string &modelPath)
 {
 	try {
-		_net = cv::dnn::readNet(modelPath);
+		_net = cv::dnn::readNet(modelPath, configPath);
 	} catch (const std::exception &e) {
 		blog(LOG_WARNING, "failed to load DNN model \"%s\": %s",
 		     modelPath.c_str(), e.what());

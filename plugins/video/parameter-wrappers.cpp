@@ -174,6 +174,7 @@ bool DnnDetectParameters::LoadModelData()
 		return false;
 	}
 	auto det = std::make_unique<DnnDetector>();
+	det->configPath = _configPath;
 	if (!det->Load(_modelPath)) {
 		_detector.reset();
 		return false;
@@ -189,6 +190,7 @@ bool DnnDetectParameters::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
 	obs_data_set_string(data, "modelPath", _modelPath.c_str());
+	obs_data_set_string(data, "configPath", _configPath.c_str());
 	confidenceThreshold.Save(data, "confidenceThreshold");
 	nmsThreshold.Save(data, "nmsThreshold");
 	inputSize.Save(data, "inputSize");
@@ -209,6 +211,7 @@ bool DnnDetectParameters::Load(obs_data_t *obj)
 		return true;
 	}
 	_modelPath = obs_data_get_string(data, "modelPath");
+	_configPath = obs_data_get_string(data, "configPath");
 	confidenceThreshold.Load(data, "confidenceThreshold");
 	nmsThreshold.Load(data, "nmsThreshold");
 	inputSize.Load(data, "inputSize");
@@ -229,6 +232,14 @@ bool DnnDetectParameters::Load(obs_data_t *obj)
 bool DnnDetectParameters::SetModelPath(const std::string &path)
 {
 	_modelPath = path;
+	_detector.reset();
+	return LoadModelData();
+}
+
+bool DnnDetectParameters::SetConfigPath(const std::string &path)
+{
+	_configPath = path;
+	_detector.reset();
 	return LoadModelData();
 }
 
