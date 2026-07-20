@@ -285,33 +285,54 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     macos)
         local opencv_dir="${project_root}/deps/opencv"
         local opencv_contrib_dir="${project_root}/deps/opencv_contrib"
-        local opencv_build_dir="${opencv_dir}/build_${target##*-}"
+        local opencv_install_x86="${opencv_dir}/install_x86_64"
+        local opencv_install_arm="${opencv_dir}/install_arm64"
 
-        local -a opencv_cmake_args=(
+        local -a opencv_cmake_args_common=(
           -DCMAKE_BUILD_TYPE=Release
           -DBUILD_LIST=core,imgproc,objdetect,xobjdetect,dnn
           -DOPENCV_EXTRA_MODULES_PATH="${opencv_contrib_dir}/modules"
-          -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
-          -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
           -DWITH_KLEIDICV=OFF
-          -DPNG_ARM_NEON=off
         )
 
-        if [ "${target}" != "macos-x86_64" ]; then
-          opencv_cmake_args+=(-DWITH_IPP=OFF)
-        fi
-
         pushd ${opencv_dir}
-        log_info "Configure OpenCV ..."
-        cmake -S . -B ${opencv_build_dir} ${opencv_cmake_args}
 
-        log_info "Building OpenCV ..."
-        cmake --build ${opencv_build_dir} --config Release
+        log_info "Configure OpenCV (x86_64) ..."
+        cmake -S . -B build_x86_64 ${opencv_cmake_args_common} \
+          -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+          -DCMAKE_INSTALL_PREFIX="${opencv_install_x86}" \
+          -DWITH_IPP=OFF
 
-        log_info "Installing OpenCV ..."
-        cmake --install ${opencv_build_dir} --prefix "${advss_dep_path}" --config Release || true
+        log_info "Building OpenCV (x86_64) ..."
+        cmake --build build_x86_64 --config Release
+
+        log_info "Installing OpenCV (x86_64) ..."
+        cmake --install build_x86_64 --prefix "${opencv_install_x86}" --config Release || true
+
+        log_info "Configure OpenCV (arm64) ..."
+        cmake -S . -B build_arm64 ${opencv_cmake_args_common} \
+          -DCMAKE_OSX_ARCHITECTURES=arm64 \
+          -DCMAKE_INSTALL_PREFIX="${opencv_install_arm}"
+
+        log_info "Building OpenCV (arm64) ..."
+        cmake --build build_arm64 --config Release
+
+        log_info "Installing OpenCV (arm64) ..."
+        cmake --install build_arm64 --prefix "${opencv_install_arm}" --config Release || true
+
+        log_info "Merging OpenCV into universal binaries ..."
+        cp -R "${opencv_install_arm}/." "${advss_dep_path}"
+        for arm_lib in ${opencv_install_arm}/lib/**/*.(dylib|a)(.); do
+          local rel="${arm_lib#${opencv_install_arm}/}"
+          local x86_lib="${opencv_install_x86}/${rel}"
+          if [[ -f "${x86_lib}" ]]; then
+            lipo -create "${x86_lib}" "${arm_lib}" -output "${advss_dep_path}/${rel}"
+          fi
+        done
+
+        rm -rf "${opencv_install_x86}" "${opencv_install_arm}"
         popd
 
         local leptonica_dir="${project_root}/deps/leptonica"
