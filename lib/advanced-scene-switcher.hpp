@@ -114,6 +114,8 @@ public slots:
 	void RenameSelectedMacro();
 	void ExportMacros() const;
 	void ImportMacros();
+	void PauseSelectedMacros();
+	void UnpauseSelectedMacros();
 	void HighlightOnChange() const;
 	void on_macroSettings_clicked();
 

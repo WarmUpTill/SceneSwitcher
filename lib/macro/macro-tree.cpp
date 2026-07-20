@@ -981,6 +981,17 @@ void MacroTree::UpdateWidgets(bool force)
 	}
 }
 
+void MacroTree::UpdateRunningStates()
+{
+	MacroTreeModel *mtm = GetModel();
+	for (int i = 0; i < (int)mtm->_macros.size(); i++) {
+		auto widget = GetItemWidget(i);
+		if (widget) {
+			widget->UpdateRunning();
+		}
+	}
+}
+
 static inline void MoveItem(std::deque<std::shared_ptr<Macro>> &items,
 			    std::shared_ptr<Macro> &item, int to)
 {

@@ -145,6 +145,7 @@ public:
 	void ExpandGroup(std::shared_ptr<Macro> item) const;
 	void CollapseGroup(std::shared_ptr<Macro> item) const;
 	void RefreshFilter();
+	void UpdateRunningStates();
 
 public slots:
 	void GroupSelectedItems();
