@@ -295,6 +295,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
           -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
           -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
+          -DWITH_KLEIDICV=OFF
         )
 
         if [ "${target}" != "macos-x86_64" ]; then
