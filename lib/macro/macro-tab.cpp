@@ -745,6 +745,17 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	remove->setDisabled(ui->macros->SelectionEmpty());
 	menu.addSeparator();
 
+	auto pause = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.pause"), this,
+		&AdvSceneSwitcher::PauseSelectedMacros);
+	pause->setDisabled(ui->macros->SelectionEmpty());
+
+	auto unpause = menu.addAction(
+		obs_module_text("AdvSceneSwitcher.macroTab.unpause"), this,
+		&AdvSceneSwitcher::UnpauseSelectedMacros);
+	unpause->setDisabled(ui->macros->SelectionEmpty());
+	menu.addSeparator();
+
 	auto group = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.group"), ui->macros,
 		&MacroTree::GroupSelectedItems);
@@ -803,6 +814,48 @@ void AdvSceneSwitcher::CopyMacro()
 	ui->macros->Add(newMacro, macro);
 	disableAddButtonHighlight();
 	MacroSignalManager::Instance()->Add(QString::fromStdString(name));
+}
+
+void AdvSceneSwitcher::PauseSelectedMacros()
+{
+	auto selectedMacros = GetSelectedMacros();
+	if (selectedMacros.empty()) {
+		return;
+	}
+
+	auto lock = LockContext();
+	for (const auto &macro : selectedMacros) {
+		if (macro->IsGroup()) {
+			for (const auto &subitem :
+			     GetGroupMacroEntries(macro.get())) {
+				subitem->SetPaused(true);
+			}
+		} else {
+			macro->SetPaused(true);
+		}
+	}
+	ui->macros->UpdateRunningStates();
+}
+
+void AdvSceneSwitcher::UnpauseSelectedMacros()
+{
+	auto selectedMacros = GetSelectedMacros();
+	if (selectedMacros.empty()) {
+		return;
+	}
+
+	auto lock = LockContext();
+	for (const auto &macro : selectedMacros) {
+		if (macro->IsGroup()) {
+			for (const auto &subitem :
+			     GetGroupMacroEntries(macro.get())) {
+				subitem->SetPaused(false);
+			}
+		} else {
+			macro->SetPaused(false);
+		}
+	}
+	ui->macros->UpdateRunningStates();
 }
 
 bool MacroTabIsInFocus()
