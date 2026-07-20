@@ -296,6 +296,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
           -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
           -DWITH_KLEIDICV=OFF
+          -DPNG_ARM_NEON=off
         )
 
         if [ "${target}" != "macos-x86_64" ]; then
