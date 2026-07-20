@@ -289,7 +289,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         local -a opencv_cmake_args=(
           -DCMAKE_BUILD_TYPE=Release
-          -DBUILD_LIST=core,imgproc,objdetect,xobjdetect
+          -DBUILD_LIST=core,imgproc,objdetect,xobjdetect,dnn
           -DOPENCV_EXTRA_MODULES_PATH="${opencv_contrib_dir}/modules"
           -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
           -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}

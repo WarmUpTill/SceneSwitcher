@@ -116,7 +116,7 @@ function Build {
         "-DCMAKE_BUILD_TYPE=Release"
         "-DCMAKE_PREFIX_PATH:PATH=${OBSDepPath}"
         "-DCMAKE_INSTALL_PREFIX:PATH=${ADVSSDepPath}"
-        "-DBUILD_LIST=core,imgproc,objdetect,xobjdetect"
+        "-DBUILD_LIST=core,imgproc,objdetect,xobjdetect,dnn"
         "-DOPENCV_EXTRA_MODULES_PATH:PATH=${OpenCVContribPath}/modules"
     )
 
