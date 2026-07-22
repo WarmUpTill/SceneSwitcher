@@ -1,5 +1,7 @@
 #pragma once
 
+#include <export-symbol-helper.hpp>
+
 #include <QFrame>
 #include <QGridLayout>
 #include <QParallelAnimationGroup>
@@ -8,7 +10,7 @@
 
 namespace advss {
 
-class Section : public QWidget {
+class ADVSS_EXPORT Section : public QWidget {
 	Q_OBJECT
 
 public:
