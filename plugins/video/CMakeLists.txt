@@ -54,8 +54,13 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE area-selection.cpp
           area-selection.hpp
+          cascade-classifier-detector.cpp
+          cascade-classifier-detector.hpp
+          dnn-detector.cpp
+          dnn-detector.hpp
           macro-condition-video.cpp
           macro-condition-video.hpp
+          object-detector.hpp
           opencv-helpers.cpp
           opencv-helpers.hpp
           parameter-wrappers.cpp
@@ -63,7 +68,13 @@ target_sources(
           preview-dialog.cpp
           preview-dialog.hpp
           screenshot-dialog.cpp
-          screenshot-dialog.hpp)
+          screenshot-dialog.hpp
+          video-edit-area.cpp
+          video-edit-brightness.cpp
+          video-edit-color.cpp
+          video-edit-object.cpp
+          video-edit-object-dnn.cpp
+          video-edit-ocr.cpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

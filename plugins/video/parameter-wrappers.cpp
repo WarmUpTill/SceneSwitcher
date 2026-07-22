@@ -1,4 +1,6 @@
 #include "parameter-wrappers.hpp"
+#include "cascade-classifier-detector.hpp"
+#include "dnn-detector.hpp" // guarded internally with HAVE_OPENCV_DNN
 #include "log-helper.hpp"
 
 #include <QFileInfo>
@@ -48,45 +50,6 @@ bool PatternMatchParameters::Load(obs_data_t *obj)
 	return true;
 }
 
-static std::shared_ptr<cv::CascadeClassifier>
-initObjectCascade(std::string &path)
-{
-	auto cascade = std::make_shared<cv::CascadeClassifier>();
-	try {
-		cascade->load(path);
-	} catch (...) {
-		blog(LOG_WARNING, "failed to load model data \"%s\"",
-		     path.c_str());
-	}
-	return cascade;
-}
-
-bool ObjDetectParameters::LoadModelData()
-{
-	const auto path = QString::fromStdString(modelPath);
-	if (!QFileInfo(path).exists(path)) {
-		cascade.reset();
-		return false;
-	}
-
-	cascade = initObjectCascade(modelPath);
-	return !cascade->empty();
-}
-
-bool ObjDetectParameters::Save(obs_data_t *obj) const
-{
-	auto data = obs_data_create();
-	obs_data_set_string(data, "modelPath", modelPath.c_str());
-	scaleFactor.Save(data, "scaleFactor");
-	obs_data_set_int(data, "minNeighbors", minNeighbors);
-	minSize.Save(data, "minSize");
-	maxSize.Save(data, "maxSize");
-	obs_data_set_obj(obj, "objectMatchData", data);
-	obs_data_set_int(data, "version", 2);
-	obs_data_release(data);
-	return true;
-}
-
 static bool isScaleFactorValid(double scaleFactor)
 {
 	return scaleFactor > 1.;
@@ -98,11 +61,41 @@ static bool isMinNeighborsValid(int minNeighbors)
 	       minNeighbors <= maxMinNeighbors;
 }
 
-bool ObjDetectParameters::Load(obs_data_t *obj)
+bool CascadeClassifierParameters::LoadModelData()
+{
+	const auto path = QString::fromStdString(_modelPath);
+	if (!QFileInfo(path).exists(path)) {
+		_detector.reset();
+		return false;
+	}
+	auto det = std::make_unique<CascadeClassifierDetector>();
+	if (!det->Load(_modelPath)) {
+		_detector.reset();
+		return false;
+	}
+	_detector = std::move(det);
+	return true;
+}
+
+bool CascadeClassifierParameters::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	obs_data_set_string(data, "modelPath", _modelPath.c_str());
+	scaleFactor.Save(data, "scaleFactor");
+	obs_data_set_int(data, "minNeighbors", minNeighbors);
+	minSize.Save(data, "minSize");
+	maxSize.Save(data, "maxSize");
+	obs_data_set_int(data, "version", 2);
+	obs_data_set_obj(obj, "objectMatchData", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool CascadeClassifierParameters::Load(obs_data_t *obj)
 {
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(obj, "patternMatchData")) {
-		modelPath = obs_data_get_string(obj, "modelDataPath");
+		_modelPath = obs_data_get_string(obj, "modelDataPath");
 		scaleFactor = obs_data_get_double(obj, "scaleFactor");
 		if (!isScaleFactorValid(scaleFactor)) {
 			scaleFactor = 1.1;
@@ -116,7 +109,7 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 		return true;
 	}
 	auto data = obs_data_get_obj(obj, "objectMatchData");
-	modelPath = obs_data_get_string(data, "modelPath");
+	_modelPath = obs_data_get_string(data, "modelPath");
 	scaleFactor.Load(data, "scaleFactor");
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(data, "version")) {
@@ -129,11 +122,11 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 		// which invalidates previously saved default model paths.
 		const std::string oldPrefix =
 			"../../data/obs-plugins/advanced-scene-switcher/res/cascadeClassifiers/";
-		if (modelPath.substr(0, oldPrefix.size()) == oldPrefix) {
-			modelPath = std::string(obs_get_module_data_path(
-					    obs_current_module())) +
-				    "/res/cascadeClassifiers/" +
-				    modelPath.substr(oldPrefix.size());
+		if (_modelPath.substr(0, oldPrefix.size()) == oldPrefix) {
+			_modelPath = std::string(obs_get_module_data_path(
+					     obs_current_module())) +
+				     "/res/cascadeClassifiers/" +
+				     _modelPath.substr(oldPrefix.size());
 		}
 #endif
 	}
@@ -147,27 +140,130 @@ bool ObjDetectParameters::Load(obs_data_t *obj)
 	minSize.Load(data, "minSize");
 	maxSize.Load(data, "maxSize");
 	obs_data_release(data);
-
 	return true;
 }
 
-bool ObjDetectParameters::SetModelPath(const std::string &path)
+bool CascadeClassifierParameters::SetModelPath(const std::string &path)
 {
-	modelPath = path;
+	_modelPath = path;
 	return LoadModelData();
 }
 
-std::shared_ptr<cv::CascadeClassifier> ObjDetectParameters::GetModel()
+ObjectDetector *CascadeClassifierParameters::GetDetector()
 {
-	if (cascade && !cascade->empty()) {
-		return cascade;
+	if (!_detector || !_detector->IsLoaded()) {
+		if (!LoadModelData()) {
+			return nullptr;
+		}
 	}
+	auto *cascade =
+		static_cast<CascadeClassifierDetector *>(_detector.get());
+	cascade->scaleFactor = scaleFactor;
+	cascade->minNeighbors = minNeighbors;
+	cascade->minSize = minSize.CV();
+	cascade->maxSize = maxSize.CV();
+	return _detector.get();
+}
 
-	if (!LoadModelData()) {
-		return {};
+bool DnnDetectParameters::LoadModelData()
+{
+#ifdef HAVE_OPENCV_DNN
+	const auto path = QString::fromStdString(_modelPath);
+	if (!QFileInfo(path).exists(path)) {
+		_detector.reset();
+		return false;
 	}
+	auto det = std::make_unique<DnnDetector>();
+	det->configPath = _configPath;
+	if (!det->Load(_modelPath)) {
+		_detector.reset();
+		return false;
+	}
+	_detector = std::move(det);
+	return true;
+#else
+	return false;
+#endif
+}
 
-	return cascade;
+bool DnnDetectParameters::Save(obs_data_t *obj) const
+{
+	auto data = obs_data_create();
+	obs_data_set_string(data, "modelPath", _modelPath.c_str());
+	obs_data_set_string(data, "configPath", _configPath.c_str());
+	confidenceThreshold.Save(data, "confidenceThreshold");
+	nmsThreshold.Save(data, "nmsThreshold");
+	inputSize.Save(data, "inputSize");
+	obs_data_set_double(data, "scaleFactor", scaleFactor);
+	obs_data_set_double(data, "meanR", meanR);
+	obs_data_set_double(data, "meanG", meanG);
+	obs_data_set_double(data, "meanB", meanB);
+	obs_data_set_bool(data, "swapRB", swapRB);
+	obs_data_set_obj(obj, "dnnObjectMatchData", data);
+	obs_data_release(data);
+	return true;
+}
+
+bool DnnDetectParameters::Load(obs_data_t *obj)
+{
+	auto data = obs_data_get_obj(obj, "dnnObjectMatchData");
+	if (!data) {
+		return true;
+	}
+	_modelPath = obs_data_get_string(data, "modelPath");
+	_configPath = obs_data_get_string(data, "configPath");
+	confidenceThreshold.Load(data, "confidenceThreshold");
+	nmsThreshold.Load(data, "nmsThreshold");
+	inputSize.Load(data, "inputSize");
+	obs_data_set_default_double(data, "scaleFactor", 1.0 / 127.5);
+	obs_data_set_default_double(data, "meanR", 127.5);
+	obs_data_set_default_double(data, "meanG", 127.5);
+	obs_data_set_default_double(data, "meanB", 127.5);
+	obs_data_set_default_bool(data, "swapRB", true);
+	scaleFactor = obs_data_get_double(data, "scaleFactor");
+	meanR = obs_data_get_double(data, "meanR");
+	meanG = obs_data_get_double(data, "meanG");
+	meanB = obs_data_get_double(data, "meanB");
+	swapRB = obs_data_get_bool(data, "swapRB");
+	obs_data_release(data);
+	return true;
+}
+
+bool DnnDetectParameters::SetModelPath(const std::string &path)
+{
+	_modelPath = path;
+	_detector.reset();
+	return LoadModelData();
+}
+
+bool DnnDetectParameters::SetConfigPath(const std::string &path)
+{
+	_configPath = path;
+	_detector.reset();
+	return LoadModelData();
+}
+
+ObjectDetector *DnnDetectParameters::GetDetector()
+{
+	if (!_detector || !_detector->IsLoaded()) {
+		if (!LoadModelData()) {
+			return nullptr;
+		}
+	}
+#ifdef HAVE_OPENCV_DNN
+	auto *dnn = static_cast<DnnDetector *>(_detector.get());
+	dnn->confidenceThreshold = confidenceThreshold;
+	dnn->nmsThreshold = nmsThreshold;
+	auto sz = inputSize.CV();
+	dnn->inputWidth = sz.width;
+	dnn->inputHeight = sz.height;
+	dnn->scaleFactor = scaleFactor;
+	dnn->meanR = meanR;
+	dnn->meanG = meanG;
+	dnn->meanB = meanB;
+	dnn->swapRB = swapRB;
+#endif
+	return _detector.get();
 }
 
 bool AreaParameters::Save(obs_data_t *obj) const

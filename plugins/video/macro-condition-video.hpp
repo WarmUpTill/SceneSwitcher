@@ -16,6 +16,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -70,7 +71,8 @@ public:
 	bool _blockUntilScreenshotDone = true;
 	NumberVariable<double> _brightnessThreshold = 0.5;
 	PatternMatchParameters _patternMatchParameters;
-	ObjDetectParameters _objMatchParameters;
+	CascadeClassifierParameters _cascadeMatchParameters;
+	DnnDetectParameters _dnnMatchParameters;
 	OCRParameters _ocrParameters;
 	ColorParameters _colorParameters;
 	AreaParameters _areaParameters;
@@ -89,6 +91,7 @@ private:
 	bool OutputChanged();
 	bool ScreenshotContainsPattern();
 	bool ScreenshotContainsObject();
+	bool ScreenshotContainsDnnObject();
 	bool CheckBrightnessThreshold();
 	bool CheckOCR();
 	bool CheckColor();
@@ -174,12 +177,12 @@ private:
 	bool _loading = true;
 };
 
-class ObjectDetectEdit : public QWidget {
+class CascadeClassifierEdit : public QWidget {
 	Q_OBJECT
 
 public:
-	ObjectDetectEdit(QWidget *parent, PreviewDialog *,
-			 const std::shared_ptr<MacroConditionVideo> &);
+	CascadeClassifierEdit(QWidget *parent, PreviewDialog *,
+			      const std::shared_ptr<MacroConditionVideo> &);
 
 private slots:
 	void ModelPathChanged(const QString &text);
@@ -195,6 +198,43 @@ private:
 	QLabel *_minNeighborsDescription;
 	SizeSelection *_minSize;
 	SizeSelection *_maxSize;
+
+	PreviewDialog *_previewDialog;
+
+	std::shared_ptr<MacroConditionVideo> _entryData;
+	bool _loading = true;
+};
+
+class DnnObjectDetectEdit : public QWidget {
+	Q_OBJECT
+
+public:
+	DnnObjectDetectEdit(QWidget *parent, PreviewDialog *,
+			    const std::shared_ptr<MacroConditionVideo> &);
+
+private slots:
+	void ModelPathChanged(const QString &text);
+	void ConfigPathChanged(const QString &text);
+	void ConfidenceThresholdChanged(const NumberVariable<double> &);
+	void NmsThresholdChanged(const NumberVariable<double> &);
+	void InputSizeChanged(Size value);
+	void ScaleFactorChanged(double value);
+	void MeanRChanged(double value);
+	void MeanGChanged(double value);
+	void MeanBChanged(double value);
+	void SwapRBChanged(int value);
+
+private:
+	FileSelection *_modelDataPath;
+	FileSelection *_configPath;
+	SliderSpinBox *_confidenceThreshold;
+	SliderSpinBox *_nmsThreshold;
+	SizeSelection *_inputSize;
+	QDoubleSpinBox *_scaleFactor;
+	QDoubleSpinBox *_meanR;
+	QDoubleSpinBox *_meanG;
+	QDoubleSpinBox *_meanB;
+	QCheckBox *_swapRB;
 
 	PreviewDialog *_previewDialog;
 
@@ -320,7 +360,8 @@ private:
 
 	BrightnessEdit *_brightness;
 	OCREdit *_ocr;
-	ObjectDetectEdit *_objectDetect;
+	CascadeClassifierEdit *_cascadeClassifierEdit;
+	DnnObjectDetectEdit *_dnnObjectDetect;
 	ColorEdit *_color;
 	AreaEdit *_area;
 

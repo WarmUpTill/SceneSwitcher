@@ -135,29 +135,6 @@ double MatchPattern(QImage &img, QImage &pattern, double threshold,
 			    matchColor);
 }
 
-std::vector<cv::Rect> MatchObject(QImage &img, cv::CascadeClassifier &cascade,
-				  double scaleFactor, int minNeighbors,
-				  const cv::Size &minSize,
-				  const cv::Size &maxSize)
-{
-	if (img.isNull() || cascade.empty()) {
-		return {};
-	}
-
-	auto image = QImageToMat(img);
-	cv::Mat frameGray;
-	cv::cvtColor(image, frameGray, cv::COLOR_RGBA2GRAY);
-	cv::equalizeHist(frameGray, frameGray);
-	std::vector<cv::Rect> objects;
-	try {
-		cascade.detectMultiScale(frameGray, objects, scaleFactor,
-					 minNeighbors, 0, minSize, maxSize);
-	} catch (const std::exception &e) {
-		vblog(LOG_INFO, "detectMultiScale failed: %s", e.what());
-	}
-	return objects;
-}
-
 uchar GetAvgBrightness(QImage &img)
 {
 	if (img.isNull()) {

@@ -27,7 +27,8 @@ public slots:
 	void CreateImage(const VideoInput &, PreviewType,
 			 const PatternMatchParameters &,
 			 const PatternImageData &,
-			 std::shared_ptr<ObjDetectParameters>,
+			 std::shared_ptr<CascadeClassifierParameters>,
+			 std::shared_ptr<DnnDetectParameters>,
 			 std::shared_ptr<OCRParameters>, const AreaParameters &,
 			 VideoCondition);
 signals:
@@ -38,12 +39,12 @@ signals:
 private:
 	void MarkMatch(QImage &screenshot, const PatternMatchParameters &,
 		       const PatternImageData &,
-		       std::shared_ptr<ObjDetectParameters>,
+		       std::shared_ptr<CascadeClassifierParameters>,
+		       std::shared_ptr<DnnDetectParameters>,
 		       std::shared_ptr<OCRParameters>, VideoCondition);
 	void MarkPatternMatch(QImage &, const PatternMatchParameters &,
 			      const PatternImageData &);
-	void MarkObjectMatch(QImage &,
-			     const std::shared_ptr<ObjDetectParameters> &);
+	void MarkObjectsFromDetector(QImage &, ObjectDetector *);
 	void MarkOCRMatch(QImage &, const std::shared_ptr<OCRParameters> &);
 
 	std::mutex &_mtx;
@@ -62,7 +63,9 @@ public:
 
 public slots:
 	void PatternMatchParametersChanged(const PatternMatchParameters &);
-	void ObjDetectParametersChanged(const ObjDetectParameters &);
+	void
+	CascadeClassifierParametersChanged(const CascadeClassifierParameters &);
+	void DnnDetectParametersChanged(const DnnDetectParameters &);
 	void OCRParametersChanged(const OCRParameters &);
 	void VideoSelectionChanged(const VideoInput &);
 	void AreaParametersChanged(const AreaParameters &);
@@ -75,7 +78,8 @@ signals:
 	void SelectionAreaChanged(QRect area);
 	void NeedImage(const VideoInput &, PreviewType,
 		       const PatternMatchParameters &, const PatternImageData &,
-		       std::shared_ptr<ObjDetectParameters>,
+		       std::shared_ptr<CascadeClassifierParameters>,
+		       std::shared_ptr<DnnDetectParameters>,
 		       std::shared_ptr<OCRParameters>, const AreaParameters &,
 		       VideoCondition);
 
@@ -90,7 +94,8 @@ private:
 	VideoInput _video;
 	PatternMatchParameters _patternMatchParams;
 	PatternImageData _patternImageData;
-	std::shared_ptr<ObjDetectParameters> _objDetectParams;
+	std::shared_ptr<CascadeClassifierParameters> _cascadeParams;
+	std::shared_ptr<DnnDetectParameters> _dnnDetectParams;
 	std::shared_ptr<OCRParameters> _ocrParams;
 	AreaParameters _areaParams;
 
