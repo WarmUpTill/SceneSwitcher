@@ -559,3 +559,58 @@ else()
     set_target_properties_obs(${PROJECT_NAME} PROPERTIES PREFIX "")
   endif()
 endif()
+
+# --- Install third-party dependency licenses ---
+#
+# Each entry is "display-name:path/to/license/file" relative to deps/. Files are
+# silently skipped when a submodule is not checked out.
+set(_dep_license_files
+    "asio:asio/asio/LICENSE_1_0.txt"
+    "cpp-httplib:cpp-httplib/LICENSE"
+    "json:json/LICENSE.MIT"
+    "jsoncons:jsoncons/LICENSE"
+    "leptonica:leptonica/leptonica-license.txt"
+    "libremidi:libremidi/LICENSE.md"
+    "libusb:libusb/COPYING"
+    "opencv:opencv/LICENSE"
+    "openvr:openvr/LICENSE"
+    "paho-mqtt:paho.mqtt.cpp/LICENSE"
+    "tesseract:tesseract/LICENSE"
+    "websocketpp:websocketpp/COPYING")
+
+if(DEB_INSTALL)
+  if(NOT DATA_OUT_DIR)
+    set(DATA_OUT_DIR "/share/obs/obs-plugins/${PROJECT_NAME}")
+  endif()
+  set(_license_dest "${CMAKE_INSTALL_PREFIX}/${DATA_OUT_DIR}/licenses")
+elseif(OS_MACOS)
+  # macOS: license files become bundle Resources/licenses/* entries
+  set(_license_dest "")
+else()
+  # Windows and non-DEB Linux: alongside the plugin's data directory
+  set(_license_dest "${CMAKE_PROJECT_NAME}/data/licenses")
+endif()
+
+foreach(_entry IN LISTS _dep_license_files)
+  string(REGEX MATCH "^([^:]+):(.+)$" _m "${_entry}")
+  set(_dep_name "${CMAKE_MATCH_1}")
+  set(_dep_file "${CMAKE_CURRENT_SOURCE_DIR}/deps/${CMAKE_MATCH_2}")
+
+  if(NOT EXISTS "${_dep_file}")
+    continue()
+  endif()
+
+  if(OS_MACOS)
+    # Copy to binary dir so we can give the file a clean name
+    set(_staged "${CMAKE_CURRENT_BINARY_DIR}/licenses/LICENSE-${_dep_name}")
+    configure_file("${_dep_file}" "${_staged}" COPYONLY)
+    target_sources(${PROJECT_NAME} PRIVATE "${_staged}")
+    set_source_files_properties("${_staged}" PROPERTIES MACOSX_PACKAGE_LOCATION
+                                                        "Resources/licenses")
+  else()
+    install(
+      FILES "${_dep_file}"
+      DESTINATION "${_license_dest}"
+      RENAME "LICENSE-${_dep_name}")
+  endif()
+endforeach()
