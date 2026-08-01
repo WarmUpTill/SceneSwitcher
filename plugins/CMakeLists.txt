@@ -41,6 +41,7 @@ add_plugin(stream-deck)
 add_plugin(twitch)
 add_plugin(usb)
 add_plugin(video)
+add_plugin(speech)
 
 # ---------------------------------------------------------------------------- #
 
