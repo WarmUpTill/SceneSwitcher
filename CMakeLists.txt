@@ -576,7 +576,8 @@ set(_dep_license_files
     "openvr:openvr/LICENSE"
     "paho-mqtt:paho.mqtt.cpp/LICENSE"
     "tesseract:tesseract/LICENSE"
-    "websocketpp:websocketpp/COPYING")
+    "websocketpp:websocketpp/COPYING"
+    "whisper:whisper.cpp/LICENSE")
 
 if(DEB_INSTALL)
   if(NOT DATA_OUT_DIR)
