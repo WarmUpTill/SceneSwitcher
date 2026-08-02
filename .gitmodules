@@ -37,3 +37,6 @@
 [submodule "deps/opencv_contrib"]
 	path = deps/opencv_contrib
 	url = https://github.com/opencv/opencv_contrib.git
+[submodule "deps/whisper.cpp"]
+	path = deps/whisper.cpp
+	url = https://github.com/ggml-org/whisper.cpp.git
