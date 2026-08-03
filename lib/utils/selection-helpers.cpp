@@ -10,6 +10,7 @@
 
 #include <obs-frontend-api.h>
 #include <QStandardItemModel>
+#include <unordered_set>
 
 namespace advss {
 
@@ -42,34 +43,46 @@ static void hasFilterEnum(obs_source_t *, obs_source_t *filter, void *ptr)
 
 QStringList GetSourcesWithFilterNames()
 {
+	struct EnumParam {
+		QStringList list;
+		// Some items appear in both obs_enum_sources and
+		// obs_enum_scenes, so track pointers to avoid adding them
+		// twice.
+		std::unordered_set<obs_source_t *> seen;
+	};
+
 	static auto enumSourcesWithFilters = [](void *param,
 						obs_source_t *source) {
 		if (!source) {
 			return true;
 		}
-		QStringList *list = reinterpret_cast<QStringList *>(param);
+		auto *ep = reinterpret_cast<EnumParam *>(param);
+		const auto [_, inserted] = ep->seen.insert(source);
+		if (!inserted) {
+			return true;
+		}
 		bool hasFilter = false;
 		obs_source_enum_filters(source, hasFilterEnum, &hasFilter);
 		if (hasFilter) {
-			*list << obs_source_get_name(source);
+			ep->list << obs_source_get_name(source);
 		}
 		return true;
 	};
 
-	QStringList list;
-	obs_enum_sources(enumSourcesWithFilters, &list);
+	EnumParam ep;
+	obs_enum_sources(enumSourcesWithFilters, &ep);
 
 #if LIBOBS_API_VER < MAKE_SEMANTIC_VERSION(31, 1, 0)
-	obs_enum_scenes(enumSourcesWithFilters, &list);
+	obs_enum_scenes(enumSourcesWithFilters, &ep);
 #else
-	static const auto enumCanvases = [](void *listPtr,
+	static const auto enumCanvases = [](void *param,
 					    obs_canvas_t *canvas) -> bool {
-		obs_canvas_enum_scenes(canvas, enumSourcesWithFilters, listPtr);
+		obs_canvas_enum_scenes(canvas, enumSourcesWithFilters, param);
 		return true;
 	};
-	obs_enum_canvases(enumCanvases, &list);
+	obs_enum_canvases(enumCanvases, &ep);
 #endif
-	return list;
+	return ep.list;
 }
 
 QStringList GetMediaSourceNames()
