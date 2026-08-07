@@ -249,6 +249,14 @@ jobs:
           name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-sources-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-*-source.*
 
+      - name: Rename artifacts for Ubuntu 24 🏷️
+        run: |
+          : Rename artifacts for Ubuntu 24 🏷️
+          for f in ${{ github.workspace }}/release/*-x86_64-linux-gnu.*; do
+            [ -e "${f}" ] || continue
+            mv "${f}" "${f/x86_64-linux-gnu/x86_64-ubuntu24.04-linux-gnu}"
+          done
+
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v7
         with:
@@ -319,6 +327,14 @@ jobs:
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
           target: x86_64
           config: ${{ needs.check-event.outputs.config }}
+
+      - name: Rename artifacts for Ubuntu 26 🏷️
+        run: |
+          : Rename artifacts for Ubuntu 26 🏷️
+          for f in ${{ github.workspace }}/release/*-x86_64-linux-gnu.*; do
+            [ -e "${f}" ] || continue
+            mv "${f}" "${f/x86_64-linux-gnu/x86_64-ubuntu26.04-linux-gnu}"
+          done
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v7
