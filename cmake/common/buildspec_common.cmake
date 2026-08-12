@@ -191,13 +191,20 @@ function(_check_dependencies)
       foreach(i RANGE 1 ${MAX_DOWNLOAD_RETRIES})
         message(STATUS "Attempt ${i}/${MAX_DOWNLOAD_RETRIES} for ${url}")
 
-        file(
-          DOWNLOAD "${url}" "${dependencies_dir}/${file}"
-          STATUS download_status
-          EXPECTED_HASH SHA256=${hash})
+        file(DOWNLOAD "${url}" "${dependencies_dir}/${file}"
+             STATUS download_status)
 
         list(GET download_status 0 error_code)
         list(GET download_status 1 error_message)
+
+        if(error_code EQUAL 0)
+          file(SHA256 "${dependencies_dir}/${file}" actual_hash)
+          if(NOT actual_hash STREQUAL hash)
+            set(error_code 1)
+            set(error_message
+                "hash mismatch (expected ${hash}, got ${actual_hash})")
+          endif()
+        endif()
 
         if(error_code EQUAL 0)
           message(STATUS "Downloading ${url} - success on attempt ${i}")
