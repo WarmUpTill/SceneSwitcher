@@ -1,4 +1,5 @@
 #include "macro-condition-edit.hpp"
+#include "macro-undo-redo.hpp"
 
 #include "advanced-scene-switcher.hpp"
 #include "condition-logic.hpp"
@@ -250,6 +251,19 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		return;
 	}
 
+	Macro *const parentMacro =
+		(*_entryData)->GetMacro()->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	}
+
+	const std::string oldId = (*_entryData)->GetId();
+	const int oldLogic = (int)(*_entryData)->GetLogicType();
+	OBSDataAutoRelease oldData = obs_data_create();
+	(*_entryData)->Save(oldData);
+
 	auto temp = DurationModifier();
 	_dur->SetValue(temp);
 	HeaderInfoChanged("");
@@ -266,6 +280,17 @@ void MacroConditionEdit::ConditionSelectionChanged(const QString &text)
 		(*_entryData)->SetEnabled(enabled);
 		(*_entryData)->PostLoad();
 		RunAndClearPostLoadSteps();
+	}
+
+	OBSDataAutoRelease newData = obs_data_create();
+	(*_entryData)->Save(newData);
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
+	} else {
+		RegisterSegmentTypeChangeUndoRedo(
+			macro, MacroEdit::SegmentType::CONDITION, idx, oldId,
+			oldData, oldLogic, id, newData,
+			(int)(*_entryData)->GetLogicType());
 	}
 	auto widget =
 		MacroConditionFactory::CreateWidget(id, this, *_entryData);

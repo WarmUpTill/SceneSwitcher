@@ -7,6 +7,7 @@
 #include "macro-helpers.hpp"
 #include "macro-search.hpp"
 #include "macro-settings.hpp"
+#include "macro-undo-redo.hpp"
 #include "macro.hpp"
 #include "path-helpers.hpp"
 #include "source-helpers.hpp"
@@ -1028,6 +1029,14 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	ui->suppressCrashRecoveryDialog->setChecked(GetSuppressCrashDialog());
 	ui->hideLegacyTabs->setChecked(switcher->hideLegacyTabs);
 	ui->settingsLock->setChecked(switcher->settingsLockEnabled);
+	ui->disableUndoRedo->setChecked(!GetUndoRedoEnabled());
+	connect(ui->disableUndoRedo, &QCheckBox::stateChanged, this,
+		[this](int state) {
+			if (loading) {
+				return;
+			}
+			SetUndoRedoEnabled(!state);
+		});
 
 	populatePriorityFunctionList(ui->priorityList);
 	populateThreadPriorityList(ui->threadPriority);
