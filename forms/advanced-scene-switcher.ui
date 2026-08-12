@@ -265,6 +265,13 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QCheckBox" name="disableUndoRedo">
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableUndoRedo</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>

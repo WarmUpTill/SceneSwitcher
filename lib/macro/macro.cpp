@@ -797,6 +797,11 @@ std::shared_ptr<Macro> Macro::Parent() const
 	return _parent.lock();
 }
 
+void Macro::SetNestedParentMacro(Macro *parent)
+{
+	_nestedParentMacro = parent;
+}
+
 bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 {
 	if (!saveForCopy) {
