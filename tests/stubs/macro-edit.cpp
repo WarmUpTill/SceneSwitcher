@@ -110,7 +110,9 @@ void MacroEdit::HighlightControls() const {}
 void MacroEdit::PopulateMacroActions(Macro &, uint32_t) {}
 void MacroEdit::PopulateMacroElseActions(Macro &, uint32_t) {}
 void MacroEdit::PopulateMacroConditions(Macro &, uint32_t) {}
-void MacroEdit::SetupMacroSegmentSelection(MacroSection, int) {}
+void MacroEdit::InsertSegmentWidget(SegmentType, int) {}
+void MacroEdit::RemoveSegmentWidget(SegmentType, int) {}
+void MacroEdit::SetupMacroSegmentSelection(SegmentType, int) {}
 void MacroEdit::SetupContextMenu(const QPoint &,
 				 const std::function<void(MacroEdit *, int)> &,
 				 const std::function<void(MacroEdit *)> &,

@@ -7,6 +7,7 @@
 #include "macro-settings.hpp"
 #include "macro-signals.hpp"
 #include "macro-tree.hpp"
+#include "macro-undo-redo.hpp"
 #include "macro.hpp"
 #include "math-helpers.hpp"
 #include "name-dialog.hpp"
@@ -122,6 +123,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		ui->macros->Add(newMacro);
 		MacroSignalManager::Instance()->Add(
 			QString::fromStdString(name));
+		RegisterMacroAddUndoRedo(name);
 		return;
 	}
 
@@ -131,6 +133,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		ui->macros->AddToGroup(newMacro, selectedMacro);
 		MacroSignalManager::Instance()->Add(
 			QString::fromStdString(name));
+		RegisterMacroAddUndoRedo(name);
 		return;
 	}
 
@@ -139,12 +142,14 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 		ui->macros->Add(newMacro, selectedMacro);
 		MacroSignalManager::Instance()->Add(
 			QString::fromStdString(name));
+		RegisterMacroAddUndoRedo(name);
 		return;
 	}
 
 	Macro::PrepareMoveToGroup(selectedMacroGroup, newMacro);
 	ui->macros->Add(newMacro, selectedMacro);
 	MacroSignalManager::Instance()->Add(QString::fromStdString(name));
+	RegisterMacroAddUndoRedo(name);
 }
 
 static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
@@ -183,6 +188,12 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 		if (!DisplayMessage(deleteWarning.arg(name), true)) {
 			return;
 		}
+	}
+
+	if (macro->IsGroup()) {
+		RegisterGroupDeleteUndoRedo(macro.get());
+	} else {
+		RegisterMacroRemoveUndoRedo(macro.get());
 	}
 
 	if (macro->IsGroup()) {
@@ -241,13 +252,16 @@ void AdvSceneSwitcher::RemoveSelectedMacros()
 void AdvSceneSwitcher::RenameMacro(std::shared_ptr<Macro> &macro,
 				   const QString &name)
 {
-	auto oldName = QString::fromStdString(macro->Name());
+	const std::string oldName = macro->Name();
+	const std::string newName = name.toStdString();
 	{
 		auto lock = LockContext();
-		macro->SetName(name.toStdString());
+		macro->SetName(newName);
 	}
 
-	MacroSignalManager::Instance()->Rename(oldName, name);
+	RegisterMacroRenameUndoRedo(oldName, newName);
+	MacroSignalManager::Instance()->Rename(QString::fromStdString(oldName),
+					       name);
 }
 
 void AdvSceneSwitcher::on_macroRemove_clicked()

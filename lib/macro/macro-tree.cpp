@@ -1,4 +1,5 @@
 #include "macro-tree.hpp"
+#include "macro-undo-redo.hpp"
 
 #include "macro-helpers.hpp"
 #include "macro-search.hpp"
@@ -824,6 +825,8 @@ void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
 
 	Reset(_macros);
 	assert(IsInValidState());
+
+	RegisterGroupCreateUndoRedo(name.toStdString());
 }
 
 void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
@@ -837,6 +840,7 @@ void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 		std::shared_ptr<Macro> item = _macros[ModelIndexToMacroIndex(
 			indices[i].row(), _macros)];
 		if (item->IsGroup()) {
+			RegisterGroupRemoveUndoRedo(item->Name());
 			Macro::RemoveGroup(item);
 		}
 	}
