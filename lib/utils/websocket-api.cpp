@@ -1,6 +1,7 @@
 #include "websocket-api.hpp"
 #include "obs-websocket-api.h"
 #include "plugin-state-helpers.hpp"
+#include "version.h"
 
 // Must be after "obs-websocket-api.h" to avoid logging function conflict
 #include "log-helper.hpp"
@@ -15,6 +16,7 @@ static constexpr char VendorName[] = "AdvancedSceneSwitcher";
 static constexpr char VendorRequestStart[] = "AdvancedSceneSwitcherStart";
 static constexpr char VendorRequestStop[] = "AdvancedSceneSwitcherStop";
 static constexpr char VendorRequestStatus[] = "IsAdvancedSceneSwitcherRunning";
+static constexpr char VendorRequestVersion[] = "AdvancedSceneSwitcherVersion";
 static obs_websocket_vendor vendor;
 
 static void registerWebsocketVendor();
@@ -81,6 +83,12 @@ static void registerWebsocketVendor()
 		[](obs_data_t *, obs_data_t *response, void *) {
 			obs_data_set_bool(response, "isRunning",
 					  PluginIsRunning());
+		});
+	registerWebsocketVendorRequest(
+		VendorRequestVersion,
+		[](obs_data_t *, obs_data_t *response, void *) {
+			obs_data_set_string(response, "version", g_GIT_TAG);
+			obs_data_set_string(response, "commit", g_GIT_SHA1);
 		});
 }
 
