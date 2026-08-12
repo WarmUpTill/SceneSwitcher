@@ -61,9 +61,14 @@ function(_advss_whisper_suppress_werror dir)
     endif()
     target_compile_options(
       ${_target}
-      PRIVATE $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error>
-              $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error>
-              $<$<C_COMPILER_ID:MSVC>:/WX-> $<$<CXX_COMPILER_ID:MSVC>:/WX->)
+      PRIVATE $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error
+              -Wno-shorten-64-to-32
+              -Wno-ambiguous-macro>
+              $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error
+              -Wno-shorten-64-to-32
+              -Wno-ambiguous-macro>
+              $<$<C_COMPILER_ID:MSVC>:/WX->
+              $<$<CXX_COMPILER_ID:MSVC>:/WX->)
   endforeach()
 endfunction()
 
