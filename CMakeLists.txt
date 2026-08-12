@@ -173,6 +173,8 @@ target_sources(
           lib/macro/macro-signals.hpp
           lib/macro/macro-tab.cpp
           lib/macro/macro-tree.cpp
+          lib/macro/macro-undo-redo.cpp
+          lib/macro/macro-undo-redo.hpp
           lib/macro/macro-tree.hpp
           lib/macro/macro-websocket-trigger.cpp
           lib/macro/macro.cpp
