@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('x64')]
+    [ValidateSet('x64', 'arm64')]
     [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
     [string] $Configuration = 'RelWithDebInfo',
@@ -93,7 +93,7 @@ function Build {
             $CmakeArgs += ('--debug-output')
         }
 
-        $Preset = "windows-$(if ( $Env:CI -ne $null ) { 'ci-' })${Target}"
+        $Preset = "windows-$(if ( $null -ne $Env:CI ) { 'ci-' })${Target}"
 
         $CmakeArgs += @(
             '--preset', $Preset
