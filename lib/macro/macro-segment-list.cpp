@@ -201,6 +201,8 @@ bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
 		_contentLayout->addWidget(widget);
 		widget->show();
 	}
+	// Widgets are now owned by the layout again, so the cache entry is stale.
+	_widgetCache.erase(it);
 
 	adjustSize();
 	updateGeometry();
