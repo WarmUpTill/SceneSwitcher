@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileDevice>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <QtDBus/QDBusConnectionInterface>
 #include <QtDBus/QDBusInterface>
@@ -97,11 +98,13 @@ bool isKWinAvailable()
 bool startKWinScript(QString &scriptObjectPath)
 {
 	const QString scriptPath =
-		"/tmp/AdvancedSceneSwitcher/KWinFocusNotifier.js";
+		QStandardPaths::writableLocation(
+			QStandardPaths::RuntimeLocation) +
+		"/AdvancedSceneSwitcher/KWinFocusNotifier.js";
 
 	const QString script =
-		R"(var adss = "com.github.AdvancedSceneSwitcher";
-var adssPath = "/com/github/AdvancedSceneSwitcher";
+		R"(var adss = "com.obsproject.Studio.Plugin.SceneSwitcher";
+var adssPath = "/com/obsproject/Studio/Plugin/SceneSwitcher";
 
 function trackWindow(window) {
     var id = window.internalId.toString();
@@ -129,7 +132,8 @@ workspace.windowActivated.connect(function(client) {
 }))";
 
 	if (const QDir dir; !dir.mkpath(QFileInfo(scriptPath).absolutePath())) {
-		blog(LOG_ERROR, "error creating /tmp/AdvancedSceneSwitcher");
+		blog(LOG_ERROR,
+		     "error creating KWinFocusNotifier script directory");
 		return false;
 	}
 
@@ -198,8 +202,8 @@ bool stopKWinScript(const QString &scriptObjectPath)
 
 bool registerKWinDBusListener(FocusNotifier *notifier)
 {
-	static const QString serviceName = "com.github.AdvancedSceneSwitcher";
-	static const QString objectPath = "/com/github/AdvancedSceneSwitcher";
+	static const QString serviceName = "com.obsproject.Studio.Plugin.SceneSwitcher";
+	static const QString objectPath = "/com/obsproject/Studio/Plugin/SceneSwitcher";
 	auto bus = QDBusConnection::sessionBus();
 
 	if (bus.objectRegisteredAt(objectPath)) {

@@ -1,5 +1,9 @@
 #include "platform-funcs.hpp"
+
 #include "log-helper.hpp"
+#include "obs-module-helper.hpp"
+#include "plugin-state-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -628,27 +632,39 @@ int ignoreXerror(Display *d, XErrorEvent *e)
 	return 0;
 }
 
+static void handleKWinInitFailure(bool kwinAvailable)
+{
+	blog(LOG_INFO, "not using KWin compat");
+	const bool onKDE = qEnvironmentVariable("XDG_CURRENT_DESKTOP")
+		.contains("KDE", Qt::CaseInsensitive);
+	const bool inFlatpak = qEnvironmentVariableIsSet("FLATPAK_ID");
+	if (!kwinAvailable && onKDE && inFlatpak)
+		AddFinishedLoadingStep([]() {
+			DisplayTrayMessage(
+				obs_module_text("AdvSceneSwitcher.pluginName"),
+				obs_module_text("AdvSceneSwitcher.kwin.flatpakPermissionWarning"));
+		});
+}
+
 void PlatformInit()
 {
+	const bool kwinAvailable = isKWinAvailable();
+	KWin = kwinAvailable && registerKWinDBusListener(&notifier) &&
+	       startKWinScript(KWinScriptObjectPath);
+	if (KWin)
+		blog(LOG_INFO, "using KWin compat");
+	else
+		handleKWinInitFailure(kwinAvailable);
+
+	initProcps();
+	initProc2();
+
 	auto display = disp();
 	if (!display) {
 		return;
 	}
 
-	KWin = isKWinAvailable();
-	if (!(KWin && startKWinScript(KWinScriptObjectPath) &&
-	      registerKWinDBusListener(&notifier))) {
-		// something bad happened while trying to initialize
-		// the KWin script/dbus so disable it
-		KWin = false;
-		blog(LOG_INFO, "not using KWin compat");
-	} else {
-		blog(LOG_INFO, "using KWin compat");
-	}
-
 	initXss();
-	initProcps();
-	initProc2();
 	XSetErrorHandler(ignoreXerror);
 }
 
