@@ -113,6 +113,9 @@ bool MacroActionPlayAudio::PerformAction()
 		DecibelToPercent(static_cast<float>(_volumeDB.GetValue()));
 	obs_source_set_volume(source, vol);
 	obs_source_set_monitoring_type(source, _monitorType);
+	if (_mono) {
+		obs_source_set_flags(source, OBS_SOURCE_FLAG_FORCE_MONO);
+	}
 
 	// Fall back to monitor-only if all output tracks are deselected —
 	// there is no point routing through the output channel if the mixer
@@ -204,6 +207,7 @@ bool MacroActionPlayAudio::Save(obs_data_t *obj) const
 	obs_data_set_bool(obj, "useDuration", _useDuration);
 	_playbackDuration.Save(obj, "playbackDuration");
 	obs_data_set_bool(obj, "waitForCompletion", _waitForCompletion);
+	obs_data_set_bool(obj, "mono", _mono);
 	return true;
 }
 
@@ -221,6 +225,7 @@ bool MacroActionPlayAudio::Load(obs_data_t *obj)
 	_useDuration = obs_data_get_bool(obj, "useDuration");
 	_playbackDuration.Load(obj, "playbackDuration");
 	_waitForCompletion = obs_data_get_bool(obj, "waitForCompletion");
+	_mono = obs_data_get_bool(obj, "mono");
 	return true;
 }
 
@@ -262,7 +267,9 @@ MacroActionPlayAudioEdit::MacroActionPlayAudioEdit(
 	  _useDuration(new QCheckBox(this)),
 	  _playbackDuration(new DurationSelection(this, true, 0.0)),
 	  _waitForCompletion(new QCheckBox(
-		  obs_module_text("AdvSceneSwitcher.action.playAudio.wait")))
+		  obs_module_text("AdvSceneSwitcher.action.playAudio.wait"))),
+	  _mono(new QCheckBox(
+		  obs_module_text("AdvSceneSwitcher.action.playAudio.mono")))
 {
 	_volumeDB->setMinimum(-100.0);
 	_volumeDB->setMaximum(0.0);
@@ -303,6 +310,8 @@ MacroActionPlayAudioEdit::MacroActionPlayAudioEdit(
 			 SLOT(PlaybackDurationChanged(const Duration &)));
 	QWidget::connect(_waitForCompletion, SIGNAL(stateChanged(int)), this,
 			 SLOT(WaitChanged(int)));
+	QWidget::connect(_mono, SIGNAL(stateChanged(int)), this,
+			 SLOT(MonoChanged(int)));
 
 	auto tracksLayout = new QHBoxLayout;
 	tracksLayout->setContentsMargins(0, 0, 0, 0);
@@ -346,6 +355,7 @@ MacroActionPlayAudioEdit::MacroActionPlayAudioEdit(
 	mainLayout->addLayout(startOffsetLayout);
 	mainLayout->addLayout(playbackDurationLayout);
 	mainLayout->addWidget(_waitForCompletion);
+	mainLayout->addWidget(_mono);
 	setLayout(mainLayout);
 
 	_entryData = entryData;
@@ -375,6 +385,7 @@ void MacroActionPlayAudioEdit::UpdateEntryData()
 	_playbackDuration->SetDuration(_entryData->_playbackDuration);
 	_playbackDuration->setEnabled(_entryData->_useDuration);
 	_waitForCompletion->setChecked(_entryData->_waitForCompletion);
+	_mono->setChecked(_entryData->_mono);
 }
 
 void MacroActionPlayAudioEdit::FilePathChanged(const QString &path)
@@ -441,6 +452,12 @@ void MacroActionPlayAudioEdit::WaitChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_waitForCompletion = value;
+}
+
+void MacroActionPlayAudioEdit::MonoChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_mono = value;
 }
 
 } // namespace advss
