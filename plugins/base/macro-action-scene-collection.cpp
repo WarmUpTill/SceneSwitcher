@@ -1,7 +1,9 @@
 #include "macro-action-scene-collection.hpp"
+
 #include "layout-helpers.hpp"
 #include "plugin-state-helpers.hpp"
 #include "selection-helpers.hpp"
+#include "ui-helpers.hpp"
 
 #include <obs-frontend-api.h>
 
@@ -15,6 +17,20 @@ bool MacroActionSceneCollection::_registered = MacroActionFactory::Register(
 	 MacroActionSceneCollectionEdit::Create,
 	 "AdvSceneSwitcher.action.sceneCollection"});
 
+template<typename F> void QueueUITaskLambda(F &&func)
+{
+	using FnType = std::decay_t<F>;
+	auto *heapFunc = new FnType(std::forward<F>(func));
+
+	QueueUITask(
+		[](void *param) {
+			std::unique_ptr<FnType> fn(
+				static_cast<FnType *>(param));
+			(*fn)();
+		},
+		heapFunc);
+}
+
 bool MacroActionSceneCollection::PerformAction()
 {
 	// Changing the scene collection will also reload the settings of the
@@ -23,7 +39,13 @@ bool MacroActionSceneCollection::PerformAction()
 	if (SettingsWindowIsOpened()) {
 		return false;
 	}
-	obs_frontend_set_current_scene_collection(_sceneCollection.c_str());
+
+	const auto collectionName = _sceneCollection;
+	QueueUITaskLambda([collectionName]() {
+		obs_frontend_set_current_scene_collection(
+			collectionName.c_str());
+	});
+
 	// It does not make sense to continue as the current settings will be
 	// invalid after switching scene collection.
 	return false;
