@@ -2,17 +2,63 @@
 #include "audio-helpers.hpp"
 #include "layout-helpers.hpp"
 #include "macro-helpers.hpp"
+#include "plugin-state-helpers.hpp"
 #include "sync-helpers.hpp"
 
+#include <obs-frontend-api.h>
+
 #include <chrono>
+#include <mutex>
+#include <set>
 #include <QFileInfo>
 #include <QLabel>
 
 namespace advss {
 
-// Use a high output channel index that is unlikely to be claimed by OBS or
-// other plugins. OBS supports channels 0-63; channel 0 is the main scene.
 static constexpr uint32_t kPlaybackOutputChannel = 63;
+
+// Tracks rawSource handles held by background cleanup threads so they can be
+// stopped early when OBS begins shutdown, before audio is freed.
+static std::mutex g_activeSourcesMutex;
+static std::set<obs_source_t *> g_activeSources;
+
+static void registerActiveSource(obs_source_t *source)
+{
+	std::lock_guard<std::mutex> lock(g_activeSourcesMutex);
+	g_activeSources.insert(source);
+}
+
+static void unregisterActiveSource(obs_source_t *source)
+{
+	std::lock_guard<std::mutex> lock(g_activeSourcesMutex);
+	g_activeSources.erase(source);
+}
+
+static void stopAllActiveSources()
+{
+	std::lock_guard<std::mutex> lock(g_activeSourcesMutex);
+	for (auto *source : g_activeSources) {
+		obs_source_media_stop(source);
+	}
+}
+
+static void handleObsEvent(enum obs_frontend_event event, void *)
+{
+	if (event == OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN ||
+	    event == OBS_FRONTEND_EVENT_EXIT) {
+		stopAllActiveSources();
+	}
+}
+
+static bool setup()
+{
+	AddPluginPostLoadStep([]() {
+		obs_frontend_add_event_callback(handleObsEvent, nullptr);
+	});
+	return true;
+}
+
+static bool setupDone = setup();
 
 const std::string MacroActionPlayAudio::id = "play_audio";
 
@@ -23,6 +69,7 @@ bool MacroActionPlayAudio::_registered = MacroActionFactory::Register(
 
 static void deactivatePlayback(obs_source_t *source, bool wantsOutput)
 {
+	obs_source_media_stop(source);
 	if (wantsOutput) {
 		obs_set_output_source(kPlaybackOutputChannel, nullptr);
 	} else {
@@ -38,8 +85,7 @@ static void waitForPlaybackToEnd(Macro *macro, obs_source_t *source,
 	std::unique_lock<std::mutex> lock(*GetMutex());
 	SetMacroAbortWait(false);
 
-	// The media source needs time to open and decode before reaching
-	// PLAYING state. Poll until it starts (or the macro is stopped).
+	// Poll until the source starts playing or the macro is stopped.
 	while (!MacroWaitShouldAbort() && !MacroIsStopped(macro)) {
 		if (obs_source_media_get_state(source) ==
 		    OBS_MEDIA_STATE_PLAYING) {
@@ -48,9 +94,8 @@ static void waitForPlaybackToEnd(Macro *macro, obs_source_t *source,
 		GetMacroWaitCV().wait_for(lock, 10ms);
 	}
 
-	// Now wait for playback to end. Require two consecutive non-playing
-	// samples to avoid false positives on brief state transitions.
-	// If maxMs > 0, also stop once that many milliseconds have elapsed.
+	// Wait for playback to end. Two consecutive non-playing samples are
+	// required to avoid false positives on brief state transitions.
 	const auto playbackStart = std::chrono::steady_clock::now();
 	static const int kStopThreshold = 2;
 	int stoppedCount = 0;
@@ -95,7 +140,6 @@ bool MacroActionPlayAudio::PerformAction()
 	obs_data_set_string(settings, "local_file", path.c_str());
 	obs_data_set_bool(settings, "is_local_file", true);
 	obs_data_set_bool(settings, "looping", false);
-	// Disable automatic restart on activate so we control start explicitly.
 	obs_data_set_bool(settings, "restart_on_activate", false);
 	obs_data_set_bool(settings, "close_when_inactive", true);
 
@@ -117,9 +161,7 @@ bool MacroActionPlayAudio::PerformAction()
 		obs_source_set_flags(source, OBS_SOURCE_FLAG_FORCE_MONO);
 	}
 
-	// Fall back to monitor-only if all output tracks are deselected —
-	// there is no point routing through the output channel if the mixer
-	// mask would silence every track.
+	// Fall back to monitor-only if all output tracks are deselected.
 	const bool wantsOutput =
 		(_monitorType != OBS_MONITORING_TYPE_MONITOR_ONLY) &&
 		(_audioMixers != 0);
@@ -131,10 +173,8 @@ bool MacroActionPlayAudio::PerformAction()
 
 	if (wantsOutput) {
 		obs_source_set_audio_mixers(source, _audioMixers);
-		// Route through a private scene so we can position the scene
-		// item far off-screen. This keeps the item "visible" (so audio
-		// is still mixed) while ensuring its video never intersects the
-		// output frame.
+		// Route through a private scene positioned off-screen so the
+		// audio mixes into the output without video appearing on screen.
 		OBSSceneAutoRelease audioScene =
 			obs_scene_create_private("advss_audio_scene");
 		obs_sceneitem_t *item = obs_scene_add(audioScene, source);
@@ -144,8 +184,7 @@ bool MacroActionPlayAudio::PerformAction()
 		}
 		obs_set_output_source(kPlaybackOutputChannel,
 				      obs_scene_get_source(audioScene));
-		// audioScene released here; the output channel holds the
-		// remaining reference and keeps the scene alive.
+		// audioScene is released here; the output channel keeps the scene alive.
 	} else {
 		obs_source_set_audio_mixers(source, 0);
 		obs_source_inc_active(source);
@@ -170,15 +209,15 @@ bool MacroActionPlayAudio::PerformAction()
 		return true;
 	}
 
-	// Keep the source alive in a background thread that cleans up
-	// once playback finishes. Grab an extra strong reference so the
-	// source survives beyond this stack frame.
+	// Keep the source alive until playback ends via a background thread.
 	auto rawSource = obs_source_get_ref(source);
+	registerActiveSource(rawSource);
 	auto macro = GetMacro();
 
 	std::thread cleanupThread([rawSource, wantsOutput, macro, maxMs]() {
 		waitForPlaybackToEnd(macro, rawSource, maxMs);
 		deactivatePlayback(rawSource, wantsOutput);
+		unregisterActiveSource(rawSource);
 		obs_source_release(rawSource);
 	});
 	AddMacroHelperThread(macro, std::move(cleanupThread));
