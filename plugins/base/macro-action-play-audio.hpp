@@ -37,6 +37,7 @@ public:
 	bool _useDuration = false;
 	Duration _playbackDuration;
 	bool _waitForCompletion = false;
+	bool _mono = false;
 
 	static bool _registered;
 	static const std::string id;
@@ -68,6 +69,7 @@ private slots:
 	void UseDurationChanged(int);
 	void PlaybackDurationChanged(const Duration &);
 	void WaitChanged(int value);
+	void MonoChanged(int value);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -83,6 +85,7 @@ private:
 	QCheckBox *_useDuration;
 	DurationSelection *_playbackDuration;
 	QCheckBox *_waitForCompletion;
+	QCheckBox *_mono;
 
 	std::shared_ptr<MacroActionPlayAudio> _entryData;
 	bool _loading = true;
