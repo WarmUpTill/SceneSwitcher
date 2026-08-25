@@ -1,4 +1,5 @@
 #include "macro-action-edit.hpp"
+#include "macro-undo-redo.hpp"
 #include "advanced-scene-switcher.hpp"
 #include "macro-helpers.hpp"
 #include "macro-settings.hpp"
@@ -111,9 +112,24 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		return;
 	}
 
+	const std::string oldId = (*_entryData)->GetId();
+	OBSDataAutoRelease oldData = obs_data_create();
+	(*_entryData)->Save(oldData);
+
 	HeaderInfoChanged("");
 	auto idx = _entryData->get()->GetIndex();
 	auto macro = _entryData->get()->GetMacro();
+
+	// Determine whether this is an action or else-action before resetting.
+	const auto *rawPtr = (*_entryData).get();
+	const auto &elseActions = macro->ElseActions();
+	const bool isElse = std::any_of(elseActions.begin(), elseActions.end(),
+					[rawPtr](const auto &a) {
+						return a.get() == rawPtr;
+					});
+	const auto segmentType = isElse ? MacroEdit::SegmentType::ELSE_ACTION
+					: MacroEdit::SegmentType::ACTION;
+
 	{
 		auto lock = LockContext();
 		_entryData->reset();
@@ -122,6 +138,11 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		(*_entryData)->PostLoad();
 		RunAndClearPostLoadSteps();
 	}
+
+	OBSDataAutoRelease newData = obs_data_create();
+	(*_entryData)->Save(newData);
+	RegisterSegmentTypeChangeUndoRedo(macro, segmentType, idx, oldId,
+					  oldData, 0, id, newData, 0);
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));

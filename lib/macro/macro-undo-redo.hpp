@@ -12,6 +12,12 @@ void RegisterMacroAddUndoRedo(const std::string &macroName);
 bool RegisterMacroRemoveUndoRedo(Macro *macro);
 void RegisterSegmentAddUndoRedo(Macro *macro, MacroEdit::SegmentType type,
 				int index);
+void RegisterSegmentTypeChangeUndoRedo(Macro *macro,
+				       MacroEdit::SegmentType type, int index,
+				       const std::string &oldId,
+				       obs_data_t *oldData, int oldLogic,
+				       const std::string &newId,
+				       obs_data_t *newData, int newLogic);
 void RegisterSegmentRemoveUndoRedo(Macro *macro, MacroEdit::SegmentType type,
 				   int index, const std::string &segmentId,
 				   obs_data_t *segmentData, int logic);

@@ -535,6 +535,102 @@ static void addSegmentFromData(const char *jsonData)
 }
 
 // ---------------------------------------------------------------------------
+// Segment type-change undo/redo callback
+// ---------------------------------------------------------------------------
+
+// Same data format as addSegmentFromData:
+// {"macro": "Name", "type": N, "index": N, "id": "...", "logic": N,
+//  "segment": {...}}
+static void replaceSegmentFromData(const char *jsonData)
+{
+	OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
+	if (!data) {
+		return;
+	}
+
+	const std::string macroName = obs_data_get_string(data, "macro");
+	const int type = (int)obs_data_get_int(data, "type");
+	const int index = (int)obs_data_get_int(data, "index");
+	const std::string id = obs_data_get_string(data, "id");
+	const int logic = (int)obs_data_get_int(data, "logic");
+	OBSDataAutoRelease segData = obs_data_get_obj(data, "segment");
+
+	const auto macro = GetWeakMacroByName(macroName.c_str()).lock();
+	if (!macro) {
+		return;
+	}
+
+	{
+		auto lock = LockContext();
+		switch ((SegmentType)type) {
+		case SegmentType::ACTION: {
+			if (index < 0 ||
+			    index >= (int)macro->Actions().size()) {
+				break;
+			}
+			macro->Actions().erase(macro->Actions().begin() +
+					       index);
+			macro->Actions().emplace(
+				macro->Actions().begin() + index,
+				MacroActionFactory::Create(id, macro.get()));
+			if (segData) {
+				macro->Actions().at(index)->Load(segData);
+			}
+			macro->Actions().at(index)->PostLoad();
+			RunAndClearPostLoadSteps();
+			macro->UpdateActionIndices();
+			break;
+		}
+		case SegmentType::ELSE_ACTION: {
+			if (index < 0 ||
+			    index >= (int)macro->ElseActions().size()) {
+				break;
+			}
+			macro->ElseActions().erase(
+				macro->ElseActions().begin() + index);
+			macro->ElseActions().emplace(
+				macro->ElseActions().begin() + index,
+				MacroActionFactory::Create(id, macro.get()));
+			if (segData) {
+				macro->ElseActions().at(index)->Load(segData);
+			}
+			macro->ElseActions().at(index)->PostLoad();
+			RunAndClearPostLoadSteps();
+			macro->UpdateElseActionIndices();
+			break;
+		}
+		case SegmentType::CONDITION: {
+			if (index < 0 ||
+			    index >= (int)macro->Conditions().size()) {
+				break;
+			}
+			macro->Conditions().erase(macro->Conditions().begin() +
+						  index);
+			macro->Conditions().emplace(
+				macro->Conditions().begin() + index,
+				MacroConditionFactory::Create(id, macro.get()));
+			if (segData) {
+				macro->Conditions().at(index)->Load(segData);
+			}
+			macro->Conditions().at(index)->PostLoad();
+			RunAndClearPostLoadSteps();
+			macro->Conditions().at(index)->SetLogicType(
+				(Logic::Type)logic);
+			macro->UpdateConditionIndices();
+			break;
+		}
+		}
+	}
+
+	if (auto *window = AdvSceneSwitcher::window) {
+		updateMacroEditSegment(window, macroName, SegmentOp::REMOVE,
+				       (SegmentType)type, index);
+		updateMacroEditSegment(window, macroName, SegmentOp::ADD,
+				       (SegmentType)type, index);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Rename undo/redo callback
 // ---------------------------------------------------------------------------
 
@@ -924,6 +1020,44 @@ void RegisterMacroRenameUndoRedo(const std::string &oldName,
 	obs_frontend_add_undo_redo_action(actionName.c_str(),
 					  &renameMacroFromData,
 					  &renameMacroFromData,
+					  obs_data_get_json(undoData),
+					  obs_data_get_json(redoData), false);
+}
+
+void RegisterSegmentTypeChangeUndoRedo(Macro *macro, SegmentType type,
+				       int index, const std::string &oldId,
+				       obs_data_t *oldData, int oldLogic,
+				       const std::string &newId,
+				       obs_data_t *newData, int newLogic)
+{
+	if (!macro) {
+		return;
+	}
+
+	const std::string macroName = macro->Name();
+
+	OBSDataAutoRelease undoData = obs_data_create();
+	obs_data_set_string(undoData, "macro", macroName.c_str());
+	obs_data_set_int(undoData, "type", (int)type);
+	obs_data_set_int(undoData, "index", index);
+	obs_data_set_string(undoData, "id", oldId.c_str());
+	obs_data_set_int(undoData, "logic", oldLogic);
+	obs_data_set_obj(undoData, "segment", oldData);
+
+	OBSDataAutoRelease redoData = obs_data_create();
+	obs_data_set_string(redoData, "macro", macroName.c_str());
+	obs_data_set_int(redoData, "type", (int)type);
+	obs_data_set_int(redoData, "index", index);
+	obs_data_set_string(redoData, "id", newId.c_str());
+	obs_data_set_int(redoData, "logic", newLogic);
+	obs_data_set_obj(redoData, "segment", newData);
+
+	const std::string actionName =
+		fmtUndoName("AdvSceneSwitcher.undo.changeSegmentType",
+			    segmentTypeName(type), macroName);
+	obs_frontend_add_undo_redo_action(actionName.c_str(),
+					  &replaceSegmentFromData,
+					  &replaceSegmentFromData,
 					  obs_data_get_json(undoData),
 					  obs_data_get_json(redoData), false);
 }
