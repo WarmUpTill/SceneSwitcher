@@ -25,6 +25,8 @@ const static std::map<MacroConditionAudio::Type, std::string> checkTypes = {
 	 "AdvSceneSwitcher.condition.audio.type.monitor"},
 	{MacroConditionAudio::Type::BALANCE,
 	 "AdvSceneSwitcher.condition.audio.type.balance"},
+	{MacroConditionAudio::Type::TRACK,
+	 "AdvSceneSwitcher.condition.audio.type.track"},
 };
 
 const static std::map<MacroConditionAudio::OutputCondition, std::string>
@@ -245,6 +247,20 @@ bool MacroConditionAudio::CheckBalance()
 	return ret && source;
 }
 
+bool MacroConditionAudio::CheckTrack()
+{
+	if (!_audioSource.GetSource()) {
+		return false;
+	}
+
+	OBSSourceAutoRelease source =
+		obs_weak_source_get_source(_audioSource.GetSource());
+	uint32_t mixers = obs_source_get_audio_mixers(source);
+	bool enabled = (mixers >> (uint32_t)(_track - 1)) & 1u;
+	SetTempVarValue("track_enabled", enabled ? "true" : "false");
+	return enabled && source;
+}
+
 bool MacroConditionAudio::CheckCondition()
 {
 	bool ret = false;
@@ -264,6 +280,9 @@ bool MacroConditionAudio::CheckCondition()
 	case Type::BALANCE:
 		ret = CheckBalance();
 		break;
+	case Type::TRACK:
+		ret = CheckTrack();
+		break;
 	}
 
 	if (GetVariableValue().empty()) {
@@ -281,6 +300,7 @@ bool MacroConditionAudio::Save(obs_data_t *obj) const
 	_volumePercent.Save(obj, "volume");
 	_syncOffset.Save(obj, "syncOffset");
 	_balance.Save(obj, "balance");
+	_track.Save(obj, "track");
 	obs_data_set_int(obj, "checkType", static_cast<int>(_checkType));
 	obs_data_set_int(obj, "outputCondition",
 			 static_cast<int>(_outputCondition));
@@ -346,6 +366,7 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 		_useDb = obs_data_get_bool(obj, "useDb");
 		_volumeDB.Load(obj, "volumeDB");
 	}
+	_track.Load(obj, "track");
 	return true;
 }
 
@@ -421,6 +442,12 @@ void MacroConditionAudio::SetupTempVars()
 			   obs_module_text(
 				   "AdvSceneSwitcher.tempVar.audio.balance"));
 		break;
+	case Type::TRACK:
+		AddTempvar(
+			"track_enabled",
+			obs_module_text(
+				"AdvSceneSwitcher.tempVar.audio.trackEnabled"));
+		break;
 	default:
 		break;
 	}
@@ -468,6 +495,7 @@ static QStringList getAudioSourcesList()
 MacroConditionAudioEdit::MacroConditionAudioEdit(
 	QWidget *parent, std::shared_ptr<MacroConditionAudio> entryData)
 	: QWidget(parent),
+	  _layout(new QHBoxLayout),
 	  _checkTypes(new QComboBox()),
 	  _sources(new SourceSelectionWidget(this, getAudioSourcesList, true)),
 	  _condition(new QComboBox()),
@@ -476,7 +504,8 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	  _percentDBToggle(new QPushButton),
 	  _syncOffset(new VariableSpinBox()),
 	  _monitorTypes(new QComboBox),
-	  _balance(new SliderSpinBox(0., 1., ""))
+	  _balance(new SliderSpinBox(0., 1., "")),
+	  _track(new VariableSpinBox())
 {
 	_volumePercent->setSuffix("%");
 	_volumePercent->setMaximum(100);
@@ -490,6 +519,9 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 	_syncOffset->setMinimum(-950);
 	_syncOffset->setMaximum(20000);
 	_syncOffset->setSuffix("ms");
+
+	_track->setMinimum(1);
+	_track->setMaximum(32);
 
 	QWidget::connect(_checkTypes, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(CheckTypeChanged(int)));
@@ -519,27 +551,16 @@ MacroConditionAudioEdit::MacroConditionAudioEdit(
 		this, SLOT(VolumeDBChanged(const NumberVariable<double> &)));
 	QWidget::connect(_percentDBToggle, SIGNAL(clicked()), this,
 			 SLOT(PercentDBClicked()));
+	QWidget::connect(
+		_track,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(TrackChanged(const NumberVariable<int> &)));
 
 	populateCheckTypes(_checkTypes);
 	PopulateMonitorTypeSelection(_monitorTypes);
 
-	QHBoxLayout *switchLayout = new QHBoxLayout;
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
-		{"{{checkType}}", _checkTypes},
-		{"{{audioSources}}", _sources},
-		{"{{volume}}", _volumePercent},
-		{"{{syncOffset}}", _syncOffset},
-		{"{{monitorTypes}}", _monitorTypes},
-		{"{{balance}}", _balance},
-		{"{{condition}}", _condition},
-		{"{{volumeDB}}", _volumeDB},
-		{"{{percentDBToggle}}", _percentDBToggle},
-	};
-	PlaceWidgets(obs_module_text("AdvSceneSwitcher.condition.audio.entry"),
-		     switchLayout, widgetPlaceholders);
-
 	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addLayout(switchLayout);
+	mainLayout->addLayout(_layout);
 	mainLayout->addWidget(_balance);
 	setLayout(mainLayout);
 
@@ -606,6 +627,12 @@ void MacroConditionAudioEdit::BalanceChanged(const NumberVariable<double> &value
 {
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_balance = value;
+}
+
+void MacroConditionAudioEdit::TrackChanged(const NumberVariable<int> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_track = value;
 }
 
 void MacroConditionAudioEdit::VolumeDBChanged(
@@ -692,6 +719,8 @@ void MacroConditionAudioEdit::CheckTypeChanged(int idx)
 	} else if (_entryData->GetType() ==
 		   MacroConditionAudio::Type::CONFIGURED_VOLUME) {
 		populateVolumeConditionSelection(_condition);
+	} else if (_entryData->GetType() == MacroConditionAudio::Type::TRACK) {
+		_condition->clear();
 	}
 	SetWidgetVisibility();
 }
@@ -708,6 +737,7 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_syncOffset->SetValue(_entryData->_syncOffset);
 	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
 	_balance->SetDoubleValue(_entryData->_balance);
+	_track->SetValue(_entryData->_track);
 	_checkTypes->setCurrentIndex(
 		_checkTypes->findData(static_cast<int>(_entryData->GetType())));
 
@@ -748,26 +778,63 @@ void MacroConditionAudioEdit::SetWidgetVisibility()
 		return;
 	}
 
+	_layout->removeWidget(_checkTypes);
+	_layout->removeWidget(_sources);
+	_layout->removeWidget(_condition);
+	_layout->removeWidget(_volumePercent);
+	_layout->removeWidget(_volumeDB);
+	_layout->removeWidget(_percentDBToggle);
+	_layout->removeWidget(_syncOffset);
+	_layout->removeWidget(_monitorTypes);
+	_layout->removeWidget(_track);
+	ClearLayout(_layout);
+
+	const std::unordered_map<std::string, QWidget *> placeholders = {
+		{"{{checkType}}", _checkTypes},
+		{"{{audioSources}}", _sources},
+		{"{{condition}}", _condition},
+		{"{{volume}}", _volumePercent},
+		{"{{volumeDB}}", _volumeDB},
+		{"{{percentDBToggle}}", _percentDBToggle},
+		{"{{syncOffset}}", _syncOffset},
+		{"{{monitorTypes}}", _monitorTypes},
+		{"{{track}}", _track},
+	};
+
+	const bool isTrack = _entryData->GetType() ==
+			     MacroConditionAudio::Type::TRACK;
+	PlaceWidgets(
+		obs_module_text(
+			isTrack ? "AdvSceneSwitcher.condition.audio.layout.track"
+				: "AdvSceneSwitcher.condition.audio.entry"),
+		_layout, placeholders);
+
 	_condition->setVisible(
-		_entryData->GetType() ==
-			MacroConditionAudio::Type::OUTPUT_VOLUME ||
-		_entryData->GetType() ==
-			MacroConditionAudio::Type::CONFIGURED_VOLUME ||
-		_entryData->GetType() == MacroConditionAudio::Type::BALANCE ||
-		_entryData->GetType() ==
-			MacroConditionAudio::Type::SYNC_OFFSET);
-	_syncOffset->setVisible(_entryData->GetType() ==
-				MacroConditionAudio::Type::SYNC_OFFSET);
-	_monitorTypes->setVisible(_entryData->GetType() ==
-				  MacroConditionAudio::Type::MONITOR);
+		!isTrack &&
+		(_entryData->GetType() ==
+			 MacroConditionAudio::Type::OUTPUT_VOLUME ||
+		 _entryData->GetType() ==
+			 MacroConditionAudio::Type::CONFIGURED_VOLUME ||
+		 _entryData->GetType() == MacroConditionAudio::Type::BALANCE ||
+		 _entryData->GetType() ==
+			 MacroConditionAudio::Type::SYNC_OFFSET));
+	_syncOffset->setVisible(!isTrack &&
+				_entryData->GetType() ==
+					MacroConditionAudio::Type::SYNC_OFFSET);
+	_monitorTypes->setVisible(!isTrack &&
+				  _entryData->GetType() ==
+					  MacroConditionAudio::Type::MONITOR);
+	_track->setVisible(isTrack);
+	_volumePercent->setVisible(!isTrack && HasVolumeControl() &&
+				   !_entryData->_useDb);
+	_volumeDB->setVisible(!isTrack && HasVolumeControl() &&
+			      _entryData->_useDb);
+	_percentDBToggle->setText(_entryData->_useDb ? "dB" : "%");
+	_percentDBToggle->setVisible(!isTrack && HasVolumeControl());
 	_balance->setVisible(_entryData->GetType() ==
 			     MacroConditionAudio::Type::BALANCE);
 	_volMeter->setVisible(_entryData->GetType() ==
 			      MacroConditionAudio::Type::OUTPUT_VOLUME);
-	_volumePercent->setVisible(HasVolumeControl() && !_entryData->_useDb);
-	_volumeDB->setVisible(HasVolumeControl() && _entryData->_useDb);
-	_percentDBToggle->setText(_entryData->_useDb ? "dB" : "%");
-	_percentDBToggle->setVisible(HasVolumeControl());
 	adjustSize();
 }
 

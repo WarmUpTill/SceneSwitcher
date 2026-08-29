@@ -5,6 +5,7 @@
 #include "source-selection.hpp"
 
 #include <limits>
+#include <QHBoxLayout>
 #include <QWidget>
 #include <QComboBox>
 #include <chrono>
@@ -36,6 +37,7 @@ public:
 		SYNC_OFFSET,
 		MONITOR,
 		BALANCE,
+		TRACK,
 	};
 	void SetType(const Type &);
 	Type GetType() const { return _checkType; }
@@ -60,6 +62,7 @@ public:
 	IntVariable _syncOffset = 0;
 	obs_monitoring_type _monitorType = OBS_MONITORING_TYPE_NONE;
 	DoubleVariable _balance = 0.5;
+	IntVariable _track = 1;
 	OutputCondition _outputCondition = OutputCondition::ABOVE;
 	VolumeCondition _volumeCondition = VolumeCondition::ABOVE;
 	obs_volmeter_t *_volmeter = nullptr;
@@ -70,6 +73,7 @@ private:
 	bool CheckSyncOffset();
 	bool CheckMonitor();
 	bool CheckBalance();
+	bool CheckTrack();
 	void SetupTempVars();
 	float GetVolumePeak();
 
@@ -111,6 +115,7 @@ private slots:
 	void VolumeDBChanged(const NumberVariable<double> &value);
 	void PercentDBClicked();
 	void SyncSliderAndValueSelection(bool sliderMoved);
+	void TrackChanged(const NumberVariable<int> &value);
 
 signals:
 	void HeaderInfoChanged(const QString &);
@@ -119,6 +124,7 @@ private:
 	void SetWidgetVisibility();
 	bool HasVolumeControl() const;
 
+	QHBoxLayout *_layout;
 	QComboBox *_checkTypes;
 	SourceSelectionWidget *_sources;
 	QComboBox *_condition;
@@ -128,6 +134,7 @@ private:
 	VariableSpinBox *_syncOffset;
 	QComboBox *_monitorTypes;
 	SliderSpinBox *_balance;
+	VariableSpinBox *_track;
 	VolControl *_volMeter = nullptr;
 
 	std::shared_ptr<MacroConditionAudio> _entryData;
