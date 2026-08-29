@@ -26,5 +26,6 @@ void RegisterMacroRenameUndoRedo(const std::string &oldName,
 void RegisterGroupCreateUndoRedo(const std::string &groupName);
 void RegisterGroupRemoveUndoRedo(const std::string &groupName);
 void RegisterGroupDeleteUndoRedo(Macro *macro);
+void RegisterMacroModifyUndoRedo(Macro *parentMacro, obs_data_t *beforeData);
 
 } // namespace advss

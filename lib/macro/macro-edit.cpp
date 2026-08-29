@@ -1171,6 +1171,13 @@ void MacroEdit::AddMacroAction(Macro *macro, int idx, const std::string &id,
 		return;
 	}
 
+	Macro *const parentMacro = macro->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	}
+
 	{
 		auto lock = LockContext();
 		macro->Actions().emplace(macro->Actions().begin() + idx,
@@ -1185,7 +1192,11 @@ void MacroEdit::AddMacroAction(Macro *macro, int idx, const std::string &id,
 			idx, new MacroActionEdit(this, &macro->Actions()[idx]));
 		SetActionData(*macro);
 	}
-	RegisterSegmentAddUndoRedo(macro, SegmentType::ACTION, idx);
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
+	} else {
+		RegisterSegmentAddUndoRedo(macro, SegmentType::ACTION, idx);
+	}
 	HighlightAction(idx);
 	ui->actionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
@@ -1251,7 +1262,12 @@ void MacroEdit::RemoveMacroAction(int idx)
 		return;
 	}
 
-	{
+	Macro *const parentMacro = macro->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	} else {
 		OBSDataAutoRelease segData = obs_data_create();
 		std::string segId;
 		{
@@ -1272,6 +1288,9 @@ void MacroEdit::RemoveMacroAction(int idx)
 		GetMacroWaitCV().notify_all();
 		macro->UpdateActionIndices();
 		SetActionData(*macro);
+	}
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
 	}
 	MacroActionSelectionChanged(-1);
 	lastInteracted = SegmentType::ACTION;
@@ -1491,6 +1510,13 @@ void MacroEdit::AddMacroElseAction(Macro *macro, int idx, const std::string &id,
 		return;
 	}
 
+	Macro *const parentMacro = macro->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	}
+
 	{
 		auto lock = LockContext();
 		macro->ElseActions().emplace(macro->ElseActions().begin() + idx,
@@ -1507,7 +1533,12 @@ void MacroEdit::AddMacroElseAction(Macro *macro, int idx, const std::string &id,
 			new MacroActionEdit(this, &macro->ElseActions()[idx]));
 		SetElseActionData(*macro);
 	}
-	RegisterSegmentAddUndoRedo(macro, SegmentType::ELSE_ACTION, idx);
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
+	} else {
+		RegisterSegmentAddUndoRedo(macro, SegmentType::ELSE_ACTION,
+					   idx);
+	}
 	HighlightElseAction(idx);
 	ui->elseActionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
@@ -1557,7 +1588,12 @@ void MacroEdit::RemoveMacroElseAction(int idx)
 		return;
 	}
 
-	{
+	Macro *const parentMacro = macro->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	} else {
 		OBSDataAutoRelease segData = obs_data_create();
 		std::string segId;
 		{
@@ -1579,6 +1615,9 @@ void MacroEdit::RemoveMacroElseAction(int idx)
 		GetMacroWaitCV().notify_all();
 		macro->UpdateElseActionIndices();
 		SetElseActionData(*macro);
+	}
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
 	}
 	MacroElseActionSelectionChanged(-1);
 	lastInteracted = SegmentType::ELSE_ACTION;
@@ -1715,6 +1754,13 @@ void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,
 		return;
 	}
 
+	Macro *const parentMacro = macro->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	}
+
 	{
 		auto lock = LockContext();
 		auto cond = macro->Conditions().emplace(
@@ -1733,7 +1779,11 @@ void MacroEdit::AddMacroCondition(Macro *macro, int idx, const std::string &id,
 					       idx == 0));
 		SetConditionData(*macro);
 	}
-	RegisterSegmentAddUndoRedo(macro, SegmentType::CONDITION, idx);
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
+	} else {
+		RegisterSegmentAddUndoRedo(macro, SegmentType::CONDITION, idx);
+	}
 	HighlightCondition(idx);
 	ui->conditionsList->SetHelpMsgVisible(false);
 	emit(MacroSegmentOrderChanged());
@@ -1769,7 +1819,12 @@ void MacroEdit::RemoveMacroCondition(int idx)
 		return;
 	}
 
-	{
+	Macro *const parentMacro = macro->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	} else {
 		OBSDataAutoRelease segData = obs_data_create();
 		std::string segId;
 		int logic;
@@ -1797,6 +1852,9 @@ void MacroEdit::RemoveMacroCondition(int idx)
 				->SetRootNode(true);
 		}
 		SetConditionData(*macro);
+	}
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
 	}
 	MacroConditionSelectionChanged(-1);
 	lastInteracted = SegmentType::CONDITION;

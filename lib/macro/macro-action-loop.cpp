@@ -83,6 +83,7 @@ bool MacroActionLoop::PostLoad()
 	MacroAction::PostLoad();
 	_loopMacro->PostLoad();
 	_loopMacro->SetActionTriggerMode(Macro::ActionTriggerMode::ALWAYS);
+	_loopMacro->SetNestedParentMacro(GetMacro());
 	return true;
 }
 

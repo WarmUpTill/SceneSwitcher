@@ -112,6 +112,14 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 		return;
 	}
 
+	Macro *const parentMacro =
+		(*_entryData)->GetMacro()->GetNestedParentMacro();
+	OBSDataAutoRelease parentBeforeData;
+	if (parentMacro) {
+		parentBeforeData = obs_data_create();
+		parentMacro->Save(parentBeforeData);
+	}
+
 	const std::string oldId = (*_entryData)->GetId();
 	OBSDataAutoRelease oldData = obs_data_create();
 	(*_entryData)->Save(oldData);
@@ -141,8 +149,13 @@ void MacroActionEdit::ActionSelectionChanged(const QString &text)
 
 	OBSDataAutoRelease newData = obs_data_create();
 	(*_entryData)->Save(newData);
-	RegisterSegmentTypeChangeUndoRedo(macro, segmentType, idx, oldId,
-					  oldData, 0, id, newData, 0);
+	if (parentMacro) {
+		RegisterMacroModifyUndoRedo(parentMacro, parentBeforeData);
+	} else {
+		RegisterSegmentTypeChangeUndoRedo(macro, segmentType, idx,
+						  oldId, oldData, 0, id,
+						  newData, 0);
+	}
 	auto widget = MacroActionFactory::CreateWidget(id, this, *_entryData);
 	QWidget::connect(widget, SIGNAL(HeaderInfoChanged(const QString &)),
 			 this, SLOT(HeaderInfoChanged(const QString &)));

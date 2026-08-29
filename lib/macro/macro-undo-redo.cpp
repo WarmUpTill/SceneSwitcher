@@ -17,6 +17,7 @@
 #include <obs-frontend-api.h>
 #include <obs.hpp>
 
+#include <QCoreApplication>
 #include <QString>
 
 namespace advss {
@@ -631,6 +632,78 @@ static void replaceSegmentFromData(const char *jsonData)
 }
 
 // ---------------------------------------------------------------------------
+// Macro state restore callback (for nested macro edits)
+// ---------------------------------------------------------------------------
+
+// Callback data format: {"name": "MacroName", "macro": {...}}
+static void restoreMacroStateFromData(const char *jsonData)
+{
+	OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
+	if (!data) {
+		return;
+	}
+
+	const std::string macroName = obs_data_get_string(data, "name");
+	OBSDataAutoRelease macroData = obs_data_get_obj(data, "macro");
+	if (!macroData) {
+		return;
+	}
+
+	const auto macro = GetWeakMacroByName(macroName.c_str()).lock();
+	if (!macro) {
+		return;
+	}
+
+	auto *const window = AdvSceneSwitcher::window;
+	const bool uiVisible = SettingsWindowIsOpened() && window;
+	auto *const macroEdit = uiVisible ? window->ui->macroEdit : nullptr;
+	const bool isCurrent = macroEdit && macroEdit->GetMacro() &&
+			       macroEdit->GetMacro()->Name() == macroName;
+
+	// Clear widgets while data is still valid; also saves splitter positions.
+	if (isCurrent) {
+		MacroSegmentList::SetCachingEnabled(false);
+		macroEdit->SetMacro({});
+	}
+
+	// Preserve splitter positions: Load() overwrites them with snapshot values.
+	const QList<int> savedCondSplitter =
+		macro->GetActionConditionSplitterPosition();
+	const QList<int> savedElseSplitter =
+		macro->GetElseActionSplitterPosition();
+
+	// Destroy deleteLater()-queued widgets now so their timers cannot fire
+	// with a dangling _entryData after the deques are cleared below.
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+	if (isCurrent) {
+		MacroSegmentList::SetCachingEnabled(true);
+	}
+
+	{
+		auto lock = LockContext();
+		// Load() appends; clear first to avoid duplicate segments.
+		macro->Conditions().clear();
+		macro->Actions().clear();
+		macro->ElseActions().clear();
+		macro->Load(macroData);
+		macro->PostLoad();
+		RunAndClearPostLoadSteps();
+	}
+
+	if (isCurrent) {
+		if (!savedCondSplitter.isEmpty()) {
+			macro->SetActionConditionSplitterPosition(
+				savedCondSplitter);
+		}
+		if (!savedElseSplitter.isEmpty()) {
+			macro->SetElseActionSplitterPosition(savedElseSplitter);
+		}
+		macroEdit->SetMacro(macro);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Rename undo/redo callback
 // ---------------------------------------------------------------------------
 
@@ -1058,6 +1131,34 @@ void RegisterSegmentTypeChangeUndoRedo(Macro *macro, SegmentType type,
 	obs_frontend_add_undo_redo_action(actionName.c_str(),
 					  &replaceSegmentFromData,
 					  &replaceSegmentFromData,
+					  obs_data_get_json(undoData),
+					  obs_data_get_json(redoData), false);
+}
+
+void RegisterMacroModifyUndoRedo(Macro *parentMacro, obs_data_t *beforeData)
+{
+	if (!parentMacro || !beforeData) {
+		return;
+	}
+
+	const std::string macroName = parentMacro->Name();
+
+	OBSDataAutoRelease afterMacroData = obs_data_create();
+	parentMacro->Save(afterMacroData);
+
+	OBSDataAutoRelease undoData = obs_data_create();
+	obs_data_set_string(undoData, "name", macroName.c_str());
+	obs_data_set_obj(undoData, "macro", beforeData);
+
+	OBSDataAutoRelease redoData = obs_data_create();
+	obs_data_set_string(redoData, "name", macroName.c_str());
+	obs_data_set_obj(redoData, "macro", afterMacroData);
+
+	const std::string actionName =
+		fmtUndoName("AdvSceneSwitcher.undo.modifyMacro", macroName);
+	obs_frontend_add_undo_redo_action(actionName.c_str(),
+					  &restoreMacroStateFromData,
+					  &restoreMacroStateFromData,
 					  obs_data_get_json(undoData),
 					  obs_data_get_json(redoData), false);
 }
