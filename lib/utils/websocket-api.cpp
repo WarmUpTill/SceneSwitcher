@@ -127,9 +127,10 @@ void RegisterWebsocketRequest(
 
 void SendWebsocketVendorEvent(const std::string &eventName, obs_data_t *data)
 {
-	if (OBSIsShuttingDown()) {
+	if (OBSIsShuttingDown() || !obs_get_module("obs-websocket")) {
 		return;
 	}
+
 	obs_websocket_vendor_emit_event(vendor, eventName.c_str(), data);
 }
 
