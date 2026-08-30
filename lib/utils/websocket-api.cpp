@@ -127,7 +127,22 @@ void RegisterWebsocketRequest(
 
 void SendWebsocketVendorEvent(const std::string &eventName, obs_data_t *data)
 {
+	// Guard against emitting vendor events while OBS is tearing down.
+	//
+	// During obs_shutdown() the modules are unloaded one-by-one. If
+	// obs-websocket was already unloaded before advanced-scene-switcher,
+	// the proc handler pointer (_ph) cached in obs-websocket-api.h is stale
+	// and proc_handler_call() crashes with a use-after-free
+	// (pthread_mutex_unlock in w32-pthreads). This happens in the forced-exit
+	// path that follows a "Source Cleanup Error" (scene collection switch),
+	// where the SCRIPTING_SHUTDOWN frontend event never fires, so the
+	// plugin's own obsIsShuttingDown flag is not set.
 	if (OBSIsShuttingDown()) {
+		return;
+	}
+	// obs_get_module() returns NULL once the module has been unloaded, so
+	// this is the reliable signal that obs-websocket's proc handler is gone.
+	if (!obs_get_module("obs-websocket")) {
 		return;
 	}
 	obs_websocket_vendor_emit_event(vendor, eventName.c_str(), data);
