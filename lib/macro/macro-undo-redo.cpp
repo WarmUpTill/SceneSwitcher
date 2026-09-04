@@ -742,6 +742,121 @@ static void renameMacroFromData(const char *jsonData)
 }
 
 // ---------------------------------------------------------------------------
+// Batch macro undo/redo callbacks (for import)
+// ---------------------------------------------------------------------------
+
+// Callback data format: {"names": [{"name": "..."}, ...]}
+static void deleteMacrosBatch(const char *jsonData)
+{
+	OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
+	if (!data) {
+		return;
+	}
+	OBSDataArrayAutoRelease names = obs_data_get_array(data, "names");
+	const int count = (int)obs_data_array_count(names);
+
+	auto *const window = AdvSceneSwitcher::window;
+	const bool uiVisible = SettingsWindowIsOpened() && window;
+
+	for (int i = count - 1; i >= 0; i--) {
+		OBSDataAutoRelease item = obs_data_array_item(names, i);
+		const std::string name = obs_data_get_string(item, "name");
+		const auto macro = GetWeakMacroByName(name.c_str()).lock();
+		if (!macro) {
+			continue;
+		}
+
+		if (uiVisible) {
+			window->ui->macroEdit->ClearSegmentWidgetCacheFor(
+				macro.get());
+		}
+
+		{
+			auto lock = LockContext();
+			auto &macros = GetTopLevelMacros();
+			const auto it =
+				std::find(macros.begin(), macros.end(), macro);
+			if (it != macros.end()) {
+				macros.erase(it);
+			}
+		}
+
+		MacroSignalManager::Instance()->Remove(
+			QString::fromStdString(name));
+	}
+
+	if (uiVisible) {
+		MacroSegmentList::SetCachingEnabled(false);
+		window->ui->macros->Reset(
+			GetTopLevelMacros(),
+			GetGlobalMacroSettings()._highlightExecuted);
+		MacroSegmentList::SetCachingEnabled(true);
+	}
+}
+
+// Callback data format:
+// {"macros": [{"index": N, "parent_group": "...", "macro": {...}}, ...]}
+static void restoreMacrosBatch(const char *jsonData)
+{
+	OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
+	if (!data) {
+		return;
+	}
+	OBSDataArrayAutoRelease macrosArray =
+		obs_data_get_array(data, "macros");
+	const size_t count = obs_data_array_count(macrosArray);
+
+	std::vector<std::string> addedNames;
+	for (size_t i = 0; i < count; i++) {
+		OBSDataAutoRelease entry = obs_data_array_item(macrosArray, i);
+		const int index = (int)obs_data_get_int(entry, "index");
+		const std::string parentGroup =
+			obs_data_get_string(entry, "parent_group");
+		OBSDataAutoRelease macroData = obs_data_get_obj(entry, "macro");
+		if (!macroData) {
+			continue;
+		}
+
+		auto macro = std::make_shared<Macro>();
+		{
+			auto lock = LockContext();
+			macro->Load(macroData);
+			macro->PostLoad();
+			RunAndClearPostLoadSteps();
+
+			if (!parentGroup.empty()) {
+				const auto parent =
+					GetWeakMacroByName(parentGroup.c_str())
+						.lock();
+				if (parent) {
+					Macro::PrepareMoveToGroup(parent,
+								  macro);
+				}
+			}
+
+			auto &macros = GetTopLevelMacros();
+			const int insertIdx =
+				std::min(index, (int)macros.size());
+			macros.insert(macros.begin() + insertIdx, macro);
+		}
+
+		addedNames.push_back(macro->Name());
+	}
+
+	auto *const window = AdvSceneSwitcher::window;
+	if (SettingsWindowIsOpened() && window) {
+		window->ui->macros->Reset(
+			GetTopLevelMacros(),
+			GetGlobalMacroSettings()._highlightExecuted);
+	}
+
+	for (const auto &name : addedNames) {
+		MacroSignalManager::Instance()->Add(
+			QString::fromStdString(name));
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Public registration functions
 // ---------------------------------------------------------------------------
 
@@ -1161,6 +1276,63 @@ void RegisterMacroModifyUndoRedo(Macro *parentMacro, obs_data_t *beforeData)
 					  &restoreMacroStateFromData,
 					  obs_data_get_json(undoData),
 					  obs_data_get_json(redoData), false);
+}
+
+void RegisterMacrosImportUndoRedo(
+	const std::vector<std::shared_ptr<Macro>> &importedMacros)
+{
+	if (importedMacros.empty()) {
+		return;
+	}
+
+	OBSDataArrayAutoRelease namesArray = obs_data_array_create();
+	OBSDataArrayAutoRelease macrosArray = obs_data_array_create();
+
+	const auto &allMacros = GetTopLevelMacros();
+	for (const auto &macro : importedMacros) {
+		const std::string macroName = macro->Name();
+
+		OBSDataAutoRelease nameItem = obs_data_create();
+		obs_data_set_string(nameItem, "name", macroName.c_str());
+		obs_data_array_push_back(namesArray, nameItem);
+
+		int index = -1;
+		for (int i = 0; i < (int)allMacros.size(); i++) {
+			if (allMacros[i].get() == macro.get()) {
+				index = i;
+				break;
+			}
+		}
+		if (index < 0) {
+			continue;
+		}
+
+		std::string parentGroup;
+		if (macro->Parent()) {
+			parentGroup = macro->Parent()->Name();
+		}
+
+		OBSDataAutoRelease macroData = obs_data_create();
+		macro->Save(macroData);
+
+		OBSDataAutoRelease entry = obs_data_create();
+		obs_data_set_int(entry, "index", index);
+		obs_data_set_string(entry, "parent_group", parentGroup.c_str());
+		obs_data_set_obj(entry, "macro", macroData);
+		obs_data_array_push_back(macrosArray, entry);
+	}
+
+	OBSDataAutoRelease undoData = obs_data_create();
+	obs_data_set_array(undoData, "names", namesArray);
+
+	OBSDataAutoRelease redoData = obs_data_create();
+	obs_data_set_array(redoData, "macros", macrosArray);
+
+	obs_frontend_add_undo_redo_action(
+		obs_module_text("AdvSceneSwitcher.undo.importMacros"),
+		&deleteMacrosBatch, &restoreMacrosBatch,
+		obs_data_get_json(undoData), obs_data_get_json(redoData),
+		false);
 }
 
 } // namespace advss

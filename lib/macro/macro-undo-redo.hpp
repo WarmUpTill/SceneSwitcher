@@ -2,7 +2,9 @@
 #include "macro-edit.hpp"
 
 #include <obs-data.h>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace advss {
 
@@ -27,5 +29,7 @@ void RegisterGroupCreateUndoRedo(const std::string &groupName);
 void RegisterGroupRemoveUndoRedo(const std::string &groupName);
 void RegisterGroupDeleteUndoRedo(Macro *macro);
 void RegisterMacroModifyUndoRedo(Macro *parentMacro, obs_data_t *beforeData);
+void RegisterMacrosImportUndoRedo(
+	const std::vector<std::shared_ptr<Macro>> &importedMacros);
 
 } // namespace advss

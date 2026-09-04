@@ -457,6 +457,7 @@ void AdvSceneSwitcher::ImportMacros()
 	ui->macros->Reset(GetTopLevelMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);
 	disableAddButtonHighlight();
+	RegisterMacrosImportUndoRedo(importedMacros);
 }
 
 void AdvSceneSwitcher::on_macroName_editingFinished()
@@ -828,6 +829,7 @@ void AdvSceneSwitcher::CopyMacro()
 	ui->macros->Add(newMacro, macro);
 	disableAddButtonHighlight();
 	MacroSignalManager::Instance()->Add(QString::fromStdString(name));
+	RegisterMacroAddUndoRedo(name);
 }
 
 void AdvSceneSwitcher::PauseSelectedMacros()
