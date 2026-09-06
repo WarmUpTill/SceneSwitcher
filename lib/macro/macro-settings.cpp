@@ -1,5 +1,6 @@
 #include "macro-settings.hpp"
 #include "layout-helpers.hpp"
+#include "macro-helpers.hpp"
 #include "macro.hpp"
 #include "obs-module-helper.hpp"
 #include "plugin-state-helpers.hpp"
@@ -8,10 +9,47 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QVBoxLayout>
+#include <set>
 
 namespace advss {
 
 static GlobalMacroSettings macroSettings;
+
+static constexpr int addNewDockWindowRole = Qt::UserRole + 1;
+
+static QStringList GetExistingDockWindowNames()
+{
+	std::set<std::string> names;
+	for (const auto &macro : GetAllMacros()) {
+		if (!macro) {
+			continue;
+		}
+		const auto &dockSettings = macro->GetDockSettings();
+		if (dockSettings.IsStandaloneDock()) {
+			continue;
+		}
+		names.insert(dockSettings.DockWindowName());
+	}
+
+	QStringList result;
+	for (const auto &name : names) {
+		result << QString::fromStdString(name);
+	}
+	return result;
+}
+
+static void populateDockWindowNameCombo(QComboBox *combo)
+{
+	combo->clear();
+	auto names = GetExistingDockWindowNames();
+	combo->addItems(names);
+	if (!names.isEmpty()) {
+		combo->insertSeparator(combo->count());
+	}
+	combo->addItem(obs_module_text(
+		"AdvSceneSwitcher.macroTab.currentDockWindowName.addNew"));
+	combo->setItemData(combo->count() - 1, true, addNewDockWindowRole);
+}
 
 void GlobalMacroSettings::Save(obs_data_t *obj) const
 {
@@ -96,7 +134,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.currentRegisterDock"))),
 	  _currentMacroIsStandaloneDock(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentIsStandaloneDock"))),
-	  _currentMacroDockWindowName(new QLineEdit(this)),
+	  _currentMacroDockWindowName(new QComboBox(this)),
 	  _currentMacroDockAddRunButton(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentDockAddRunButton"))),
 	  _currentMacroDockAddPauseButton(new QCheckBox(obs_module_text(
@@ -142,6 +180,17 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		obs_module_text(
 			"AdvSceneSwitcher.macroTab.pauseStateSaveBehavior.unpause"),
 		static_cast<int>(Macro::PauseStateSaveBehavior::UNPAUSE));
+
+	_currentMacroDockWindowName->setEditable(true);
+	populateDockWindowNameCombo(_currentMacroDockWindowName);
+	connect(_currentMacroDockWindowName,
+		qOverload<int>(&QComboBox::activated), this, [this](int index) {
+			if (_currentMacroDockWindowName
+				    ->itemData(index, addNewDockWindowRole)
+				    .toBool()) {
+				_currentMacroDockWindowName->setCurrentText("");
+			}
+		});
 
 	auto highlightOptions = new QGroupBox(
 		obs_module_text("AdvSceneSwitcher.macroTab.highlightSettings"));
@@ -348,7 +397,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 	_currentMacroRegisterDock->setChecked(dockEnabled);
 	_currentMacroIsStandaloneDock->setChecked(
 		dockSettings.IsStandaloneDock());
-	_currentMacroDockWindowName->setText(
+	_currentMacroDockWindowName->setCurrentText(
 		QString::fromStdString(dockSettings.DockWindowName()));
 	_currentMacroDockAddRunButton->setChecked(dockSettings.HasRunButton());
 	_currentMacroDockAddPauseButton->setChecked(
@@ -486,7 +535,7 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 	dockSettings.SetIsStandaloneDock(
 		dialog._currentMacroIsStandaloneDock->isChecked());
 	dockSettings.SetDockWindowName(
-		dialog._currentMacroDockWindowName->text().toStdString());
+		dialog._currentMacroDockWindowName->currentText().toStdString());
 	dockSettings.SetHasRunButton(
 		dialog._currentMacroDockAddRunButton->isChecked());
 	dockSettings.SetHasPauseButton(

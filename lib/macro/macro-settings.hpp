@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <QDialog>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QGroupBox>
 #include <QLineEdit>
 #include <QGridLayout>
@@ -71,7 +72,7 @@ private:
 	MacroInputSelection *_currentInputs;
 	QCheckBox *_currentMacroRegisterDock;
 	QCheckBox *_currentMacroIsStandaloneDock;
-	QLineEdit *_currentMacroDockWindowName;
+	QComboBox *_currentMacroDockWindowName;
 	QCheckBox *_currentMacroDockAddRunButton;
 	QCheckBox *_currentMacroDockAddPauseButton;
 	QCheckBox *_currentMacroDockAddStatusLabel;
