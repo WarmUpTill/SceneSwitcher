@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('x64')]
+    [ValidateSet('x64', 'arm64')]
     [string] $Target = 'x64',
     [ValidateSet('Debug', 'RelWithDebInfo', 'Release', 'MinSizeRel')]
     [string] $Configuration = 'RelWithDebInfo',
@@ -69,7 +69,8 @@ function Package {
     Remove-Item @RemoveArgs
 
     $ReleasePath = "${ProjectRoot}/release/${Configuration}"
-    $NewBinPath  = "${ReleasePath}/${ProductName}/bin/64bit"
+    $BinDirName  = if ($Target -eq 'arm64') { 'arm64' } else { '64bit' }
+    $NewBinPath  = "${ReleasePath}/${ProductName}/bin/${BinDirName}"
     $NewDataPath = "${ReleasePath}/${ProductName}/data"
     $CIWindowsDir = "${ProjectRoot}/build-aux/CI/windows"
 
@@ -80,7 +81,7 @@ function Package {
     New-Item -ItemType Directory -Force -Path $RecStaging | Out-Null
     Copy-Item -Path "${CIWindowsDir}/README.txt" -Destination "${RecStaging}/README.txt"
     if ( Test-Path -Path $NewBinPath ) {
-        $RecBinPath = "${RecStaging}/${ProductName}/bin/64bit"
+        $RecBinPath = "${RecStaging}/${ProductName}/bin/${BinDirName}"
         New-Item -ItemType Directory -Force -Path $RecBinPath | Out-Null
         Copy-Item -Path "${NewBinPath}/*" -Destination $RecBinPath -Recurse -Force
     }
@@ -102,7 +103,7 @@ function Package {
     New-Item -ItemType Directory -Force -Path $PortableStaging | Out-Null
     Copy-Item -Path "${CIWindowsDir}/README-portable.txt" -Destination "${PortableStaging}/README.txt"
     if ( Test-Path -Path $NewBinPath ) {
-        $PortableBinPath = "${PortableStaging}/obs-plugins/64bit"
+        $PortableBinPath = "${PortableStaging}/obs-plugins/${BinDirName}"
         New-Item -ItemType Directory -Force -Path $PortableBinPath | Out-Null
         Copy-Item -Path "${NewBinPath}/*" -Destination $PortableBinPath -Recurse -Force
     }
@@ -136,10 +137,10 @@ function Package {
         Copy-Item -Path "${Configuration}/*" -Destination $PkgRec -Recurse -Force
 
         # Legacy layout (for OBS installation directory)
-        if ( Test-Path "${Configuration}/${ProductName}/bin/64bit" ) {
-            $PkgLegBin = "Package/portable/obs-plugins/64bit"
+        if ( Test-Path "${Configuration}/${ProductName}/bin/${BinDirName}" ) {
+            $PkgLegBin = "Package/portable/obs-plugins/${BinDirName}"
             New-Item -ItemType Directory -Force -Path $PkgLegBin | Out-Null
-            Copy-Item -Path "${Configuration}/${ProductName}/bin/64bit/*" -Destination $PkgLegBin -Recurse -Force
+            Copy-Item -Path "${Configuration}/${ProductName}/bin/${BinDirName}/*" -Destination $PkgLegBin -Recurse -Force
         }
         if ( Test-Path "${Configuration}/${ProductName}/data" ) {
             $PkgLegData = "Package/portable/data/obs-plugins/${ProductName}"
