@@ -504,11 +504,10 @@ void LoadVariables(obs_data_t *obj)
 	}
 }
 
-static void signalImportedVariables(void *varsPtr)
+static void
+signalImportedVariables(const std::vector<std::shared_ptr<Item>> &vars)
 {
-	auto vars = std::unique_ptr<std::vector<std::shared_ptr<Item>>>(
-		static_cast<std::vector<std::shared_ptr<Item>> *>(varsPtr));
-	for (const auto &var : *vars) {
+	for (const auto &var : vars) {
 		VariableSignalManager::Instance()->Add(
 			QString::fromStdString(var->Name()));
 	}
@@ -519,7 +518,7 @@ void ImportVariables(obs_data_t *data)
 	OBSDataArrayAutoRelease array = obs_data_get_array(data, "variables");
 	size_t count = obs_data_array_count(array);
 
-	auto importedVars = new std::vector<std::shared_ptr<Item>>;
+	std::vector<std::shared_ptr<Item>> importedVars;
 
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease arrayElement = obs_data_array_item(array, i);
@@ -531,10 +530,11 @@ void ImportVariables(obs_data_t *data)
 		}
 
 		GetVariables().emplace_back(var);
-		importedVars->emplace_back(var);
+		importedVars.emplace_back(var);
 	}
 
-	QueueUITask(signalImportedVariables, importedVars);
+	QueueUITask(
+		[importedVars]() { signalImportedVariables(importedVars); });
 }
 
 std::chrono::high_resolution_clock::time_point GetLastVariableChangeTime()
