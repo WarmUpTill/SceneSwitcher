@@ -184,9 +184,9 @@ std::string GetThemeTypeName()
 #endif
 }
 
-void QueueUITask(void (*task)(void *param), void *param)
+void QueueUITaskRaw(void (*task)(void *param), void *param, bool wait)
 {
-	obs_queue_task(OBS_TASK_UI, task, param, false);
+	obs_queue_task(OBS_TASK_UI, task, param, wait);
 }
 
 bool IsCursorInWidgetArea(QWidget *widget)

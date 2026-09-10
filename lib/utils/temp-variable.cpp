@@ -734,12 +734,10 @@ TempVarSignalManager *TempVarSignalManager::Instance()
 void NotifyUIAboutTempVarChange(MacroSegment *segment)
 {
 	IncrementTempVarInUseGeneration();
-	QueueUITask(
-		[](void *segment) {
-			TempVarSignalManager::Instance()->SegmentTempVarsChanged(
-				(MacroSegment *)segment);
-		},
-		segment);
+	QueueUITask([segment]() {
+		TempVarSignalManager::Instance()->SegmentTempVarsChanged(
+			segment);
+	});
 }
 
 TempVarOutputMappingsWidget::TempVarOutputMappingsWidget(QWidget *parent)
