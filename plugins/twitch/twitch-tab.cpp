@@ -31,14 +31,9 @@ static bool setup()
 	static const auto showInvalidWarnings = [](void *) {
 		const auto invalidTokens = getInvalidTokens();
 		for (const auto &token : invalidTokens) {
-			QueueUITask(
-				[](void *tokenPtr) {
-					auto tokenName = static_cast<QString *>(
-						tokenPtr);
-					InvalidTokenDialog::ShowWarning(
-						*tokenName);
-				},
-				(void *)&token);
+			QueueUITask([token]() {
+				InvalidTokenDialog::ShowWarning(token);
+			});
 		}
 	};
 

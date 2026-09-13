@@ -420,11 +420,10 @@ static bool queueWithNameExists(const std::string &name)
 	return !GetWeakActionQueueByName(name).expired();
 }
 
-static void signalImportedQueues(void *varsPtr)
+static void
+signalImportedQueues(const std::vector<std::shared_ptr<Item>> &queues)
 {
-	auto queues = std::unique_ptr<std::vector<std::shared_ptr<Item>>>(
-		static_cast<std::vector<std::shared_ptr<Item>> *>(varsPtr));
-	for (const auto &queue : *queues) {
+	for (const auto &queue : queues) {
 		ActionQueueSignalManager::Instance()->Add(
 			QString::fromStdString(queue->Name()));
 	}
@@ -436,7 +435,7 @@ void ImportQueues(obs_data_t *data)
 		obs_data_get_array(data, "actionQueues");
 	size_t count = obs_data_array_count(array);
 
-	auto importedQueues = new std::vector<std::shared_ptr<Item>>;
+	std::vector<std::shared_ptr<Item>> importedQueues;
 
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease arrayElement = obs_data_array_item(array, i);
@@ -446,10 +445,11 @@ void ImportQueues(obs_data_t *data)
 			continue;
 		}
 		queues.emplace_back(queue);
-		importedQueues->emplace_back(queue);
+		importedQueues.emplace_back(queue);
 	}
 
-	QueueUITask(signalImportedQueues, importedQueues);
+	QueueUITask(
+		[importedQueues]() { signalImportedQueues(importedQueues); });
 }
 
 std::weak_ptr<ActionQueue> GetWeakActionQueueByName(const std::string &name)
