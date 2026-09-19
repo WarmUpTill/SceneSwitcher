@@ -201,6 +201,8 @@ bool MacroSegmentList::PopulateWidgetsFromCache(const Macro *macro)
 		_contentLayout->addWidget(widget);
 		widget->show();
 	}
+	// Widgets are now owned by the layout again, so the cache entry is stale.
+	_widgetCache.erase(it);
 
 	adjustSize();
 	updateGeometry();
@@ -463,7 +465,17 @@ void MacroSegmentList::SetupVisibleMacroSegmentWidgets()
 
 	const auto viewportRect = viewport()->rect();
 
-	for (auto segment : widget()->findChildren<MacroSegmentEdit *>()) {
+	for (int i = 0; i < _contentLayout->count(); ++i) {
+		auto item = _contentLayout->itemAt(i);
+		if (!item) {
+			continue;
+		}
+
+		auto segment = dynamic_cast<MacroSegmentEdit *>(item->widget());
+		if (!segment) {
+			continue;
+		}
+
 		const auto pos = segment->mapTo(viewport(), QPoint(0, 0));
 		const QRect rect(pos, segment->size());
 		if (!viewportRect.intersects(rect)) {

@@ -130,6 +130,13 @@ public:
 	void SetParent(std::shared_ptr<Macro> m) { _parent = m; }
 	std::shared_ptr<Macro> Parent() const;
 
+	// For nested macros embedded in actions (e.g. loop, nested-macro action)
+	void SetNestedParentMacro(Macro *parent)
+	{
+		_nestedParentMacro = parent;
+	}
+	Macro *GetNestedParentMacro() const { return _nestedParentMacro; }
+
 	// Saving and loading
 	bool Save(obs_data_t *obj, bool saveForCopy = false) const;
 	bool Load(obs_data_t *obj);
@@ -187,6 +194,7 @@ private:
 	std::deque<std::shared_ptr<MacroAction>> _elseActions;
 
 	std::weak_ptr<Macro> _parent;
+	Macro *_nestedParentMacro = nullptr;
 	uint32_t _groupSize = 0;
 	bool _isGroup = false;
 	bool _isCollapsed = false;

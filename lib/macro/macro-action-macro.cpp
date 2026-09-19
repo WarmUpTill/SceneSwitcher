@@ -281,6 +281,7 @@ bool MacroActionMacro::PostLoad()
 	MacroAction::PostLoad();
 	_runOptions.macro.PostLoad();
 	_nestedMacro->PostLoad();
+	_nestedMacro->SetNestedParentMacro(GetMacro());
 	return true;
 }
 

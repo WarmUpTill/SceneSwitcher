@@ -12,11 +12,15 @@ class MacroEdit : public QWidget {
 	Q_OBJECT
 
 public:
+	enum class SegmentType { CONDITION, ACTION, ELSE_ACTION };
+
 	MacroEdit(QWidget *parent, QStringList helpMsg = {});
 	void SetMacro(const std::shared_ptr<Macro> &);
 	std::shared_ptr<Macro> GetMacro() const;
 	void ClearSegmentWidgetCacheFor(Macro *) const;
 	void SetControlsDisabled(bool disable) const;
+	void InsertSegmentWidget(SegmentType type, int idx);
+	void RemoveSegmentWidget(SegmentType type, int idx);
 	void HighlightAction(int idx, QColor color = QColor(Qt::green)) const;
 	void HighlightElseAction(int idx,
 				 QColor color = QColor(Qt::green)) const;
@@ -112,14 +116,12 @@ protected:
 	bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
-	enum class MacroSection { CONDITIONS, ACTIONS, ELSE_ACTIONS };
-
 	void PopulateMacroActions(Macro &m, uint32_t afterIdx = 0);
 	void PopulateMacroElseActions(Macro &m, uint32_t afterIdx = 0);
 	void PopulateMacroConditions(Macro &m, uint32_t afterIdx = 0);
 	void ScrollAndFocusNewSegment(MacroSegmentList *list, int newIdx,
 				      int *currentIdx);
-	void SetupMacroSegmentSelection(MacroSection type, int idx);
+	void SetupMacroSegmentSelection(SegmentType type, int idx);
 	void
 	SetupContextMenu(const QPoint &pos,
 			 const std::function<void(MacroEdit *, int)> &remove,
@@ -131,7 +133,7 @@ private:
 	void RunSegmentHighlightChecks();
 	bool ElseSectionIsVisible() const;
 
-	MacroSection lastInteracted = MacroSection::CONDITIONS;
+	SegmentType lastInteracted = SegmentType::CONDITION;
 	int currentConditionIdx = -1;
 	int currentActionIdx = -1;
 	int currentElseActionIdx = -1;
