@@ -12,7 +12,8 @@ namespace advss {
 
 class FocusNotifier final : public QObject {
 	Q_OBJECT
-	Q_CLASSINFO("D-Bus Interface", "com.github.AdvancedSceneSwitcher")
+	Q_CLASSINFO("D-Bus Interface",
+		    "com.obsproject.Studio.Plugin.SceneSwitcher")
 
 	static std::mutex _mutex;
 	static int activePID;
