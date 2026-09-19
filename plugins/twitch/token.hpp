@@ -65,7 +65,7 @@ private:
 	mutable std::string _lastValidityCheckValue;
 	mutable bool _lastValidityCheckResult = false;
 	mutable std::chrono::system_clock::time_point _lastValidityCheckTime;
-	std::optional<std::string> _userID;
+	mutable std::optional<std::string> _userID;
 	std::set<TokenOption> _tokenOptions = TokenOption::GetAllTokenOptions();
 	std::shared_ptr<EventSub> _eventSub;
 	bool _validateEventSubTimestamps = false;

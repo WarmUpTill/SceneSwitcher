@@ -233,7 +233,11 @@ void TwitchToken::Load(obs_data_t *obj)
 {
 	Item::Load(obj);
 	_token = obs_data_get_string(obj, "token");
-	_userID = obs_data_get_string(obj, "userID");
+	if (obs_data_has_user_value(obj, "userID")) {
+		_userID = obs_data_get_string(obj, "userID");
+	} else {
+		_userID = {};
+	}
 	obs_data_set_default_bool(obj, "validateEventSubTimestamps", true);
 	_validateEventSubTimestamps =
 		obs_data_get_bool(obj, "validateEventSubTimestamps");
@@ -394,6 +398,10 @@ bool TwitchToken::IsValid(bool forceUpdate) const
 			     _name.c_str(), id, _userID->c_str());
 			_lastValidityCheckResult = false;
 			return false;
+		}
+
+		if (!_userID) {
+			_userID = id;
 		}
 
 		_lastValidityCheckResult = true;
