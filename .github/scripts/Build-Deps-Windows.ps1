@@ -216,8 +216,11 @@ function Build {
         Invoke-External $msbuildExe "${LibusbPath}/msvc/libusb.sln" /property:Configuration=Release /property:Platform=$LibusbPlatform
         Remove-Item Env:CL
 
-        $libusbBuildResultDirectory = "${LibusbPath}/build/v143/${LibusbPlatform}/Release"
-        if (-not (Test-Path -Path $libusbBuildResultDirectory)) {
+        $libusbBuildResultDirectory = Get-ChildItem -Path "${LibusbPath}/build" -Directory -Filter "v*" -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName "${LibusbPlatform}/Release" } |
+            Where-Object { Test-Path -Path $_ } |
+            Select-Object -First 1
+        if (-not $libusbBuildResultDirectory) {
             $libusbBuildResultDirectory = "${LibusbPath}/${LibusbPlatform}/Release/dll"
         }
         Copy-Item -Path "${libusbBuildResultDirectory}/*" -Destination ${ADVSSDepPath} -Recurse -Force
