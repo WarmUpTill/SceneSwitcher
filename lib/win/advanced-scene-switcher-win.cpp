@@ -2,6 +2,7 @@
 #include "plugin-state-helpers.hpp"
 
 #include <windows.h>
+#include <objbase.h>
 #include <UIAutomation.h>
 #include <util/platform.h>
 #include <TlHelp32.h>

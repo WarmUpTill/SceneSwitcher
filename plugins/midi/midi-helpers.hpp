@@ -6,6 +6,10 @@
 #include <variable-spinbox.hpp>
 #include <variable-string.hpp>
 
+#ifdef WIN32_LEAN_AND_MEAN
+#undef WIN32_LEAN_AND_MEAN
+#endif
+
 #define LIBREMIDI_HEADER_ONLY 1
 #include <libremidi/libremidi.hpp>
 
