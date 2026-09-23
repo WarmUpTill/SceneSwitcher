@@ -9,6 +9,10 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+#ifdef DELETE
+#undef DELETE
+#endif
+
 namespace advss {
 
 class MacroActionHttp final : public MacroAction {
