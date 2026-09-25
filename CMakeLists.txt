@@ -383,8 +383,18 @@ target_precompile_headers(${LIB_NAME} PRIVATE
                           "${CMAKE_CURRENT_SOURCE_DIR}/lib/pch.hpp")
 
 target_include_directories(
-  ${LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib"
-                     "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
+  ${LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/obs-websocket/lib")
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk/exprtk.hpp")
+  target_include_directories(${LIB_NAME}
+                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/deps/exprtk")
+  target_compile_definitions(${LIB_NAME} PRIVATE EXPRTK_SUPPORT=1)
+else()
+  message(
+    STATUS
+      "${PROJECT_NAME}: deps/exprtk not found - math expression support disabled"
+  )
+endif()
 
 if(NOT nlohmann_json_DIR
    AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/json/CMakeLists.txt")
