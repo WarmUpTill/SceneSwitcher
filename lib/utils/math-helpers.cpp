@@ -2,13 +2,16 @@
 #include "obs-module-helper.hpp"
 
 #include <climits>
+#ifdef EXPRTK_SUPPORT
 #include <exprtk.hpp>
 #include <random>
+#endif
 
 namespace advss {
 
 std::variant<double, std::string> EvalMathExpression(const std::string &expr)
 {
+#ifdef EXPRTK_SUPPORT
 	static auto randomFunc = []() {
 		thread_local std::mt19937 gen(std::random_device{}());
 		thread_local std::uniform_real_distribution<double> dis(0.0,
@@ -26,6 +29,7 @@ std::variant<double, std::string> EvalMathExpression(const std::string &expr)
 	if (parser.compile(expr, expression)) {
 		return expression.value();
 	}
+#endif
 	return std::string(obs_module_text(
 		       "AdvSceneSwitcher.math.expressionFail")) +
 	       " \"" + expr + "\"";

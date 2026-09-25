@@ -85,8 +85,11 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE test-math.cpp ${ADVSS_SOURCE_DIR}/lib/utils/math-helpers.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/obs-module-helper.cpp)
-target_include_directories(${PROJECT_NAME}
-                           PRIVATE ${ADVSS_SOURCE_DIR}/deps/exprtk)
+if(EXISTS "${ADVSS_SOURCE_DIR}/deps/exprtk/exprtk.hpp")
+  target_include_directories(${PROJECT_NAME}
+                             PRIVATE ${ADVSS_SOURCE_DIR}/deps/exprtk)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE EXPRTK_SUPPORT=1)
+endif()
 
 if(MSVC)
   target_compile_options(${PROJECT_NAME} PUBLIC /MP /d2FH4- /wd4267 /bigobj)
