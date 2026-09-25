@@ -48,7 +48,7 @@ public:
 	bool OptionIsActive(const TokenOption &option) const;
 	bool OptionIsEnabled(const TokenOption &option) const;
 	bool AnyOptionIsEnabled(const std::vector<TokenOption> &options) const;
-	void SetToken(const std::string &);
+	bool SetToken(const std::string &);
 	bool IsEmpty() const { return _token.empty(); }
 	std::optional<std::string> GetToken() const;
 	std::optional<std::string> GetUserID() const { return _userID; }
