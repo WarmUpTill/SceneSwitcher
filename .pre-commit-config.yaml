@@ -16,6 +16,10 @@ repos:
     rev: v0.6.13
     hooks:
       - id: cmake-format
+        exclude: |
+            (?x)^(
+                deps/.*
+            )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.2
