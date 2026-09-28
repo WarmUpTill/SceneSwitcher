@@ -88,8 +88,40 @@ namespace lib {
         inline lib::chrono::milliseconds milliseconds(long duration) {
             return lib::chrono::milliseconds(duration);
         }
+
+#if ASIO_VERSION >= 103300
+        // Shims restoring io_service/strand/work, removed in Asio 1.33+.
+        class io_service : public ::asio::io_context {
+        public:
+            using ::asio::io_context::io_context;
+
+            class strand : public ::asio::strand<::asio::io_context::executor_type> {
+            public:
+                explicit strand(io_service & ios)
+                  : ::asio::strand<::asio::io_context::executor_type>(
+                        ios.get_executor())
+                {}
+
+                template <typename Handler>
+                auto wrap(Handler handler) {
+                    return ::asio::bind_executor(*this, std::move(handler));
+                }
+            };
+
+            class work : public ::asio::executor_work_guard<
+                ::asio::io_context::executor_type>
+            {
+            public:
+                explicit work(io_service & ios)
+                  : ::asio::executor_work_guard<::asio::io_context::executor_type>(
+                        ios.get_executor())
+                {}
+            };
+        };
+#endif // ASIO_VERSION >= 103300
+
     } // namespace asio
-    
+
 #else
     namespace asio {
         using namespace boost::asio;
