@@ -47,7 +47,7 @@ target_compile_definitions(
   ${PROJECT_NAME} PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT=1 ASIO_STANDALONE=1
                           ASIO_HAS_OPENSSSL=1)
 target_include_directories(
-  ${PROJECT_NAME} PUBLIC "${ADVSS_SOURCE_DIR}/deps/asio/asio/include"
+  ${PROJECT_NAME} PUBLIC "${ADVSS_SOURCE_DIR}/deps/asio/include"
                          "${ADVSS_SOURCE_DIR}/deps/websocketpp")
 if(OS_MACOS)
   target_compile_definitions(
