@@ -95,7 +95,7 @@ public:
     explicit endpoint()
       : m_io_service(NULL)
       , m_external_io_service(false)
-      , m_listen_backlog(lib::asio::socket_base::max_connections)
+      , m_listen_backlog(lib::asio::socket_base::max_listen_connections)
       , m_reuse_addr(false)
       , m_state(UNINITIALIZED)
     {
@@ -135,7 +135,7 @@ public:
       , m_io_service(src.m_io_service)
       , m_external_io_service(src.m_external_io_service)
       , m_acceptor(src.m_acceptor)
-      , m_listen_backlog(lib::asio::socket_base::max_connections)
+      , m_listen_backlog(lib::asio::socket_base::max_listen_connections)
       , m_reuse_addr(src.m_reuse_addr)
       , m_elog(src.m_elog)
       , m_alog(src.m_alog)
@@ -159,7 +159,7 @@ public:
             rhs.m_io_service = NULL;
             rhs.m_external_io_service = false;
             rhs.m_acceptor = NULL;
-            rhs.m_listen_backlog = lib::asio::socket_base::max_connections;
+            rhs.m_listen_backlog = lib::asio::socket_base::max_listen_connections;
             rhs.m_state = UNINITIALIZED;
             
             // TODO: this needs to be updated
@@ -558,16 +558,15 @@ public:
     {
         using lib::asio::ip::tcp;
         tcp::resolver r(*m_io_service);
-        tcp::resolver::query query(host, service);
-        tcp::resolver::iterator endpoint_iterator = r.resolve(query);
-        tcp::resolver::iterator end;
-        if (endpoint_iterator == end) {
+        lib::asio::error_code aec;
+        tcp::resolver::results_type endpoints = r.resolve(host, service, aec);
+        if (aec || endpoints.empty()) {
             m_elog->write(log::elevel::library,
                 "asio::listen could not resolve the supplied host or service");
             ec = make_error_code(error::invalid_host_service);
             return;
         }
-        listen(*endpoint_iterator,ec);
+        listen(*endpoints.begin(),ec);
     }
 
     /// Set up endpoint for listening on a host and service
@@ -664,9 +663,9 @@ public:
         return m_io_service->poll_one();
     }
 
-    /// wraps the reset method of the internal io_service object
+    /// wraps the restart method of the internal io_service object
     void reset() {
-        m_io_service->reset();
+        m_io_service->restart();
     }
 
     /// wraps the stopped method of the internal io_service object
@@ -883,8 +882,6 @@ protected:
             port = pu->get_port_str();
         }
 
-        tcp::resolver::query query(host,port);
-
         if (m_alog->static_test(log::alevel::devel)) {
             m_alog->write(log::alevel::devel,
                 "starting async DNS resolve for "+host+":"+port);
@@ -905,7 +902,8 @@ protected:
 
         if (config::enable_multithreading) {
             m_resolver->async_resolve(
-                query,
+                host,
+                port,
                 tcon->get_strand()->wrap(lib::bind(
                     &type::handle_resolve,
                     this,
@@ -918,7 +916,8 @@ protected:
             );
         } else {
             m_resolver->async_resolve(
-                query,
+                host,
+                port,
                 lib::bind(
                     &type::handle_resolve,
                     this,
@@ -966,10 +965,10 @@ protected:
 
     void handle_resolve(transport_con_ptr tcon, timer_ptr dns_timer,
         connect_handler callback, lib::asio::error_code const & ec,
-        lib::asio::ip::tcp::resolver::iterator iterator)
+        lib::asio::ip::tcp::resolver::results_type endpoints)
     {
         if (ec == lib::asio::error::operation_aborted ||
-            lib::asio::is_neg(dns_timer->expires_from_now()))
+            dns_timer->expiry() < lib::asio::steady_timer::clock_type::now())
         {
             m_alog->write(log::alevel::devel,"async_resolve cancelled");
             return;
@@ -987,9 +986,8 @@ protected:
             std::stringstream s;
             s << "Async DNS resolve successful. Results: ";
 
-            lib::asio::ip::tcp::resolver::iterator it, end;
-            for (it = iterator; it != end; ++it) {
-                s << (*it).endpoint() << " ";
+            for (auto const & entry : endpoints) {
+                s << entry.endpoint() << " ";
             }
 
             m_alog->write(log::alevel::devel,s.str());
@@ -1014,7 +1012,7 @@ protected:
         if (config::enable_multithreading) {
             lib::asio::async_connect(
                 tcon->get_raw_socket(),
-                iterator,
+                endpoints,
                 tcon->get_strand()->wrap(lib::bind(
                     &type::handle_connect,
                     this,
@@ -1027,7 +1025,7 @@ protected:
         } else {
             lib::asio::async_connect(
                 tcon->get_raw_socket(),
-                iterator,
+                endpoints,
                 lib::bind(
                     &type::handle_connect,
                     this,
@@ -1077,7 +1075,7 @@ protected:
         connect_handler callback, lib::asio::error_code const & ec)
     {
         if (ec == lib::asio::error::operation_aborted ||
-            lib::asio::is_neg(con_timer->expires_from_now()))
+            con_timer->expiry() < lib::asio::steady_timer::clock_type::now())
         {
             m_alog->write(log::alevel::devel,"async_connect cancelled");
             return;
