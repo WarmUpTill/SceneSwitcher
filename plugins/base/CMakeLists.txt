@@ -223,7 +223,7 @@ get_target_property(ADVSS_SOURCE_DIR advanced-scene-switcher-lib SOURCE_DIR)
 add_definitions(-DASIO_STANDALONE)
 target_include_directories(
   ${LIB_NAME}
-  PUBLIC "${ADVSS_SOURCE_DIR}/deps/asio/asio/include"
+  PUBLIC "${ADVSS_SOURCE_DIR}/deps/asio/include"
          "${ADVSS_SOURCE_DIR}/deps/websocketpp"
          "${ADVSS_SOURCE_DIR}/deps/obs-websocket/lib")
 
