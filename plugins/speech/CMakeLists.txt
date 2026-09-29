@@ -63,10 +63,16 @@ function(_advss_whisper_suppress_werror dir)
       ${_target}
       PRIVATE $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error
               -Wno-shorten-64-to-32
-              -Wno-ambiguous-macro>
+              -Wno-ambiguous-macro
+              -Wno-unused-parameter
+              -Wno-unreachable-code
+              -Wno-unguarded-availability-new>
               $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wno-error
               -Wno-shorten-64-to-32
-              -Wno-ambiguous-macro>
+              -Wno-ambiguous-macro
+              -Wno-unused-parameter
+              -Wno-unreachable-code
+              -Wno-unguarded-availability-new>
               $<$<C_COMPILER_ID:MSVC>:/WX->
               $<$<CXX_COMPILER_ID:MSVC>:/WX->)
   endforeach()
