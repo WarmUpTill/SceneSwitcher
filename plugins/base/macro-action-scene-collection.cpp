@@ -17,20 +17,6 @@ bool MacroActionSceneCollection::_registered = MacroActionFactory::Register(
 	 MacroActionSceneCollectionEdit::Create,
 	 "AdvSceneSwitcher.action.sceneCollection"});
 
-template<typename F> void QueueUITaskLambda(F &&func)
-{
-	using FnType = std::decay_t<F>;
-	auto *heapFunc = new FnType(std::forward<F>(func));
-
-	QueueUITask(
-		[](void *param) {
-			std::unique_ptr<FnType> fn(
-				static_cast<FnType *>(param));
-			(*fn)();
-		},
-		heapFunc);
-}
-
 bool MacroActionSceneCollection::PerformAction()
 {
 	// Changing the scene collection will also reload the settings of the
@@ -41,7 +27,7 @@ bool MacroActionSceneCollection::PerformAction()
 	}
 
 	const auto collectionName = _sceneCollection;
-	QueueUITaskLambda([collectionName]() {
+	QueueUITask([collectionName]() {
 		obs_frontend_set_current_scene_collection(
 			collectionName.c_str());
 	});

@@ -6,7 +6,10 @@
 #include <QIcon>
 #include <QString>
 
+#include <memory>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 class QAbstractButton;
 class QComboBox;
@@ -38,7 +41,23 @@ EXPORT void DisplayTrayMessage(const QString &title, const QString &msg,
 EXPORT std::string GetThemeTypeName();
 EXPORT QWidget *GetSettingsWindow();
 
-EXPORT void QueueUITask(void (*task)(void *param), void *param);
+EXPORT void QueueUITaskRaw(void (*task)(void *param), void *param,
+			   bool wait = false);
+
+// Runs func on the main/UI thread; blocks if wait is true.
+template<typename F> void QueueUITask(F &&func, bool wait = false)
+{
+	using FnType = std::decay_t<F>;
+	auto *heapFunc = new FnType(std::forward<F>(func));
+
+	QueueUITaskRaw(
+		[](void *param) {
+			std::unique_ptr<FnType> fn(
+				static_cast<FnType *>(param));
+			(*fn)();
+		},
+		heapFunc, wait);
+}
 
 bool IsCursorInWidgetArea(QWidget *widget);
 

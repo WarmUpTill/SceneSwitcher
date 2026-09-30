@@ -185,20 +185,6 @@ static void closeSourceDialog(obs_source_t *source, bool accept,
 	}
 }
 
-template<typename F> void QueueUITaskLambda(F &&func)
-{
-	using FnType = std::decay_t<F>;
-	auto *heapFunc = new FnType(std::forward<F>(func));
-
-	QueueUITask(
-		[](void *param) {
-			std::unique_ptr<FnType> fn(
-				static_cast<FnType *>(param));
-			(*fn)();
-		},
-		heapFunc);
-}
-
 bool MacroActionSource::PerformAction()
 {
 	OBSSource s = obs_weak_source_get_source(_source.GetSource());
@@ -271,17 +257,17 @@ bool MacroActionSource::PerformAction()
 			break;
 		}
 
-		QueueUITaskLambda([&]() {
+		QueueUITask([&]() {
 			closeSourceDialog(s, true, "OBSBasicInteraction");
 		});
 		break;
 	case Action::CLOSE_FILTER_DIALOG:
-		QueueUITaskLambda([&]() {
+		QueueUITask([&]() {
 			closeSourceDialog(s, _acceptDialog, "OBSBasicFilters");
 		});
 		break;
 	case Action::CLOSE_PROPERTIES_DIALOG:
-		QueueUITaskLambda([&]() {
+		QueueUITask([&]() {
 			closeSourceDialog(s, _acceptDialog,
 					  "OBSBasicProperties");
 		});
