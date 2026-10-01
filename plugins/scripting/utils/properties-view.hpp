@@ -9,6 +9,10 @@
 #include <QScrollArea>
 #include <QPlainTextEdit>
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 0, 0)
 
 class QFormLayout;

@@ -9,6 +9,12 @@ if(NOT WIN32)
   return()
 endif(NOT WIN32)
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|arm64|aarch64")
+  message(WARNING "OpenVR does not provide Windows ARM64 binaries!\n"
+                  "OpenVR condition will be disabled!")
+  return()
+endif()
+
 # --- End of section ---
 
 add_library(${PROJECT_NAME} MODULE)
@@ -28,7 +34,9 @@ endif()
 
 if(EXISTS "${OpenVR_DIR}/CMakeLists.txt")
   set(SIZEOF_VOIDP ${CMAKE_SIZEOF_VOID_P})
-  if((NOT APPLE) AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
+  if(WIN32 AND CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|arm64|aarch64")
+    set(PROCESSOR_ARCH "arm64")
+  elseif((NOT APPLE) AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
     set(PROCESSOR_ARCH "64")
   else()
     set(PROCESSOR_ARCH "32")

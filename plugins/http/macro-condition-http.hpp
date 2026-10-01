@@ -8,6 +8,10 @@
 #include <QCheckBox>
 #include <QComboBox>
 
+#ifdef DELETE
+#undef DELETE
+#endif
+
 namespace advss {
 
 class MacroConditionHttp : public MacroCondition {
