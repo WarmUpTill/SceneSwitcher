@@ -5,7 +5,73 @@
 
 #include <QFileDialog>
 
+#ifdef __APPLE__
+#include <spawn.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <csignal>
+#include <cerrno>
+#include <chrono>
+#include <thread>
+#include <vector>
+
+extern char **environ;
+#endif
+
 namespace advss {
+
+#ifdef __APPLE__
+// QProcess uses fork(), which is unsafe to call in OBS's multi-threaded,
+// CEF/XPC-using process (see fork(2)). posix_spawn() avoids fork() entirely.
+
+namespace {
+
+std::vector<char *> BuildArgv(const std::string &path, const QStringList &args,
+			      std::vector<std::string> &storage)
+{
+	storage.push_back(path);
+	for (auto &arg : args) {
+		storage.push_back(arg.toStdString());
+	}
+
+	std::vector<char *> argv;
+	argv.reserve(storage.size() + 1);
+	for (auto &arg : storage) {
+		argv.push_back(const_cast<char *>(arg.c_str()));
+	}
+	argv.push_back(nullptr);
+	return argv;
+}
+
+bool DrainPipe(int fd, std::string &buffer)
+{
+	char chunk[4096];
+	while (true) {
+		ssize_t n = read(fd, chunk, sizeof(chunk));
+		if (n > 0) {
+			buffer.append(chunk, static_cast<size_t>(n));
+			continue;
+		}
+		if (n == 0) {
+			return false; // EOF
+		}
+		if (errno == EINTR) {
+			continue;
+		}
+		return true; // EAGAIN/EWOULDBLOCK
+	}
+}
+
+std::string TrimTrailingNewline(const std::string &s)
+{
+	static const QRegularExpression regex("(\\r\\n|\\r|\\n)$");
+	return QString::fromStdString(s).remove(regex).toStdString();
+}
+
+} // namespace
+#endif
 
 bool ProcessConfig::Save(obs_data_t *obj) const
 {
@@ -50,11 +116,44 @@ QStringList ProcessConfig::Args() const
 	return result;
 }
 
+#ifdef __APPLE__
+bool ProcessConfig::StartProcessDetached() const
+{
+	auto path = Path();
+	auto workDir = WorkingDir();
+	std::vector<std::string> argStorage;
+	auto argv = BuildArgv(path, Args(), argStorage);
+
+	posix_spawn_file_actions_t actions;
+	posix_spawn_file_actions_init(&actions);
+	if (!workDir.empty()) {
+		posix_spawn_file_actions_addchdir_np(&actions, workDir.c_str());
+	}
+
+	pid_t pid = 0;
+	int rc = posix_spawn(&pid, path.c_str(), &actions, nullptr, argv.data(),
+			     environ);
+	posix_spawn_file_actions_destroy(&actions);
+
+	if (rc != 0) {
+		return false;
+	}
+
+	std::thread([pid]() {
+		int status = 0;
+		while (waitpid(pid, &status, 0) == -1 && errno == EINTR) {
+		}
+	}).detach();
+
+	return true;
+}
+#else
 bool ProcessConfig::StartProcessDetached() const
 {
 	return QProcess::startDetached(QString::fromStdString(Path()), Args(),
 				       QString::fromStdString(WorkingDir()));
 }
+#endif
 
 void ProcessConfig::ResolveVariables()
 {
@@ -63,6 +162,139 @@ void ProcessConfig::ResolveVariables()
 	_args.ResolveVariables();
 }
 
+#ifdef __APPLE__
+std::variant<int, ProcessConfig::ProcStartError>
+ProcessConfig::StartProcessAndWait(int timeout)
+{
+	ResetFinishedProcessData();
+
+	vblog(LOG_INFO, "run \"%s\" with a timeout of %d ms", Path().c_str(),
+	      timeout);
+
+	int outPipe[2];
+	int errPipe[2];
+	if (pipe(outPipe) != 0 || pipe(errPipe) != 0) {
+		vblog(LOG_INFO, "failed to start \"%s\"!", Path().c_str());
+		return ProcStartError::FAILED_TO_START;
+	}
+
+	auto path = Path();
+	auto workDir = WorkingDir();
+	std::vector<std::string> argStorage;
+	auto argv = BuildArgv(path, Args(), argStorage);
+
+	posix_spawn_file_actions_t actions;
+	posix_spawn_file_actions_init(&actions);
+	posix_spawn_file_actions_addclose(&actions, outPipe[0]);
+	posix_spawn_file_actions_addclose(&actions, errPipe[0]);
+	posix_spawn_file_actions_adddup2(&actions, outPipe[1], STDOUT_FILENO);
+	posix_spawn_file_actions_adddup2(&actions, errPipe[1], STDERR_FILENO);
+	posix_spawn_file_actions_addclose(&actions, outPipe[1]);
+	posix_spawn_file_actions_addclose(&actions, errPipe[1]);
+	if (!workDir.empty()) {
+		posix_spawn_file_actions_addchdir_np(&actions, workDir.c_str());
+	}
+
+	pid_t pid = 0;
+	int rc = posix_spawn(&pid, path.c_str(), &actions, nullptr, argv.data(),
+			     environ);
+	posix_spawn_file_actions_destroy(&actions);
+	close(outPipe[1]);
+	close(errPipe[1]);
+
+	if (rc != 0) {
+		close(outPipe[0]);
+		close(errPipe[0]);
+		vblog(LOG_INFO, "failed to start \"%s\"!", Path().c_str());
+		return ProcStartError::FAILED_TO_START;
+	}
+
+	SetProcessId(std::to_string(pid));
+	fcntl(outPipe[0], F_SETFL, O_NONBLOCK);
+	fcntl(errPipe[0], F_SETFL, O_NONBLOCK);
+
+	std::string outBuf;
+	std::string errBuf;
+	bool outDone = false;
+	bool errDone = false;
+	auto deadline = std::chrono::steady_clock::now() +
+			std::chrono::milliseconds(timeout);
+
+	while (!outDone || !errDone) {
+		auto remaining =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				deadline - std::chrono::steady_clock::now())
+				.count();
+		if (remaining <= 0) {
+			break;
+		}
+
+		struct pollfd fds[2];
+		int n = 0;
+		int outIdx = -1;
+		int errIdx = -1;
+		if (!outDone) {
+			fds[n] = {outPipe[0], POLLIN, 0};
+			outIdx = n++;
+		}
+		if (!errDone) {
+			fds[n] = {errPipe[0], POLLIN, 0};
+			errIdx = n++;
+		}
+
+		int pr = poll(fds, n, static_cast<int>(remaining));
+		if (pr < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			break;
+		}
+
+		if (outIdx >= 0 && fds[outIdx].revents != 0) {
+			if (!DrainPipe(outPipe[0], outBuf)) {
+				outDone = true;
+			}
+		}
+		if (errIdx >= 0 && fds[errIdx].revents != 0) {
+			if (!DrainPipe(errPipe[0], errBuf)) {
+				errDone = true;
+			}
+		}
+	}
+
+	close(outPipe[0]);
+	close(errPipe[0]);
+
+	if (!outDone || !errDone) {
+		vblog(LOG_INFO,
+		      "timeout while running \"%s\"\nAttempting to kill process!",
+		      Path().c_str());
+		kill(pid, SIGKILL);
+		int status = 0;
+		while (waitpid(pid, &status, 0) == -1 && errno == EINTR) {
+		}
+		_processOutputStream = TrimTrailingNewline(outBuf);
+		_processErrorStream = TrimTrailingNewline(errBuf);
+		return ProcStartError::TIMEOUT;
+	}
+
+	int status = 0;
+	while (waitpid(pid, &status, 0) == -1 && errno == EINTR) {
+	}
+
+	_processOutputStream = TrimTrailingNewline(outBuf);
+	_processErrorStream = TrimTrailingNewline(errBuf);
+
+	if (WIFEXITED(status)) {
+		int exitCode = WEXITSTATUS(status);
+		_processExitCode = std::to_string(exitCode);
+		return exitCode;
+	}
+
+	vblog(LOG_INFO, "process \"%s\" crashed!", Path().c_str());
+	return ProcStartError::CRASH;
+}
+#else
 std::variant<int, ProcessConfig::ProcStartError>
 ProcessConfig::StartProcessAndWait(int timeout)
 {
@@ -101,6 +333,7 @@ ProcessConfig::StartProcessAndWait(int timeout)
 	vblog(LOG_INFO, "process \"%s\" crashed!", Path().c_str());
 	return ProcStartError::CRASH;
 }
+#endif
 
 void ProcessConfig::SetFinishedProcessData(QProcess &process)
 {

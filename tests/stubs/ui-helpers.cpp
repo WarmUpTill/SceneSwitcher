@@ -40,7 +40,7 @@ std::string GetThemeTypeName()
 	return "Dark";
 }
 
-void QueueUITask(void (*task)(void *param), void *) {}
+void QueueUITaskRaw(void (*task)(void *param), void *, bool) {}
 
 QWidget *GetSettingsWindow()
 {
