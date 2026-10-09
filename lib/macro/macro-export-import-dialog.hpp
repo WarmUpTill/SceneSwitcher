@@ -1,9 +1,12 @@
 #pragma once
 
+#include "macro-export-prompts-dialog.hpp"
+
 #include <QCheckBox>
 #include <QDialog>
 #include <QList>
 #include <QPlainTextEdit>
+#include <QPushButton>
 
 #include <obs-data.h>
 #include <vector>
@@ -21,6 +24,7 @@ public:
 private slots:
 	void UsePlainTextChanged(int);
 	void UpdateExportString();
+	void EditImportPrompts();
 
 private:
 	explicit MacroExportImportDialog(Type type,
@@ -38,8 +42,10 @@ private:
 	void RefreshExportText();
 
 	QString _baseJson;
+	ExportPromptsState _promptsState;
 	QPlainTextEdit *_importExportString;
 	QCheckBox *_usePlainText;
+	QPushButton *_editImportPrompts;
 	QList<ExtensionUI> _extensionUIs;
 	std::vector<int> _extensionOrder;
 };
