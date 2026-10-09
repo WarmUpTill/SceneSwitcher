@@ -28,15 +28,17 @@ function(set_target_properties_plugin target)
   set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION
                                                        ${PLUGIN_VERSION})
 
+  set(_bin_destination "${target}${ADVSS_WINDOWS_BIN_SUBDIR}")
+
   install(
     TARGETS ${target}
-    RUNTIME DESTINATION "${target}/bin/64bit"
-    LIBRARY DESTINATION "${target}/bin/64bit")
+    RUNTIME DESTINATION "${_bin_destination}"
+    LIBRARY DESTINATION "${_bin_destination}")
 
   install(
     FILES "$<TARGET_PDB_FILE:${target}>"
     CONFIGURATIONS RelWithDebInfo Debug Release
-    DESTINATION "${target}/bin/64bit"
+    DESTINATION "${_bin_destination}"
     OPTIONAL)
 
   if(OBS_BUILD_DIR)
@@ -44,11 +46,11 @@ function(set_target_properties_plugin target)
       TARGET ${target}
       POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E make_directory
-              "${OBS_BUILD_DIR}/plugins/${target}/bin/64bit"
+              "${OBS_BUILD_DIR}/plugins/${_bin_destination}"
       COMMAND
         "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${target}>"
         "$<$<CONFIG:Debug,RelWithDebInfo,Release>:$<TARGET_PDB_FILE:${target}>>"
-        "${OBS_BUILD_DIR}/plugins/${target}/bin/64bit"
+        "${OBS_BUILD_DIR}/plugins/${_bin_destination}"
       COMMENT "Copy ${target} to obs-studio directory ${OBS_BUILD_DIR}"
       VERBATIM)
   endif()

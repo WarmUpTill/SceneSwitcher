@@ -30,10 +30,9 @@ DisableDirPage=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-; Recommended layout - used when installing to %ProgramData%\obs-studio\plugins\
-Source: "..\release\Package\recommended\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsRecommendedLayout
-; Legacy layout - used when installing to the OBS installation directory
-Source: "..\release\Package\portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: IsLegacyLayout
+; The destination depends on the detected OBS version and plugin layout
+Source: "..\release\Package\bin\*"; DestDir: "{code:GetBinDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\release\Package\data\*"; DestDir: "{code:GetDataDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\LICENSE"; Flags: dontcopy
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -42,6 +41,18 @@ Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 
 [Code]
+const
+  PluginName = '{#MyAppName}';
+  LayoutUnknown = -1;
+  LayoutProgramData = 0;
+  LayoutProgramDataObs32 = 1;
+  LayoutPortable = 2;
+  LayoutPortableObs32 = 3;
+
+var
+  ObsVersionPage: TInputOptionWizardPage;
+  CachedLayout: Integer;
+
 procedure InitializeWizard();
 var
   GPLText: AnsiString;
@@ -54,27 +65,174 @@ begin
     'Press Page Down to see the rest of the agreement. Once you are aware of your rights, click Next to continue.',
     String(GPLText)
   );
+
+  ObsVersionPage := CreateInputOptionPage(wpSelectDir,
+    'OBS Studio Version', 'Which version of OBS Studio do you use?',
+    'The installed OBS Studio version could not be detected. OBS Studio 33 changed where plugins are loaded from, so select the version this plugin will be used with.',
+    True, False);
+  ObsVersionPage.Add('OBS Studio 33 or newer');
+  ObsVersionPage.Add('OBS Studio 32 or older');
+  ObsVersionPage.Values[0] := True;
+
+  CachedLayout := LayoutUnknown;
 end;
 
 // Returns true when the selected install directory is under %ProgramData%,
 // meaning the recommended plugin layout should be used.
-function IsRecommendedLayout(): Boolean;
+function IsProgramDataDir(): Boolean;
 begin
   Result := Pos(LowerCase(ExpandConstant('{commonappdata}')),
                 LowerCase(WizardDirValue())) = 1;
 end;
 
-function IsLegacyLayout(): Boolean;
+function GetSelectedDir(): string;
 begin
-  Result := not IsRecommendedLayout();
+  Result := RemoveBackslashUnlessRoot(WizardDirValue());
+end;
+
+function HasObsExecutable(Dir: string): Boolean;
+begin
+  Result := (Dir <> '') and FileExists(Dir + '\bin\64bit\obs64.exe');
+end;
+
+// Returns -1 if no OBS installation was found in ObsDir
+function GetObsMajorVersion(ObsDir: string): Integer;
+var
+  Version: string;
+begin
+  Result := -1;
+  if not HasObsExecutable(ObsDir) then
+    Exit;
+  if not GetVersionNumbersString(ObsDir + '\bin\64bit\obs64.exe', Version) then
+    Exit;
+  Result := StrToIntDef(Copy(Version, 1, Pos('.', Version) - 1), -1);
+end;
+
+// Written by both the regular OBS installer and Steam
+function GetInstalledObsDir(): string;
+begin
+  if IsWin64 and RegQueryStringValue(HKLM64, 'SOFTWARE\OBS Studio', '', Result) then
+    Exit;
+  if not RegQueryStringValue(HKLM32, 'SOFTWARE\OBS Studio', '', Result) then
+    Result := '';
+end;
+
+// Users might select either the OBS installation directory or its "plugins"
+// folder. Returns an empty string if no OBS installation was found.
+function GetObsDir(): string;
+var
+  Dir: string;
+begin
+  if IsProgramDataDir() then begin
+    Result := GetInstalledObsDir();
+    Exit;
+  end;
+  Result := '';
+  Dir := GetSelectedDir();
+  if HasObsExecutable(Dir) then
+    Result := Dir
+  else if (CompareText(ExtractFileName(Dir), 'plugins') = 0) and
+          HasObsExecutable(ExtractFileDir(Dir)) then
+    Result := ExtractFileDir(Dir);
+end;
+
+// Directory containing the obs-plugins folder of the OBS 32 portable layout
+function GetPortableObs32BaseDir(): string;
+begin
+  Result := GetObsDir();
+  if Result = '' then
+    Result := GetSelectedDir();
+end;
+
+// Same marker files OBS checks for, the --portable argument cannot be detected
+function IsPortableModeEnabled(ObsDir: string): Boolean;
+begin
+  Result := FileExists(ObsDir + '\portable_mode') or
+            FileExists(ObsDir + '\obs_portable_mode') or
+            FileExists(ObsDir + '\portable_mode.txt') or
+            FileExists(ObsDir + '\obs_portable_mode.txt');
+end;
+
+function DetectLayout(): Integer;
+var
+  ObsDir: string;
+  ObsMajorVersion: Integer;
+begin
+  ObsDir := GetObsDir();
+  ObsMajorVersion := GetObsMajorVersion(ObsDir);
+  if IsProgramDataDir() then begin
+    if ObsMajorVersion >= 33 then
+      Result := LayoutProgramData
+    else if ObsMajorVersion >= 0 then
+      Result := LayoutProgramDataObs32
+    else if ObsVersionPage.Values[0] then
+      Result := LayoutProgramData
+    else
+      Result := LayoutProgramDataObs32;
+    Exit;
+  end;
+  // OBS 33 only loads plugins from its own "plugins" folder in portable mode,
+  // while the old obs-plugins/64bit location is still loaded in either mode
+  if (ObsMajorVersion >= 33) and IsPortableModeEnabled(ObsDir) then
+    Result := LayoutPortable
+  else
+    Result := LayoutPortableObs32;
+end;
+
+// Evaluated for every installed file, so avoid repeated detection
+function GetLayout(): Integer;
+begin
+  if CachedLayout = LayoutUnknown then
+    CachedLayout := DetectLayout();
+  Result := CachedLayout;
+end;
+
+function GetPluginDir(): string;
+begin
+  if GetLayout() = LayoutPortable then
+    Result := GetObsDir() + '\plugins\' + PluginName
+  else
+    Result := GetSelectedDir() + '\' + PluginName;
+end;
+
+function GetBinDir(Param: string): string;
+begin
+  case GetLayout() of
+    LayoutProgramDataObs32:
+      Result := GetPluginDir() + '\bin\64bit';
+    LayoutPortableObs32:
+      Result := GetPortableObs32BaseDir() + '\obs-plugins\64bit';
+  else
+    Result := GetPluginDir();
+  end;
+end;
+
+function GetDataDir(Param: string): string;
+begin
+  if GetLayout() = LayoutPortableObs32 then
+    Result := GetPortableObs32BaseDir() + '\data\obs-plugins\' + PluginName
+  else
+    Result := GetPluginDir() + '\data';
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if PageID <> ObsVersionPage.ID then
+    Exit;
+  Result := not IsProgramDataDir() or (GetObsMajorVersion(GetObsDir()) >= 0);
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  // The directory or the selected OBS version might have changed
+  CachedLayout := LayoutUnknown;
+  Result := True;
 end;
 
 function GetUninstallIconPath(Param: string): string;
 begin
-  if IsRecommendedLayout() then
-    Result := ExpandConstant('{app}\advanced-scene-switcher\data\res\images\logo.ico')
-  else
-    Result := ExpandConstant('{app}\data\obs-plugins\advanced-scene-switcher\res\images\logo.ico');
+  Result := GetDataDir('') + '\res\images\logo.ico';
 end;
 
 function GetDirName(Value: string): string;
@@ -88,15 +246,46 @@ begin
     Result := PrevPath;
 end;
 
-// Remove files placed by the portable installer (obs-plugins/64bit and
-// data/obs-plugins layout) so the plugin is not loaded twice by OBS.
+procedure DeleteBinaries(Dir: string);
+begin
+  DeleteFile(Dir + '\advanced-scene-switcher.dll');
+  DeleteFile(Dir + '\advanced-scene-switcher.pdb');
+  DeleteFile(Dir + '\advanced-scene-switcher-lib.dll');
+  DeleteFile(Dir + '\advanced-scene-switcher-lib.pdb');
+  DelTree(Dir + '\advanced-scene-switcher-plugins', True, True, True);
+end;
+
+procedure DeletePortableObs32Files(ObsDir: string);
+begin
+  DeleteBinaries(ObsDir + '\obs-plugins\64bit');
+  DelTree(ObsDir + '\data\obs-plugins\advanced-scene-switcher', True, True, True);
+end;
+
+// Remove binaries of the other layout in the same location so OBS does not
+// load a stale copy
+procedure RemoveOtherLayoutFiles();
+begin
+  case GetLayout() of
+    LayoutProgramData:
+      DelTree(GetPluginDir() + '\bin', True, True, True);
+    LayoutProgramDataObs32:
+      DeleteBinaries(GetPluginDir());
+    LayoutPortable:
+      DeletePortableObs32Files(GetObsDir());
+    LayoutPortableObs32:
+      DelTree(GetPortableObs32BaseDir() + '\plugins\' + PluginName, True, True, True);
+  end;
+end;
+
+// Remove files placed by the portable installer so the plugin is not loaded
+// twice by OBS.
 // Only runs when upgrading from a portable location to the recommended one.
 procedure RemoveLegacyFiles();
 var
   OldInstallPath: string;
   UninstallKey: string;
 begin
-  if not IsRecommendedLayout() then
+  if not IsProgramDataDir() then
     Exit;
   UninstallKey := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\' + '{' + '{#MyAppId}' + '}_is1';
   if not RegQueryStringValue(HKLM, UninstallKey, 'InstallLocation', OldInstallPath) then
@@ -104,16 +293,14 @@ begin
   // Skip if the previous install was already in the recommended location
   if Pos(LowerCase(ExpandConstant('{commonappdata}')), LowerCase(OldInstallPath)) = 1 then
     Exit;
-  DeleteFile(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher.dll');
-  DeleteFile(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher.pdb');
-  DeleteFile(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher-lib.dll');
-  DeleteFile(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher-lib.pdb');
-  DelTree(OldInstallPath + '\obs-plugins\64bit\advanced-scene-switcher-plugins', True, True, True);
-  DelTree(OldInstallPath + '\data\obs-plugins\advanced-scene-switcher', True, True, True);
+  DeletePortableObs32Files(OldInstallPath);
+  DelTree(OldInstallPath + '\plugins\advanced-scene-switcher', True, True, True);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if CurStep = ssInstall then
-    RemoveLegacyFiles();
+  if CurStep <> ssInstall then
+    Exit;
+  RemoveLegacyFiles();
+  RemoveOtherLayoutFiles();
 end;
