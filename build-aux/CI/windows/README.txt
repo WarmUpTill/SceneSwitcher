@@ -5,7 +5,7 @@ For full installation instructions visit:
 https://github.com/WarmUpTill/SceneSwitcher/wiki/Installation
 
 
-This archive uses the recommended plugin layout for OBS 28 and newer.
+This archive is for OBS 33 and newer.
 
 Extract the CONTENTS of this archive into:
 
@@ -14,8 +14,13 @@ Extract the CONTENTS of this archive into:
 Tip: press Win+R and type  %ProgramData%\obs-studio\plugins  to open that folder.
 
 After extracting, the path should look like:
-    C:\ProgramData\obs-studio\plugins\advanced-scene-switcher\bin\64bit\advanced-scene-switcher.dll
+    C:\ProgramData\obs-studio\plugins\advanced-scene-switcher\advanced-scene-switcher.dll
+
+For a portable OBS install, extract it into the "plugins" folder of your OBS
+installation directory instead:
+    <OBS directory>\plugins\advanced-scene-switcher\advanced-scene-switcher.dll
 
 
-If the plugin does not appear in OBS, try the portable archive instead:
-    advanced-scene-switcher-<version>-windows-x64-portable.zip
+For OBS 32 and older use one of these archives instead:
+    advanced-scene-switcher-<version>-windows-x64-obs32.zip
+    advanced-scene-switcher-<version>-windows-x64-portable-obs32.zip
