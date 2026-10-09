@@ -1,12 +1,18 @@
 #pragma once
 
+#include "macro-export-prompts-dialog.hpp"
+
 #include <QCheckBox>
 #include <QDialog>
 #include <QList>
 #include <QPlainTextEdit>
+#include <QPushButton>
 
 #include <obs-data.h>
 #include <vector>
+
+class QScrollArea;
+class QSplitter;
 
 namespace advss {
 
@@ -21,6 +27,8 @@ public:
 private slots:
 	void UsePlainTextChanged(int);
 	void UpdateExportString();
+	void EditImportPrompts();
+	void FitExtensionSection();
 
 private:
 	explicit MacroExportImportDialog(Type type,
@@ -38,8 +46,12 @@ private:
 	void RefreshExportText();
 
 	QString _baseJson;
+	ExportPromptsState _promptsState;
 	QPlainTextEdit *_importExportString;
 	QCheckBox *_usePlainText;
+	QPushButton *_editImportPrompts;
+	QSplitter *_splitter = nullptr;
+	QScrollArea *_extensionScrollArea = nullptr;
 	QList<ExtensionUI> _extensionUIs;
 	std::vector<int> _extensionOrder;
 };

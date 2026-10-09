@@ -144,8 +144,14 @@ target_sources(
           lib/macro/macro-export-extensions.hpp
           lib/macro/macro-export-import-dialog.cpp
           lib/macro/macro-export-import-dialog.hpp
+          lib/macro/macro-export-prompts-dialog.cpp
+          lib/macro/macro-export-prompts-dialog.hpp
           lib/macro/macro-helpers.cpp
           lib/macro/macro-helpers.hpp
+          lib/macro/macro-import-prompts.cpp
+          lib/macro/macro-import-prompts.hpp
+          lib/macro/macro-import-prompts-dialog.cpp
+          lib/macro/macro-import-prompts-dialog.hpp
           lib/macro/macro-input.cpp
           lib/macro/macro-input.hpp
           lib/macro/macro-list.cpp

@@ -1,10 +1,13 @@
 #include "macro-export-import-dialog.hpp"
+#include "json-helpers.hpp"
 #include "macro-export-extensions.hpp"
+#include "macro-import-prompts-dialog.hpp"
 #include "obs-module-helper.hpp"
 #include "section.hpp"
 
 #include <obs.hpp>
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLayout>
 #include <QScrollArea>
@@ -43,9 +46,59 @@ static bool isValidData(const QString &json)
 	return !!data;
 }
 
+static bool runImportPrompts(obs_data_t *data)
+{
+	auto prompts = LoadImportPrompts(data);
+	if (prompts.empty()) {
+		return true;
+	}
+
+	MacroImportPromptsDialog dialog(nullptr, prompts);
+	if (dialog.exec() != QDialog::Accepted) {
+		return false;
+	}
+
+	auto replacements = dialog.GetReplacements();
+	if (replacements.empty()) {
+		return true;
+	}
+
+	auto macrosJson =
+		GetJsonField(obs_data_get_json(data), "macros").value_or("[]");
+	for (auto &[placeholder, value] : replacements) {
+		macrosJson =
+			ReplaceJsonStringValue(macrosJson, placeholder, value);
+	}
+
+	std::string wrapped = "{\"macros\":" + macrosJson + "}";
+	OBSDataAutoRelease wrapper = obs_data_create_from_json(wrapped.c_str());
+	if (!wrapper) {
+		return true;
+	}
+	OBSDataArrayAutoRelease macros = obs_data_get_array(wrapper, "macros");
+	obs_data_set_array(data, "macros", macros);
+	return true;
+}
+
 // ---------------------------------------------------------------------------
 // Extension section
 // ---------------------------------------------------------------------------
+
+class ContentSizedScrollArea : public QScrollArea {
+public:
+	using QScrollArea::QScrollArea;
+
+	// Skip scrollbars and so on to avoid gap in layout
+	QSize minimumSizeHint() const override
+	{
+		auto hint = QScrollArea::minimumSizeHint();
+		if (widget()) {
+			hint.setHeight(std::min(hint.height(),
+						widget()->sizeHint().height()));
+		}
+		return hint;
+	}
+};
 
 QWidget *MacroExportImportDialog::BuildExtensionWidget()
 {
@@ -147,6 +200,8 @@ QWidget *MacroExportImportDialog::BuildExtensionWidget()
 			});
 
 		innerSection->SetContent(subWidget, true);
+		connect(innerSection, &Section::AnimationFinished, this,
+			&MacroExportImportDialog::FitExtensionSection);
 		outerLayout->addWidget(innerSection);
 		_extensionUIs.append(std::move(ui));
 		_extensionOrder.push_back(extIdx);
@@ -154,12 +209,18 @@ QWidget *MacroExportImportDialog::BuildExtensionWidget()
 
 	outerLayout->addStretch();
 
-	auto scrollArea = new QScrollArea(wrapper);
+	auto scrollArea = new ContentSizedScrollArea(wrapper);
+	_extensionScrollArea = scrollArea;
 	scrollArea->setWidget(outerContent);
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	scrollArea->setFrameShape(QFrame::NoFrame);
 	wrapperLayout->addWidget(scrollArea);
+
+	auto promptsLayout = new QHBoxLayout();
+	promptsLayout->addWidget(_editImportPrompts);
+	promptsLayout->addStretch();
+	wrapperLayout->addLayout(promptsLayout);
 
 	return wrapper;
 }
@@ -174,8 +235,18 @@ MacroExportImportDialog::MacroExportImportDialog(Type type,
 	  _baseJson(baseJson),
 	  _importExportString(new QPlainTextEdit(this)),
 	  _usePlainText(new QCheckBox(obs_module_text(
-		  "AdvSceneSwitcher.macroTab.export.usePlainText")))
+		  "AdvSceneSwitcher.macroTab.export.usePlainText"))),
+	  _editImportPrompts(new QPushButton(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.export.importPrompts.edit")))
 {
+	if (type == Type::EXPORT_MACRO) {
+		OBSDataAutoRelease data = obs_data_create_from_json(
+			_baseJson.toStdString().c_str());
+		if (data) {
+			_promptsState.Load(data);
+		}
+	}
+
 	_importExportString->setReadOnly(type == Type::EXPORT_MACRO);
 
 	auto label = new QLabel(obs_module_text(
@@ -200,12 +271,16 @@ MacroExportImportDialog::MacroExportImportDialog(Type type,
 	connect(_usePlainText, &QCheckBox::stateChanged, this,
 		&MacroExportImportDialog::UsePlainTextChanged);
 
+	_editImportPrompts->setVisible(type == Type::EXPORT_MACRO);
+	connect(_editImportPrompts, &QPushButton::clicked, this,
+		&MacroExportImportDialog::EditImportPrompts);
+
 	auto layout = new QVBoxLayout(this);
 
 	if (type == Type::EXPORT_MACRO && !GetMacroExportExtensions().empty()) {
 		auto splitter = new QSplitter(Qt::Vertical, this);
 		splitter->setChildrenCollapsible(false);
-		splitter->addWidget(BuildExtensionWidget());
+		_splitter = splitter;
 
 		auto textWidget = new QWidget(splitter);
 		auto textLayout = new QVBoxLayout(textWidget);
@@ -214,12 +289,16 @@ MacroExportImportDialog::MacroExportImportDialog(Type type,
 		textLayout->addWidget(_importExportString);
 		textLayout->addWidget(_usePlainText);
 		splitter->addWidget(textWidget);
+		splitter->addWidget(BuildExtensionWidget());
+		splitter->setStretchFactor(0, 1);
+		splitter->setStretchFactor(1, 0);
 
 		layout->addWidget(splitter);
 	} else {
 		layout->addWidget(label);
 		layout->addWidget(_importExportString);
 		layout->addWidget(_usePlainText);
+		layout->addWidget(_editImportPrompts);
 	}
 
 	layout->addWidget(buttons);
@@ -243,6 +322,8 @@ QString MacroExportImportDialog::BuildExportJson() const
 	if (!data) {
 		return _baseJson;
 	}
+
+	_promptsState.Apply(data);
 
 	const auto &extensions = GetMacroExportExtensions();
 	for (int i = 0; i < (int)_extensionUIs.size(); ++i) {
@@ -283,6 +364,36 @@ void MacroExportImportDialog::RefreshExportText()
 
 void MacroExportImportDialog::UpdateExportString()
 {
+	RefreshExportText();
+}
+
+void MacroExportImportDialog::FitExtensionSection()
+{
+	if (!_splitter || !_extensionScrollArea ||
+	    !_extensionScrollArea->widget()) {
+		return;
+	}
+
+	const int delta = _extensionScrollArea->widget()->sizeHint().height() -
+			  _extensionScrollArea->viewport()->height();
+	if (delta == 0) {
+		return;
+	}
+
+	auto sizes = _splitter->sizes();
+	const int minTextHeight =
+		_splitter->widget(0)->minimumSizeHint().height();
+	const int change = std::min(delta, sizes[0] - minTextHeight);
+	sizes[0] -= change;
+	sizes[1] += change;
+	_splitter->setSizes(sizes);
+}
+
+void MacroExportImportDialog::EditImportPrompts()
+{
+	if (!MacroExportPromptsDialog::Edit(this, _promptsState)) {
+		return;
+	}
 	RefreshExportText();
 }
 
@@ -330,13 +441,19 @@ bool MacroExportImportDialog::ImportMacros(QString &json)
 		json = dialog._importExportString->toPlainText();
 	}
 
-	// Invoke all extension load callbacks.
 	OBSDataAutoRelease data =
 		obs_data_create_from_json(json.toStdString().c_str());
-	if (data) {
-		for (const auto &ext : GetMacroExportExtensions()) {
-			ext.load(data, {});
-		}
+	if (!data) {
+		return true;
+	}
+
+	if (!runImportPrompts(data)) {
+		return false;
+	}
+	json = QString::fromUtf8(obs_data_get_json(data));
+
+	for (const auto &ext : GetMacroExportExtensions()) {
+		ext.load(data, {});
 	}
 
 	return true;
