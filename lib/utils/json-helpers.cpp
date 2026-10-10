@@ -6,6 +6,9 @@
 #endif
 #include <nlohmann/json.hpp>
 #include <QJsonDocument>
+#include <unordered_map>
+#include <util/bmem.h>
+#include <util/platform.h>
 
 namespace advss {
 
@@ -116,6 +119,91 @@ ExtractSingleJsonArrayElement(const std::string &jsonStr)
 		return {};
 	}
 	return {};
+}
+
+static void collectStrings(const nlohmann::json &json,
+			   std::vector<std::pair<std::string, int>> &result,
+			   std::unordered_map<std::string, size_t> &index)
+{
+	if (json.is_string()) {
+		auto value = json.get<std::string>();
+		auto it = index.find(value);
+		if (it == index.end()) {
+			index[value] = result.size();
+			result.emplace_back(value, 1);
+		} else {
+			result[it->second].second++;
+		}
+		return;
+	}
+	if (json.is_object()) {
+		for (const auto &item : json.items()) {
+			collectStrings(item.value(), result, index);
+		}
+		return;
+	}
+	if (json.is_array()) {
+		for (const auto &value : json) {
+			collectStrings(value, result, index);
+		}
+	}
+}
+
+std::vector<std::pair<std::string, int>>
+CollectDistinctJsonStringValues(const std::string &jsonStr)
+{
+	std::vector<std::pair<std::string, int>> result;
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		std::unordered_map<std::string, size_t> index;
+		collectStrings(json, result, index);
+	} catch (const nlohmann::json::exception &) {
+	}
+	return result;
+}
+
+static void replaceStrings(nlohmann::json &json, const std::string &oldValue,
+			   const std::string &newValue)
+{
+	if (json.is_string()) {
+		if (json.get<std::string>() == oldValue) {
+			json = newValue;
+		}
+		return;
+	}
+	if (json.is_object()) {
+		for (auto &item : json.items()) {
+			replaceStrings(item.value(), oldValue, newValue);
+		}
+		return;
+	}
+	if (json.is_array()) {
+		for (auto &value : json) {
+			replaceStrings(value, oldValue, newValue);
+		}
+	}
+}
+
+std::string ReplaceJsonStringValue(const std::string &jsonStr,
+				   const std::string &oldValue,
+				   const std::string &newValue)
+{
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		replaceStrings(json, oldValue, newValue);
+		return json.dump();
+	} catch (const nlohmann::json::exception &) {
+		return jsonStr;
+	}
+}
+
+std::string GenerateImportPlaceholder()
+{
+	char *uuid = os_generate_uuid();
+	std::string result =
+		"ADVSS_IMPORT_PLACEHOLDER_" + std::string(uuid ? uuid : "");
+	bfree(uuid);
+	return result;
 }
 
 } // namespace advss
