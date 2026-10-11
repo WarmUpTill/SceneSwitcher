@@ -1,5 +1,6 @@
 #pragma once
 #include "resizing-text-edit.hpp"
+#include "value-input.hpp"
 
 #include <QDialog>
 #include <QMessageBox>
@@ -19,6 +20,9 @@ public:
 			      bool focusAdvssWindow = false);
 	NonModalMessageDialog(const QString &message, bool question,
 			      bool focusAdvssWindow = false);
+	NonModalMessageDialog(const QString &message, ValueInputType inputType,
+			      const std::string &defaultValue,
+			      const QStringList &options);
 	~NonModalMessageDialog();
 	QMessageBox::StandardButton ShowMessage();
 	std::optional<std::string> GetInput();
@@ -34,6 +38,7 @@ private:
 	const Type _type;
 	QString _input = "";
 	ResizingPlainTextEdit *_inputEdit = nullptr;
+	ValueInputWidget *_valueInput = nullptr;
 	QMessageBox::StandardButton _answer;
 };
 

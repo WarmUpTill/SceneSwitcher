@@ -7,6 +7,7 @@
 #include "scene-selection.hpp"
 #include "single-char-selection.hpp"
 #include "string-list.hpp"
+#include "value-input.hpp"
 #include "variable-line-edit.hpp"
 #include "variable-text-edit.hpp"
 #include "variable-spinbox.hpp"
@@ -84,6 +85,8 @@ public:
 	bool _useInputPlaceholder = false;
 	StringVariable _inputPlaceholder =
 		obs_module_text("AdvSceneSwitcher.enterText");
+	ValueInputType _inputType = ValueInputType::String;
+	StringList _inputOptions = {"value1", "value2", "value3"};
 #ifdef _WIN32
 	StringVariable _envVariableName = "USERPROFILE";
 #else
@@ -173,6 +176,8 @@ private slots:
 	void InputPromptChanged();
 	void UseInputPlaceholderChanged(int);
 	void InputPlaceholderChanged();
+	void InputTypeChanged(int);
+	void InputOptionsChanged(const StringList &);
 	void EnvVariableChanged();
 	void SceneChanged(const SceneSelection &);
 	void SelectionChanged(const TempVariableRef &var);
@@ -224,6 +229,9 @@ private:
 	QHBoxLayout *_placeholderLayout;
 	QCheckBox *_useInputPlaceholder;
 	VariableLineEdit *_inputPlaceholder;
+	QHBoxLayout *_inputTypeLayout;
+	QComboBox *_inputType;
+	StringListEdit *_inputOptions;
 	VariableLineEdit *_envVariable;
 	SceneSelectionWidget *_scenes;
 	TempVariableSelection *_tempVars;
