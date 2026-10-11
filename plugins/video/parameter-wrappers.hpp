@@ -94,7 +94,7 @@ public:
 	}
 
 	bool SetModelPath(const std::string &path);
-	const std::string &GetModelPath() const { return _modelPath; }
+	const StringVariable &GetModelPath() const { return _modelPath; }
 	ObjectDetector *GetDetector();
 
 	NumberVariable<double> scaleFactor = defaultScaleFactor;
@@ -106,10 +106,11 @@ private:
 	bool LoadModelData();
 
 	std::unique_ptr<ObjectDetector> _detector;
-	std::string _modelPath =
+	StringVariable _modelPath =
 		obs_get_module_data_path(obs_current_module()) +
 		std::string(
 			"/res/cascadeClassifiers/haarcascade_frontalface_alt.xml");
+	std::string _loadedModelPath;
 };
 
 class OCRParameters {
@@ -125,13 +126,16 @@ public:
 	bool Initialized() const { return initDone; }
 	void SetPageMode(tesseract::PageSegMode);
 	bool SetLanguageCode(const std::string &);
-	std::string GetLanguageCode() const;
+	const StringVariable &GetLanguageCode() const { return languageCode; }
 	bool SetTesseractBasePath(const std::string &);
-	std::string GetTesseractBasePath() const;
+	const StringVariable &GetTesseractBasePath() const
+	{
+		return tesseractBasePath;
+	}
 	void EnableCustomConfig(bool enable);
 	bool CustomConfigIsEnabled() const { return useConfig; }
 	void SetCustomConfigFile(const std::string &);
-	std::string GetCustomConfigFile() const { return configFile; }
+	const StringVariable &GetCustomConfigFile() const { return configFile; }
 	tesseract::PageSegMode GetPageMode() const { return pageSegMode; }
 	tesseract::TessBaseAPI *GetOCR();
 
@@ -142,6 +146,7 @@ public:
 
 private:
 	void Setup();
+	bool SetupIsUpToDate() const;
 
 	tesseract::PageSegMode pageSegMode = tesseract::PSM_SINGLE_BLOCK;
 	StringVariable tesseractBasePath =
@@ -149,9 +154,12 @@ private:
 		std::string("/res/ocr");
 	StringVariable languageCode = "eng";
 	bool useConfig = false;
-	std::string configFile = "config.txt";
+	StringVariable configFile = "config.txt";
 	std::unique_ptr<tesseract::TessBaseAPI> ocr;
 	bool initDone = false;
+	std::string setupBasePath;
+	std::string setupLanguageCode;
+	std::string setupConfigFile;
 };
 
 class ColorParameters {

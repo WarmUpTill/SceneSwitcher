@@ -60,7 +60,7 @@ public:
 
 	VideoInput _video;
 	bool _keepActive = false;
-	std::string _file = obs_module_text("AdvSceneSwitcher.enterPath");
+	StringVariable _file = obs_module_text("AdvSceneSwitcher.enterPath");
 	// Enabling this will reduce matching latency, but slow down the
 	// the condition checks of all macros overall.
 	//
