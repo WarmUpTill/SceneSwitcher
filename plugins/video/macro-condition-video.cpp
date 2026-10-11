@@ -133,7 +133,7 @@ bool MacroConditionVideo::Save(obs_data_t *obj) const
 	_video.Save(obj);
 	obs_data_set_bool(obj, "keepActive", _keepActive);
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
-	obs_data_set_string(obj, "filePath", _file.c_str());
+	_file.Save(obj, "filePath");
 	obs_data_set_bool(obj, "blockUntilScreenshotDone",
 			  _blockUntilScreenshotDone);
 	_brightnessThreshold.Save(obj, "brightnessThreshold");
@@ -154,7 +154,7 @@ bool MacroConditionVideo::Load(obs_data_t *obj)
 	_keepActive = obs_data_get_bool(obj, "keepActive");
 	SetCondition(static_cast<VideoCondition>(
 		obs_data_get_int(obj, "condition")));
-	_file = obs_data_get_string(obj, "filePath");
+	_file.Load(obj, "filePath");
 	_blockUntilScreenshotDone =
 		obs_data_get_bool(obj, "blockUntilScreenshotDone");
 	// TODO: Remove this fallback in a future version
@@ -202,12 +202,13 @@ void MacroConditionVideo::GetScreenshot(bool blocking)
 
 bool MacroConditionVideo::LoadImageFromFile()
 {
-	const QFileInfo info(QString::fromStdString(_file));
+	const std::string file = _file;
+	const QFileInfo info(QString::fromStdString(file));
 	_loadedFileLastModified = info.lastModified();
-	_loadedFile = _file;
+	_loadedFile = file;
 	if (!_matchImage.load(info.absoluteFilePath())) {
 		blog(LOG_WARNING, "Cannot load image data from file '%s'",
-		     _file.c_str());
+		     file.c_str());
 		(&_matchImage)->~QImage();
 		new (&_matchImage) QImage();
 		_patternImageData = {};
@@ -304,9 +305,10 @@ bool MacroConditionVideo::FileInputIsUpToDate() const
 	if (!requiresFileInput(_condition)) {
 		return true;
 	}
-	const QFileInfo info(QString::fromStdString(_file));
+	const std::string file = _file;
+	const QFileInfo info(QString::fromStdString(file));
 	return (_loadedFileLastModified == info.lastModified()) &&
-	       (_file == _loadedFile);
+	       (file == _loadedFile);
 }
 
 bool MacroConditionVideo::OutputChanged()
@@ -1099,7 +1101,7 @@ void MacroConditionVideoEdit::UpdateEntryData()
 	_condition->setCurrentIndex(_condition->findData(
 		static_cast<int>(_entryData->GetCondition())));
 	_reduceLatency->setChecked(_entryData->_blockUntilScreenshotDone);
-	_imagePath->SetPath(QString::fromStdString(_entryData->_file));
+	_imagePath->SetPath(_entryData->_file);
 	_usePatternForChangedCheck->setChecked(
 		_entryData->_patternMatchParameters.useForChangedCheck);
 	_patternThreshold->SetDoubleValue(

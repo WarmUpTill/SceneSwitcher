@@ -62,13 +62,14 @@ static bool isMinNeighborsValid(int minNeighbors)
 
 bool CascadeClassifierParameters::LoadModelData()
 {
-	const auto path = QString::fromStdString(_modelPath);
+	_loadedModelPath = _modelPath;
+	const auto path = QString::fromStdString(_loadedModelPath);
 	if (!QFileInfo(path).exists(path)) {
 		_detector.reset();
 		return false;
 	}
 	auto det = std::make_unique<CascadeClassifierDetector>();
-	if (!det->Load(_modelPath)) {
+	if (!det->Load(_loadedModelPath)) {
 		_detector.reset();
 		return false;
 	}
@@ -79,7 +80,7 @@ bool CascadeClassifierParameters::LoadModelData()
 bool CascadeClassifierParameters::Save(obs_data_t *obj) const
 {
 	auto data = obs_data_create();
-	obs_data_set_string(data, "modelPath", _modelPath.c_str());
+	_modelPath.Save(data, "modelPath");
 	scaleFactor.Save(data, "scaleFactor");
 	obs_data_set_int(data, "minNeighbors", minNeighbors);
 	minSize.Save(data, "minSize");
@@ -108,7 +109,7 @@ bool CascadeClassifierParameters::Load(obs_data_t *obj)
 		return true;
 	}
 	auto data = obs_data_get_obj(obj, "objectMatchData");
-	_modelPath = obs_data_get_string(data, "modelPath");
+	_modelPath.Load(data, "modelPath");
 	scaleFactor.Load(data, "scaleFactor");
 	// TODO: Remove this fallback in a future version
 	if (!obs_data_has_user_value(data, "version")) {
@@ -121,11 +122,12 @@ bool CascadeClassifierParameters::Load(obs_data_t *obj)
 		// which invalidates previously saved default model paths.
 		const std::string oldPrefix =
 			"../../data/obs-plugins/advanced-scene-switcher/res/cascadeClassifiers/";
-		if (_modelPath.substr(0, oldPrefix.size()) == oldPrefix) {
+		const std::string oldPath = _modelPath.UnresolvedValue();
+		if (oldPath.substr(0, oldPrefix.size()) == oldPrefix) {
 			_modelPath = std::string(obs_get_module_data_path(
 					     obs_current_module())) +
 				     "/res/cascadeClassifiers/" +
-				     _modelPath.substr(oldPrefix.size());
+				     oldPath.substr(oldPrefix.size());
 		}
 #endif
 	}
@@ -150,7 +152,8 @@ bool CascadeClassifierParameters::SetModelPath(const std::string &path)
 
 ObjectDetector *CascadeClassifierParameters::GetDetector()
 {
-	if (!_detector || !_detector->IsLoaded()) {
+	if (!_detector || !_detector->IsLoaded() ||
+	    std::string(_modelPath) != _loadedModelPath) {
 		if (!LoadModelData()) {
 			return nullptr;
 		}
@@ -316,7 +319,7 @@ bool OCRParameters::Save(obs_data_t *obj) const
 	tesseractBasePath.Save(data, "tesseractBasePath");
 	languageCode.Save(data, "language");
 	obs_data_set_bool(data, "useConfig", useConfig);
-	obs_data_set_string(data, "configFile", configFile.c_str());
+	configFile.Save(data, "configFile");
 	color.Save(data, "textColor");
 	colorThreshold.Save(data, "colorThreshold");
 	obs_data_set_int(data, "pageSegMode", static_cast<int>(pageSegMode));
@@ -358,7 +361,7 @@ bool OCRParameters::Load(obs_data_t *obj)
 #endif
 	}
 	useConfig = obs_data_get_bool(data, "useConfig");
-	configFile = obs_data_get_string(data, "configFile");
+	configFile.Load(data, "configFile");
 
 	color.Load(data, "textColor");
 	if (obs_data_has_user_value(data, "version")) {
@@ -382,18 +385,31 @@ void OCRParameters::SetPageMode(tesseract::PageSegMode mode)
 
 tesseract::TessBaseAPI *OCRParameters::GetOCR()
 {
-	if (!initDone) {
+	if (!initDone || !SetupIsUpToDate()) {
 		Setup();
 	}
 	return initDone ? ocr.get() : nullptr;
 }
 
+static bool containsVariables(const std::string &value)
+{
+	return std::string(StringVariable(value)) != value;
+}
+
+static bool modelFileExists(const std::string &basePath,
+			    const std::string &languageCode)
+{
+	const auto dataPath = QString::fromStdString(basePath) + "/" +
+			      QString::fromStdString(languageCode) +
+			      ".traineddata";
+	return QFileInfo::exists(dataPath);
+}
+
 bool OCRParameters::SetLanguageCode(const std::string &value)
 {
-	const auto dataPath = QString::fromStdString(tesseractBasePath) + "/" +
-			      QString::fromStdString(value) + ".traineddata";
-	QFileInfo fileInfo(dataPath);
-	if (!fileInfo.exists(dataPath)) {
+	// Variable values can change later, so only fixed values are validated
+	if (!containsVariables(value) &&
+	    !modelFileExists(tesseractBasePath, value)) {
 		return false;
 	}
 	languageCode = value;
@@ -401,28 +417,15 @@ bool OCRParameters::SetLanguageCode(const std::string &value)
 	return true;
 }
 
-std::string OCRParameters::GetLanguageCode() const
-{
-	return languageCode;
-}
-
 bool OCRParameters::SetTesseractBasePath(const std::string &value)
 {
-	const auto dataPath = QString::fromStdString(value) + "/" +
-			      QString::fromStdString(languageCode) +
-			      ".traineddata";
-	QFileInfo fileInfo(dataPath);
-	if (!fileInfo.exists(dataPath)) {
+	if (!containsVariables(value) &&
+	    !modelFileExists(value, languageCode)) {
 		return false;
 	}
 	tesseractBasePath = value;
 	initDone = false;
 	return true;
-}
-
-std::string OCRParameters::GetTesseractBasePath() const
-{
-	return tesseractBasePath;
 }
 
 void OCRParameters::EnableCustomConfig(bool enable)
@@ -437,17 +440,27 @@ void OCRParameters::SetCustomConfigFile(const std::string &filename)
 	initDone = false;
 }
 
+bool OCRParameters::SetupIsUpToDate() const
+{
+	return setupBasePath == std::string(tesseractBasePath) &&
+	       setupLanguageCode == std::string(languageCode) &&
+	       setupConfigFile == std::string(configFile);
+}
+
 void OCRParameters::Setup()
 {
+	setupBasePath = tesseractBasePath;
+	setupLanguageCode = languageCode;
+	setupConfigFile = configFile;
+
 	ocr = std::make_unique<tesseract::TessBaseAPI>();
 	if (!ocr) {
 		initDone = false;
 		return;
 	}
 
-	const std::string dataPath = std::string(tesseractBasePath) + "/";
-	const std::string modelFile =
-		std::string(languageCode) + ".traineddata";
+	const std::string dataPath = setupBasePath + "/";
+	const std::string modelFile = setupLanguageCode + ".traineddata";
 	const auto modelFullPath = QString::fromStdString(dataPath) +
 				   QString::fromStdString(modelFile);
 	QFileInfo modelFileInfo(modelFullPath);
@@ -459,7 +472,7 @@ void OCRParameters::Setup()
 		return;
 	}
 
-	auto configPath = QString::fromStdString(configFile);
+	auto configPath = QString::fromStdString(setupConfigFile);
 	QFileInfo configFileInfo(configPath);
 	bool configFileExists = configFileInfo.exists(configPath);
 
@@ -471,8 +484,8 @@ void OCRParameters::Setup()
 		setupWithConfig = false;
 	}
 
-	char *configs[] = {configFile.data()};
-	if (ocr->Init(dataPath.c_str(), languageCode.c_str(),
+	char *configs[] = {setupConfigFile.data()};
+	if (ocr->Init(dataPath.c_str(), setupLanguageCode.c_str(),
 		      tesseract::OEM_DEFAULT,
 		      setupWithConfig ? configs : nullptr,
 		      setupWithConfig ? 1 : 0, nullptr, nullptr, false) != 0) {
