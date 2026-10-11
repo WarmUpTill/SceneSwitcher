@@ -301,6 +301,8 @@ target_sources(
           lib/utils/ui-helpers.hpp
           lib/utils/utility.cpp
           lib/utils/utility.hpp
+          lib/utils/value-input.cpp
+          lib/utils/value-input.hpp
           lib/utils/volume-control.cpp
           lib/utils/volume-control.hpp
           lib/utils/websocket-api.cpp
