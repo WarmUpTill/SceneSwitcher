@@ -266,11 +266,16 @@ void MacroActionVariable::PickRandomValue(Variable *var)
 }
 
 struct AskForInputParams {
-	AskForInputParams(const QString &prompt_, const QString &placeholder_)
+	AskForInputParams(const QString &prompt_, const QString &placeholder_,
+			  ValueInputType type_, const QStringList &options_)
 		: prompt(prompt_),
-		  placeholder(placeholder_){};
+		  placeholder(placeholder_),
+		  type(type_),
+		  options(options_){};
 	QString prompt;
 	QString placeholder;
+	ValueInputType type;
+	QStringList options;
 	std::optional<std::string> result;
 	std::atomic_bool resultReady = {false};
 };
@@ -279,9 +284,18 @@ static void askForInput(void *param)
 {
 	auto parameters =
 		*static_cast<std::shared_ptr<AskForInputParams> *>(param);
-	auto dialog = new NonModalMessageDialog(
-		parameters->prompt, NonModalMessageDialog::Type::INPUT, false);
-	dialog->SetInput(parameters->placeholder);
+	NonModalMessageDialog *dialog = nullptr;
+	if (parameters->type == ValueInputType::String) {
+		dialog = new NonModalMessageDialog(
+			parameters->prompt, NonModalMessageDialog::Type::INPUT,
+			false);
+		dialog->SetInput(parameters->placeholder);
+	} else {
+		dialog = new NonModalMessageDialog(
+			parameters->prompt, parameters->type,
+			parameters->placeholder.toStdString(),
+			parameters->options);
+	}
 	parameters->result = dialog->GetInput();
 	parameters->resultReady = true;
 }
@@ -395,6 +409,10 @@ bool MacroActionVariable::PerformAction()
 		return true;
 	}
 	case Action::USER_INPUT: {
+		QStringList options;
+		for (const auto &option : _inputOptions) {
+			options << QString::fromStdString(option);
+		}
 		auto params = std::make_shared<AskForInputParams>(
 			_useCustomPrompt
 				? QString::fromStdString(_inputPrompt)
@@ -404,7 +422,8 @@ bool MacroActionVariable::PerformAction()
 						  var->Name())),
 			_useCustomPrompt && _useInputPlaceholder
 				? QString::fromStdString(_inputPlaceholder)
-				: "");
+				: "",
+			_inputType, options);
 		obs_queue_task(OBS_TASK_UI, askForInput, &params, false);
 		while (!params->resultReady) {
 			if (GetMacro()->GetStop()) {
@@ -548,6 +567,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	_inputPrompt.Save(obj, "inputPrompt");
 	obs_data_set_bool(obj, "useInputPlaceholder", _useInputPlaceholder);
 	_inputPlaceholder.Save(obj, "inputPlaceholder");
+	obs_data_set_int(obj, "inputType", static_cast<int>(_inputType));
+	_inputOptions.Save(obj, "inputOptions", "value");
 	_envVariableName.Save(obj, "environmentVariableName");
 	_scene.Save(obj);
 	_tempVar.Save(obj, GetMacro());
@@ -591,6 +612,11 @@ bool MacroActionVariable::Load(obs_data_t *obj)
 	_inputPrompt.Load(obj, "inputPrompt");
 	_useInputPlaceholder = obs_data_get_bool(obj, "useInputPlaceholder");
 	_inputPlaceholder.Load(obj, "inputPlaceholder");
+	obs_data_set_default_int(obj, "inputType",
+				 static_cast<int>(ValueInputType::String));
+	_inputType =
+		static_cast<ValueInputType>(obs_data_get_int(obj, "inputType"));
+	_inputOptions.Load(obj, "inputOptions", "value");
 	_envVariableName.Load(obj, "environmentVariableName");
 	_scene.Load(obj);
 	_tempVar.Load(obj, GetMacro());
@@ -723,6 +749,7 @@ void MacroActionVariable::ResolveVariablesToFixedValues()
 	_mathExpression.ResolveVariables();
 	_inputPrompt.ResolveVariables();
 	_inputPlaceholder.ResolveVariables();
+	_inputOptions.ResolveVariables();
 	_envVariableName.ResolveVariables();
 	_scene.ResolveVariables();
 	_sceneItemIndex.ResolveVariables();
@@ -890,6 +917,9 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _placeholderLayout(new QHBoxLayout()),
 	  _useInputPlaceholder(new QCheckBox()),
 	  _inputPlaceholder(new VariableLineEdit(this)),
+	  _inputTypeLayout(new QHBoxLayout()),
+	  _inputType(new QComboBox(this)),
+	  _inputOptions(new StringListEdit(this)),
 	  _envVariable(new VariableLineEdit(this)),
 	  _scenes(new SceneSelectionWidget(this, true, false, true, true,
 					   true)),
@@ -954,11 +984,13 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	populateActionSelection(_actions);
 	populateDirectionSelection(_direction);
 	populateCaseTypeSelection(_caseType);
+	PopulateValueInputTypeSelection(_inputType);
 	_randomNumberStart->setMinimum(-9999999999);
 	_randomNumberStart->setMaximum(9999999999);
 	_randomNumberEnd->setMinimum(-9999999999);
 	_randomNumberEnd->setMaximum(9999999999);
 	_randomValues->SetMaxStringSize(99999999);
+	_inputOptions->SetMaxStringSize(99999999);
 	_jsonIndex->setMaximum(999);
 	auto jsonExtractSingleLayout = new QHBoxLayout();
 	jsonExtractSingleLayout->addWidget(_jsonExtractSingle);
@@ -1018,6 +1050,11 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			 SLOT(UseInputPlaceholderChanged(int)));
 	QWidget::connect(_inputPlaceholder, SIGNAL(editingFinished()), this,
 			 SLOT(InputPlaceholderChanged()));
+	QWidget::connect(_inputType, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(InputTypeChanged(int)));
+	QWidget::connect(_inputOptions,
+			 SIGNAL(StringListChanged(const StringList &)), this,
+			 SLOT(InputOptionsChanged(const StringList &)));
 	QWidget::connect(_envVariable, SIGNAL(editingFinished()), this,
 			 SLOT(EnvVariableChanged()));
 	QWidget::connect(_scenes, SIGNAL(SceneChanged(const SceneSelection &)),
@@ -1081,6 +1118,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 		{"{{inputPrompt}}", _inputPrompt},
 		{"{{useInputPlaceholder}}", _useInputPlaceholder},
 		{"{{inputPlaceholder}}", _inputPlaceholder},
+		{"{{inputType}}", _inputType},
 		{"{{envVariableName}}", _envVariable},
 		{"{{scenes}}", _scenes},
 		{"{{tempVars}}", _tempVars},
@@ -1111,6 +1149,10 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 			"AdvSceneSwitcher.action.variable.layout.findAndReplace"),
 		_findReplaceLayout, widgetPlaceholders, false);
 
+	PlaceWidgets(
+		obs_module_text(
+			"AdvSceneSwitcher.action.variable.layout.userInput.type"),
+		_inputTypeLayout, widgetPlaceholders);
 	PlaceWidgets(
 		obs_module_text(
 			"AdvSceneSwitcher.action.variable.layout.userInput.customPrompt"),
@@ -1147,6 +1189,8 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	layout->addWidget(_segmentValue);
 	layout->addLayout(_findReplaceLayout);
 	layout->addWidget(_mathExpressionResult);
+	layout->addLayout(_inputTypeLayout);
+	layout->addWidget(_inputOptions);
 	layout->addLayout(_promptLayout);
 	layout->addLayout(_placeholderLayout);
 	layout->addLayout(_randomNumberLayout);
@@ -1196,6 +1240,9 @@ void MacroActionVariableEdit::UpdateEntryData()
 	_inputPrompt->setText(_entryData->_inputPrompt);
 	_useInputPlaceholder->setChecked(_entryData->_useInputPlaceholder);
 	_inputPlaceholder->setText(_entryData->_inputPlaceholder);
+	_inputType->setCurrentIndex(
+		_inputType->findData(static_cast<int>(_entryData->_inputType)));
+	_inputOptions->SetStringList(_entryData->_inputOptions);
 	_envVariable->setText(_entryData->_envVariableName);
 	_scenes->SetScene(_entryData->_scene);
 	_tempVars->SetVariable(_entryData->_tempVar);
@@ -1477,6 +1524,20 @@ void MacroActionVariableEdit::InputPlaceholderChanged()
 	_entryData->_inputPlaceholder = _inputPlaceholder->text().toStdString();
 }
 
+void MacroActionVariableEdit::InputTypeChanged(int)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_inputType =
+		static_cast<ValueInputType>(_inputType->currentData().toInt());
+	SetWidgetVisibility();
+}
+
+void MacroActionVariableEdit::InputOptionsChanged(const StringList &options)
+{
+	GUARD_LOADING_AND_LOCK();
+	_entryData->_inputOptions = options;
+}
+
 void MacroActionVariableEdit::EnvVariableChanged()
 {
 	GUARD_LOADING_AND_LOCK();
@@ -1714,6 +1775,13 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 		_entryData->_action ==
 		MacroActionVariable::Action::MATH_EXPRESSION);
 	_mathExpressionResult->hide();
+	SetLayoutVisible(_inputTypeLayout,
+			 _entryData->_action ==
+				 MacroActionVariable::Action::USER_INPUT);
+	_inputOptions->setVisible(
+		_entryData->_action ==
+			MacroActionVariable::Action::USER_INPUT &&
+		_entryData->_inputType == ValueInputType::Selection);
 	SetLayoutVisible(_promptLayout,
 			 _entryData->_action ==
 				 MacroActionVariable::Action::USER_INPUT);

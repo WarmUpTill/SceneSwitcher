@@ -23,6 +23,19 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message,
 {
 }
 
+NonModalMessageDialog::NonModalMessageDialog(const QString &message,
+					     ValueInputType inputType,
+					     const std::string &defaultValue,
+					     const QStringList &options)
+	: NonModalMessageDialog(message, Type::INPUT)
+{
+	_valueInput =
+		new ValueInputWidget(inputType, defaultValue, options, this);
+	layout()->replaceWidget(_inputEdit, _valueInput);
+	delete _inputEdit;
+	_inputEdit = nullptr;
+}
+
 NonModalMessageDialog::~NonModalMessageDialog()
 {
 	std::lock_guard<std::mutex> lock(mutex);
@@ -101,16 +114,21 @@ std::optional<std::string> NonModalMessageDialog::GetInput()
 {
 	show();
 
-	// Trigger resize
-	_inputEdit->setPlainText(_inputEdit->toPlainText());
+	if (_inputEdit) {
+		// Trigger resize
+		_inputEdit->setPlainText(_inputEdit->toPlainText());
+	}
 
 	exec();
 	deleteLater();
 
-	if (_answer == QMessageBox::Yes) {
-		return _input.toStdString();
+	if (_answer != QMessageBox::Yes) {
+		return {};
 	}
-	return {};
+	if (_valueInput) {
+		return _valueInput->Value();
+	}
+	return _input.toStdString();
 }
 
 void NonModalMessageDialog::SetInput(const QString &input)
