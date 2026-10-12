@@ -11,6 +11,8 @@ target_sources(${PROJECT_NAME} PRIVATE macro-condition-now-playing.cpp
                                        macro-condition-now-playing.hpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE windowsapp)
+target_compile_definitions(
+  ${PROJECT_NAME} PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

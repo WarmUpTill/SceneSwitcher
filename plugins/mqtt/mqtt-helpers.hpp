@@ -16,6 +16,10 @@
 
 #include <mqtt/async_client.h>
 
+#ifdef SendMessage
+#undef SendMessage
+#endif
+
 namespace advss {
 
 using MqttMessageBuffer = std::shared_ptr<MessageBuffer<std::string>>;

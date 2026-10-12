@@ -5,6 +5,10 @@
 #include <memory>
 #include <vector>
 
+#ifdef DispatchMessage
+#undef DispatchMessage
+#endif
+
 namespace advss {
 
 template<class T> class MessageDispatcher {
