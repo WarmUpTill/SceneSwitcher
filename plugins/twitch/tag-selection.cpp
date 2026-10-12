@@ -179,7 +179,7 @@ bool TagListWidget::IsValidTag(const QString &tag)
 		return true;
 	}
 
-	QRegularExpression regex("^[A-Za-z0-9]+$"); // Only letters and digits
+	static const QRegularExpression regex("^[\\p{L}\\p{M}\\p{N}]+$");
 	return regex.match(tag).hasMatch();
 }
 
