@@ -797,6 +797,14 @@ std::shared_ptr<Macro> Macro::Parent() const
 	return _parent.lock();
 }
 
+std::shared_ptr<Macro> Macro::CreateNested()
+{
+	auto macro = std::make_shared<Macro>();
+	macro->_isNested = true;
+	macro->_registerHotkeys = false;
+	return macro;
+}
+
 void Macro::SetNestedParentMacro(Macro *parent)
 {
 	_nestedParentMacro = parent;
@@ -934,20 +942,12 @@ bool Macro::Load(obs_data_t *obj)
 			"macroElseActionSplitterPosition");
 
 	obs_data_set_default_bool(obj, "registerHotkeys", true);
-	_registerHotkeys = obs_data_get_bool(obj, "registerHotkeys");
-	if (_registerHotkeys) {
-		SetupHotkeys();
-	}
-	OBSDataArrayAutoRelease pauseHotkey =
-		obs_data_get_array(obj, "pauseHotkey");
-	obs_hotkey_load(_pauseHotkey, pauseHotkey);
-	OBSDataArrayAutoRelease unpauseHotkey =
-		obs_data_get_array(obj, "unpauseHotkey");
-	obs_hotkey_load(_unpauseHotkey, unpauseHotkey);
-	OBSDataArrayAutoRelease togglePauseHotkey =
-		obs_data_get_array(obj, "togglePauseHotkey");
-	obs_hotkey_load(_togglePauseHotkey, togglePauseHotkey);
-	SetHotkeysDesc();
+	_registerHotkeys = !_isNested &&
+			   obs_data_get_bool(obj, "registerHotkeys");
+	_pauseHotkeyData = obs_data_get_array(obj, "pauseHotkey");
+	_unpauseHotkeyData = obs_data_get_array(obj, "unpauseHotkey");
+	_togglePauseHotkeyData = obs_data_get_array(obj, "togglePauseHotkey");
+	_hotkeyLoadPending = true;
 
 	bool root = true;
 	OBSDataArrayAutoRelease conditions =
@@ -1022,8 +1022,29 @@ bool Macro::Load(obs_data_t *obj)
 	return true;
 }
 
+void Macro::LoadHotkeys()
+{
+	if (!_hotkeyLoadPending) {
+		return;
+	}
+	_hotkeyLoadPending = false;
+
+	if (_registerHotkeys) {
+		SetupHotkeys();
+	}
+	obs_hotkey_load(_pauseHotkey, _pauseHotkeyData);
+	obs_hotkey_load(_unpauseHotkey, _unpauseHotkeyData);
+	obs_hotkey_load(_togglePauseHotkey, _togglePauseHotkeyData);
+	SetHotkeysDesc();
+
+	_pauseHotkeyData = nullptr;
+	_unpauseHotkeyData = nullptr;
+	_togglePauseHotkeyData = nullptr;
+}
+
 bool Macro::PostLoad()
 {
+	LoadHotkeys();
 	for (auto &c : _conditions) {
 		c->WithLock([c]() { c->PostLoad(); });
 	}
@@ -1149,6 +1170,10 @@ static obs_hotkey_id registerHotkeyHelper(const std::string prefix,
 
 void Macro::SetupHotkeys()
 {
+	if (_isNested) {
+		return;
+	}
+
 	if (_pauseHotkey != OBS_INVALID_HOTKEY_ID ||
 	    _unpauseHotkey != OBS_INVALID_HOTKEY_ID ||
 	    _togglePauseHotkey != OBS_INVALID_HOTKEY_ID) {

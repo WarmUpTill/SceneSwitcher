@@ -18,6 +18,13 @@ bool MacroActionMacro::_registered = MacroActionFactory::Register(
 	{MacroActionMacro::Create, MacroActionMacroEdit::Create,
 	 "AdvSceneSwitcher.action.macro"});
 
+MacroActionMacro::MacroActionMacro(Macro *m)
+	: MacroAction(m),
+	  MacroRefAction(m),
+	  _nestedMacro(Macro::CreateNested())
+{
+}
+
 void MacroActionMacro::AdjustActionState(Macro *macro) const
 {
 	const auto &macroActions = _useElseSection ? macro->ElseActions()
@@ -266,7 +273,7 @@ bool MacroActionMacro::Load(obs_data_t *obj)
 	if (obs_data_has_user_value(obj, "nestedMacro")) {
 		OBSDataAutoRelease nestedMacroData =
 			obs_data_get_obj(obj, "nestedMacro");
-		_nestedMacro = std::make_shared<Macro>();
+		_nestedMacro = Macro::CreateNested();
 		_nestedMacro->Load(nestedMacroData);
 	}
 
@@ -303,7 +310,7 @@ std::shared_ptr<MacroAction> MacroActionMacro::Copy() const
 	OBSDataAutoRelease data = obs_data_create();
 	_nestedMacro->Save(data);
 
-	copy->_nestedMacro = std::make_shared<Macro>();
+	copy->_nestedMacro = Macro::CreateNested();
 	copy->_nestedMacro->Load(data);
 	copy->_nestedMacro->PostLoad();
 

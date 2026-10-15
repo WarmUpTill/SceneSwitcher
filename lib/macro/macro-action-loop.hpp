@@ -11,7 +11,7 @@ namespace advss {
 
 class MacroActionLoop : public MacroAction {
 public:
-	MacroActionLoop(Macro *m) : MacroAction(m) {}
+	MacroActionLoop(Macro *m);
 	bool PerformAction();
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
@@ -22,7 +22,7 @@ public:
 	std::shared_ptr<MacroAction> Copy() const;
 	void ResolveVariablesToFixedValues();
 
-	std::shared_ptr<Macro> _loopMacro = std::make_shared<Macro>();
+	std::shared_ptr<Macro> _loopMacro;
 	IntVariable _maxIterations = 100;
 	int _customWidgetHeight = 0;
 

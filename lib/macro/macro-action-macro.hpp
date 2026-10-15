@@ -17,7 +17,7 @@ namespace advss {
 
 class MacroActionMacro final : public MacroRefAction {
 public:
-	MacroActionMacro(Macro *m) : MacroAction(m), MacroRefAction(m) {}
+	MacroActionMacro(Macro *m);
 	bool PerformAction();
 	void LogAction() const;
 	bool Save(obs_data_t *obj) const;
@@ -73,7 +73,7 @@ public:
 	std::string _actionId;
 	RegexConfig _regex;
 	RunOptions _runOptions = {};
-	std::shared_ptr<Macro> _nestedMacro = std::make_shared<Macro>();
+	std::shared_ptr<Macro> _nestedMacro;
 	int _customWidgetHeight = 0;
 
 private:
