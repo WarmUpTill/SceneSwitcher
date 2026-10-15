@@ -130,6 +130,7 @@ public:
 	void SetParent(std::shared_ptr<Macro> m) { _parent = m; }
 	std::shared_ptr<Macro> Parent() const;
 
+	static std::shared_ptr<Macro> CreateNested();
 	void SetNestedParentMacro(Macro *parent);
 	Macro *GetNestedParentMacro() const { return _nestedParentMacro; }
 
@@ -163,6 +164,7 @@ public:
 
 private:
 	void SetupHotkeys();
+	void LoadHotkeys();
 	void ClearHotkeys() const;
 	void SetHotkeysDesc() const;
 
@@ -191,6 +193,7 @@ private:
 
 	std::weak_ptr<Macro> _parent;
 	Macro *_nestedParentMacro = nullptr;
+	bool _isNested = false;
 	uint32_t _groupSize = 0;
 	bool _isGroup = false;
 	bool _isCollapsed = false;
@@ -213,6 +216,10 @@ private:
 	obs_hotkey_id _pauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _unpauseHotkey = OBS_INVALID_HOTKEY_ID;
 	obs_hotkey_id _togglePauseHotkey = OBS_INVALID_HOTKEY_ID;
+	bool _hotkeyLoadPending = false;
+	OBSDataArrayAutoRelease _pauseHotkeyData;
+	OBSDataArrayAutoRelease _unpauseHotkeyData;
+	OBSDataArrayAutoRelease _togglePauseHotkeyData;
 
 	ActionTriggerMode _actionTriggerMode =
 		ActionTriggerMode::MACRO_RESULT_CHANGED;

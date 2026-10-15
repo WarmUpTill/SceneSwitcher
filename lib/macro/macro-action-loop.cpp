@@ -13,6 +13,12 @@ bool MacroActionLoop::_registered = MacroActionFactory::Register(
 	{MacroActionLoop::Create, MacroActionLoopEdit::Create,
 	 "AdvSceneSwitcher.action.loop"});
 
+MacroActionLoop::MacroActionLoop(Macro *m)
+	: MacroAction(m),
+	  _loopMacro(Macro::CreateNested())
+{
+}
+
 bool MacroActionLoop::PerformAction()
 {
 	int iterations = 0;
@@ -71,7 +77,7 @@ bool MacroActionLoop::Load(obs_data_t *obj)
 	if (obs_data_has_user_value(obj, "loopMacro")) {
 		OBSDataAutoRelease loopMacroData =
 			obs_data_get_obj(obj, "loopMacro");
-		_loopMacro = std::make_shared<Macro>();
+		_loopMacro = Macro::CreateNested();
 		_loopMacro->Load(loopMacroData);
 	}
 	_customWidgetHeight = obs_data_get_int(obj, "customWidgetHeight");
@@ -99,7 +105,7 @@ std::shared_ptr<MacroAction> MacroActionLoop::Copy() const
 	OBSDataAutoRelease data = obs_data_create();
 	_loopMacro->Save(data);
 
-	copy->_loopMacro = std::make_shared<Macro>();
+	copy->_loopMacro = Macro::CreateNested();
 	copy->_loopMacro->Load(data);
 	copy->_loopMacro->PostLoad();
 

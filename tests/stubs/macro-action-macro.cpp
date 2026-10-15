@@ -5,6 +5,10 @@ namespace advss {
 bool MacroActionMacro::_registered = false;
 const std::string MacroActionMacro::id = "macro";
 
+MacroActionMacro::MacroActionMacro(Macro *m) : MacroAction(m), MacroRefAction(m)
+{
+}
+
 bool MacroActionMacro::PerformAction()
 {
 	return false;
