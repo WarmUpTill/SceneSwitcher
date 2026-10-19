@@ -1,6 +1,8 @@
 #include "catch.hpp"
 
+#include <variable-number.hpp>
 #include <variable-ref.hpp>
+#include <variable-string.hpp>
 #include <variable.hpp>
 
 #include <obs.hpp>
@@ -116,6 +118,40 @@ TEST_CASE("VariableRef", "[variable]")
 		REQUIRE(outer.Counts().empty());
 		advss::ReportVariableRef(var);
 		REQUIRE(outer.Counts().at("var") == 1);
+	}
+
+	SECTION("Number variable reports only when using a variable")
+	{
+		OBSDataAutoRelease data = obs_data_create();
+		OBSDataAutoRelease numberData = obs_data_create();
+		obs_data_set_string(numberData, "variable", "var");
+		obs_data_set_int(numberData, "type", 1);
+		obs_data_set_obj(data, "number", numberData);
+
+		advss::IntVariable number;
+		number.Load(data, "number");
+		{
+			advss::VariableRefCollector collector;
+			number.Save(data, "number");
+			REQUIRE(collector.Counts().at("var") == 1);
+		}
+
+		obs_data_set_int(numberData, "type", 0);
+		obs_data_set_obj(data, "number", numberData);
+		number.Load(data, "number");
+		advss::VariableRefCollector collector;
+		number.Save(data, "number");
+		REQUIRE(collector.Counts().empty());
+	}
+
+	SECTION("String variable reports text references")
+	{
+		advss::StringVariable text = "${var} and ${var2}";
+		advss::VariableRefCollector collector;
+		OBSDataAutoRelease data = obs_data_create();
+		text.Save(data, "text");
+		REQUIRE(collector.Counts().at("var") == 1);
+		REQUIRE(collector.Counts().at("var2") == 1);
 	}
 
 	advss::GetVariables().clear();

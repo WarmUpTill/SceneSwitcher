@@ -1,6 +1,7 @@
 #pragma once
 #include "filter-combo-box.hpp"
 #include "obs.hpp"
+#include "variable-ref.hpp"
 
 namespace advss {
 
@@ -30,7 +31,7 @@ private:
 	void LoadFallback(obs_data_t *obj, const char *name);
 
 	OBSWeakSource _source;
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 	Type _type = Type::SOURCE;
 	friend class SourceSelectionWidget;
 };

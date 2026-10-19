@@ -1,4 +1,5 @@
 #pragma once
+#include "variable-ref.hpp"
 #include "variable.hpp"
 
 namespace advss {
@@ -27,7 +28,7 @@ public:
 private:
 	Type _type = Type::FIXED_VALUE;
 	T _value = {};
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 
 	friend class GenericVariableSpinbox;
 	friend class VariableSpinBox;

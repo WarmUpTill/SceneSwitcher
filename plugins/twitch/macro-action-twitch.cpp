@@ -1292,8 +1292,7 @@ bool MacroActionTwitch::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "pollEndStatus",
 			 static_cast<int>(_pollEndStatus));
 	_pointsReward.Save(obj);
-	obs_data_set_string(obj, "rewardVariable",
-			    GetWeakVariableName(_rewardVariable).c_str());
+	_rewardVariable.Save(obj, "rewardVariable");
 	obs_data_set_bool(obj, "useVariableForRewardSelection",
 			  _useVariableForRewardSelection);
 
@@ -1334,8 +1333,7 @@ bool MacroActionTwitch::Load(obs_data_t *obj)
 	_pollEndStatus = static_cast<PollEndStatus>(
 		obs_data_get_int(obj, "pollEndStatus"));
 	_pointsReward.Load(obj);
-	_rewardVariable = GetWeakVariableByName(
-		obs_data_get_string(obj, "rewardVariable"));
+	_rewardVariable.Load(obj, "rewardVariable");
 	_useVariableForRewardSelection =
 		obs_data_get_bool(obj, "useVariableForRewardSelection");
 

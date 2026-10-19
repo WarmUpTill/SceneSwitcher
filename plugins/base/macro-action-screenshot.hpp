@@ -4,6 +4,7 @@
 #include "scene-selection.hpp"
 #include "screenshot-helper.hpp"
 #include "source-selection.hpp"
+#include "variable-ref.hpp"
 #include "variable.hpp"
 
 #include <QComboBox>
@@ -31,7 +32,7 @@ public:
 	SceneSelection _scene;
 	SourceSelection _source;
 	StringVariable _path = obs_module_text("AdvSceneSwitcher.enterPath");
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 
 private:
 	void FrontendScreenshot(OBSWeakSource &) const;

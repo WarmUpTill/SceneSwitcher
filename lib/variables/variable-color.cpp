@@ -11,9 +11,8 @@ void ColorVariable::Save(obs_data_t *obj, const char *name) const
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_int(data, "version", 1);
 	obs_data_set_int(data, "type", static_cast<int>(_type));
-	auto var = _variable.lock();
-	if (var) {
-		obs_data_set_string(data, "variable", var->Name().c_str());
+	if (_type == Type::VARIABLE) {
+		_variable.Save(data, "variable");
 	}
 	obs_data_set_int(data, "red", _value.red());
 	obs_data_set_int(data, "green", _value.green());
@@ -32,8 +31,7 @@ void ColorVariable::Load(obs_data_t *obj, const char *name)
 		_type = Type::FIXED_VALUE;
 		return;
 	}
-	auto variableName = obs_data_get_string(data, "variable");
-	_variable = GetWeakVariableByName(variableName);
+	_variable.Load(data, "variable");
 	_type = static_cast<Type>(obs_data_get_int(data, "type"));
 }
 

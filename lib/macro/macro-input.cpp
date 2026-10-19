@@ -14,12 +14,10 @@ void MacroInputVariables::Save(obs_data_t *obj) const
 	OBSDataArrayAutoRelease array = obs_data_array_create();
 	for (auto &var : _inputVariables) {
 		OBSDataAutoRelease arrayObj = obs_data_create();
-		auto variable = var.lock();
-		if (variable) {
-			obs_data_set_string(arrayObj, "variableName",
-					    variable->Name().c_str());
-		} else {
+		if (var.expired()) {
 			obs_data_set_bool(arrayObj, "invalidVariable", true);
+		} else {
+			var.Save(arrayObj, "variableName");
 		}
 		obs_data_array_push_back(array, arrayObj);
 	}

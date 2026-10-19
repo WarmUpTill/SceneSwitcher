@@ -1,5 +1,6 @@
 #pragma once
 #include "canvas-helpers.hpp"
+#include "variable-ref.hpp"
 
 namespace advss {
 
@@ -32,7 +33,7 @@ private:
 	OBSWeakSource _scene;
 	OBSWeakCanvas _canvas = GetMainCanvas();
 	SceneGroup *_group = nullptr;
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 	Type _type = Type::SCENE;
 	friend class SceneSelectionWidget;
 };

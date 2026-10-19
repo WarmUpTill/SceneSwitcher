@@ -1,6 +1,7 @@
 #pragma once
 #include "list-editor.hpp"
 #include "string-list.hpp"
+#include "variable-ref.hpp"
 #include "variable.hpp"
 
 #include <QGridLayout>
@@ -16,7 +17,7 @@ public:
 	void SetValues(const StringList &values);
 
 private:
-	std::vector<std::weak_ptr<Variable>> _inputVariables;
+	std::vector<VariableRef> _inputVariables;
 	friend class MacroInputSelection;
 	friend class MacroInputEdit;
 };

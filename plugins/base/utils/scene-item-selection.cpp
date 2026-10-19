@@ -205,14 +205,9 @@ void SceneItemSelection::Save(obs_data_t *obj, const char *name) const
 		obs_data_set_string(data, itemSaveName.data(),
 				    GetWeakSourceName(_source).c_str());
 		break;
-	case SceneItemSelection::Type::VARIABLE_NAME: {
-		auto var = _variable.lock();
-		if (var) {
-			obs_data_set_string(data, itemSaveName.data(),
-					    var->Name().c_str());
-		}
+	case SceneItemSelection::Type::VARIABLE_NAME:
+		_variable.Save(data, itemSaveName.data());
 		break;
-	}
 	case SceneItemSelection::Type::SOURCE_NAME_PATTERN:
 		_pattern.Save(data, patternSaveName.data());
 		_regex.Save(data);

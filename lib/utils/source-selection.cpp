@@ -19,15 +19,9 @@ void SourceSelection::Save(obs_data_t *obj, const char *name) const
 		obs_data_set_string(data, nameSaveName.data(),
 				    GetWeakSourceName(_source).c_str());
 		break;
-	case Type::VARIABLE: {
-		auto var = _variable.lock();
-		if (!var) {
-			break;
-		}
-		obs_data_set_string(data, nameSaveName.data(),
-				    var->Name().c_str());
+	case Type::VARIABLE:
+		_variable.Save(data, nameSaveName.data());
 		break;
-	}
 	default:
 		break;
 	}

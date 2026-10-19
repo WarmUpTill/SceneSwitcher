@@ -129,10 +129,8 @@ bool MacroConditionVariable::CheckCondition()
 bool MacroConditionVariable::Save(obs_data_t *obj) const
 {
 	MacroCondition::Save(obj);
-	obs_data_set_string(obj, "variableName",
-			    GetWeakVariableName(_variable).c_str());
-	obs_data_set_string(obj, "variable2Name",
-			    GetWeakVariableName(_variable2).c_str());
+	_variable.Save(obj, "variableName");
+	_variable2.Save(obj, "variable2Name");
 	_strValue.Save(obj, "strValue");
 	obs_data_set_double(obj, "numValue", _numValue);
 	obs_data_set_int(obj, "condition", static_cast<int>(_type));
@@ -143,10 +141,8 @@ bool MacroConditionVariable::Save(obs_data_t *obj) const
 bool MacroConditionVariable::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
-	_variable =
-		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
-	_variable2 = GetWeakVariableByName(
-		obs_data_get_string(obj, "variable2Name"));
+	_variable.Load(obj, "variableName");
+	_variable2.Load(obj, "variable2Name");
 	_strValue.Load(obj, "strValue");
 	_numValue = obs_data_get_double(obj, "numValue");
 	_type = static_cast<Condition>(obs_data_get_int(obj, "condition"));

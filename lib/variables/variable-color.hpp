@@ -1,4 +1,5 @@
 #pragma once
+#include "variable-ref.hpp"
 #include "variable.hpp"
 
 #include <obs-data.h>
@@ -27,7 +28,7 @@ public:
 private:
 	Type _type = Type::FIXED_VALUE;
 	QColor _value = Qt::black;
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 
 	friend class VariableColorButton;
 };
