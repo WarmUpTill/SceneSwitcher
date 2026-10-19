@@ -128,6 +128,7 @@ target_sources(
           ${ADVSS_SOURCE_DIR}/lib/utils/item-selection-helpers.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/name-dialog.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/resizing-text-edit.cpp
+          ${ADVSS_SOURCE_DIR}/lib/variables/variable-ref.cpp
           ${ADVSS_SOURCE_DIR}/lib/variables/variable.cpp)
 
 # --- macro / macro-condition --- #
