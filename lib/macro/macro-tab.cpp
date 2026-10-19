@@ -333,7 +333,7 @@ void AdvSceneSwitcher::ExportMacros() const
 	obs_data_set_array(data, "macros", macroArray);
 	obs_data_set_string(data, "version", g_GIT_TAG);
 
-	MacroExportImportDialog::ExportMacros(data);
+	MacroExportImportDialog::ExportMacros(data, macros);
 }
 
 bool AdvSceneSwitcher::ResolveMacroImportNameConflict(

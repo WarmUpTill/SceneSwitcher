@@ -41,4 +41,18 @@ std::unordered_map<std::string, int> GetVariablesUsedByMacro(Macro *macro)
 	return collectReferences(macro);
 }
 
+std::unordered_map<std::string, int>
+GetVariablesUsedByMacros(const std::vector<std::shared_ptr<Macro>> &macros)
+{
+	std::unordered_map<std::string, int> result;
+	auto lock = LockContext();
+	for (const auto &macro : macros) {
+		for (const auto &[name, count] :
+		     collectReferences(macro.get())) {
+			result[name] += count;
+		}
+	}
+	return result;
+}
+
 } // namespace advss
