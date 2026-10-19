@@ -113,6 +113,22 @@ target_sources(
           lib/macro/macro-action-macro.hpp
           lib/macro/macro-action-queue.cpp
           lib/macro/macro-action-queue.hpp
+          lib/macro/macro-action-variable-basic.cpp
+          lib/macro/macro-action-variable-basic.hpp
+          lib/macro/macro-action-variable-group.cpp
+          lib/macro/macro-action-variable-group.hpp
+          lib/macro/macro-action-variable-input.cpp
+          lib/macro/macro-action-variable-input.hpp
+          lib/macro/macro-action-variable-json.cpp
+          lib/macro/macro-action-variable-json.hpp
+          lib/macro/macro-action-variable-macro.cpp
+          lib/macro/macro-action-variable-macro.hpp
+          lib/macro/macro-action-variable-math.cpp
+          lib/macro/macro-action-variable-math.hpp
+          lib/macro/macro-action-variable-scene.cpp
+          lib/macro/macro-action-variable-scene.hpp
+          lib/macro/macro-action-variable-string.cpp
+          lib/macro/macro-action-variable-string.hpp
           lib/macro/macro-action-variable.cpp
           lib/macro/macro-action-variable.hpp
           lib/macro/macro-action.cpp
