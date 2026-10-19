@@ -23,6 +23,7 @@ struct MacroSearchSettings {
 		CONDITIONS = 20,
 		ACTIONS = 30,
 		LABEL = 40,
+		VARIABLE = 50,
 	};
 
 	SearchType searchType = SearchType::NAME;

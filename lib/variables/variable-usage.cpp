@@ -32,4 +32,13 @@ std::unordered_map<std::string, VariableUsage> GetVariableUsage()
 	return result;
 }
 
+std::unordered_map<std::string, int> GetVariablesUsedByMacro(Macro *macro)
+{
+	if (!macro) {
+		return {};
+	}
+
+	return collectReferences(macro);
+}
+
 } // namespace advss
