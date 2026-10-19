@@ -3,6 +3,7 @@
 #include "export-symbol-helper.hpp"
 
 #include <functional>
+#include <memory>
 #include <obs-data.h>
 #include <QList>
 #include <QPair>
@@ -10,6 +11,8 @@
 #include <vector>
 
 namespace advss {
+
+class Macro;
 
 struct MacroExportExtension {
 	const char *displayNameKey;
@@ -33,6 +36,11 @@ struct MacroExportExtension {
 	// checkbox in the export dialog.
 	std::function<QList<QPair<QString, QString>>()> getExportItems =
 		nullptr;
+
+	// Optional: item IDs to check by default for the exported macros.
+	std::function<QStringList(
+		const std::vector<std::shared_ptr<Macro>> &macros)>
+		getDefaultSelectedIds = nullptr;
 };
 
 EXPORT void AddMacroExportExtension(const MacroExportExtension &ext);

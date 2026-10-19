@@ -15,5 +15,7 @@ struct VariableUsage {
 
 std::unordered_map<std::string, VariableUsage> GetVariableUsage();
 std::unordered_map<std::string, int> GetVariablesUsedByMacro(Macro *macro);
+std::unordered_map<std::string, int>
+GetVariablesUsedByMacros(const std::vector<std::shared_ptr<Macro>> &macros);
 
 } // namespace advss

@@ -100,6 +100,125 @@ public:
 	}
 };
 
+static QList<QPair<QString, QString>>
+getSortedExportItems(const MacroExportExtension &ext)
+{
+	auto items = ext.getExportItems();
+	std::sort(items.begin(), items.end(),
+		  [](const QPair<QString, QString> &a,
+		     const QPair<QString, QString> &b) {
+			  return QString::localeAwareCompare(a.second,
+							     b.second) < 0;
+		  });
+	return items;
+}
+
+static QString getItemLabel(const QString &displayName, bool isDefault)
+{
+	if (!isDefault) {
+		return displayName;
+	}
+
+	return displayName + " " +
+	       obs_module_text("AdvSceneSwitcher.macroTab.export.used");
+}
+
+static void setInitialMainCheckState(QCheckBox *mainCheck, int checkedCount,
+				     int itemCount)
+{
+	if (checkedCount == 0) {
+		return;
+	}
+
+	if (checkedCount == itemCount) {
+		mainCheck->setChecked(true);
+		return;
+	}
+
+	mainCheck->setCheckState(Qt::PartiallyChecked);
+	mainCheck->setTristate(false);
+}
+
+void MacroExportImportDialog::AddExtensionCheckBox(
+	const MacroExportExtension &ext, int extIdx, QWidget *parent,
+	QLayout *layout)
+{
+	ExtensionUI ui;
+	ui.mainCheck =
+		new QCheckBox(obs_module_text(ext.displayNameKey), parent);
+	connect(ui.mainCheck, &QCheckBox::stateChanged, this,
+		&MacroExportImportDialog::UpdateExportString);
+	layout->addWidget(ui.mainCheck);
+
+	_extensionUIs.append(std::move(ui));
+	_extensionOrder.push_back(extIdx);
+}
+
+void MacroExportImportDialog::AddExtensionSection(
+	const MacroExportExtension &ext, int extIdx, QWidget *parent,
+	QLayout *layout)
+{
+	const auto items = getSortedExportItems(ext);
+	if (items.isEmpty()) {
+		return;
+	}
+
+	ExtensionUI ui;
+	ui.mainCheck = new QCheckBox(obs_module_text(ext.displayNameKey));
+
+	auto itemsWidget = new QWidget();
+	auto itemsLayout = new QVBoxLayout(itemsWidget);
+	itemsLayout->setContentsMargins(4, 2, 4, 2);
+	itemsLayout->setSpacing(2);
+
+	const auto defaultIds = ext.getDefaultSelectedIds
+					? ext.getDefaultSelectedIds(_macros)
+					: QStringList();
+	int checkedCount = 0;
+	for (const auto &[id, displayName] : items) {
+		const bool isDefault = defaultIds.contains(id);
+		auto checkBox = new QCheckBox(
+			getItemLabel(displayName, isDefault), itemsWidget);
+		checkBox->setChecked(isDefault);
+		checkedCount += isDefault ? 1 : 0;
+		connect(checkBox, &QCheckBox::stateChanged, this,
+			&MacroExportImportDialog::UpdateExportString);
+		itemsLayout->addWidget(checkBox);
+		ui.itemChecks.append({id, checkBox});
+	}
+	setInitialMainCheckState(ui.mainCheck, checkedCount, items.size());
+
+	const int uiIdx = _extensionUIs.size();
+	connect(ui.mainCheck, &QCheckBox::stateChanged, this,
+		[this, uiIdx](int state) {
+			SetExtensionItemsChecked(uiIdx, state);
+		});
+
+	auto section = new Section(200, parent);
+	section->AddHeaderWidget(ui.mainCheck);
+	section->SetContent(itemsWidget, true);
+	connect(section, &Section::AnimationFinished, this,
+		&MacroExportImportDialog::FitExtensionSection);
+	layout->addWidget(section);
+
+	_extensionUIs.append(std::move(ui));
+	_extensionOrder.push_back(extIdx);
+}
+
+void MacroExportImportDialog::SetExtensionItemsChecked(int uiIdx, int state)
+{
+	if (state == Qt::PartiallyChecked || uiIdx >= _extensionUIs.size()) {
+		return;
+	}
+
+	const bool checked = state == Qt::Checked;
+	for (auto &[id, checkBox] : _extensionUIs[uiIdx].itemChecks) {
+		QSignalBlocker blocker(checkBox);
+		checkBox->setChecked(checked);
+	}
+	UpdateExportString();
+}
+
 QWidget *MacroExportImportDialog::BuildExtensionWidget()
 {
 	auto wrapper = new QWidget(this);
@@ -128,83 +247,13 @@ QWidget *MacroExportImportDialog::BuildExtensionWidget()
 
 	for (int extIdx : order) {
 		const auto &ext = extensions[extIdx];
-		ExtensionUI ui;
-
-		// Simple all-or-nothing checkbox (no sub-items).
-		if (!ext.getExportItems) {
-			ui.mainCheck = new QCheckBox(
-				obs_module_text(ext.displayNameKey),
-				outerContent);
-			ui.mainCheck->setChecked(false);
-			connect(ui.mainCheck, &QCheckBox::stateChanged, this,
-				&MacroExportImportDialog::UpdateExportString);
-			outerLayout->addWidget(ui.mainCheck);
-			_extensionUIs.append(std::move(ui));
-			_extensionOrder.push_back(extIdx);
-			continue;
+		if (ext.getExportItems) {
+			AddExtensionSection(ext, extIdx, outerContent,
+					    outerLayout);
+		} else {
+			AddExtensionCheckBox(ext, extIdx, outerContent,
+					     outerLayout);
 		}
-
-		// Extensions with per-item selection get their own inner
-		// Section: the main checkbox sits in the header (next to the
-		// toggle arrow) and the per-item checkboxes live in the
-		// collapsible content area.
-		auto items = ext.getExportItems();
-		if (items.isEmpty()) {
-			continue;
-		}
-
-		std::sort(items.begin(), items.end(),
-			  [](const QPair<QString, QString> &a,
-			     const QPair<QString, QString> &b) {
-				  return QString::localeAwareCompare(
-						 a.second, b.second) < 0;
-			  });
-
-		auto innerSection = new Section(200, outerContent);
-
-		ui.mainCheck =
-			new QCheckBox(obs_module_text(ext.displayNameKey));
-		ui.mainCheck->setChecked(false);
-		innerSection->AddHeaderWidget(ui.mainCheck);
-
-		auto subWidget = new QWidget();
-		auto subLayout = new QVBoxLayout(subWidget);
-		subLayout->setContentsMargins(4, 2, 4, 2);
-		subLayout->setSpacing(2);
-
-		for (const auto &[id, displayName] : items) {
-			auto cb = new QCheckBox(displayName, subWidget);
-			cb->setChecked(false);
-			subLayout->addWidget(cb);
-			ui.itemChecks.append({id, cb});
-			connect(cb, &QCheckBox::stateChanged, this,
-				&MacroExportImportDialog::UpdateExportString);
-		}
-
-		// Main checkbox toggles all sub-items.
-		// Capture uiIdx (position in _extensionUIs after append).
-		const int uiIdx = _extensionUIs.size();
-		connect(ui.mainCheck, &QCheckBox::stateChanged, this,
-			[this, uiIdx](int state) {
-				if (state == Qt::PartiallyChecked)
-					return;
-				const bool checked = (state == Qt::Checked);
-				if (uiIdx < _extensionUIs.size()) {
-					for (auto &[id, cb] :
-					     _extensionUIs[uiIdx].itemChecks) {
-						QSignalBlocker b(cb);
-						cb->setChecked(checked);
-					}
-				}
-				UpdateExportString();
-			});
-
-		innerSection->SetContent(subWidget, true);
-		connect(innerSection, &Section::AnimationFinished, this,
-			&MacroExportImportDialog::FitExtensionSection);
-		outerLayout->addWidget(innerSection);
-		_extensionUIs.append(std::move(ui));
-		_extensionOrder.push_back(extIdx);
 	}
 
 	outerLayout->addStretch();
@@ -229,10 +278,12 @@ QWidget *MacroExportImportDialog::BuildExtensionWidget()
 // Constructor
 // ---------------------------------------------------------------------------
 
-MacroExportImportDialog::MacroExportImportDialog(Type type,
-						 const QString &baseJson)
+MacroExportImportDialog::MacroExportImportDialog(
+	Type type, const QString &baseJson,
+	const std::vector<std::shared_ptr<Macro>> &macros)
 	: QDialog(nullptr),
 	  _baseJson(baseJson),
+	  _macros(macros),
 	  _importExportString(new QPlainTextEdit(this)),
 	  _usePlainText(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.export.usePlainText"))),
@@ -416,13 +467,15 @@ void MacroExportImportDialog::UsePlainTextChanged(int value)
 // Static entry points
 // ---------------------------------------------------------------------------
 
-void MacroExportImportDialog::ExportMacros(obs_data_t *macroData)
+void MacroExportImportDialog::ExportMacros(
+	obs_data_t *macroData,
+	const std::vector<std::shared_ptr<Macro>> &macros)
 {
 	const char *rawJson = obs_data_get_json(macroData);
 	const QString baseJson = rawJson ? QString::fromUtf8(rawJson)
 					 : QString{};
 
-	MacroExportImportDialog dialog(Type::EXPORT_MACRO, baseJson);
+	MacroExportImportDialog dialog(Type::EXPORT_MACRO, baseJson, macros);
 	dialog.adjustSize();
 	dialog.updateGeometry();
 	dialog.exec();

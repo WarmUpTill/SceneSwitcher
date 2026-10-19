@@ -1,6 +1,7 @@
 #include "macro-export-extensions.hpp"
 
 #include "action-queue.hpp"
+#include "variable-usage.hpp"
 #include "variable.hpp"
 
 #include <obs.hpp>
@@ -45,6 +46,14 @@ static bool setup()
 				 items.append({name, name});
 			 }
 			 return items;
+		 },
+		 [](const std::vector<std::shared_ptr<Macro>> &macros) {
+			 QStringList ids;
+			 for (const auto &[name, count] :
+			      GetVariablesUsedByMacros(macros)) {
+				 ids << QString::fromStdString(name);
+			 }
+			 return ids;
 		 }});
 
 	// --- Action Queues ---
