@@ -214,15 +214,9 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@main
 
       - name: Install Vulkan SDK 🌋
-        shell: bash
-        run: |
-          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc \
-            | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list \
-            https://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list
-          sudo apt-get update -qq
-          sudo apt-get install -y vulkan-sdk
-          echo "VULKAN_SDK=/usr" >> "$GITHUB_ENV"
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          cache: true
 
       - name: Build Plugin 🧱
         uses: ./.github/actions/build-plugin
@@ -308,6 +302,11 @@ jobs:
 
       - name: Set up Homebrew 🍺
         uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Install Vulkan SDK 🌋
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          cache: true
 
       - name: Build Plugin 🧱
         uses: ./.github/actions/build-plugin
