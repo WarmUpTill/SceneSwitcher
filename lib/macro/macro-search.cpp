@@ -7,6 +7,8 @@
 #include "macro-signals.hpp"
 #include "plugin-state-helpers.hpp"
 #include "ui-helpers.hpp"
+#include "variable-usage.hpp"
+#include "variable.hpp"
 
 #include <obs.hpp>
 
@@ -26,6 +28,9 @@ static QComboBox *searchType = nullptr;
 static RegexConfigWidget *searchRegex = nullptr;
 static QPushButton *showSettings = nullptr;
 static std::function<void()> refreshFilter;
+
+// Saving a macro is too expensive to do for every size hint request
+static std::unordered_map<Macro *, std::vector<std::string>> usedVariablesCache;
 
 static void save(obs_data_t *data)
 {
@@ -103,7 +108,10 @@ void SetupMacroSearchWidgets(QLayout *searchLayoutArg, QLineEdit *searchText,
 	searchLayout = searchLayoutArg;
 	searchType = searchTypeArg;
 	searchRegex = searchRegexArg;
-	refreshFilter = refreshArg;
+	refreshFilter = [refreshArg]() {
+		usedVariablesCache.clear();
+		refreshArg();
+	};
 	showSettings = showSettingsArg;
 
 	searchClear->setMaximumWidth(22);
@@ -150,6 +158,9 @@ void SetupMacroSearchWidgets(QLayout *searchLayoutArg, QLineEdit *searchText,
 	searchType->addItem(
 		obs_module_text("AdvSceneSwitcher.macroTab.search.label"),
 		static_cast<int>(MacroSearchSettings::SearchType::LABEL));
+	searchType->addItem(
+		obs_module_text("AdvSceneSwitcher.macroTab.search.variable"),
+		static_cast<int>(MacroSearchSettings::SearchType::VARIABLE));
 	searchType->setCurrentIndex(searchType->findData(
 		static_cast<int>(GetMacroSearchSettings().searchType)));
 	QWidget::connect(
@@ -177,6 +188,18 @@ void SetupMacroSearchWidgets(QLayout *searchLayoutArg, QLineEdit *searchText,
 
 	QWidget::connect(MacroSignalManager::Instance(),
 			 &MacroSignalManager::Rename, searchText,
+			 []() { refreshFilter(); });
+	QWidget::connect(MacroSignalManager::Instance(),
+			 &MacroSignalManager::Add, searchText,
+			 []() { usedVariablesCache.clear(); });
+	QWidget::connect(MacroSignalManager::Instance(),
+			 &MacroSignalManager::Remove, searchText,
+			 []() { usedVariablesCache.clear(); });
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Rename, searchText,
+			 []() { refreshFilter(); });
+	QWidget::connect(VariableSignalManager::Instance(),
+			 &VariableSignalManager::Remove, searchText,
 			 []() { refreshFilter(); });
 
 	CheckMacroSearchVisibility();
@@ -227,6 +250,30 @@ static bool segmentLabelMatches(MacroSegment *segment)
 
 	const auto label = segment->GetCustomLabel();
 	return stringMatches(label);
+}
+
+static const std::vector<std::string> &getUsedVariables(Macro *macro)
+{
+	auto it = usedVariablesCache.find(macro);
+	if (it != usedVariablesCache.end()) {
+		return it->second;
+	}
+
+	std::vector<std::string> names;
+	for (const auto &[name, count] : GetVariablesUsedByMacro(macro)) {
+		names.emplace_back(name);
+	}
+	return usedVariablesCache.emplace(macro, std::move(names)).first->second;
+}
+
+static bool usedVariableMatches(Macro *macro)
+{
+	for (const auto &name : getUsedVariables(macro)) {
+		if (stringMatches(name)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool MacroMatchesSearchFilter(Macro *macro)
@@ -311,6 +358,8 @@ bool MacroMatchesSearchFilter(Macro *macro)
 			}
 		}
 		return false;
+	case MacroSearchSettings::SearchType::VARIABLE:
+		return usedVariableMatches(macro);
 	default:
 		break;
 	}
