@@ -331,6 +331,8 @@ target_sources(
           lib/variables/variable-tab.hpp
           lib/variables/variable-text-edit.cpp
           lib/variables/variable-text-edit.hpp
+          lib/variables/variable-usage.cpp
+          lib/variables/variable-usage.hpp
           lib/variables/variable.cpp
           lib/variables/variable.hpp)
 

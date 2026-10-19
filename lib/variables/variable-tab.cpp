@@ -6,6 +6,7 @@
 #include "tab-helpers.hpp"
 #include "time-helpers.hpp"
 #include "ui-helpers.hpp"
+#include "variable-usage.hpp"
 #include "variable.hpp"
 
 #include <obs-frontend-api.h>
@@ -218,6 +219,62 @@ static void updateVariableStatus(QTableWidget *table)
 	}
 }
 
+static constexpr int usageColumn = 5;
+
+static QString formatUsageText(const VariableUsage &usage)
+{
+	if (usage.macroNames.size() == 1) {
+		return obs_module_text(
+			"AdvSceneSwitcher.variableTab.usage.text.single");
+	}
+
+	return QString(obs_module_text(
+			       "AdvSceneSwitcher.variableTab.usage.text.multiple"))
+		.arg(usage.macroNames.size());
+}
+
+static QString formatUsageTooltip(const VariableUsage &usage)
+{
+	QStringList macroNames;
+	for (const auto &name : usage.macroNames) {
+		macroNames << QString::fromStdString(name);
+	}
+	macroNames.sort();
+
+	return QString(obs_module_text(
+			       "AdvSceneSwitcher.variableTab.usage.tooltip"))
+		.arg(usage.referenceCount)
+		.arg(macroNames.join("\n"));
+}
+
+static void updateVariableUsage(QTableWidget *table)
+{
+	const auto usage = GetVariableUsage();
+	for (int row = 0; row < table->rowCount(); row++) {
+		auto nameItem = table->item(row, 0);
+		if (!nameItem) {
+			continue;
+		}
+
+		auto item = table->item(row, usageColumn);
+		if (!item) {
+			item = new QTableWidgetItem();
+			table->setItem(row, usageColumn, item);
+		}
+
+		const auto it = usage.find(nameItem->text().toStdString());
+		if (it == usage.end()) {
+			item->setText(obs_module_text(
+				"AdvSceneSwitcher.variableTab.usage.text.none"));
+			item->setToolTip("");
+			continue;
+		}
+
+		item->setText(formatUsageText(it->second));
+		item->setToolTip(formatUsageTooltip(it->second));
+	}
+}
+
 static void openSettingsDialog(VariableTable *table)
 {
 	auto selectedRows = table->Table()->selectionModel()->selectedRows();
@@ -350,7 +407,9 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 			  << obs_module_text(
 				     "AdvSceneSwitcher.variableTab.lastUsed.header")
 			  << obs_module_text(
-				     "AdvSceneSwitcher.variableTab.lastChanged.header"),
+				     "AdvSceneSwitcher.variableTab.lastChanged.header")
+			  << obs_module_text(
+				     "AdvSceneSwitcher.variableTab.usage.header"),
 		  [this]() { openSettingsDialog(this); }),
 	  _searchField(new QLineEdit(this)),
 	  _clear(new QPushButton(this)),
@@ -424,6 +483,7 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 			 [this](const QString &oldName,
 				const QString &newName) {
 				 RenameItemTableRow(Table(), oldName, newName);
+				 UpdateUsage();
 			 });
 	QWidget::connect(
 		VariableSignalManager::Instance(), &VariableSignalManager::Add,
@@ -433,6 +493,7 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 				getCellLabels(GetVariableByQString(name)));
 			SetHelpVisible(false);
 			HighlightAddButton(false);
+			UpdateUsage();
 		});
 	QWidget::connect(VariableSignalManager::Instance(),
 			 &VariableSignalManager::Remove, this,
@@ -450,6 +511,15 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 			 [this]() { updateVariableStatus(Table()); });
 	timer->start();
 
+	auto usageTimer = new QTimer(this);
+	usageTimer->setInterval(5000);
+	QWidget::connect(usageTimer, &QTimer::timeout, [this]() {
+		if (isVisible()) {
+			UpdateUsage();
+		}
+	});
+	usageTimer->start();
+
 	auto searchLayout = new QHBoxLayout();
 	searchLayout->addWidget(_searchField);
 	searchLayout->addWidget(_clear);
@@ -459,6 +529,17 @@ VariableTable::VariableTable(Settings &settings, QWidget *parent)
 	qobject_cast<QVBoxLayout *>(layout())->insertLayout(0, searchLayout);
 
 	SetHelpVisible(GetVariables().empty());
+}
+
+void VariableTable::UpdateUsage()
+{
+	updateVariableUsage(Table());
+}
+
+void VariableTable::showEvent(QShowEvent *event)
+{
+	ResourceTable::showEvent(event);
+	UpdateUsage();
 }
 
 static void setupTab(QTabWidget *tab)

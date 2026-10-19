@@ -25,12 +25,17 @@ public:
 	static VariableTable *CreateTabTable();
 	void HideDockOptions() const;
 
+protected:
+	void showEvent(QShowEvent *event) override;
+
 private slots:
 	void Add();
 	void Remove();
 	void Filter();
 
 private:
+	void UpdateUsage();
+
 	QLineEdit *_searchField;
 	QPushButton *_clear;
 	QComboBox *_searchType;
