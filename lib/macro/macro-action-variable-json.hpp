@@ -18,6 +18,7 @@ public:
 	StringVariable _jsonQuery = "$.some.nested.value";
 	IntVariable _jsonIndex = 0;
 	bool _jsonQueryExtractSingle = true;
+	StringVariable _jsonValue = "value";
 };
 
 class VariableActionJsonEdit : public VariableActionGroupEdit {
@@ -36,6 +37,7 @@ private slots:
 	void JsonQueryChanged();
 	void JsonIndexChanged(const NumberVariable<int> &);
 	void JsonQueryExtractSingleChanged(int);
+	void JsonValueChanged();
 
 private:
 	VariableActionJson *_data;
@@ -45,6 +47,7 @@ private:
 	VariableSpinBox *_jsonIndex;
 	QCheckBox *_jsonExtractSingle;
 	HelpIcon *_jsonExtractSingleHelp;
+	VariableTextEdit *_jsonValue;
 };
 
 } // namespace advss

@@ -1,5 +1,8 @@
 #include "macro-action-variable-scene.hpp"
+#include "scene-switch-helpers.hpp"
 #include "source-helpers.hpp"
+
+#include <obs-frontend-api.h>
 
 namespace advss {
 
@@ -8,6 +11,14 @@ using Action = MacroActionVariable::Action;
 static bool registered = RegisterVariableActionGroup(
 	{60,
 	 {
+		 {Action::CURRENT_SCENE,
+		  "AdvSceneSwitcher.action.variable.type.currentScene"},
+		 {Action::PREVIOUS_SCENE,
+		  "AdvSceneSwitcher.action.variable.type.previousScene"},
+		 {Action::PREVIEW_SCENE,
+		  "AdvSceneSwitcher.action.variable.type.previewScene"},
+		 {Action::CURRENT_TRANSITION,
+		  "AdvSceneSwitcher.action.variable.type.currentTransition"},
 		 {Action::SCENE_ITEM_NAME,
 		  "AdvSceneSwitcher.action.variable.type.sceneItemName",
 		  "AdvSceneSwitcher.action.variable.layout.sceneItemName"},
@@ -96,6 +107,25 @@ bool VariableActionScene::Perform(MacroActionVariable &,
 	case Action::SCENE_ITEM_COUNT:
 		var.SetValue(GetSceneItemCount(_scene.GetScene(false)));
 		break;
+	case Action::CURRENT_SCENE:
+		var.SetValue(GetWeakSourceName(GetCurrentScene()));
+		break;
+	case Action::PREVIOUS_SCENE:
+		var.SetValue(GetWeakSourceName(GetPreviousScene()));
+		break;
+	case Action::PREVIEW_SCENE: {
+		// Only available in studio mode
+		OBSSourceAutoRelease scene =
+			obs_frontend_get_current_preview_scene();
+		var.SetValue(scene ? obs_source_get_name(scene) : "");
+		break;
+	}
+	case Action::CURRENT_TRANSITION: {
+		OBSSourceAutoRelease transition =
+			obs_frontend_get_current_transition();
+		var.SetValue(transition ? obs_source_get_name(transition) : "");
+		break;
+	}
 	default:
 		break;
 	}

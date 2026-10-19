@@ -17,6 +17,12 @@ static bool registered = RegisterVariableActionGroup(
 		 {Action::ARRAY_JSON,
 		  "AdvSceneSwitcher.action.variable.type.accessJsonArray",
 		  "AdvSceneSwitcher.action.variable.layout.accessJsonArray"},
+		 {Action::JSON_ARRAY_LENGTH,
+		  "AdvSceneSwitcher.action.variable.type.jsonArrayLength",
+		  "AdvSceneSwitcher.action.variable.layout.jsonArrayLength"},
+		 {Action::SET_JSON_FIELD,
+		  "AdvSceneSwitcher.action.variable.type.setJsonField",
+		  "AdvSceneSwitcher.action.variable.layout.setJsonField", true},
 	 },
 	 []() { return std::make_unique<VariableActionJson>(); },
 	 VariableActionJsonEdit::Create});
@@ -33,6 +39,7 @@ void VariableActionJson::Save(obs_data_t *obj,
 	_jsonIndex.Save(obj, "jsonIndex");
 	obs_data_set_bool(obj, "jsonQueryExtractSingle",
 			  _jsonQueryExtractSingle);
+	_jsonValue.Save(obj, "jsonValue");
 }
 
 void VariableActionJson::Load(obs_data_t *obj, MacroActionVariable &)
@@ -41,12 +48,16 @@ void VariableActionJson::Load(obs_data_t *obj, MacroActionVariable &)
 	_jsonIndex.Load(obj, "jsonIndex");
 	_jsonQueryExtractSingle =
 		obs_data_get_bool(obj, "jsonQueryExtractSingle");
+	if (obs_data_has_user_value(obj, "jsonValue")) {
+		_jsonValue.Load(obj, "jsonValue");
+	}
 }
 
 void VariableActionJson::ResolveVariables()
 {
 	_jsonQuery.ResolveVariables();
 	_jsonIndex.ResolveVariables();
+	_jsonValue.ResolveVariables();
 }
 
 bool VariableActionJson::Perform(MacroActionVariable &action,
@@ -89,6 +100,27 @@ bool VariableActionJson::Perform(MacroActionVariable &action,
 		var.SetValue(*value);
 		return true;
 	}
+	case Action::JSON_ARRAY_LENGTH: {
+		auto input = action._variable2.lock();
+		if (!input) {
+			return true;
+		}
+		auto length = GetJsonArrayLength(input->Value());
+		if (!length.has_value()) {
+			return true;
+		}
+		var.SetValue(*length);
+		return true;
+	}
+	case Action::SET_JSON_FIELD: {
+		auto value =
+			SetJsonField(var.Value(), action._strValue, _jsonValue);
+		if (!value.has_value()) {
+			return true;
+		}
+		var.SetValue(*value);
+		return true;
+	}
 	default:
 		return true;
 	}
@@ -112,7 +144,8 @@ VariableActionJsonEdit::VariableActionJsonEdit(
 	  _jsonExtractSingleHelp(new HelpIcon(
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.variable.type.queryJson.extractSingle.info"),
-		  this))
+		  this)),
+	  _jsonValue(new VariableTextEdit(this, 5, 1, 1))
 {
 	_jsonIndex->setMaximum(999);
 
@@ -124,6 +157,8 @@ VariableActionJsonEdit::VariableActionJsonEdit(
 		this, SLOT(JsonIndexChanged(const NumberVariable<int> &)));
 	QWidget::connect(_jsonExtractSingle, SIGNAL(stateChanged(int)), this,
 			 SLOT(JsonQueryExtractSingleChanged(int)));
+	QWidget::connect(_jsonValue, SIGNAL(textChanged()), this,
+			 SLOT(JsonValueChanged()));
 
 	auto layout = new QHBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -147,6 +182,7 @@ VariableActionJsonEdit::GetInlineWidgets()
 		{"{{jsonQuery}}", _jsonQuery},
 		{"{{jsonQueryHelp}}", _jsonQueryHelp},
 		{"{{jsonIndex}}", _jsonIndex},
+		{"{{jsonValue}}", _jsonValue},
 	};
 }
 
@@ -159,6 +195,7 @@ void VariableActionJsonEdit::UpdateEntryData()
 	_jsonQuery->setText(_data->_jsonQuery);
 	_jsonIndex->SetValue(_data->_jsonIndex);
 	_jsonExtractSingle->setChecked(_data->_jsonQueryExtractSingle);
+	_jsonValue->setPlainText(_data->_jsonValue);
 	_loading = false;
 }
 
@@ -184,6 +221,13 @@ void VariableActionJsonEdit::JsonQueryExtractSingleChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_data->_jsonQueryExtractSingle = value;
+}
+
+void VariableActionJsonEdit::JsonValueChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_data->_jsonValue = _jsonValue->toPlainText().toStdString();
+	UpdateSize();
 }
 
 } // namespace advss

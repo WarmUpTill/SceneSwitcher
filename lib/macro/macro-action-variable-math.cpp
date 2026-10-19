@@ -3,6 +3,8 @@
 #include "log-helper.hpp"
 #include "math-helpers.hpp"
 
+#include <QLocale>
+
 #include <random>
 
 namespace advss {
@@ -24,6 +26,9 @@ static bool registered = RegisterVariableActionGroup(
 		  "AdvSceneSwitcher.action.variable.layout.numValue"},
 		 {Action::ROUND_TO_INT,
 		  "AdvSceneSwitcher.action.variable.type.roundToInt"},
+		 {Action::FORMAT_NUMBER,
+		  "AdvSceneSwitcher.action.variable.type.formatNumber",
+		  "AdvSceneSwitcher.action.variable.layout.formatNumber"},
 		 {Action::RANDOM_NUMBER,
 		  "AdvSceneSwitcher.action.variable.type.randomNumber"},
 		 {Action::RANDOM_LIST_VALUE,
@@ -61,6 +66,8 @@ void VariableActionMath::Save(obs_data_t *obj,
 	obs_data_set_bool(obj, "generateInteger", _generateInteger);
 	_randomValues.Save(obj, "randomValues", "value");
 	obs_data_set_bool(obj, "allowRepeatValues", _allowRepeatValues);
+	_decimalPlaces.Save(obj, "decimalPlaces");
+	obs_data_set_bool(obj, "groupDigits", _groupDigits);
 }
 
 void VariableActionMath::Load(obs_data_t *obj, MacroActionVariable &)
@@ -80,11 +87,31 @@ void VariableActionMath::Load(obs_data_t *obj, MacroActionVariable &)
 	_generateInteger = obs_data_get_bool(obj, "generateInteger");
 	_randomValues.Load(obj, "randomValues", "value");
 	_allowRepeatValues = obs_data_get_bool(obj, "allowRepeatValues");
+	if (obs_data_has_user_value(obj, "decimalPlaces")) {
+		_decimalPlaces.Load(obj, "decimalPlaces");
+	}
+	_groupDigits = obs_data_get_bool(obj, "groupDigits");
 }
 
 void VariableActionMath::ResolveVariables()
 {
 	_mathExpression.ResolveVariables();
+	_decimalPlaces.ResolveVariables();
+}
+
+void VariableActionMath::FormatNumber(Variable &var)
+{
+	auto value = var.DoubleValue();
+	if (!value.has_value()) {
+		return;
+	}
+
+	// C locale to keep the output parsable by other variable actions
+	auto locale = QLocale::c();
+	locale.setNumberOptions(_groupDigits ? QLocale::NumberOptions()
+					     : QLocale::OmitGroupSeparator);
+	var.SetValue(locale.toString(*value, 'f', _decimalPlaces.GetValue())
+			     .toStdString());
 }
 
 void VariableActionMath::HandleMathExpression(Variable &var)
@@ -177,6 +204,9 @@ bool VariableActionMath::Perform(MacroActionVariable &,
 		var.SetValue(std::to_string(int(std::round(*curValue))));
 		break;
 	}
+	case Action::FORMAT_NUMBER:
+		FormatNumber(var);
+		break;
 	case Action::RANDOM_NUMBER:
 		GenerateRandomNumber(var);
 		break;
@@ -209,8 +239,12 @@ VariableActionMathEdit::VariableActionMathEdit(
 		  obs_module_text(
 			  "AdvSceneSwitcher.action.variable.type.allowRepeat"),
 		  this)),
-	  _randomValueLayout(new QVBoxLayout())
+	  _randomValueLayout(new QVBoxLayout()),
+	  _decimalPlaces(new VariableSpinBox(this)),
+	  _groupDigits(new QCheckBox(this))
 {
+	_decimalPlaces->setMinimum(0);
+	_decimalPlaces->setMaximum(15);
 	_numValue->setMinimum(-9999999999);
 	_numValue->setMaximum(9999999999);
 	_randomNumberStart->setMinimum(-9999999999);
@@ -242,6 +276,12 @@ VariableActionMathEdit::VariableActionMathEdit(
 			 SLOT(RandomValueListChanged(const StringList &)));
 	QWidget::connect(_allowRepeatValues, SIGNAL(stateChanged(int)), this,
 			 SLOT(AllowRepeatValuesChanged(int)));
+	QWidget::connect(
+		_decimalPlaces,
+		SIGNAL(NumberVariableChanged(const NumberVariable<int> &)),
+		this, SLOT(DecimalPlacesChanged(const NumberVariable<int> &)));
+	QWidget::connect(_groupDigits, SIGNAL(stateChanged(int)), this,
+			 SLOT(GroupDigitsChanged(int)));
 
 	auto randomLayout = new QHBoxLayout();
 	PlaceWidgets(
@@ -277,6 +317,8 @@ VariableActionMathEdit::GetInlineWidgets()
 	return {
 		{"{{numValue}}", _numValue},
 		{"{{mathExpression}}", _mathExpression},
+		{"{{decimalPlaces}}", _decimalPlaces},
+		{"{{groupDigits}}", _groupDigits},
 	};
 }
 
@@ -293,6 +335,8 @@ void VariableActionMathEdit::UpdateEntryData()
 	_generateInteger->setChecked(_data->_generateInteger);
 	_allowRepeatValues->setChecked(_data->_allowRepeatValues);
 	_randomValues->SetStringList(_data->_randomValues);
+	_decimalPlaces->SetValue(_data->_decimalPlaces);
+	_groupDigits->setChecked(_data->_groupDigits);
 	_loading = false;
 }
 
@@ -361,6 +405,19 @@ void VariableActionMathEdit::AllowRepeatValuesChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
 	_data->_allowRepeatValues = value;
+}
+
+void VariableActionMathEdit::DecimalPlacesChanged(
+	const NumberVariable<int> &value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_data->_decimalPlaces = value;
+}
+
+void VariableActionMathEdit::GroupDigitsChanged(int value)
+{
+	GUARD_LOADING_AND_LOCK();
+	_data->_groupDigits = value;
 }
 
 } // namespace advss
