@@ -1,6 +1,7 @@
 #pragma once
 #include "source-selection.hpp"
 #include "filter-combo-box.hpp"
+#include "variable-ref.hpp"
 
 namespace advss {
 
@@ -32,7 +33,7 @@ private:
 	// Storing the name separately as depending on the source selection
 	// the filter source might not be available at the moment.
 	std::string _filterName = "";
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 	Type _type = Type::SOURCE;
 	friend class FilterSelectionWidget;
 };

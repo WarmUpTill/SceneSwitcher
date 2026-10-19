@@ -2,6 +2,7 @@
 #include "macro-action-edit.hpp"
 #include "duration-control.hpp"
 #include "regex-config.hpp"
+#include "variable-ref.hpp"
 #include "variable-spinbox.hpp"
 #include "variable-text-edit.hpp"
 #include "variable.hpp"
@@ -44,7 +45,7 @@ public:
 		LESS_THAN,
 		GREATER_THAN,
 	};
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 	Condition _condition = Condition::EQUALS;
 	StringVariable _strValue = "";
 	DoubleVariable _numValue = 0.0;

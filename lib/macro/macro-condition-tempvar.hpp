@@ -1,6 +1,7 @@
 #pragma once
 #include "macro-condition-edit.hpp"
 #include "resizing-text-edit.hpp"
+#include "variable-ref.hpp"
 #include "variable.hpp"
 #include "regex-config.hpp"
 #include "variable-text-edit.hpp"
@@ -40,7 +41,7 @@ public:
 
 	Condition _type = Condition::EQUALS;
 	TempVariableRef _tempVar;
-	std::weak_ptr<Variable> _variable2;
+	VariableRef _variable2;
 	StringVariable _strValue = "";
 	double _numValue = 0;
 	RegexConfig _regex;

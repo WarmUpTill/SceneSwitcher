@@ -546,10 +546,8 @@ bool MacroActionVariable::PerformAction()
 bool MacroActionVariable::Save(obs_data_t *obj) const
 {
 	MacroAction::Save(obj);
-	obs_data_set_string(obj, "variableName",
-			    GetWeakVariableName(_variable).c_str());
-	obs_data_set_string(obj, "variable2Name",
-			    GetWeakVariableName(_variable2).c_str());
+	_variable.Save(obj, "variableName");
+	_variable2.Save(obj, "variable2Name");
 	_strValue.Save(obj, "strValue");
 	_numValue.Save(obj, "numValue");
 	obs_data_set_int(obj, "condition", static_cast<int>(_action));
@@ -595,10 +593,8 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 bool MacroActionVariable::Load(obs_data_t *obj)
 {
 	MacroAction::Load(obj);
-	_variable =
-		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
-	_variable2 = GetWeakVariableByName(
-		obs_data_get_string(obj, "variable2Name"));
+	_variable.Load(obj, "variableName");
+	_variable2.Load(obj, "variable2Name");
 	_strValue.Load(obj, "strValue");
 	_action = static_cast<Action>(obs_data_get_int(obj, "condition"));
 	_segmentIdxLoadValue = obs_data_get_int(obj, "segmentIdx");

@@ -1,5 +1,6 @@
 #include "variable-string.hpp"
 #include "utility.hpp"
+#include "variable-ref.hpp"
 
 namespace advss {
 
@@ -50,6 +51,7 @@ void StringVariable::Load(obs_data_t *obj, const char *name)
 void StringVariable::Save(obs_data_t *obj, const char *name) const
 {
 	obs_data_set_string(obj, name, _value.c_str());
+	ReportVariableRefsInText(_value);
 }
 
 void StringVariable::ResolveVariables()

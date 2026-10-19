@@ -18,9 +18,8 @@ void NumberVariable<T>::Save(obs_data_t *obj, const char *name) const
 	} else {
 		assert(false);
 	}
-	auto var = _variable.lock();
-	if (var) {
-		obs_data_set_string(data, "variable", var->Name().c_str());
+	if (_type == Type::VARIABLE) {
+		_variable.Save(data, "variable");
 	}
 	obs_data_set_int(data, "type", static_cast<int>(_type));
 	obs_data_set_obj(obj, name, data);
@@ -38,8 +37,7 @@ void NumberVariable<T>::Load(obs_data_t *obj, const char *name)
 	} else {
 		assert(false);
 	}
-	auto variableName = obs_data_get_string(data, "variable");
-	_variable = GetWeakVariableByName(variableName);
+	_variable.Load(data, "variable");
 	_type = static_cast<Type>(obs_data_get_int(data, "type"));
 	obs_data_release(data);
 }

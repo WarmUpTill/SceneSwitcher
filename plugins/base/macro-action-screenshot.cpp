@@ -116,8 +116,7 @@ bool MacroActionScreenshot::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "saveType", static_cast<int>(_saveType));
 	obs_data_set_int(obj, "targetType", static_cast<int>(_targetType));
 	_path.Save(obj, "savePath");
-	obs_data_set_string(obj, "variable",
-			    GetWeakVariableName(_variable).c_str());
+	_variable.Save(obj, "variable");
 	obs_data_set_int(obj, "version", 1);
 	return true;
 }
@@ -131,7 +130,7 @@ bool MacroActionScreenshot::Load(obs_data_t *obj)
 	_targetType =
 		static_cast<TargetType>(obs_data_get_int(obj, "targetType"));
 	_path.Load(obj, "savePath");
-	_variable = GetWeakVariableByName(obs_data_get_string(obj, "variable"));
+	_variable.Load(obj, "variable");
 
 	// TODO: Remove fallback for older versions
 	if (!obs_data_has_user_value(obj, "version")) {

@@ -176,8 +176,7 @@ bool MacroActionWait::Save(obs_data_t *obj) const
 	obs_data_set_int(obj, "version", 1);
 	_duration.Save(obj);
 	_duration2.Save(obj, "duration2");
-	obs_data_set_string(obj, "variableName",
-			    GetWeakVariableName(_variable).c_str());
+	_variable.Save(obj, "variableName");
 	obs_data_set_int(obj, "condition", static_cast<int>(_condition));
 	_strValue.Save(obj, "strValue");
 	_numValue.Save(obj, "numValue");
@@ -200,8 +199,7 @@ bool MacroActionWait::Load(obs_data_t *obj)
 			obs_data_get_int(obj, "displayUnit2")));
 	}
 	_duration.Load(obj);
-	_variable =
-		GetWeakVariableByName(obs_data_get_string(obj, "variableName"));
+	_variable.Load(obj, "variableName");
 	_condition = static_cast<Condition>(obs_data_get_int(obj, "condition"));
 	_strValue.Load(obj, "strValue");
 	_numValue.Load(obj, "numValue");

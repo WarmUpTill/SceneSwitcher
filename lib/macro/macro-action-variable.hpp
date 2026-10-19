@@ -9,6 +9,7 @@
 #include "string-list.hpp"
 #include "value-input.hpp"
 #include "variable-line-edit.hpp"
+#include "variable-ref.hpp"
 #include "variable-text-edit.hpp"
 #include "variable-spinbox.hpp"
 
@@ -63,8 +64,8 @@ public:
 	};
 
 	Action _action = Action::SET_VALUE;
-	std::weak_ptr<Variable> _variable;
-	std::weak_ptr<Variable> _variable2;
+	VariableRef _variable;
+	VariableRef _variable2;
 	StringVariable _strValue = "";
 	DoubleVariable _numValue = 0;
 	IntVariable _subStringStart = 0;

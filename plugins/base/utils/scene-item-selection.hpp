@@ -3,6 +3,7 @@
 #include "filter-combo-box.hpp"
 #include "variable-spinbox.hpp"
 #include "variable-line-edit.hpp"
+#include "variable-ref.hpp"
 #include "variable-string.hpp"
 #include "regex-config.hpp"
 
@@ -77,7 +78,7 @@ private:
 	Type _type = Type::SOURCE_NAME;
 
 	OBSWeakSource _source;
-	std::weak_ptr<Variable> _variable;
+	VariableRef _variable;
 	IntVariable _index = 1;
 	IntVariable _indexEnd = 1;
 	NameConflictSelection _nameConflictSelectionType =

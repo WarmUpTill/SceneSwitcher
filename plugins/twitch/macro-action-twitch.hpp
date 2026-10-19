@@ -10,6 +10,7 @@
 #include "tag-selection.hpp"
 
 #include <variable-line-edit.hpp>
+#include <variable-ref.hpp>
 #include <variable-text-edit.hpp>
 #include <duration-control.hpp>
 #include <duration.hpp>
@@ -197,7 +198,7 @@ public:
 	DoubleVariable _userId = 0;
 	StringVariable _banReason = "";
 	TwitchPointsReward _pointsReward;
-	std::weak_ptr<Variable> _rewardVariable;
+	VariableRef _rewardVariable;
 	bool _useVariableForRewardSelection = false;
 	StringVariable _pollTitle = "Poll question";
 	StringVariable _pollChoices = "Choice 1\nChoice 2";

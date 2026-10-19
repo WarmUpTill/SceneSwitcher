@@ -32,15 +32,9 @@ void SceneSelection::Save(obs_data_t *obj) const
 		obs_data_set_string(data, nameSaveName.data(),
 				    _group->name.c_str());
 		break;
-	case Type::VARIABLE: {
-		auto var = _variable.lock();
-		if (!var) {
-			break;
-		}
-		obs_data_set_string(data, nameSaveName.data(),
-				    var->Name().c_str());
+	case Type::VARIABLE:
+		_variable.Save(data, nameSaveName.data());
 		break;
-	}
 	default:
 		break;
 	}

@@ -6,6 +6,7 @@
 #include "obs-module-helper.hpp"
 #include "sync-helpers.hpp"
 #include "temp-variable.hpp"
+#include "variable-ref.hpp"
 
 #include <obs-data.h>
 
@@ -26,7 +27,7 @@ class Variable;
 
 struct VarMapping {
 	TempVariableRef tempVar;
-	std::weak_ptr<Variable> variable;
+	VariableRef variable;
 };
 
 class EXPORT MacroSegment : public Lockable {
