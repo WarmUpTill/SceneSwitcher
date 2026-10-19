@@ -25,9 +25,12 @@ public:
 	bool _generateInteger = true;
 	StringList _randomValues = {"value1", "value2", "value3"};
 	bool _allowRepeatValues = true;
+	IntVariable _decimalPlaces = 2;
+	bool _groupDigits = false;
 
 private:
 	void HandleMathExpression(Variable &);
+	void FormatNumber(Variable &);
 	void GenerateRandomNumber(Variable &);
 	void PickRandomValue(Variable &);
 
@@ -54,6 +57,8 @@ private slots:
 	void GenerateIntegerChanged(int);
 	void RandomValueListChanged(const StringList &);
 	void AllowRepeatValuesChanged(int);
+	void DecimalPlacesChanged(const NumberVariable<int> &);
+	void GroupDigitsChanged(int);
 
 private:
 	VariableActionMath *_data;
@@ -68,6 +73,8 @@ private:
 	StringListEdit *_randomValues;
 	QCheckBox *_allowRepeatValues;
 	QVBoxLayout *_randomValueLayout;
+	VariableSpinBox *_decimalPlaces;
+	QCheckBox *_groupDigits;
 };
 
 } // namespace advss

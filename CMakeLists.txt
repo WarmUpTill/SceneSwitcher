@@ -129,6 +129,8 @@ target_sources(
           lib/macro/macro-action-variable-scene.hpp
           lib/macro/macro-action-variable-string.cpp
           lib/macro/macro-action-variable-string.hpp
+          lib/macro/macro-action-variable-time.cpp
+          lib/macro/macro-action-variable-time.hpp
           lib/macro/macro-action-variable.cpp
           lib/macro/macro-action-variable.hpp
           lib/macro/macro-action.cpp
