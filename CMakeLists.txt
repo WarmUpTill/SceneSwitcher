@@ -321,6 +321,8 @@ target_sources(
           lib/variables/variable-line-edit.hpp
           lib/variables/variable-number.hpp
           lib/variables/variable-number.tpp
+          lib/variables/variable-ref.cpp
+          lib/variables/variable-ref.hpp
           lib/variables/variable-spinbox.cpp
           lib/variables/variable-spinbox.hpp
           lib/variables/variable-string.cpp
