@@ -54,6 +54,7 @@ private:
 	void AddExtensionSection(const MacroExportExtension &ext, int extIdx,
 				 QWidget *parent, QLayout *layout);
 	void SetExtensionItemsChecked(int uiIdx, int state);
+	void ExtensionItemChanged(int uiIdx);
 	QWidget *BuildExtensionWidget();
 	QString BuildExportJson() const;
 	void RefreshExportText();
