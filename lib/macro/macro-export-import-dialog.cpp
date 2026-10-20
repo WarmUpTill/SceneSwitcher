@@ -123,19 +123,24 @@ static QString getItemLabel(const QString &displayName, bool isDefault)
 	       obs_module_text("AdvSceneSwitcher.macroTab.export.used");
 }
 
-static void setInitialMainCheckState(QCheckBox *mainCheck, int checkedCount,
-				     int itemCount)
+static void
+syncMainCheckState(QCheckBox *mainCheck,
+		   const QList<QPair<QString, QCheckBox *>> &itemChecks)
 {
+	const auto checkedCount =
+		std::count_if(itemChecks.begin(), itemChecks.end(),
+			      [](const QPair<QString, QCheckBox *> &item) {
+				      return item.second->isChecked();
+			      });
+
+	const QSignalBlocker blocker(mainCheck);
 	if (checkedCount == 0) {
-		return;
+		mainCheck->setCheckState(Qt::Unchecked);
+	} else if (checkedCount == itemChecks.size()) {
+		mainCheck->setCheckState(Qt::Checked);
+	} else {
+		mainCheck->setCheckState(Qt::PartiallyChecked);
 	}
-
-	if (checkedCount == itemCount) {
-		mainCheck->setChecked(true);
-		return;
-	}
-
-	mainCheck->setCheckState(Qt::PartiallyChecked);
 	mainCheck->setTristate(false);
 }
 
@@ -171,24 +176,22 @@ void MacroExportImportDialog::AddExtensionSection(
 	itemsLayout->setContentsMargins(4, 2, 4, 2);
 	itemsLayout->setSpacing(2);
 
+	const int uiIdx = _extensionUIs.size();
 	const auto defaultIds = ext.getDefaultSelectedIds
 					? ext.getDefaultSelectedIds(_macros)
 					: QStringList();
-	int checkedCount = 0;
 	for (const auto &[id, displayName] : items) {
 		const bool isDefault = defaultIds.contains(id);
 		auto checkBox = new QCheckBox(
 			getItemLabel(displayName, isDefault), itemsWidget);
 		checkBox->setChecked(isDefault);
-		checkedCount += isDefault ? 1 : 0;
 		connect(checkBox, &QCheckBox::stateChanged, this,
-			&MacroExportImportDialog::UpdateExportString);
+			[this, uiIdx]() { ExtensionItemChanged(uiIdx); });
 		itemsLayout->addWidget(checkBox);
 		ui.itemChecks.append({id, checkBox});
 	}
-	setInitialMainCheckState(ui.mainCheck, checkedCount, items.size());
+	syncMainCheckState(ui.mainCheck, ui.itemChecks);
 
-	const int uiIdx = _extensionUIs.size();
 	connect(ui.mainCheck, &QCheckBox::stateChanged, this,
 		[this, uiIdx](int state) {
 			SetExtensionItemsChecked(uiIdx, state);
@@ -216,6 +219,17 @@ void MacroExportImportDialog::SetExtensionItemsChecked(int uiIdx, int state)
 		QSignalBlocker blocker(checkBox);
 		checkBox->setChecked(checked);
 	}
+	UpdateExportString();
+}
+
+void MacroExportImportDialog::ExtensionItemChanged(int uiIdx)
+{
+	if (uiIdx >= _extensionUIs.size()) {
+		return;
+	}
+
+	const auto &ui = _extensionUIs[uiIdx];
+	syncMainCheckState(ui.mainCheck, ui.itemChecks);
 	UpdateExportString();
 }
 
