@@ -512,9 +512,8 @@ void SourceSettingSelection::SetSource(const OBSWeakSource &source,
 {
 	const auto previousSelection = _settings->currentData();
 	Populate(source);
-	if (restorePreviousSelection) {
-		_settings->setCurrentIndex(
-			_settings->findData(previousSelection));
+	if (restorePreviousSelection && previousSelection.isValid()) {
+		Select(previousSelection.value<SourceSetting>());
 	}
 }
 
@@ -522,9 +521,30 @@ void SourceSettingSelection::SetSelection(const OBSWeakSource &source,
 					  const SourceSetting &setting)
 {
 	SetSource(source, false);
+	Select(setting);
+}
+
+void SourceSettingSelection::Select(const SourceSetting &setting)
+{
 	QVariant variant;
 	variant.setValue(setting);
-	_settings->setCurrentIndex(_settings->findData(variant));
+	int idx = _settings->findData(variant);
+
+	// Keep showing the selected setting even if the source does not provide
+	// at the moment.
+	// So when a variable acts as the source the UI does not just show the
+	// placeholder value
+	if (idx == -1 && !setting._id.empty()) {
+		const auto &name = setting._description.empty()
+					   ? setting._id
+					   : setting._description;
+		_settings->addItem(QString::fromStdString(name), variant);
+		idx = _settings->count() - 1;
+		adjustSize();
+		updateGeometry();
+	}
+
+	_settings->setCurrentIndex(idx);
 }
 
 void SourceSettingSelection::SelectionIdxChanged(int idx)

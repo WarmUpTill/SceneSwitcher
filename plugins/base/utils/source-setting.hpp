@@ -61,6 +61,7 @@ signals:
 
 private:
 	void Populate(const OBSWeakSource &);
+	void Select(const SourceSetting &);
 
 	FilterComboBox *_settings;
 	HelpIcon *_tooltip;
