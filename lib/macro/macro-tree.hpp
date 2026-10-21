@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QTimer>
-#include <QLabel>
+#include <QAbstractItemModel>
 #include <QCheckBox>
-#include <QListView>
-#include <QStaticText>
-#include <QAbstractListModel>
+#include <QLabel>
 #include <QStyledItemDelegate>
+#include <QTimer>
+#include <QTreeView>
 
-#include <memory>
-#include <deque>
 #include <chrono>
+#include <deque>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 class QLabel;
-class QSpacerItem;
 class QHBoxLayout;
 
 // Only used to enable applying "SourceTreeSubItemCheckBox" stylesheet
@@ -33,33 +33,26 @@ class MacroTreeItem : public QFrame {
 public:
 	explicit MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macro,
 			       bool highlight);
+	Macro *GetMacro() const { return _macro.get(); }
+	void UpdateExpandState();
 
 protected:
 	bool event(QEvent *) override;
+
+public slots:
+	void UpdateRunning();
 
 private slots:
 	void ExpandClicked(bool checked);
 	void EnableHighlight(bool enable);
 	void RunningClicked(bool);
-	void UpdateRunning();
 	void HighlightIfExecuted();
 	void MacroRenamed(const QString &, const QString &);
 
 private:
 	virtual void paintEvent(QPaintEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
-	void Update(bool force);
 
-	enum class Type {
-		Unknown,
-		Item,
-		Group,
-		SubItem,
-	};
-
-	Type _type = Type::Unknown;
-
-	QSpacerItem *_spacer = nullptr;
 	QCheckBox *_expand = nullptr;
 	QLabel *_iconLabel = nullptr;
 	QCheckBox *_running = nullptr;
@@ -70,59 +63,65 @@ private:
 	std::chrono::high_resolution_clock::time_point _lastHighlightCheckTime{};
 	QTimer _timer;
 	std::shared_ptr<Macro> _macro;
-
-	friend class MacroTree;
-	friend class MacroTreeModel;
 };
 
-class MacroTreeModel : public QAbstractListModel {
+// Exposes the flat, pre-ordered list of macros as a tree.
+// The structure reported to Qt is only updated from the macro list between the
+// begin*() and end*() calls of each modification, so changes of the macro
+// parents made before a modification do not confuse the views.
+class MacroTreeModel : public QAbstractItemModel {
 	Q_OBJECT
 
 public:
-	explicit MacroTreeModel(MacroTree *st,
-				std::deque<std::shared_ptr<Macro>> &macros);
-	~MacroTreeModel() = default;
-	virtual int rowCount(const QModelIndex &parent) const override;
-	virtual QVariant data(const QModelIndex &index,
-			      int role) const override;
-	virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
-	virtual Qt::DropActions supportedDropActions() const override;
+	MacroTreeModel(QObject *parent,
+		       std::deque<std::shared_ptr<Macro>> &macros);
+
+	QModelIndex index(int row, int column,
+			  const QModelIndex &parent = {}) const override;
+	QModelIndex parent(const QModelIndex &index) const override;
+	int rowCount(const QModelIndex &parent = {}) const override;
+	int columnCount(const QModelIndex &parent = {}) const override;
+	QVariant data(const QModelIndex &index, int role) const override;
+	Qt::ItemFlags flags(const QModelIndex &index) const override;
+	Qt::DropActions supportedDropActions() const override;
+	QStringList mimeTypes() const override;
+	QMimeData *mimeData(const QModelIndexList &indexes) const override;
+
+	static const char *MimeType();
+
+	QModelIndex IndexOf(const Macro *macro) const;
+	std::shared_ptr<Macro> MacroAt(const QModelIndex &index) const;
+	Macro *ParentOf(const Macro *macro) const;
+	int RowOf(const Macro *macro) const;
+	int PositionOf(const Macro *macro) const;
+	int ChildCount(const Macro *parent) const;
+	Macro *ChildAt(const Macro *parent, int row) const;
+
+	void Insert(const std::shared_ptr<Macro> &item, Macro *parent, int row);
+	void Remove(const std::shared_ptr<Macro> &item);
+	// row is the position among the children of the new parent before
+	// the move via beginMoveRows()
+	bool Move(const std::shared_ptr<Macro> &item, Macro *newParent,
+		  int row);
 
 private:
-	void Reset(std::deque<std::shared_ptr<Macro>> &);
-	void MoveItemBefore(const std::shared_ptr<Macro> &item,
-			    const std::shared_ptr<Macro> &before);
-	void MoveItemAfter(const std::shared_ptr<Macro> &item,
-			   const std::shared_ptr<Macro> &after);
-	void Add(std::shared_ptr<Macro> item);
-	void MoveToBeginningOfGroup(std::shared_ptr<Macro> item,
-				    std::shared_ptr<Macro>);
-	void Remove(std::shared_ptr<Macro> item);
-	std::shared_ptr<Macro> Neighbor(const std::shared_ptr<Macro> &m,
-					bool above) const;
-	std::shared_ptr<Macro> FindEndOfGroup(const std::shared_ptr<Macro> &m,
-					      bool above) const;
-	std::shared_ptr<Macro> GetCurrentMacro() const;
-	std::vector<std::shared_ptr<Macro>>
-	GetCurrentMacros(const QModelIndexList &) const;
-	QString GetNewGroupName();
-	void GroupSelectedItems(QModelIndexList &indices);
-	void UngroupSelectedGroups(QModelIndexList &indices);
-	void ExpandGroup(std::shared_ptr<Macro> item);
-	void CollapseGroup(std::shared_ptr<Macro> item);
-	int GetItemMacroIndex(const std::shared_ptr<Macro> &item) const;
-	int GetItemModelIndex(const std::shared_ptr<Macro> &item) const;
-	bool IsLastItem(std::shared_ptr<Macro> item) const;
-	bool IsInValidState();
+	struct Node {
+		Macro *parent = nullptr;
+		int row = 0;
+		size_t position = 0;
+	};
 
-	MacroTree *_mt;
+	void RebuildCache();
+	size_t SubtreeEnd(size_t position) const;
+	size_t InsertPosition(const Macro *parent, int row) const;
+	std::shared_ptr<Macro> SharedMacro(const Macro *macro) const;
+
 	std::deque<std::shared_ptr<Macro>> &_macros;
-
-	friend class MacroTree;
-	friend class MacroTreeItem;
+	std::unordered_map<const Macro *, Node> _nodes;
+	std::unordered_map<const Macro *, std::vector<Macro *>> _children;
 };
 
-class MacroTree : public QListView {
+class MacroTree : public QTreeView {
 	Q_OBJECT
 
 public:
@@ -142,8 +141,9 @@ public:
 	bool SingleItemSelected() const;
 	bool SelectionEmpty() const;
 	bool GroupsExist() const;
-	void ExpandGroup(std::shared_ptr<Macro> item) const;
-	void CollapseGroup(std::shared_ptr<Macro> item) const;
+	void ExpandGroup(std::shared_ptr<Macro> item);
+	void CollapseGroup(std::shared_ptr<Macro> item);
+	void SetGroupExpanded(Macro *group, bool expanded);
 	void RefreshFilter();
 	void UpdateRunningStates();
 
@@ -160,24 +160,31 @@ signals:
 	void MacroSelectionChanged();
 
 protected:
-	virtual void dropEvent(QDropEvent *event) override;
-	virtual void paintEvent(QPaintEvent *event) override;
+	void dropEvent(QDropEvent *event) override;
+	void paintEvent(QPaintEvent *event) override;
+	void drawBranches(QPainter *painter, const QRect &rect,
+			  const QModelIndex &index) const override;
+
+private slots:
+	void SyncExpandState(const QModelIndex &index);
+	void UpdateWidgets();
 
 private:
-	MacroTreeItem *GetItemWidget(int idx) const;
-	void ResetWidgets();
-	void UpdateWidget(const QModelIndex &idx, std::shared_ptr<Macro> item);
-	void UpdateWidgets(bool force = false);
-	void MoveItemBefore(const std::shared_ptr<Macro> &item,
-			    const std::shared_ptr<Macro> &after) const;
-	void MoveItemAfter(const std::shared_ptr<Macro> &item,
-			   const std::shared_ptr<Macro> &after) const;
+	struct DropTarget {
+		Macro *parent = nullptr;
+		int row = 0;
+	};
+
+	DropTarget DropTargetAt(const QPoint &pos) const;
+	bool MoveSelection(const DropTarget &target);
+	void UpdateWidgets(const QModelIndex &parent);
+	void ApplyExpandState(const QModelIndex &parent);
+	void ApplyFilter(const QModelIndex &parent);
+	std::vector<std::shared_ptr<Macro>> GetSelectedSubtreeRoots() const;
+	QString GetNewGroupName() const;
 	MacroTreeModel *GetModel() const;
 
 	bool _highlight = false;
-
-	friend class MacroTreeModel;
-	friend class MacroTreeItem;
 };
 
 class MacroTreeDelegate : public QStyledItemDelegate {
@@ -185,8 +192,8 @@ class MacroTreeDelegate : public QStyledItemDelegate {
 
 public:
 	MacroTreeDelegate(QObject *parent);
-	virtual QSize sizeHint(const QStyleOptionViewItem &option,
-			       const QModelIndex &index) const override;
+	QSize sizeHint(const QStyleOptionViewItem &option,
+		       const QModelIndex &index) const override;
 };
 
 } // namespace advss
