@@ -1,0 +1,263 @@
+#include "catch.hpp"
+#include "macro-test-helpers.hpp"
+
+#include <macro.hpp>
+#include <macro-helpers.hpp>
+
+#include <obs.hpp>
+
+namespace {
+
+using namespace advss;
+using namespace advss::test;
+
+using Names = std::vector<std::string>;
+
+Names names(const std::vector<std::shared_ptr<Macro>> &macros)
+{
+	Names result;
+	for (const auto &macro : macros) {
+		result.emplace_back(macro->Name());
+	}
+	return result;
+}
+
+uint32_t groupSize(const std::string &name)
+{
+	auto group = GetMacro(name);
+	REQUIRE(group);
+	REQUIRE(group->IsGroup());
+	return group->GroupSize();
+}
+
+void loadFromJson(const char *json)
+{
+	OBSDataAutoRelease data = obs_data_create_from_json(json);
+	REQUIRE(data);
+	LoadMacros(data);
+}
+
+void saveAndLoad()
+{
+	OBSDataAutoRelease data = obs_data_create();
+	SaveMacros(data);
+	GetTopLevelMacros().clear();
+	LoadMacros(data);
+}
+
+struct ClearMacros {
+	~ClearMacros() { GetTopLevelMacros().clear(); }
+};
+
+} // namespace
+
+TEST_CASE("Nested group sizes", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("A, G1[B, G2[C, D], E], F");
+
+	REQUIRE(DescribeMacros() == "A, G1[B, G2[C, D], E], F");
+	REQUIRE(groupSize("G1") == 5);
+	REQUIRE(groupSize("G2") == 2);
+	REQUIRE(GetMacro("C")->Parent() == GetMacro("G2"));
+	REQUIRE(GetMacro("G2")->Parent() == GetMacro("G1"));
+	REQUIRE_FALSE(GetMacro("A")->Parent());
+}
+
+TEST_CASE("Group helpers", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("A, G1[B, G2[C, D], E, G3[]], F");
+	auto g1 = GetMacro("G1").get();
+	auto g2 = GetMacro("G2").get();
+
+	REQUIRE(names(GetGroupChildren(g1)) == Names{"B", "G2", "E", "G3"});
+	REQUIRE(names(GetGroupDescendants(g1)) ==
+		Names{"B", "G2", "C", "D", "E", "G3"});
+	REQUIRE(names(GetGroupMacroEntries(g1)) == Names{"B", "C", "D", "E"});
+	REQUIRE(names(GetGroupMacroEntries(g2)) == Names{"C", "D"});
+	REQUIRE(GetGroupMacroEntries(GetMacro("G3").get()).empty());
+	REQUIRE(GetGroupChildren(GetMacro("A").get()).empty());
+
+	REQUIRE(IsMacroInGroup(GetMacro("C").get(), g1));
+	REQUIRE(IsMacroInGroup(GetMacro("C").get(), g2));
+	REQUIRE_FALSE(IsMacroInGroup(GetMacro("B").get(), g2));
+	REQUIRE_FALSE(IsMacroInGroup(g1, g1));
+	REQUIRE_FALSE(IsMacroInGroup(GetMacro("A").get(), g1));
+}
+
+TEST_CASE("Move macros between nested groups", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("A, G1[B, G2[C, D], E], F");
+
+	SECTION("Group with children to top level")
+	{
+		Macro::PrepareMoveToGroup(nullptr, GetMacro("G2"));
+		REQUIRE(groupSize("G1") == 2);
+		REQUIRE(groupSize("G2") == 2);
+		REQUIRE_FALSE(GetMacro("G2")->Parent());
+	}
+
+	SECTION("Macro into nested group")
+	{
+		Macro::PrepareMoveToGroup(GetMacro("G2"), GetMacro("A"));
+		REQUIRE(groupSize("G1") == 6);
+		REQUIRE(groupSize("G2") == 3);
+		REQUIRE(GetMacro("A")->Parent() == GetMacro("G2"));
+	}
+
+	SECTION("Macro from nested group to outer group")
+	{
+		Macro::PrepareMoveToGroup(GetMacro("G1"), GetMacro("C"));
+		REQUIRE(groupSize("G1") == 5);
+		REQUIRE(groupSize("G2") == 1);
+	}
+
+	SECTION("Group into itself is rejected")
+	{
+		Macro::PrepareMoveToGroup(GetMacro("G1"), GetMacro("G1"));
+		REQUIRE_FALSE(GetMacro("G1")->Parent());
+		REQUIRE(groupSize("G1") == 5);
+	}
+
+	SECTION("Group into own descendant is rejected")
+	{
+		Macro::PrepareMoveToGroup(GetMacro("G2"), GetMacro("G1"));
+		REQUIRE_FALSE(GetMacro("G1")->Parent());
+		REQUIRE(groupSize("G1") == 5);
+		REQUIRE(groupSize("G2") == 2);
+	}
+}
+
+TEST_CASE("Create group from nested macros", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("A, G1[B, C, D]");
+	std::vector<std::shared_ptr<Macro>> children = {GetMacro("B"),
+							GetMacro("C")};
+	auto group = Macro::CreateGroup("G2", children);
+
+	REQUIRE(group->Parent() == GetMacro("G1"));
+	REQUIRE(group->GroupSize() == 2);
+	REQUIRE(groupSize("G1") == 4);
+	REQUIRE(GetMacro("B")->Parent() == group);
+}
+
+TEST_CASE("Remove nested group", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("A, G1[B, G2[C, D], E], F");
+
+	SECTION("Inner group")
+	{
+		Macro::RemoveGroup(GetMacro("G2"));
+		REQUIRE(DescribeMacros() == "A, G1[B, C, D, E], F");
+		REQUIRE(groupSize("G1") == 4);
+	}
+
+	SECTION("Outer group")
+	{
+		Macro::RemoveGroup(GetMacro("G1"));
+		REQUIRE(DescribeMacros() == "A, B, G2[C, D], E, F");
+		REQUIRE(groupSize("G2") == 2);
+	}
+}
+
+TEST_CASE("Save and load nested groups", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("A, G1{B, G2[C, G3{D}], E, G4[]}, F");
+	saveAndLoad();
+
+	REQUIRE(DescribeMacros() == "A, G1{B, G2[C, G3{D}], E, G4[]}, F");
+	REQUIRE(groupSize("G1") == 7);
+	REQUIRE(groupSize("G2") == 3);
+	REQUIRE(groupSize("G3") == 1);
+	REQUIRE(groupSize("G4") == 0);
+}
+
+TEST_CASE("Saved group size is number of descendants", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("G1[A, G2[B, C]]");
+	OBSDataAutoRelease data = obs_data_create();
+	SaveMacros(data);
+
+	OBSDataArrayAutoRelease array = obs_data_get_array(data, "macros");
+	REQUIRE(obs_data_array_count(array) == 5);
+	OBSDataAutoRelease g1 = obs_data_array_item(array, 0);
+	OBSDataAutoRelease g1Data = obs_data_get_obj(g1, "groupData");
+	REQUIRE(obs_data_get_int(g1Data, "size") == 4);
+	OBSDataAutoRelease g2 = obs_data_array_item(array, 2);
+	OBSDataAutoRelease g2Data = obs_data_get_obj(g2, "groupData");
+	REQUIRE(obs_data_get_int(g2Data, "size") == 2);
+}
+
+TEST_CASE("Load single level groups", "[macro-group]")
+{
+	ClearMacros clear;
+	loadFromJson(R"({"macros": [
+		{"name": "A"},
+		{"name": "G1", "group": true,
+		 "groupData": {"size": 2, "collapsed": true}},
+		{"name": "B"},
+		{"name": "C"},
+		{"name": "D"}
+	]})");
+
+	REQUIRE(DescribeMacros() == "A, G1{B, C}, D");
+	REQUIRE(groupSize("G1") == 2);
+}
+
+TEST_CASE("Load groups with invalid sizes", "[macro-group]")
+{
+	ClearMacros clear;
+
+	SECTION("Group size exceeds number of macros")
+	{
+		loadFromJson(R"({"macros": [
+			{"name": "A"},
+			{"name": "G1", "group": true, "groupData": {"size": 5}},
+			{"name": "B"},
+			{"name": "C"}
+		]})");
+		REQUIRE(DescribeMacros() == "A, G1[B, C]");
+		REQUIRE(groupSize("G1") == 2);
+	}
+
+	SECTION("Nested group exceeds parent group")
+	{
+		loadFromJson(R"({"macros": [
+			{"name": "G1", "group": true, "groupData": {"size": 2}},
+			{"name": "G2", "group": true, "groupData": {"size": 3}},
+			{"name": "A"},
+			{"name": "B"},
+			{"name": "C"}
+		]})");
+		REQUIRE(DescribeMacros() == "G1[G2[A]], B, C");
+		REQUIRE(groupSize("G1") == 2);
+		REQUIRE(groupSize("G2") == 1);
+	}
+
+	SECTION("Empty group at the end")
+	{
+		loadFromJson(R"({"macros": [
+			{"name": "A"},
+			{"name": "G1", "group": true, "groupData": {"size": 1}}
+		]})");
+		REQUIRE(DescribeMacros() == "A, G1[]");
+	}
+}
+
+TEST_CASE("Execution time is propagated to all parent groups", "[macro-group]")
+{
+	ClearMacros clear;
+	SetupMacros("G1[G2[A]], B");
+	const auto start = std::chrono::high_resolution_clock::now();
+	GetMacro("A")->PerformActions(true);
+
+	REQUIRE(GetMacro("G1")->WasExecutedSince(start));
+	REQUIRE(GetMacro("G2")->WasExecutedSince(start));
+	REQUIRE_FALSE(GetMacro("B")->WasExecutedSince(start));
+}

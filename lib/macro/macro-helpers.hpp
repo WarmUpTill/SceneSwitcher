@@ -37,7 +37,11 @@ EXPORT std::optional<std::deque<std::shared_ptr<MacroCondition>>>
 GetMacroConditions(Macro *);
 
 EXPORT bool IsGroupMacro(Macro *);
+// Returns all non-group macros within the group including nested groups
 EXPORT std::vector<std::shared_ptr<Macro>> GetGroupMacroEntries(Macro *);
+std::vector<std::shared_ptr<Macro>> GetGroupChildren(const Macro *group);
+std::vector<std::shared_ptr<Macro>> GetGroupDescendants(const Macro *group);
+bool IsMacroInGroup(const Macro *macro, const Macro *group);
 
 EXPORT std::condition_variable &GetMacroWaitCV();
 EXPORT std::condition_variable &GetMacroTransitionCV();
