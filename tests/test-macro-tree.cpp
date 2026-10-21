@@ -226,18 +226,12 @@ public:
 		return result;
 	}
 
-	// MacroTree::dropEvent() emits row move signals before the underlying
-	// data is changed
-	void IgnoreModelSignalErrors() { _ignoreModelSignalErrors = true; }
-
 	void CheckInvariants() const
 	{
 		ProcessEvents();
 		_checker->CheckStructure();
 		for (const auto &error : _checker->Errors()) {
-			if (!_ignoreModelSignalErrors) {
-				FAIL_CHECK(error);
-			}
+			FAIL_CHECK(error);
 		}
 		CheckGroupStructure();
 		REQUIRE(VisibleRows() == ExpectedVisibleRows());
@@ -353,7 +347,6 @@ private:
 	MacroTree *_tree;
 	ModelChecker *_checker = nullptr;
 	QLineEdit *_searchText = nullptr;
-	bool _ignoreModelSignalErrors = false;
 };
 
 } // namespace
@@ -363,6 +356,26 @@ TEST_CASE("Macro tree shows macros and groups", "[macro-tree]")
 	TreeFixture f("A, G1[B, C], D, G2{E, F}, H");
 	f.CheckInvariants();
 	REQUIRE(f.VisibleRows() == Names{"A", "G1", "B", "C", "D", "G2", "H"});
+}
+
+TEST_CASE("Macro tree shows nested groups", "[macro-tree]")
+{
+	TreeFixture f("A, G1[B, G2{C, G3[D]}, E], F");
+	f.CheckInvariants();
+	REQUIRE(f.VisibleRows() == Names{"A", "G1", "B", "G2", "E", "F"});
+
+	f.ClickCheckBox(f.ExpandCheckBox("G2"));
+	f.CheckInvariants();
+	REQUIRE(f.VisibleRows() ==
+		Names{"A", "G1", "B", "G2", "C", "G3", "D", "E", "F"});
+
+	f.Tree()->Up(GetMacro("G3"));
+	f.CheckInvariants();
+	REQUIRE(DescribeMacros() == "A, G1[B, G2[G3[D], C], E], F");
+
+	f.Tree()->Remove(GetMacro("G2"));
+	f.CheckInvariants();
+	REQUIRE(DescribeMacros() == "A, G1[B, E], F");
 }
 
 TEST_CASE("Macro tree selection", "[macro-tree]")
@@ -715,7 +728,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Macro below macro")
 	{
 		TreeFixture f("A, B, C, D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("A"), f.RowBottom("C"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "B, C, A, D");
@@ -724,7 +736,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Macro above macro")
 	{
 		TreeFixture f("A, B, C, D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("D"), f.RowTop("A"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "D, A, B, C");
@@ -733,7 +744,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Macro below last row")
 	{
 		TreeFixture f("A, B, C");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("A"),
 		       QPoint(40, f.Viewport()->height() - 5));
 		f.CheckInvariants();
@@ -743,7 +753,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Macro onto expanded group")
 	{
 		TreeFixture f("A, G1[B, C], D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("A"), f.RowCenter("G1"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "G1[A, B, C], D");
@@ -752,7 +761,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Macro between subitems")
 	{
 		TreeFixture f("A, G1[B, C], D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("D"), f.RowTop("C"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "A, G1[B, D, C]");
@@ -761,7 +769,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Subitem out of group")
 	{
 		TreeFixture f("A, G1[B, C], D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("B"), f.RowBottom("D"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "A, G1[C], D, B");
@@ -770,7 +777,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Subitem to top")
 	{
 		TreeFixture f("A, G1[B, C], D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("C"), f.RowTop("A"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "C, A, G1[B], D");
@@ -779,7 +785,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Macro past collapsed group")
 	{
 		TreeFixture f("A, G1{B, C}, D");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("D"), f.RowTop("A"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "D, A, G1{B, C}");
@@ -788,7 +793,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Expanded group")
 	{
 		TreeFixture f("A, G1[B, C], D, E");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("G1"), f.RowBottom("D"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "A, D, G1[B, C], E");
@@ -797,7 +801,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Collapsed group")
 	{
 		TreeFixture f("A, G1{B, C}, D, E");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("G1"), f.RowBottom("D"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "A, D, G1{B, C}, E");
@@ -806,7 +809,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Group onto group is rejected")
 	{
 		TreeFixture f("G1[A], G2[B]");
-		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("G2"), f.RowCenter("G1"));
 		f.CheckInvariants();
 		REQUIRE(DescribeMacros() == "G1[A], G2[B]");
@@ -815,7 +817,6 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	SECTION("Multiple macros")
 	{
 		TreeFixture f("A, B, C, D");
-		f.IgnoreModelSignalErrors();
 		f.SelectRows({"A", "C"});
 		f.Drag(f.RowCenter("C"), f.RowBottom("D"));
 		f.CheckInvariants();
@@ -823,12 +824,14 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 	}
 }
 
-// Known issue: dropping onto an expanded group inserts at the start of the
-// group, dropping onto a collapsed group appends at the end
-TEST_CASE("Macro tree drop onto collapsed group", "[macro-tree][!shouldfail]")
+TEST_CASE("Macro tree drop onto collapsed group", "[macro-tree]")
 {
+	if (!DragAndDropSupported()) {
+		WARN("Skipped: drag and drop is not supported by the Qt platform");
+		return;
+	}
+
 	TreeFixture f("A, G1{B, C}, D");
-	f.IgnoreModelSignalErrors();
 	f.Drag(f.RowCenter("D"), f.RowCenter("G1"));
 	f.CheckInvariants();
 	REQUIRE(DescribeMacros() == "A, G1{D, B, C}");
@@ -914,10 +917,7 @@ TEST_CASE("Macro tree running state", "[macro-tree]")
 	}
 }
 
-// Known issue: MacroTreeItem::RunningClicked() uses the position in the macro
-// list as model row, which is wrong if a collapsed group is above
-TEST_CASE("Macro tree running state after collapsed group",
-	  "[macro-tree][!shouldfail]")
+TEST_CASE("Macro tree running state after collapsed group", "[macro-tree]")
 {
 	TreeFixture f("G0{X}, A, G1[B, C]");
 	f.ClickCheckBox(f.RunningCheckBox("B"));
