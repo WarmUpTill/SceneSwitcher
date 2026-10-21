@@ -222,7 +222,7 @@ static void deleteGroupWithChildrenFromData(const char *jsonData)
 		return;
 	}
 
-	const auto children = GetGroupMacroEntries(group.get());
+	const auto children = GetGroupChildren(group.get());
 
 	auto *const window = AdvSceneSwitcher::window;
 	if (SettingsWindowIsOpened() && window) {
@@ -1113,7 +1113,7 @@ void RegisterGroupCreateUndoRedo(const std::string &groupName)
 		return;
 	}
 
-	const auto children = GetGroupMacroEntries(group.get());
+	const auto children = GetGroupChildren(group.get());
 	OBSDataArrayAutoRelease childArray = buildChildArray(children);
 
 	OBSDataAutoRelease undoData = obs_data_create();
@@ -1157,7 +1157,7 @@ void RegisterGroupRemoveUndoRedo(const std::string &groupName)
 		return;
 	}
 
-	const auto children = GetGroupMacroEntries(group.get());
+	const auto children = GetGroupChildren(group.get());
 	OBSDataArrayAutoRelease childArray = buildChildArray(children);
 
 	OBSDataAutoRelease undoData = obs_data_create();
@@ -1205,7 +1205,7 @@ void RegisterGroupDeleteUndoRedo(Macro *macro)
 	OBSDataAutoRelease groupData = obs_data_create();
 	macro->Save(groupData);
 
-	const auto children = GetGroupMacroEntries(macro);
+	const auto children = GetGroupChildren(macro);
 	OBSDataArrayAutoRelease childArray = obs_data_array_create();
 	for (const auto &child : children) {
 		OBSDataAutoRelease childData = obs_data_create();

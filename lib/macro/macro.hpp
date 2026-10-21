@@ -121,7 +121,10 @@ public:
 				       std::shared_ptr<Macro> item);
 	static void PrepareMoveToGroup(std::shared_ptr<Macro> group,
 				       std::shared_ptr<Macro> item);
+	static void
+	RestoreGroupHierarchy(const std::deque<std::shared_ptr<Macro>> &);
 	bool IsGroup() const { return _isGroup; }
+	// Number of all macros and groups nested within this group
 	uint32_t GroupSize() const { return _groupSize; }
 	void ResetGroupSize() { _groupSize = 0; }
 	bool IsSubitem() const { return !_parent.expired(); }
@@ -190,6 +193,8 @@ private:
 	std::deque<std::shared_ptr<MacroCondition>> _conditions;
 	std::deque<std::shared_ptr<MacroAction>> _actions;
 	std::deque<std::shared_ptr<MacroAction>> _elseActions;
+
+	static void AddToGroupSizes(std::shared_ptr<Macro> group, int count);
 
 	std::weak_ptr<Macro> _parent;
 	Macro *_nestedParentMacro = nullptr;
