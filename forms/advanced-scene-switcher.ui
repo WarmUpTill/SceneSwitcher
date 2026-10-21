@@ -699,9 +699,6 @@
              <property name="selectionMode">
               <enum>QAbstractItemView::ExtendedSelection</enum>
              </property>
-             <property name="spacing">
-              <number>0</number>
-             </property>
             </widget>
            </item>
            <item>
@@ -4071,7 +4068,7 @@
  <customwidgets>
   <customwidget>
    <class>advss::MacroTree</class>
-   <extends>QListView</extends>
+   <extends>QTreeView</extends>
    <header>macro-tree.hpp</header>
   </customwidget>
   <customwidget>

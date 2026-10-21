@@ -11,24 +11,28 @@
 
 #include <obs.h>
 
+#include <QDropEvent>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
+#include <QMimeData>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QSpacerItem>
-#include <QStylePainter>
+#include <QStyleOption>
 #include <QToolTip>
-#include <QVBoxLayout>
 
+#include <algorithm>
+#include <functional>
 #include <string>
-
-Q_DECLARE_METATYPE(std::shared_ptr<advss::Macro>);
 
 namespace advss {
 
 MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 			     bool highlight)
-	: _tree(tree),
+	: _running(new QCheckBox()),
+	  _boxLayout(new QHBoxLayout()),
+	  _label(new QLabel(QString::fromStdString(macroItem->Name()))),
+	  _tree(tree),
 	  _highlight(highlight),
 	  _macro(macroItem)
 {
@@ -36,26 +40,10 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	// This is necessary for some theses to display active selections properly
 	setStyleSheet("background: none");
 
-	auto name = _macro->Name();
-	bool macroPaused = _macro->Paused();
-	bool isGroup = _macro->IsGroup();
-
-	if (isGroup) {
-		const auto path = QString::fromStdString(GetDataFilePath(
-			"res/images/" + GetThemeTypeName() + "Group.svg"));
-		QIcon icon(path);
-		QPixmap pixmap = icon.pixmap(QSize(16, 16));
-		_iconLabel = new QLabel();
-		_iconLabel->setPixmap(pixmap);
-		_iconLabel->setStyleSheet("background: none");
-	}
-
-	_running = new QCheckBox();
 	_running->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	_running->setChecked(!macroPaused);
+	_running->setChecked(!_macro->Paused());
 	_running->setStyleSheet("background: none");
 
-	_label = new QLabel(QString::fromStdString(name));
 	_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	_label->setAttribute(Qt::WA_TranslucentBackground);
@@ -64,11 +52,34 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	_running->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 #endif
 
-	_boxLayout = new QHBoxLayout();
 	_boxLayout->setContentsMargins(0, 0, 0, 0);
-	if (isGroup) {
+	if (_macro->IsGroup()) {
+		_expand = new SourceTreeSubItemCheckBox();
+		_expand->setProperty("sourceTreeSubItem", true);
+		_expand->setSizePolicy(QSizePolicy::Maximum,
+				       QSizePolicy::Maximum);
+		_expand->setMaximumSize(10, 16);
+		_expand->setMinimumSize(10, 0);
+		_expand->setProperty("class", "checkbox-icon indicator-expand");
+#ifdef __APPLE__
+		_expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+#endif
+		_expand->setChecked(_macro->IsCollapsed());
+		connect(_expand, &QCheckBox::toggled, this,
+			&MacroTreeItem::ExpandClicked);
+		_boxLayout->addWidget(_expand);
+
+		const auto path = QString::fromStdString(GetDataFilePath(
+			"res/images/" + GetThemeTypeName() + "Group.svg"));
+		QIcon icon(path);
+		QPixmap pixmap = icon.pixmap(QSize(16, 16));
+		_iconLabel = new QLabel();
+		_iconLabel->setPixmap(pixmap);
+		_iconLabel->setStyleSheet("background: none");
 		_boxLayout->addWidget(_iconLabel);
 		_boxLayout->addSpacing(2);
+	} else {
+		_boxLayout->addSpacing(3);
 	}
 	_boxLayout->addWidget(_running);
 	_boxLayout->addWidget(_label);
@@ -76,8 +87,6 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 	/* Hack: Fixes a bug where scrollbars would be above the lock icon */
 	_boxLayout->addSpacing(16);
 #endif
-
-	Update(true);
 	setLayout(_boxLayout);
 
 	connect(_running, SIGNAL(clicked(bool)), this,
@@ -92,6 +101,15 @@ MacroTreeItem::MacroTreeItem(MacroTree *tree, std::shared_ptr<Macro> macroItem,
 
 	UpdateRunning();
 	_timer.start(1500);
+}
+
+void MacroTreeItem::UpdateExpandState()
+{
+	if (!_expand) {
+		return;
+	}
+	const QSignalBlocker blocker(_expand);
+	_expand->setChecked(_macro->IsCollapsed());
 }
 
 bool MacroTreeItem::event(QEvent *event)
@@ -130,55 +148,17 @@ void MacroTreeItem::EnableHighlight(bool enable)
 
 void MacroTreeItem::RunningClicked(bool running)
 {
-	const auto updateWidget = [this](Macro *macro) {
-		if (!macro) {
-			return;
+	if (_macro->IsGroup()) {
+		for (const auto &macro : GetGroupMacroEntries(_macro.get())) {
+			macro->SetPaused(!running);
 		}
-
-		const auto &macros = GetTopLevelMacros();
-
-		bool found = false;
-		int idx = 0;
-		for (const auto &m : macros) {
-			if (m.get() == macro) {
-				found = true;
-				break;
-			}
-			idx++;
-		}
-
-		if (!found) {
-			return;
-		}
-
-		const auto widget = _tree->GetItemWidget(idx);
-		if (widget) {
-			widget->UpdateRunning();
-		}
-	};
-
-	if (!_macro->IsGroup()) {
+	} else {
 		_macro->SetPaused(!running);
-		if (!_macro->IsSubitem()) {
-			return;
-		}
-
-		const auto group = _macro->Parent();
-		updateWidget(group.get());
-		return;
-	}
-
-	const auto macros = GetGroupMacroEntries(_macro.get());
-	for (const auto &macro : macros) {
-		macro->SetPaused(!running);
 	}
 
 	// Update backend values before updating UI to prevent flickering in
 	// running state of the group
-	for (const auto &macro : macros) {
-		updateWidget(macro.get());
-	}
-	UpdateRunning();
+	_tree->UpdateRunningStates();
 }
 
 void MacroTreeItem::UpdateRunning()
@@ -262,457 +242,736 @@ void MacroTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 	}
 }
 
-void MacroTreeItem::Update(bool force)
-{
-	Type newType;
-
-	if (_macro->IsGroup()) {
-		newType = Type::Group;
-	} else if (_macro->IsSubitem()) {
-		newType = Type::SubItem;
-	} else {
-		newType = Type::Item;
-	}
-
-	if (!force && newType == _type) {
-		return;
-	}
-
-	if (_spacer) {
-		_boxLayout->removeItem(_spacer);
-		delete _spacer;
-		_spacer = nullptr;
-	}
-
-	if (_type == Type::Group && _expand) {
-		_boxLayout->removeWidget(_expand);
-		_expand->deleteLater();
-		_expand = nullptr;
-	}
-
-	_type = newType;
-	if (_type == Type::SubItem) {
-		_spacer = new QSpacerItem(16, 1);
-		_boxLayout->insertItem(0, _spacer);
-
-	} else if (_type == Type::Group) {
-		_expand = new SourceTreeSubItemCheckBox();
-		_expand->setProperty("sourceTreeSubItem", true);
-		_expand->setSizePolicy(QSizePolicy::Maximum,
-				       QSizePolicy::Maximum);
-		_expand->setMaximumSize(10, 16);
-		_expand->setMinimumSize(10, 0);
-		_expand->setProperty("class", "checkbox-icon indicator-expand");
-#ifdef __APPLE__
-		_expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
-#endif
-		_boxLayout->insertWidget(0, _expand);
-		_expand->blockSignals(true);
-		_expand->setChecked(_macro->IsCollapsed());
-		_expand->blockSignals(false);
-		connect(_expand, &QCheckBox::toggled, this,
-			&MacroTreeItem::ExpandClicked);
-	} else {
-		_spacer = new QSpacerItem(3, 1);
-		_boxLayout->insertItem(0, _spacer);
-	}
-	_label->setText(QString::fromStdString(_macro->Name()));
-}
-
 void MacroTreeItem::ExpandClicked(bool checked)
 {
-	if (!checked) {
-		_tree->GetModel()->ExpandGroup(_macro);
-	} else {
-		_tree->GetModel()->CollapseGroup(_macro);
-	}
+	_tree->SetGroupExpanded(_macro.get(), !checked);
 }
 
 /* ========================================================================= */
 
-void MacroTreeModel::Reset(std::deque<std::shared_ptr<Macro>> &newItems)
-{
-	beginResetModel();
-	_macros = newItems;
-	endResetModel();
-
-	_mt->ResetWidgets();
-}
-
-static inline int
-ModelIndexToMacroIndex(int modelIdx,
-		       const std::deque<std::shared_ptr<Macro>> &macros)
-{
-	assert((int)macros.size() >= modelIdx);
-	int realIdx = 0;
-	const auto &m = macros[0];
-	bool inCollapsedGroup = m->IsGroup() && m->IsCollapsed();
-	uint32_t groupSize = m->GroupSize();
-	for (int i = 0; i < modelIdx; i++) {
-		if (inCollapsedGroup) {
-			realIdx += groupSize;
-			groupSize = 0;
-			inCollapsedGroup = false;
-		}
-		realIdx++;
-		const auto &m = macros.at(realIdx);
-		inCollapsedGroup = m->IsGroup() && m->IsCollapsed();
-		groupSize = m->GroupSize();
-	}
-	return realIdx;
-}
-
-static inline int
-MacroIndexToModelIndex(int realIdx,
-		       const std::deque<std::shared_ptr<Macro>> &macros)
-{
-	if (realIdx == -1) {
-		return -1;
-	}
-
-	int modelIdx = 0;
-	bool inCollapsedGroup = false;
-	uint32_t groupSize = 0;
-	for (int i = 0; i < realIdx; i++) {
-		if (inCollapsedGroup) {
-			i += groupSize - 1;
-			groupSize = 0;
-			inCollapsedGroup = false;
-			continue;
-		}
-		const auto &m = macros.at(i);
-		inCollapsedGroup = m->IsGroup() && m->IsCollapsed();
-		groupSize = m->GroupSize();
-		modelIdx++;
-	}
-	return modelIdx;
-}
-
-void MacroTreeModel::MoveItemBefore(const std::shared_ptr<Macro> &item,
-				    const std::shared_ptr<Macro> &before)
-{
-	if (!item || !before || item == before ||
-	    Neighbor(item, false) == before) {
-		return;
-	}
-
-	int modelFromIdx = 0, modelFromEndIdx = 0, modelTo = 0, macroFrom = 0,
-	    macroTo = 0;
-	try {
-		modelFromEndIdx = GetItemModelIndex(item);
-		modelFromIdx = modelFromEndIdx;
-		modelTo = GetItemModelIndex(before);
-		macroFrom = GetItemMacroIndex(item);
-		macroTo = GetItemMacroIndex(before);
-	} catch (const std::out_of_range &) {
-		blog(LOG_WARNING,
-		     "error while trying to move item \"%s\" before \"%s\"",
-		     item->Name().c_str(), before->Name().c_str());
-		assert(IsInValidState());
-		return;
-	}
-
-	if (before->IsSubitem()) {
-		modelTo -= before->IsCollapsed() ? 0 : before->GroupSize();
-		macroTo -= before->GroupSize();
-	}
-
-	if (!item->IsGroup()) {
-		beginMoveRows(QModelIndex(), modelFromIdx, modelFromIdx,
-			      QModelIndex(), modelTo);
-		auto it = std::next(_macros.begin(), macroFrom);
-		std::shared_ptr<Macro> tmp = *it;
-		_macros.erase(it);
-		_macros.insert(std::next(_macros.begin(), macroTo), tmp);
-		endMoveRows();
-		assert(IsInValidState());
-		return;
-	}
-
-	if (!item->IsCollapsed()) {
-		modelFromEndIdx += item->GroupSize();
-	}
-
-	beginMoveRows(QModelIndex(), modelFromIdx, modelFromEndIdx,
-		      QModelIndex(), modelTo);
-	for (uint32_t i = 0; i <= item->GroupSize(); i++) {
-		auto it = std::next(_macros.begin(), macroFrom + i);
-		auto tmp = *it;
-		_macros.erase(it);
-		_macros.insert(std::next(_macros.begin(), macroTo + i), tmp);
-	}
-	endMoveRows();
-	assert(IsInValidState());
-}
-
-void MacroTreeModel::MoveItemAfter(const std::shared_ptr<Macro> &item,
-				   const std::shared_ptr<Macro> &after)
-{
-	if (!item || !after || item == after || Neighbor(item, true) == after) {
-		return;
-	}
-
-	auto moveAfter = after;
-	int modelFromIdx = 0, modelFromEndIdx = 0, modelTo = 0;
-	try {
-		modelFromIdx = GetItemModelIndex(item);
-		modelFromEndIdx = modelFromIdx;
-		modelTo = GetItemModelIndex(after);
-	} catch (const std::out_of_range &) {
-		blog(LOG_WARNING,
-		     "error while trying to move item \"%s\" after \"%s\"",
-		     item->Name().c_str(), after->Name().c_str());
-		assert(IsInValidState());
-		return;
-	}
-
-	if (after->IsGroup()) {
-		modelTo += after->IsCollapsed() ? 0 : after->GroupSize();
-		moveAfter = FindEndOfGroup(after, false);
-	}
-
-	if (!item->IsGroup()) {
-		beginMoveRows(QModelIndex(), modelFromIdx, modelFromEndIdx,
-			      QModelIndex(), modelTo + 1);
-		auto it = std::find(_macros.begin(), _macros.end(), item);
-		std::shared_ptr<Macro> tmp = *it;
-		_macros.erase(it);
-		it = std::find(_macros.begin(), _macros.end(), moveAfter);
-		if (it == _macros.end()) {
-			_macros.insert(it, tmp);
-		} else {
-			_macros.insert(std::next(it), tmp);
-		}
-		endMoveRows();
-		assert(IsInValidState());
-		return;
-	}
-
-	if (!item->IsCollapsed()) {
-		modelFromEndIdx += item->GroupSize();
-	}
-
-	beginMoveRows(QModelIndex(), modelFromIdx, modelFromEndIdx,
-		      QModelIndex(), modelTo + 1);
-	auto groupStart = std::find(_macros.begin(), _macros.end(), item);
-	auto groupEnd = std::next(groupStart, item->GroupSize() + 1);
-	std::deque<std::shared_ptr<Macro>> elementsToMove(groupStart, groupEnd);
-	for (const auto &element : elementsToMove) {
-		auto it = std::find(_macros.begin(), _macros.end(), element);
-		_macros.erase(it);
-		it = std::find(_macros.begin(), _macros.end(), moveAfter);
-		if (it == _macros.end()) {
-			_macros.insert(it, element);
-		} else {
-			_macros.insert(std::next(it), element);
-		}
-		moveAfter = element;
-	}
-	endMoveRows();
-	assert(IsInValidState());
-}
-
-static inline int
-CountItemsVisibleInModel(const std::deque<std::shared_ptr<Macro>> &macros)
-{
-	int count = macros.size();
-	for (const auto &m : macros) {
-		if (m->IsGroup() && m->IsCollapsed()) {
-			count -= m->GroupSize();
-		}
-	}
-	return count;
-}
-
-void MacroTreeModel::Add(std::shared_ptr<Macro> item)
-{
-	auto lock = LockContext();
-	auto idx = CountItemsVisibleInModel(_macros);
-	beginInsertRows(QModelIndex(), idx, idx);
-	_macros.emplace_back(item);
-	endInsertRows();
-	_mt->UpdateWidget(createIndex(idx, 0, nullptr), item);
-	_mt->selectionModel()->clear();
-	_mt->selectionModel()->select(createIndex(idx, 0, nullptr),
-				      QItemSelectionModel::Select);
-}
-
-void MacroTreeModel::MoveToBeginningOfGroup(std::shared_ptr<Macro> item,
-					    std::shared_ptr<Macro> group)
-{
-	auto it = std::find(_macros.begin(), _macros.end(), item);
-	assert(it != _macros.end());
-	std::shared_ptr<Macro> tmp = *it;
-	_macros.erase(it);
-	it = std::find(_macros.begin(), _macros.end(), group);
-	assert(it != _macros.end());
-	_macros.insert(std::next(it), tmp);
-
-	Reset(_macros);
-}
-
-void MacroTreeModel::Remove(std::shared_ptr<Macro> item)
-{
-	auto lock = LockContext();
-	auto uiStartIdx = GetItemModelIndex(item);
-	if (uiStartIdx == -1) {
-		return;
-	}
-	auto macroStartIdx = ModelIndexToMacroIndex(uiStartIdx, _macros);
-
-	auto uiEndIdx = uiStartIdx;
-	auto macroEndIdx = macroStartIdx;
-
-	bool isGroup = item->IsGroup();
-	if (isGroup) {
-		macroEndIdx += item->GroupSize();
-		if (!item->IsCollapsed()) {
-			uiEndIdx += item->GroupSize();
-		}
-	} else if (item->IsSubitem()) {
-		Macro::PrepareMoveToGroup(nullptr, item);
-	}
-
-	beginRemoveRows(QModelIndex(), uiStartIdx, uiEndIdx);
-	_macros.erase(std::next(_macros.begin(), macroStartIdx),
-		      std::next(_macros.begin(), macroEndIdx + 1));
-	endRemoveRows();
-
-	_mt->selectionModel()->clear();
-
-	assert(IsInValidState());
-}
-
-std::shared_ptr<Macro> MacroTreeModel::Neighbor(const std::shared_ptr<Macro> &m,
-						bool above) const
-{
-	if (!m) {
-		return std::shared_ptr<Macro>();
-	}
-
-	auto it = std::find(_macros.begin(), _macros.end(), m);
-	if (it == _macros.end()) {
-		return std::shared_ptr<Macro>();
-	}
-	if (above) {
-		if (it == _macros.begin()) {
-			return std::shared_ptr<Macro>();
-		}
-		return *std::prev(it, 1);
-	}
-	auto result = std::next(it, 1);
-	if (result == _macros.end()) {
-		return std::shared_ptr<Macro>();
-	}
-	return *result;
-}
-
-std::shared_ptr<Macro>
-MacroTreeModel::FindEndOfGroup(const std::shared_ptr<Macro> &m,
-			       bool above) const
-{
-	auto endOfGroup = Neighbor(m, above);
-	if (!endOfGroup) {
-		return m;
-	}
-
-	if (above) {
-		while (!endOfGroup->IsGroup()) {
-			endOfGroup = Neighbor(endOfGroup, above);
-		}
-	} else {
-		while (endOfGroup->IsSubitem() &&
-		       GetItemMacroIndex(endOfGroup) + 1 !=
-			       (int)_macros.size()) {
-			endOfGroup = Neighbor(endOfGroup, above);
-		}
-		if (!endOfGroup->IsSubitem()) {
-			endOfGroup = Neighbor(endOfGroup, !above);
-		}
-	}
-
-	return endOfGroup;
-}
-
-std::shared_ptr<Macro> MacroTreeModel::GetCurrentMacro() const
-{
-	auto sel = _mt->selectionModel()->selection();
-	if (sel.empty()) {
-		return std::shared_ptr<Macro>();
-	}
-	auto idx = sel.indexes().back().row();
-	if (idx >= (int)_macros.size()) {
-		return std::shared_ptr<Macro>();
-	}
-	return _macros[ModelIndexToMacroIndex(idx, _macros)];
-}
-
-std::vector<std::shared_ptr<Macro>>
-MacroTreeModel::GetCurrentMacros(const QModelIndexList &selection) const
-{
-	std::vector<std::shared_ptr<Macro>> result;
-	result.reserve(selection.size());
-	for (const auto &sel : selection) {
-		try {
-			result.emplace_back(_macros.at(
-				ModelIndexToMacroIndex(sel.row(), _macros)));
-		} catch (const std::out_of_range &) {
-		}
-	}
-	return result;
-}
-
-MacroTreeModel::MacroTreeModel(MacroTree *st_,
+MacroTreeModel::MacroTreeModel(QObject *parent,
 			       std::deque<std::shared_ptr<Macro>> &macros)
-	: QAbstractListModel(st_),
-	  _mt(st_),
+	: QAbstractItemModel(parent),
 	  _macros(macros)
 {
+	RebuildCache();
+}
+
+const char *MacroTreeModel::MimeType()
+{
+	return "application/x-advss-macro-tree";
+}
+
+void MacroTreeModel::RebuildCache()
+{
+	_nodes.clear();
+	_children.clear();
+	_children[nullptr];
+
+	for (size_t i = 0; i < _macros.size(); i++) {
+		auto macro = _macros[i].get();
+		auto parent = macro->Parent().get();
+		if (parent && _nodes.find(parent) == _nodes.end()) {
+			blog(LOG_WARNING,
+			     "parent of macro \"%s\" not found in macro tree",
+			     macro->Name().c_str());
+			parent = nullptr;
+		}
+		auto &siblings = _children[parent];
+		_nodes[macro] = {parent, (int)siblings.size(), i};
+		siblings.emplace_back(macro);
+	}
+}
+
+static bool isCachedDescendant(
+	const std::unordered_map<const Macro *, std::vector<Macro *>> &children,
+	const Macro *macro, const Macro *ancestor)
+{
+	auto it = children.find(ancestor);
+	if (it == children.end()) {
+		return false;
+	}
+	for (const auto child : it->second) {
+		if (child == macro ||
+		    isCachedDescendant(children, macro, child)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+size_t MacroTreeModel::SubtreeEnd(size_t position) const
+{
+	const auto root = _macros[position].get();
+	size_t end = position + 1;
+	while (end < _macros.size() &&
+	       isCachedDescendant(_children, _macros[end].get(), root)) {
+		end++;
+	}
+	return end;
+}
+
+size_t MacroTreeModel::InsertPosition(const Macro *parent, int row) const
+{
+	if (row < ChildCount(parent)) {
+		return _nodes.at(ChildAt(parent, row)).position;
+	}
+	if (parent) {
+		return SubtreeEnd(_nodes.at(parent).position);
+	}
+	return _macros.size();
+}
+
+std::shared_ptr<Macro> MacroTreeModel::SharedMacro(const Macro *macro) const
+{
+	auto it = _nodes.find(macro);
+	if (it == _nodes.end()) {
+		return {};
+	}
+	return _macros[it->second.position];
+}
+
+QModelIndex MacroTreeModel::index(int row, int column,
+				  const QModelIndex &parent) const
+{
+	if (column != 0 || row < 0) {
+		return {};
+	}
+	auto parentMacro = static_cast<const Macro *>(parent.internalPointer());
+	auto it = _children.find(parent.isValid() ? parentMacro : nullptr);
+	if (it == _children.end() || row >= (int)it->second.size()) {
+		return {};
+	}
+	return createIndex(row, 0, it->second[row]);
+}
+
+QModelIndex MacroTreeModel::parent(const QModelIndex &index) const
+{
+	if (!index.isValid()) {
+		return {};
+	}
+	auto it = _nodes.find(
+		static_cast<const Macro *>(index.internalPointer()));
+	if (it == _nodes.end() || !it->second.parent) {
+		return {};
+	}
+	return IndexOf(it->second.parent);
 }
 
 int MacroTreeModel::rowCount(const QModelIndex &parent) const
 {
-	return parent.isValid() ? 0 : CountItemsVisibleInModel(_macros);
+	if (parent.column() > 0) {
+		return 0;
+	}
+	return ChildCount(parent.isValid() ? static_cast<const Macro *>(
+						     parent.internalPointer())
+					   : nullptr);
+}
+
+int MacroTreeModel::columnCount(const QModelIndex &) const
+{
+	return 1;
 }
 
 QVariant MacroTreeModel::data(const QModelIndex &index, int role) const
 {
-	if (role == Qt::AccessibleTextRole) {
-		std::shared_ptr<Macro> item =
-			_macros[ModelIndexToMacroIndex(index.row(), _macros)];
-		if (!item) {
-			return QVariant();
-		}
-		return QVariant(QString::fromStdString(item->Name()));
+	if (role != Qt::AccessibleTextRole) {
+		return {};
 	}
-
-	return QVariant();
+	auto macro = MacroAt(index);
+	if (!macro) {
+		return {};
+	}
+	return QString::fromStdString(macro->Name());
 }
 
 Qt::ItemFlags MacroTreeModel::flags(const QModelIndex &index) const
 {
 	if (!index.isValid()) {
-		return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+		return Qt::ItemIsDropEnabled;
 	}
 
-	std::shared_ptr<Macro> item;
-	try {
-		item = _macros.at(ModelIndexToMacroIndex(index.row(), _macros));
-	} catch (const std::out_of_range &) {
-		return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+	auto macro = MacroAt(index);
+	if (!macro) {
+		return Qt::NoItemFlags;
 	}
-	bool isGroup = item->IsGroup();
-	return QAbstractListModel::flags(index) | Qt::ItemIsEditable |
-	       Qt::ItemIsDragEnabled |
-	       (isGroup ? Qt::ItemIsDropEnabled : Qt::NoItemFlags);
+	const Qt::ItemFlags flags = Qt::ItemIsSelectable | Qt::ItemIsEnabled |
+				    Qt::ItemIsDragEnabled;
+	return macro->IsGroup() ? flags | Qt::ItemIsDropEnabled : flags;
 }
 
 Qt::DropActions MacroTreeModel::supportedDropActions() const
 {
-	return QAbstractItemModel::supportedDropActions() | Qt::MoveAction;
+	return Qt::MoveAction;
 }
 
-QString MacroTreeModel::GetNewGroupName()
+QStringList MacroTreeModel::mimeTypes() const
+{
+	return {MimeType()};
+}
+
+QMimeData *MacroTreeModel::mimeData(const QModelIndexList &indexes) const
+{
+	QStringList names;
+	for (const auto &index : indexes) {
+		names << index.data(Qt::AccessibleTextRole).toString();
+	}
+	auto data = new QMimeData();
+	data->setData(MimeType(), names.join('\n').toUtf8());
+	return data;
+}
+
+QModelIndex MacroTreeModel::IndexOf(const Macro *macro) const
+{
+	auto it = _nodes.find(macro);
+	if (it == _nodes.end()) {
+		return {};
+	}
+	return createIndex(it->second.row, 0, const_cast<Macro *>(macro));
+}
+
+std::shared_ptr<Macro> MacroTreeModel::MacroAt(const QModelIndex &index) const
+{
+	if (!index.isValid() || index.model() != this) {
+		return {};
+	}
+	return SharedMacro(static_cast<const Macro *>(index.internalPointer()));
+}
+
+Macro *MacroTreeModel::ParentOf(const Macro *macro) const
+{
+	auto it = _nodes.find(macro);
+	return it == _nodes.end() ? nullptr : it->second.parent;
+}
+
+int MacroTreeModel::RowOf(const Macro *macro) const
+{
+	auto it = _nodes.find(macro);
+	return it == _nodes.end() ? -1 : it->second.row;
+}
+
+int MacroTreeModel::PositionOf(const Macro *macro) const
+{
+	auto it = _nodes.find(macro);
+	return it == _nodes.end() ? -1 : (int)it->second.position;
+}
+
+int MacroTreeModel::ChildCount(const Macro *parent) const
+{
+	auto it = _children.find(parent);
+	return it == _children.end() ? 0 : (int)it->second.size();
+}
+
+Macro *MacroTreeModel::ChildAt(const Macro *parent, int row) const
+{
+	auto it = _children.find(parent);
+	if (it == _children.end() || row < 0 || row >= (int)it->second.size()) {
+		return nullptr;
+	}
+	return it->second[row];
+}
+
+void MacroTreeModel::Insert(const std::shared_ptr<Macro> &item, Macro *parent,
+			    int row)
+{
+	if (!item || _nodes.find(item.get()) != _nodes.end() ||
+	    (parent && _nodes.find(parent) == _nodes.end())) {
+		return;
+	}
+
+	row = std::clamp(row, 0, ChildCount(parent));
+	const auto position = InsertPosition(parent, row);
+	const auto parentMacro = SharedMacro(parent);
+
+	beginInsertRows(IndexOf(parent), row, row);
+	Macro::PrepareMoveToGroup(parentMacro, item);
+	_macros.insert(_macros.begin() + position, item);
+	RebuildCache();
+	endInsertRows();
+}
+
+void MacroTreeModel::Remove(const std::shared_ptr<Macro> &item)
+{
+	auto it = _nodes.find(item.get());
+	if (it == _nodes.end()) {
+		return;
+	}
+
+	const auto node = it->second;
+	const auto end = SubtreeEnd(node.position);
+
+	beginRemoveRows(IndexOf(node.parent), node.row, node.row);
+	Macro::PrepareMoveToGroup(nullptr, item);
+	_macros.erase(_macros.begin() + node.position, _macros.begin() + end);
+	RebuildCache();
+	endRemoveRows();
+}
+
+bool MacroTreeModel::Move(const std::shared_ptr<Macro> &item, Macro *newParent,
+			  int row)
+{
+	auto it = _nodes.find(item.get());
+	if (it == _nodes.end() ||
+	    (newParent && _nodes.find(newParent) == _nodes.end())) {
+		return false;
+	}
+
+	const auto node = it->second;
+	if (newParent == item.get() ||
+	    isCachedDescendant(_children, newParent, item.get())) {
+		return false;
+	}
+
+	row = std::clamp(row, 0, ChildCount(newParent));
+	if (node.parent == newParent &&
+	    (row == node.row || row == node.row + 1)) {
+		return false;
+	}
+
+	const auto insertBefore = ChildAt(newParent, row);
+	const auto newParentMacro = SharedMacro(newParent);
+	if (!beginMoveRows(IndexOf(node.parent), node.row, node.row,
+			   IndexOf(newParent), row)) {
+		return false;
+	}
+
+	const auto start = _macros.begin() + node.position;
+	const auto end = _macros.begin() + SubtreeEnd(node.position);
+	const std::vector<std::shared_ptr<Macro>> subtree(start, end);
+	_macros.erase(start, end);
+
+	auto position = _macros.end();
+	if (insertBefore) {
+		position = std::find_if(
+			_macros.begin(), _macros.end(),
+			[insertBefore](const std::shared_ptr<Macro> &macro) {
+				return macro.get() == insertBefore;
+			});
+	} else if (newParent) {
+		position = std::find(_macros.begin(), _macros.end(),
+				     newParentMacro);
+		position = std::find_if(
+			std::next(position), _macros.end(),
+			[this, newParent](const std::shared_ptr<Macro> &m) {
+				return !isCachedDescendant(_children, m.get(),
+							   newParent);
+			});
+	}
+	_macros.insert(position, subtree.begin(), subtree.end());
+
+	Macro::PrepareMoveToGroup(newParentMacro, item);
+	RebuildCache();
+	endMoveRows();
+	return true;
+}
+
+/* ========================================================================= */
+
+MacroTree::MacroTree(QWidget *parent) : QTreeView(parent)
+{
+	setStyleSheet(QString(
+		"*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
+		"*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
+		"*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
+		"*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
+		"*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
+		"*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
+		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
+		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
+
+	setHeaderHidden(true);
+	setRootIsDecorated(false);
+	setIndentation(16);
+	setExpandsOnDoubleClick(false);
+	// Groups are expanded and collapsed using the checkbox of the group
+	setItemsExpandable(false);
+	setEditTriggers(QAbstractItemView::NoEditTriggers);
+	setItemDelegate(new MacroTreeDelegate(this));
+
+	connect(this, &QTreeView::expanded, this, &MacroTree::SyncExpandState);
+	connect(this, &QTreeView::collapsed, this, &MacroTree::SyncExpandState);
+}
+
+void MacroTree::Reset(std::deque<std::shared_ptr<Macro>> &macros,
+		      bool highlight)
+{
+	_highlight = highlight;
+
+	auto oldModel = model();
+	auto oldSelectionModel = selectionModel();
+	auto newModel = new MacroTreeModel(this, macros);
+	setModel(newModel);
+	if (oldSelectionModel) {
+		oldSelectionModel->deleteLater();
+	}
+	if (oldModel) {
+		oldModel->deleteLater();
+	}
+
+	connect(newModel, &QAbstractItemModel::rowsInserted, this,
+		qOverload<>(&MacroTree::UpdateWidgets));
+	connect(newModel, &QAbstractItemModel::rowsMoved, this,
+		qOverload<>(&MacroTree::UpdateWidgets));
+	connect(newModel, &QAbstractItemModel::rowsRemoved, this,
+		qOverload<>(&MacroTree::UpdateWidgets));
+	connect(selectionModel(), &QItemSelectionModel::selectionChanged, this,
+		&MacroTree::SelectionChangedHelper);
+
+	UpdateWidgets();
+}
+
+void MacroTree::UpdateWidgets()
+{
+	UpdateWidgets(QModelIndex());
+	ApplyExpandState(QModelIndex());
+	ApplyFilter(QModelIndex());
+}
+
+void MacroTree::UpdateWidgets(const QModelIndex &parent)
+{
+	auto treeModel = GetModel();
+	for (int row = 0; row < treeModel->rowCount(parent); row++) {
+		const auto index = treeModel->index(row, 0, parent);
+		const auto macro = treeModel->MacroAt(index);
+		auto widget = qobject_cast<MacroTreeItem *>(indexWidget(index));
+		if (!widget || widget->GetMacro() != macro.get()) {
+			setIndexWidget(index, new MacroTreeItem(this, macro,
+								_highlight));
+		}
+		UpdateWidgets(index);
+	}
+}
+
+void MacroTree::ApplyExpandState(const QModelIndex &parent)
+{
+	auto treeModel = GetModel();
+	for (int row = 0; row < treeModel->rowCount(parent); row++) {
+		const auto index = treeModel->index(row, 0, parent);
+		const auto macro = treeModel->MacroAt(index);
+		if (!macro->IsGroup()) {
+			continue;
+		}
+		const bool expand = !macro->IsCollapsed();
+		if (isExpanded(index) != expand) {
+			setExpanded(index, expand);
+		}
+		ApplyExpandState(index);
+	}
+}
+
+void MacroTree::ApplyFilter(const QModelIndex &parent)
+{
+	auto treeModel = GetModel();
+	for (int row = 0; row < treeModel->rowCount(parent); row++) {
+		const auto index = treeModel->index(row, 0, parent);
+		const auto macro = treeModel->MacroAt(index);
+		setRowHidden(row, parent,
+			     !MacroMatchesSearchFilter(macro.get()));
+		ApplyFilter(index);
+	}
+}
+
+void MacroTree::SyncExpandState(const QModelIndex &index)
+{
+	const auto macro = GetModel()->MacroAt(index);
+	if (!macro || !macro->IsGroup()) {
+		return;
+	}
+
+	const bool collapsed = !isExpanded(index);
+	macro->SetCollapsed(collapsed);
+	if (auto widget = qobject_cast<MacroTreeItem *>(indexWidget(index))) {
+		widget->UpdateExpandState();
+	}
+
+	if (!collapsed) {
+		return;
+	}
+
+	// Avoid hidden macros being modified by actions on the selection
+	for (const auto &selected : selectionModel()->selectedIndexes()) {
+		const auto selectedMacro = GetModel()->MacroAt(selected);
+		if (IsMacroInGroup(selectedMacro.get(), macro.get())) {
+			selectionModel()->select(selected,
+						 QItemSelectionModel::Deselect);
+		}
+	}
+}
+
+void MacroTree::SetGroupExpanded(Macro *group, bool expanded)
+{
+	if (!group || !group->IsGroup()) {
+		return;
+	}
+
+	group->SetCollapsed(!expanded);
+	const auto index = GetModel()->IndexOf(group);
+	if (!index.isValid()) {
+		return;
+	}
+	setExpanded(index, expanded);
+	SyncExpandState(index);
+}
+
+void MacroTree::Add(std::shared_ptr<Macro> item,
+		    std::shared_ptr<Macro> after) const
+{
+	auto treeModel = GetModel();
+	{
+		auto lock = LockContext();
+		Macro *parent = nullptr;
+		int row = treeModel->ChildCount(nullptr);
+		if (after && treeModel->RowOf(after.get()) != -1) {
+			parent = treeModel->ParentOf(after.get());
+			row = treeModel->RowOf(after.get()) + 1;
+		}
+		treeModel->Insert(item, parent, row);
+	}
+	selectionModel()->setCurrentIndex(treeModel->IndexOf(item.get()),
+					  QItemSelectionModel::ClearAndSelect);
+}
+
+void MacroTree::AddToGroup(std::shared_ptr<Macro> item,
+			   std::shared_ptr<Macro> group) const
+{
+	auto treeModel = GetModel();
+	{
+		auto lock = LockContext();
+		treeModel->Insert(item, group.get(), 0);
+	}
+	selectionModel()->setCurrentIndex(treeModel->IndexOf(item.get()),
+					  QItemSelectionModel::ClearAndSelect);
+}
+
+void MacroTree::Remove(std::shared_ptr<Macro> item) const
+{
+	{
+		auto lock = LockContext();
+		GetModel()->Remove(item);
+	}
+	selectionModel()->clear();
+}
+
+void MacroTree::Up(std::shared_ptr<Macro> item) const
+{
+	auto lock = LockContext();
+	auto treeModel = GetModel();
+	const int row = treeModel->RowOf(item.get());
+	if (row <= 0) {
+		return;
+	}
+	treeModel->Move(item, treeModel->ParentOf(item.get()), row - 1);
+}
+
+void MacroTree::Down(std::shared_ptr<Macro> item) const
+{
+	auto lock = LockContext();
+	auto treeModel = GetModel();
+	const int row = treeModel->RowOf(item.get());
+	const auto parent = treeModel->ParentOf(item.get());
+	if (row == -1 || row + 1 >= treeModel->ChildCount(parent)) {
+		return;
+	}
+	treeModel->Move(item, parent, row + 2);
+}
+
+std::shared_ptr<Macro> MacroTree::GetCurrentMacro() const
+{
+	const auto selection = selectionModel()->selectedIndexes();
+	if (selection.empty()) {
+		return {};
+	}
+	return GetModel()->MacroAt(selection.back());
+}
+
+std::vector<std::shared_ptr<Macro>> MacroTree::GetCurrentMacros() const
+{
+	std::vector<std::shared_ptr<Macro>> result;
+	for (const auto &index : selectionModel()->selectedIndexes()) {
+		auto macro = GetModel()->MacroAt(index);
+		if (macro) {
+			result.emplace_back(macro);
+		}
+	}
+	return result;
+}
+
+std::vector<std::shared_ptr<Macro>> MacroTree::GetSelectedSubtreeRoots() const
+{
+	auto selected = GetCurrentMacros();
+	std::vector<std::shared_ptr<Macro>> roots;
+	for (const auto &macro : selected) {
+		const bool hasSelectedAncestor = std::any_of(
+			selected.begin(), selected.end(),
+			[&macro](const std::shared_ptr<Macro> &other) {
+				return IsMacroInGroup(macro.get(), other.get());
+			});
+		if (!hasSelectedAncestor) {
+			roots.emplace_back(macro);
+		}
+	}
+
+	auto treeModel = GetModel();
+	std::sort(roots.begin(), roots.end(),
+		  [treeModel](const std::shared_ptr<Macro> &a,
+			      const std::shared_ptr<Macro> &b) {
+			  return treeModel->PositionOf(a.get()) <
+				 treeModel->PositionOf(b.get());
+		  });
+	return roots;
+}
+
+bool MacroTree::GroupsSelected() const
+{
+	const auto selected = GetCurrentMacros();
+	return std::any_of(selected.begin(), selected.end(),
+			   [](const std::shared_ptr<Macro> &macro) {
+				   return macro->IsGroup();
+			   });
+}
+
+bool MacroTree::GroupedItemsSelected() const
+{
+	const auto selected = GetCurrentMacros();
+	return std::any_of(selected.begin(), selected.end(),
+			   [](const std::shared_ptr<Macro> &macro) {
+				   return !!macro->Parent();
+			   });
+}
+
+bool MacroTree::SingleItemSelected() const
+{
+	return selectionModel()->selectedIndexes().size() == 1;
+}
+
+bool MacroTree::SelectionEmpty() const
+{
+	return selectionModel()->selectedIndexes().empty();
+}
+
+bool MacroTree::GroupsExist() const
+{
+	const auto &macros = GetTopLevelMacros();
+	return std::any_of(macros.begin(), macros.end(),
+			   [](const std::shared_ptr<Macro> &macro) {
+				   return macro->IsGroup();
+			   });
+}
+
+void MacroTree::ExpandGroup(std::shared_ptr<Macro> item)
+{
+	SetGroupExpanded(item.get(), true);
+}
+
+void MacroTree::CollapseGroup(std::shared_ptr<Macro> item)
+{
+	SetGroupExpanded(item.get(), false);
+}
+
+void MacroTree::RefreshFilter()
+{
+	ApplyFilter(QModelIndex());
+}
+
+void MacroTree::UpdateRunningStates()
+{
+	std::function<void(const QModelIndex &)> update =
+		[this, &update](const QModelIndex &parent) {
+			for (int row = 0; row < model()->rowCount(parent);
+			     row++) {
+				const auto index =
+					model()->index(row, 0, parent);
+				if (auto widget = qobject_cast<MacroTreeItem *>(
+					    indexWidget(index))) {
+					widget->UpdateRunning();
+				}
+				update(index);
+			}
+		};
+	update(QModelIndex());
+}
+
+MacroTree::DropTarget MacroTree::DropTargetAt(const QPoint &pos) const
+{
+	auto treeModel = GetModel();
+	const auto index = indexAt(pos);
+	if (!index.isValid()) {
+		return {nullptr, treeModel->ChildCount(nullptr)};
+	}
+
+	const auto macro = treeModel->MacroAt(index).get();
+	const auto parent = treeModel->ParentOf(macro);
+	const auto rect = visualRect(index);
+
+	if (macro->IsGroup()) {
+		// Same margin QAbstractItemView uses for the drop indicator
+		const int margin = std::clamp(int(rect.height() / 5.5), 2, 12);
+		const bool onItem = pos.y() - rect.top() >= margin &&
+				    rect.bottom() - pos.y() >= margin;
+		const bool belowExpanded = pos.y() > rect.center().y() &&
+					   isExpanded(index);
+		if (onItem || belowExpanded) {
+			return {macro, 0};
+		}
+	}
+
+	if (pos.y() < rect.center().y()) {
+		return {parent, index.row()};
+	}
+	return {parent, index.row() + 1};
+}
+
+bool MacroTree::MoveSelection(const DropTarget &target)
+{
+	const auto items = GetSelectedSubtreeRoots();
+	if (items.empty()) {
+		return false;
+	}
+
+	for (const auto &item : items) {
+		if (target.parent == item.get() ||
+		    IsMacroInGroup(target.parent, item.get())) {
+			return false;
+		}
+		// Nested groups are not supported yet
+		if (target.parent && item->IsGroup()) {
+			return false;
+		}
+	}
+
+	auto lock = LockContext();
+	auto treeModel = GetModel();
+	const auto insertBefore = treeModel->ChildAt(target.parent, target.row);
+	bool moved = false;
+	for (const auto &item : items) {
+		const int row = insertBefore
+					? treeModel->RowOf(insertBefore)
+					: treeModel->ChildCount(target.parent);
+		moved |= treeModel->Move(item, target.parent, row);
+	}
+	return moved;
+}
+
+void MacroTree::dropEvent(QDropEvent *event)
+{
+	if (event->source() != this ||
+	    !event->mimeData()->hasFormat(MacroTreeModel::MimeType())) {
+		QTreeView::dropEvent(event);
+		return;
+	}
+
+	MoveSelection(DropTargetAt(event->position().toPoint()));
+
+	// Prevent QAbstractItemView::startDrag() from removing the dragged
+	// rows, as they were already moved
+	event->setDropAction(Qt::CopyAction);
+	event->accept();
+	stopAutoScroll();
+	setState(NoState);
+	viewport()->update();
+}
+
+QString MacroTree::GetNewGroupName() const
 {
 	QString fmt =
 		obs_module_text("AdvSceneSwitcher.macroTab.defaultGroupName");
@@ -729,717 +988,82 @@ QString MacroTreeModel::GetNewGroupName()
 	return name;
 }
 
-int MacroTreeModel::GetItemMacroIndex(const std::shared_ptr<Macro> &item) const
-{
-	auto it = std::find(_macros.begin(), _macros.end(), item);
-	if (it == _macros.end()) {
-		return -1;
-	}
-
-	return it - _macros.begin();
-}
-
-int MacroTreeModel::GetItemModelIndex(const std::shared_ptr<Macro> &item) const
-{
-	return MacroIndexToModelIndex(GetItemMacroIndex(item), _macros);
-}
-
-bool MacroTreeModel::IsLastItem(std::shared_ptr<Macro> item) const
-{
-	return GetItemModelIndex(item) + 1 == (int)_macros.size();
-}
-
-bool MacroTreeModel::IsInValidState()
-{
-	// Check for reordering erros
-	for (size_t i = 0, j = 0; i < _macros.size(); i++) {
-		const auto &m = _macros[i];
-		if (QString::fromStdString(m->Name()) !=
-		    data(index(j, 0), Qt::AccessibleTextRole)) {
-			return false;
-		}
-		if (m->IsGroup() && m->IsCollapsed()) {
-			i += m->GroupSize();
-		}
-		j++;
-	}
-
-	// Check for group errors
-	for (size_t i = 0; i < _macros.size(); i++) {
-		const auto &m = _macros[i];
-		if (!m->IsGroup()) {
-			continue;
-		}
-		const auto groupSize = m->GroupSize();
-		assert(i + groupSize < _macros.size());
-		for (uint32_t j = 1; j <= groupSize; j++) {
-			assert(_macros[i + j]->IsSubitem());
-		}
-	}
-
-	return true;
-}
-
-void MacroTreeModel::GroupSelectedItems(QModelIndexList &indices)
-{
-	if (indices.count() == 0) {
-		return;
-	}
-
-	auto lock = LockContext();
-	QString name = GetNewGroupName();
-	std::vector<std::shared_ptr<Macro>> itemsToGroup;
-	itemsToGroup.reserve(indices.size());
-	int insertGroupAt = indices[0].row();
-	for (int i = 0; i < indices.count(); i++) {
-		int selectedIdx = indices[i].row();
-		if (selectedIdx < insertGroupAt) {
-			insertGroupAt = selectedIdx;
-		}
-
-		std::shared_ptr<Macro> item =
-			_macros[ModelIndexToMacroIndex(selectedIdx, _macros)];
-		itemsToGroup.emplace_back(item);
-	}
-
-	std::shared_ptr<Macro> group =
-		Macro::CreateGroup(name.toStdString(), itemsToGroup);
-	if (!group) {
-		return;
-	}
-
-	// Add new list entry for group
-	insertGroupAt = ModelIndexToMacroIndex(insertGroupAt, _macros);
-	_macros.insert(_macros.begin() + insertGroupAt, group);
-
-	// Move all selected items after new group entry
-	int offset = 1;
-	for (const auto &item : itemsToGroup) {
-		auto it = _macros.begin() + GetItemMacroIndex(item);
-		_macros.erase(it);
-		_macros.insert(_macros.begin() + insertGroupAt + offset, item);
-		offset++;
-	}
-
-	_mt->selectionModel()->clear();
-
-	Reset(_macros);
-	assert(IsInValidState());
-
-	RegisterGroupCreateUndoRedo(name.toStdString());
-}
-
-void MacroTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
-{
-	if (indices.count() == 0) {
-		return;
-	}
-
-	auto lock = LockContext();
-	for (int i = indices.count() - 1; i >= 0; i--) {
-		std::shared_ptr<Macro> item = _macros[ModelIndexToMacroIndex(
-			indices[i].row(), _macros)];
-		if (item->IsGroup()) {
-			RegisterGroupRemoveUndoRedo(item->Name());
-			Macro::RemoveGroup(item);
-		}
-	}
-
-	_mt->selectionModel()->clear();
-
-	Reset(_macros);
-	assert(IsInValidState());
-}
-
-void MacroTreeModel::ExpandGroup(std::shared_ptr<Macro> item)
-{
-	auto idx = GetItemModelIndex(item);
-	if (idx == -1 || !item->IsGroup() || !item->GroupSize() ||
-	    !item->IsCollapsed()) {
-		return;
-	}
-
-	item->SetCollapsed(false);
-	Reset(_macros);
-
-	_mt->selectionModel()->clear();
-	assert(IsInValidState());
-}
-
-void MacroTreeModel::CollapseGroup(std::shared_ptr<Macro> item)
-{
-	auto idx = GetItemModelIndex(item);
-	if (idx == -1 || !item->IsGroup() || !item->GroupSize() ||
-	    item->IsCollapsed()) {
-		return;
-	}
-
-	item->SetCollapsed(true);
-	Reset(_macros);
-
-	_mt->selectionModel()->clear();
-	assert(IsInValidState());
-}
-
-void MacroTree::Reset(std::deque<std::shared_ptr<Macro>> &macros,
-		      bool highlight)
-{
-	_highlight = highlight;
-
-	auto mtm = new MacroTreeModel(this, macros);
-	setModel(mtm);
-	GetModel()->Reset(macros);
-	connect(selectionModel(),
-		SIGNAL(selectionChanged(const QItemSelection &,
-					const QItemSelection &)),
-		this,
-		SLOT(SelectionChangedHelper(const QItemSelection &,
-					    const QItemSelection &)));
-}
-
-void MacroTree::Add(std::shared_ptr<Macro> item,
-		    std::shared_ptr<Macro> after) const
-{
-	GetModel()->Add(item);
-	if (after) {
-		MoveItemAfter(item, after);
-	}
-	assert(GetModel()->IsInValidState());
-}
-
-void MacroTree::AddToGroup(std::shared_ptr<Macro> item,
-			   std::shared_ptr<Macro> group) const
-{
-	GetModel()->Add(item);
-	GetModel()->MoveToBeginningOfGroup(item, group);
-}
-
-std::shared_ptr<Macro> MacroTree::GetCurrentMacro() const
-{
-	return GetModel()->GetCurrentMacro();
-}
-
-std::vector<std::shared_ptr<Macro>> MacroTree::GetCurrentMacros() const
-{
-	QModelIndexList indices = selectedIndexes();
-	return GetModel()->GetCurrentMacros(indices);
-}
-
-MacroTree::MacroTree(QWidget *parent_) : QListView(parent_)
-{
-	setStyleSheet(QString(
-		"*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
-		"*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
-		"*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
-		"*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
-		"*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
-		"*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
-		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
-		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
-
-	setItemDelegate(new MacroTreeDelegate(this));
-}
-
-void MacroTree::ResetWidgets()
-{
-	MacroTreeModel *mtm = GetModel();
-	int modelIdx = 0;
-	for (int i = 0; i < (int)mtm->_macros.size(); i++) {
-		QModelIndex index = mtm->createIndex(modelIdx, 0, nullptr);
-		const auto &macro = mtm->_macros[i];
-		setIndexWidget(index,
-			       new MacroTreeItem(this, macro, _highlight));
-
-		// Skip items of collapsed groups
-		if (macro->IsGroup() && macro->IsCollapsed()) {
-			i += macro->GroupSize();
-		}
-		modelIdx++;
-	}
-	assert(GetModel()->IsInValidState());
-}
-
-void MacroTree::UpdateWidget(const QModelIndex &idx,
-			     std::shared_ptr<Macro> item)
-{
-	setIndexWidget(idx, new MacroTreeItem(this, item, _highlight));
-}
-
-void MacroTree::UpdateWidgets(bool force)
-{
-	MacroTreeModel *mtm = GetModel();
-
-	for (int i = 0; i < (int)mtm->_macros.size(); i++) {
-		std::shared_ptr<Macro> item = mtm->_macros[i];
-		auto widget = GetItemWidget(i);
-
-		if (!widget) {
-			UpdateWidget(mtm->createIndex(i, 0, nullptr), item);
-		} else {
-			widget->Update(force);
-		}
-		// Skip items of collapsed groups
-		if (item->IsGroup() && item->IsCollapsed()) {
-			i += item->GroupSize();
-		}
-	}
-}
-
-void MacroTree::UpdateRunningStates()
-{
-	MacroTreeModel *mtm = GetModel();
-	for (int i = 0; i < (int)mtm->_macros.size(); i++) {
-		auto widget = GetItemWidget(i);
-		if (widget) {
-			widget->UpdateRunning();
-		}
-	}
-}
-
-static inline void MoveItem(std::deque<std::shared_ptr<Macro>> &items,
-			    std::shared_ptr<Macro> &item, int to)
-{
-	auto it = std::find(items.begin(), items.end(), item);
-	if (it == items.end()) {
-		blog(LOG_ERROR,
-		     "something went wrong during drag & drop reordering");
-		return;
-	}
-
-	items.erase(it);
-	items.insert(std::next(items.begin(), to), item);
-}
-
-// Logic mostly based on OBS's source-tree dropEvent() with a few modifications
-// regarding group handling
-void MacroTree::dropEvent(QDropEvent *event)
-{
-	if (event->source() != this) {
-		QListView::dropEvent(event);
-		return;
-	}
-
-	MacroTreeModel *mtm = GetModel();
-	auto &items = mtm->_macros;
-	QModelIndexList indices = selectedIndexes();
-
-	DropIndicatorPosition indicator = dropIndicatorPosition();
-	int row = indexAt(event->position().toPoint()).row();
-	bool emptyDrop = row == -1;
-
-	if (emptyDrop) {
-		if (items.empty()) {
-			QListView::dropEvent(event);
-			return;
-		}
-
-		row = mtm->rowCount(QModelIndex()) - 1;
-		indicator = QAbstractItemView::BelowItem;
-	}
-
-	// Store destination group if moving to a group
-	Macro *dropItem = items[ModelIndexToMacroIndex(row, items)]
-				  .get(); // Item being dropped on
-	bool itemIsGroup = dropItem->IsGroup();
-	Macro *dropGroup = itemIsGroup ? dropItem : dropItem->Parent().get();
-
-	// Not a group if moving above the group
-	if (indicator == QAbstractItemView::AboveItem && itemIsGroup) {
-		dropGroup = nullptr;
-	}
-	if (emptyDrop) {
-		dropGroup = nullptr;
-	}
-
-	// Remember to remove list items if dropping on collapsed group
-	bool dropOnCollapsed = false;
-	if (dropGroup) {
-		dropOnCollapsed = dropGroup->IsCollapsed();
-	}
-
-	if (indicator == QAbstractItemView::BelowItem ||
-	    indicator == QAbstractItemView::OnItem ||
-	    indicator == QAbstractItemView::OnViewport)
-		row++;
-
-	if (row < 0 || row > (int)items.size()) {
-		QListView::dropEvent(event);
-		return;
-	}
-
-	// Determine if any base group is selected
-	bool hasGroups = false;
-	for (int i = 0; i < indices.size(); i++) {
-		std::shared_ptr<Macro> item =
-			items[ModelIndexToMacroIndex(indices[i].row(), items)];
-		if (item->IsGroup()) {
-			hasGroups = true;
-			break;
-		}
-	}
-
-	// If dropping a group, detect if it's below another group
-	std::shared_ptr<Macro> itemBelow;
-	if (row == (int)items.size()) {
-		itemBelow = nullptr;
-	} else {
-		itemBelow = items[MacroIndexToModelIndex(row, items)];
-	}
-
-	if (hasGroups) {
-		if (!itemBelow || itemBelow->Parent().get() != dropGroup) {
-			dropGroup = nullptr;
-			dropOnCollapsed = false;
-		}
-	}
-
-	// If dropping groups on other groups, disregard as invalid drag/drop
-	if (dropGroup && hasGroups) {
-		QListView::dropEvent(event);
-		return;
-	}
-
-	// If selection includes base group items, include all group sub-items and
-	// treat them all as one
-	//
-	// Also gather list of (sub)items to move in backend
-	std::vector<std::shared_ptr<Macro>> subItemsToMove;
-	QModelIndexList indicesWithoutSubitems = indices;
-
-	if (hasGroups) {
-		// Remove sub-items if selected
-		for (int i = indices.size() - 1; i >= 0; i--) {
-			std::shared_ptr<Macro> item =
-				items[ModelIndexToMacroIndex(indices[i].row(),
-							     items)];
-			auto parent = item->Parent();
-			if (parent != nullptr) {
-				indices.removeAt(i);
-			}
-		}
-		indicesWithoutSubitems = indices;
-
-		// Add all sub-items of selected groups
-		for (int i = indices.size() - 1; i >= 0; i--) {
-			std::shared_ptr<Macro> item =
-				items[ModelIndexToMacroIndex(indices[i].row(),
-							     items)];
-			if (!item->IsGroup()) {
-				continue;
-			}
-			bool collapsed = item->IsCollapsed();
-			for (int j = items.size() - 1; j >= 0; j--) {
-				std::shared_ptr<Macro> subitem = items[j];
-				auto subitemGroup = subitem->Parent().get();
-
-				if (subitemGroup == item.get()) {
-					if (!collapsed) {
-						QModelIndex idx = mtm->createIndex(
-							MacroIndexToModelIndex(
-								j, items),
-							0, nullptr);
-						indices.insert(i + 1, idx);
-					}
-					subItemsToMove.emplace_back(subitem);
-				}
-			}
-		}
-	}
-
-	// Build persistent indices
-	QList<QPersistentModelIndex> persistentIndices;
-	persistentIndices.reserve(indices.count());
-	for (QModelIndex &index : indices) {
-		persistentIndices.append(index);
-	}
-	std::sort(persistentIndices.begin(), persistentIndices.end());
-
-	// Prepare items to move in backend
-	std::sort(indicesWithoutSubitems.begin(), indicesWithoutSubitems.end());
-	std::vector<std::shared_ptr<Macro>> itemsToMove;
-	for (const auto &subitemsIdx : indicesWithoutSubitems) {
-		auto idx = ModelIndexToMacroIndex(subitemsIdx.row(), items);
-		itemsToMove.emplace_back(items[idx]);
-	}
-
-	// Move all items to destination index
-	int r = row;
-	for (auto &persistentIdx : persistentIndices) {
-		int from = persistentIdx.row();
-		int to = r;
-		int itemTo = to;
-
-		if (itemTo > from) {
-			itemTo--;
-		}
-
-		if (itemTo != from) {
-			mtm->beginMoveRows(QModelIndex(), from, from,
-					   QModelIndex(), to);
-			mtm->endMoveRows();
-		}
-
-		r = persistentIdx.row() + 1;
-	}
-
-	std::sort(persistentIndices.begin(), persistentIndices.end());
-	int firstIdx = persistentIndices.front().row();
-	int lastIdx = persistentIndices.back().row();
-
-	// Remove items if dropped in to collapsed group
-	if (dropOnCollapsed) {
-		mtm->beginRemoveRows(QModelIndex(), firstIdx, lastIdx);
-		mtm->endRemoveRows();
-	}
-
-	// Move items in backend
-	auto lock = LockContext();
-	int to = row;
-	try {
-		to = ModelIndexToMacroIndex(row, items);
-	} catch (std::out_of_range const &) {
-		to = items.size();
-	}
-	auto prev = *itemsToMove.rbegin();
-	auto curIdx = mtm->GetItemMacroIndex(prev);
-	int toIdx = to;
-	if (toIdx > curIdx) {
-		toIdx--;
-	}
-	Macro::PrepareMoveToGroup(dropGroup, prev);
-	MoveItem(items, prev, toIdx);
-	for (auto it = std::next(itemsToMove.rbegin(), 1);
-	     it != itemsToMove.rend(); ++it) {
-		auto &item = *it;
-		auto curIdx = mtm->GetItemMacroIndex(item);
-		int toIdx = mtm->GetItemMacroIndex(prev);
-		if (toIdx > curIdx) {
-			toIdx--;
-		}
-		Macro::PrepareMoveToGroup(dropGroup, item);
-		MoveItem(items, item, toIdx);
-		prev = item;
-	}
-
-	// Move subitems of groups
-	for (const auto &i : subItemsToMove) {
-		auto removeIt = std::find(items.begin(), items.end(), i);
-		if (removeIt == items.end()) {
-			blog(LOG_ERROR, "Cannot move subitem '%s'",
-			     i->Name().c_str());
-			continue;
-		}
-		items.erase(removeIt);
-		auto targetName = i->Parent()->Name();
-		auto GroupNameMatches = [targetName](std::shared_ptr<Macro> m) {
-			return m->Name() == targetName;
-		};
-		auto it = std::find_if(items.begin(), items.end(),
-				       GroupNameMatches);
-		items.insert(std::next(it, 1), i);
-	}
-
-	// Update widgets and accept event
-	UpdateWidgets(true);
-	event->accept();
-	event->setDropAction(Qt::CopyAction);
-
-	QListView::dropEvent(event);
-	assert(GetModel()->IsInValidState());
-}
-
-bool MacroTree::GroupsSelected() const
-{
-	if (SelectionEmpty()) {
-		return false;
-	}
-
-	MacroTreeModel *mtm = GetModel();
-	for (auto &idx : selectedIndexes()) {
-		std::shared_ptr<Macro> item =
-			mtm->_macros[ModelIndexToMacroIndex(idx.row(),
-							    mtm->_macros)];
-		if (item->IsGroup()) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool MacroTree::GroupedItemsSelected() const
-{
-	if (SelectionEmpty()) {
-		return false;
-	}
-
-	auto *mtm = GetModel();
-	for (auto &idx : selectedIndexes()) {
-		std::shared_ptr<Macro> item =
-			mtm->_macros[ModelIndexToMacroIndex(idx.row(),
-							    mtm->_macros)];
-		auto parent = item->Parent();
-		if (parent) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool MacroTree::SingleItemSelected() const
-{
-	return selectedIndexes().size() == 1;
-}
-
-bool MacroTree::SelectionEmpty() const
-{
-	return selectedIndexes().empty();
-}
-
-bool MacroTree::GroupsExist() const
-{
-	for (const auto &macro : GetTopLevelMacros()) {
-		if (macro->IsGroup()) {
-			return true;
-		}
-	}
-	return false;
-}
-
-void MacroTree::ExpandGroup(std::shared_ptr<Macro> item) const
-{
-	auto *mtm = GetModel();
-	mtm->ExpandGroup(item);
-}
-
-void MacroTree::CollapseGroup(std::shared_ptr<Macro> item) const
-{
-	auto *mtm = GetModel();
-	mtm->CollapseGroup(item);
-}
-
-void MacroTree::RefreshFilter()
-{
-	UpdateWidgets();
-	doItemsLayout();
-}
-
-void MacroTree::MoveItemBefore(const std::shared_ptr<Macro> &item,
-			       const std::shared_ptr<Macro> &after) const
-{
-	GetModel()->MoveItemBefore(item, after);
-}
-
-void MacroTree::MoveItemAfter(const std::shared_ptr<Macro> &item,
-			      const std::shared_ptr<Macro> &after) const
-{
-	GetModel()->MoveItemAfter(item, after);
-}
-
-MacroTreeModel *MacroTree::GetModel() const
-{
-	return qobject_cast<MacroTreeModel *>(model());
-}
-
-void MacroTree::Remove(std::shared_ptr<Macro> item) const
-{
-	GetModel()->Remove(item);
-}
-
-void MacroTree::Up(std::shared_ptr<Macro> item) const
-{
-	auto lock = LockContext();
-	auto above = GetModel()->Neighbor(item, true);
-	if (!above) {
-		return;
-	}
-
-	if (item->IsSubitem()) {
-		// Nowhere to move to, when the item above is a group or
-		// regular entry
-		if (!above->IsSubitem()) {
-			return;
-		}
-
-		MoveItemBefore(item, above);
-		return;
-	}
-
-	if (above->IsSubitem()) {
-		above = GetModel()->FindEndOfGroup(above, true);
-	}
-
-	MoveItemBefore(item, above);
-}
-
-void MacroTree::Down(std::shared_ptr<Macro> item) const
-{
-	auto lock = LockContext();
-	auto below = GetModel()->Neighbor(item, false);
-	if (!below) {
-		return;
-	}
-
-	if (item->IsSubitem()) {
-		// Nowhere to move to, when the item below is a group or
-		// regular entry
-		if (!below->IsSubitem()) {
-			return;
-		}
-
-		MoveItemAfter(item, below);
-		return;
-	}
-
-	if (item->IsGroup()) {
-		if (below->IsSubitem()) {
-			below = GetModel()->FindEndOfGroup(below, false);
-
-			// Nowhere to move group to
-			if (GetModel()->IsLastItem(below)) {
-				return;
-			}
-
-			below = GetModel()->Neighbor(below, false);
-		}
-		MoveItemAfter(item, below);
-		return;
-	}
-
-	MoveItemAfter(item, below);
-}
-
 void MacroTree::GroupSelectedItems()
 {
-	QModelIndexList indices = selectedIndexes();
-	std::sort(indices.begin(), indices.end());
-	GetModel()->GroupSelectedItems(indices);
-	assert(GetModel()->IsInValidState());
+	const auto items = GetSelectedSubtreeRoots();
+	if (items.empty()) {
+		return;
+	}
+
+	auto treeModel = GetModel();
+	const auto parent = treeModel->ParentOf(items.front().get());
+	for (const auto &item : items) {
+		if (treeModel->ParentOf(item.get()) != parent) {
+			return;
+		}
+	}
+
+	const auto name = GetNewGroupName().toStdString();
+	std::shared_ptr<Macro> group;
+	{
+		auto lock = LockContext();
+		std::vector<std::shared_ptr<Macro>> noChildren;
+		group = Macro::CreateGroup(name, noChildren);
+		treeModel->Insert(group, parent,
+				  treeModel->RowOf(items.front().get()));
+		int row = 0;
+		for (const auto &item : items) {
+			treeModel->Move(item, group.get(), row++);
+		}
+		RegisterGroupCreateUndoRedo(name);
+	}
+
+	selectionModel()->clear();
+	SetGroupExpanded(group.get(), true);
 }
 
 void MacroTree::UngroupSelectedGroups()
 {
-	QModelIndexList indices = selectedIndexes();
-	GetModel()->UngroupSelectedGroups(indices);
-	assert(GetModel()->IsInValidState());
+	std::vector<std::shared_ptr<Macro>> groups;
+	for (const auto &macro : GetCurrentMacros()) {
+		if (macro->IsGroup()) {
+			groups.emplace_back(macro);
+		}
+	}
+	if (groups.empty()) {
+		return;
+	}
+
+	{
+		auto lock = LockContext();
+		auto treeModel = GetModel();
+		for (const auto &group : groups) {
+			RegisterGroupRemoveUndoRedo(group->Name());
+			const auto parent = treeModel->ParentOf(group.get());
+			const int row = treeModel->RowOf(group.get());
+			const auto children = GetGroupChildren(group.get());
+			int offset = 1;
+			for (const auto &child : children) {
+				treeModel->Move(child, parent, row + offset++);
+			}
+			treeModel->Remove(group);
+		}
+	}
+
+	selectionModel()->clear();
 }
 
 void MacroTree::ExpandAll()
 {
 	for (const auto &macro : GetTopLevelMacros()) {
-		if (!macro->IsGroup()) {
-			continue;
-		}
-		ExpandGroup(macro);
+		SetGroupExpanded(macro.get(), true);
 	}
 }
 
 void MacroTree::CollapseAll()
 {
 	for (const auto &macro : GetTopLevelMacros()) {
-		if (!macro->IsGroup()) {
-			continue;
-		}
-		CollapseGroup(macro);
+		SetGroupExpanded(macro.get(), false);
 	}
 }
 
@@ -1450,16 +1074,9 @@ void MacroTree::SelectionChangedHelper(const QItemSelection &,
 	emit MacroSelectionChanged();
 }
 
-inline MacroTreeItem *MacroTree::GetItemWidget(int idx) const
-{
-	auto widget = indexWidget(GetModel()->createIndex(idx, 0, nullptr));
-	return qobject_cast<MacroTreeItem *>(widget);
-}
-
 void MacroTree::paintEvent(QPaintEvent *event)
 {
-	MacroTreeModel *mtm = GetModel();
-	if (mtm && mtm->_macros.empty()) {
+	if (model() && model()->rowCount() == 0) {
 		QPainter painter(viewport());
 		const QRect rectangle =
 			QRect(0, 0, size().width(), size().height());
@@ -1468,8 +1085,28 @@ void MacroTree::paintEvent(QPaintEvent *event)
 		painter.drawText(rectangle, Qt::AlignCenter | Qt::TextWordWrap,
 				 text, &boundingRect);
 	} else {
-		QListView::paintEvent(event);
+		QTreeView::paintEvent(event);
 	}
+}
+
+void MacroTree::drawBranches(QPainter *painter, const QRect &rect,
+			     const QModelIndex &index) const
+{
+	// Only draw the background, as the branch indicators would duplicate
+	// the expand checkbox of nested groups
+	QStyleOptionViewItem option;
+	initViewItemOption(&option);
+	option.rect = rect;
+	if (selectionModel()->isSelected(index)) {
+		option.state |= QStyle::State_Selected;
+	}
+	style()->drawPrimitive(QStyle::PE_PanelItemViewRow, &option, painter,
+			       this);
+}
+
+MacroTreeModel *MacroTree::GetModel() const
+{
+	return qobject_cast<MacroTreeModel *>(model());
 }
 
 MacroTreeDelegate::MacroTreeDelegate(QObject *parent)
@@ -1481,24 +1118,11 @@ QSize MacroTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
 				  const QModelIndex &index) const
 {
 	auto tree = qobject_cast<MacroTree *>(parent());
-	auto widget = tree->indexWidget(index);
-
+	auto widget = tree ? tree->indexWidget(index) : nullptr;
 	if (!widget) {
 		return QStyledItemDelegate::sizeHint(option, index);
 	}
-
-	auto name = index.data(Qt::AccessibleTextRole).toString();
-	auto macro = GetMacroByQString(name);
-
-	if (!macro) {
-		return QStyledItemDelegate::sizeHint(option, index);
-	}
-
-	if (MacroMatchesSearchFilter(macro)) {
-		return QSize(widget->sizeHint());
-	}
-
-	return QSize(0, 0);
+	return widget->sizeHint();
 }
 
 } // namespace advss
