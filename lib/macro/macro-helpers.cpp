@@ -3,6 +3,8 @@
 #include "macro-action-macro.hpp"
 #include "plugin-state-helpers.hpp"
 
+#include <algorithm>
+
 namespace advss {
 
 static std::atomic_bool abortMacroWait = {false};
@@ -124,25 +126,58 @@ bool IsGroupMacro(Macro *macro)
 
 std::vector<std::shared_ptr<Macro>> GetGroupMacroEntries(Macro *macro)
 {
-	if (!macro || !macro->IsGroup()) {
+	auto entries = GetGroupDescendants(macro);
+	entries.erase(std::remove_if(entries.begin(), entries.end(),
+				     [](const std::shared_ptr<Macro> &entry) {
+					     return entry->IsGroup();
+				     }),
+		      entries.end());
+	return entries;
+}
+
+std::vector<std::shared_ptr<Macro>> GetGroupChildren(const Macro *group)
+{
+	if (!group || !group->IsGroup()) {
 		return {};
 	}
 
-	std::vector<std::shared_ptr<Macro>> entries;
-	entries.reserve(macro->GroupSize());
+	std::vector<std::shared_ptr<Macro>> children;
+	for (const auto &macro : GetTopLevelMacros()) {
+		if (macro->Parent().get() == group) {
+			children.emplace_back(macro);
+		}
+	}
+	return children;
+}
 
-	const auto &macros = GetTopLevelMacros();
-	for (auto it = macros.begin(); it < macros.end(); it++) {
-		if ((*it)->Name() != macro->Name()) {
-			continue;
-		}
-		for (uint32_t i = 1; i <= macro->GroupSize(); i++) {
-			entries.emplace_back(*std::next(it, i));
-		}
-		break;
+std::vector<std::shared_ptr<Macro>> GetGroupDescendants(const Macro *group)
+{
+	if (!group || !group->IsGroup()) {
+		return {};
 	}
 
-	return entries;
+	std::vector<std::shared_ptr<Macro>> descendants;
+	descendants.reserve(group->GroupSize());
+	for (const auto &macro : GetTopLevelMacros()) {
+		if (IsMacroInGroup(macro.get(), group)) {
+			descendants.emplace_back(macro);
+		}
+	}
+	return descendants;
+}
+
+bool IsMacroInGroup(const Macro *macro, const Macro *group)
+{
+	if (!macro || !group) {
+		return false;
+	}
+
+	for (auto parent = macro->Parent(); parent; parent = parent->Parent()) {
+		if (parent.get() == group) {
+			return true;
+		}
+	}
+	return false;
 }
 
 std::condition_variable &GetMacroWaitCV()

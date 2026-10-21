@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include "macro-test-helpers.hpp"
 #include "ui-test-helpers.hpp"
 
 #include <macro.hpp>
@@ -16,7 +17,6 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
-#include <cctype>
 #include <memory>
 
 namespace {
@@ -27,109 +27,6 @@ using namespace advss::test;
 using Names = std::vector<std::string>;
 
 const std::string newGroupName = "AdvSceneSwitcher.macroTab.defaultGroupName";
-
-// Layout syntax: "A, G1[B, C], G2{D}" where [] is an expanded and {} a
-// collapsed group
-class LayoutParser {
-public:
-	explicit LayoutParser(const std::string &layout) : _text(layout) {}
-
-	std::deque<std::shared_ptr<Macro>> Parse()
-	{
-		std::deque<std::shared_ptr<Macro>> result;
-		ParseList(result);
-		return result;
-	}
-
-private:
-	std::vector<std::shared_ptr<Macro>>
-	ParseList(std::deque<std::shared_ptr<Macro>> &out)
-	{
-		std::vector<std::shared_ptr<Macro>> items;
-		SkipSpaces();
-		while (_pos < _text.size() && _text[_pos] != ']' &&
-		       _text[_pos] != '}') {
-			items.emplace_back(ParseItem(out));
-			SkipSpaces();
-			if (_pos < _text.size() && _text[_pos] == ',') {
-				_pos++;
-			}
-			SkipSpaces();
-		}
-		return items;
-	}
-
-	std::shared_ptr<Macro>
-	ParseItem(std::deque<std::shared_ptr<Macro>> &out)
-	{
-		std::string name;
-		while (_pos < _text.size() &&
-		       std::isalnum(static_cast<unsigned char>(_text[_pos]))) {
-			name += _text[_pos++];
-		}
-
-		if (_pos >= _text.size() ||
-		    (_text[_pos] != '[' && _text[_pos] != '{')) {
-			auto macro = std::make_shared<Macro>(name);
-			out.emplace_back(macro);
-			return macro;
-		}
-
-		const bool collapsed = _text[_pos] == '{';
-		_pos++;
-		std::deque<std::shared_ptr<Macro>> descendants;
-		auto children = ParseList(descendants);
-		_pos++;
-
-		auto group = Macro::CreateGroup(name, children);
-		group->SetCollapsed(collapsed);
-		out.emplace_back(group);
-		out.insert(out.end(), descendants.begin(), descendants.end());
-		return group;
-	}
-
-	void SkipSpaces()
-	{
-		while (_pos < _text.size() && _text[_pos] == ' ') {
-			_pos++;
-		}
-	}
-
-	std::string _text;
-	size_t _pos = 0;
-};
-
-std::string describeChildren(const Macro *parent)
-{
-	std::string result;
-	for (const auto &macro : GetTopLevelMacros()) {
-		if (macro->Parent().get() != parent) {
-			continue;
-		}
-		if (!result.empty()) {
-			result += ", ";
-		}
-		result += macro->Name();
-		if (!macro->IsGroup()) {
-			continue;
-		}
-		const bool collapsed = macro->IsCollapsed();
-		result += collapsed ? "{" : "[";
-		result += describeChildren(macro.get());
-		result += collapsed ? "}" : "]";
-	}
-	return result;
-}
-
-std::string describeMacros()
-{
-	return describeChildren(nullptr);
-}
-
-std::shared_ptr<Macro> getMacro(const std::string &name)
-{
-	return GetWeakMacroByName(name.c_str()).lock();
-}
 
 bool isHiddenByCollapsedAncestor(const Macro *macro)
 {
@@ -148,8 +45,7 @@ public:
 		  _tree(new MacroTree(_window.get()))
 	{
 		GetMacroSearchSettings() = {};
-		auto &macros = GetTopLevelMacros();
-		macros = LayoutParser(layout).Parse();
+		SetupMacros(layout);
 
 		// Same settings as in forms/advanced-scene-switcher.ui
 		_tree->setDragEnabled(true);
@@ -394,7 +290,7 @@ private:
 		std::vector<Macro *> openGroups;
 		for (const auto &macro : macros) {
 			INFO("macro \"" << macro->Name() << "\" in "
-					<< describeMacros());
+					<< DescribeMacros());
 			const auto parent = macro->Parent().get();
 			while (!openGroups.empty() &&
 			       openGroups.back() != parent) {
@@ -413,20 +309,21 @@ private:
 				continue;
 			}
 			INFO("group \"" << macro->Name() << "\" in "
-					<< describeMacros());
-			const auto children = std::count_if(
+					<< DescribeMacros());
+			const auto descendants = std::count_if(
 				macros.begin(), macros.end(),
 				[&macro](const std::shared_ptr<Macro> &m) {
-					return m->Parent() == macro;
+					return IsMacroInGroup(m.get(),
+							      macro.get());
 				});
-			REQUIRE(macro->GroupSize() == (uint32_t)children);
+			REQUIRE(macro->GroupSize() == (uint32_t)descendants);
 		}
 	}
 
 	void CheckRowWidget(const std::string &name) const
 	{
-		INFO("row \"" << name << "\" in " << describeMacros());
-		auto macro = getMacro(name);
+		INFO("row \"" << name << "\" in " << DescribeMacros());
+		auto macro = GetMacro(name);
 		REQUIRE(macro);
 		auto widget = RowWidget(name);
 		REQUIRE(widget);
@@ -518,12 +415,12 @@ TEST_CASE("Macro tree expand and collapse", "[macro-tree]")
 	SECTION("Expand checkbox")
 	{
 		f.ClickCheckBox(f.ExpandCheckBox("G1"));
-		REQUIRE(getMacro("G1")->IsCollapsed());
+		REQUIRE(GetMacro("G1")->IsCollapsed());
 		f.CheckInvariants();
 		REQUIRE(f.VisibleRows() == Names{"A", "G1", "D", "G2"});
 
 		f.ClickCheckBox(f.ExpandCheckBox("G2"));
-		REQUIRE_FALSE(getMacro("G2")->IsCollapsed());
+		REQUIRE_FALSE(GetMacro("G2")->IsCollapsed());
 		f.CheckInvariants();
 		REQUIRE(f.VisibleRows() == Names{"A", "G1", "D", "G2", "E"});
 
@@ -536,11 +433,11 @@ TEST_CASE("Macro tree expand and collapse", "[macro-tree]")
 	SECTION("Double click")
 	{
 		DoubleClick(f.Viewport(), f.RowCenter("G2"));
-		REQUIRE_FALSE(getMacro("G2")->IsCollapsed());
+		REQUIRE_FALSE(GetMacro("G2")->IsCollapsed());
 		f.CheckInvariants();
 
 		DoubleClick(f.Viewport(), f.RowCenter("G1"));
-		REQUIRE(getMacro("G1")->IsCollapsed());
+		REQUIRE(GetMacro("G1")->IsCollapsed());
 		f.CheckInvariants();
 	}
 
@@ -573,43 +470,43 @@ TEST_CASE("Macro tree add", "[macro-tree]")
 	{
 		f.Tree()->Add(newMacro);
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B], C, G2{D}, X");
+		REQUIRE(DescribeMacros() == "A, G1[B], C, G2{D}, X");
 		REQUIRE(f.Tree()->GetCurrentMacro() == newMacro);
 	}
 
 	SECTION("After top level macro")
 	{
-		f.Tree()->Add(newMacro, getMacro("A"));
+		f.Tree()->Add(newMacro, GetMacro("A"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, X, G1[B], C, G2{D}");
+		REQUIRE(DescribeMacros() == "A, X, G1[B], C, G2{D}");
 	}
 
 	SECTION("After macro following collapsed group")
 	{
-		f.Tree()->Add(newMacro, getMacro("C"));
+		f.Tree()->Add(newMacro, GetMacro("C"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B], C, X, G2{D}");
+		REQUIRE(DescribeMacros() == "A, G1[B], C, X, G2{D}");
 	}
 
 	// Mirrors AdvSceneSwitcher::on_macroAdd_clicked() with a group selected
 	SECTION("Into group")
 	{
-		auto group = getMacro("G2");
+		auto group = GetMacro("G2");
 		f.Tree()->ExpandGroup(group);
 		Macro::PrepareMoveToGroup(group, newMacro);
 		f.Tree()->AddToGroup(newMacro, group);
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B], C, G2[X, D]");
+		REQUIRE(DescribeMacros() == "A, G1[B], C, G2[X, D]");
 	}
 
 	// Mirrors AdvSceneSwitcher::on_macroAdd_clicked() with a subitem
 	// selected
 	SECTION("After subitem")
 	{
-		Macro::PrepareMoveToGroup(getMacro("G1"), newMacro);
-		f.Tree()->Add(newMacro, getMacro("B"));
+		Macro::PrepareMoveToGroup(GetMacro("G1"), newMacro);
+		f.Tree()->Add(newMacro, GetMacro("B"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B, X], C, G2{D}");
+		REQUIRE(DescribeMacros() == "A, G1[B, X], C, G2{D}");
 	}
 }
 
@@ -619,40 +516,40 @@ TEST_CASE("Macro tree remove", "[macro-tree]")
 
 	SECTION("Subitem")
 	{
-		f.Tree()->Remove(getMacro("B"));
+		f.Tree()->Remove(GetMacro("B"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[C], D, G2{E, F}, H");
+		REQUIRE(DescribeMacros() == "A, G1[C], D, G2{E, F}, H");
 
-		f.Tree()->Remove(getMacro("C"));
+		f.Tree()->Remove(GetMacro("C"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[], D, G2{E, F}, H");
+		REQUIRE(DescribeMacros() == "A, G1[], D, G2{E, F}, H");
 	}
 
 	SECTION("Expanded group")
 	{
-		f.Tree()->Remove(getMacro("G1"));
+		f.Tree()->Remove(GetMacro("G1"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, D, G2{E, F}, H");
+		REQUIRE(DescribeMacros() == "A, D, G2{E, F}, H");
 	}
 
 	SECTION("Collapsed group")
 	{
-		f.Tree()->Remove(getMacro("G2"));
+		f.Tree()->Remove(GetMacro("G2"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B, C], D, H");
+		REQUIRE(DescribeMacros() == "A, G1[B, C], D, H");
 	}
 
 	SECTION("Macro after collapsed group")
 	{
-		f.Tree()->Remove(getMacro("H"));
+		f.Tree()->Remove(GetMacro("H"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B, C], D, G2{E, F}");
+		REQUIRE(DescribeMacros() == "A, G1[B, C], D, G2{E, F}");
 	}
 
 	SECTION("Everything")
 	{
 		for (const auto &name : {"H", "A", "G2", "B", "G1", "D"}) {
-			f.Tree()->Remove(getMacro(name));
+			f.Tree()->Remove(GetMacro(name));
 			f.CheckInvariants();
 		}
 		REQUIRE(GetTopLevelMacros().empty());
@@ -663,7 +560,7 @@ TEST_CASE("Macro tree remove", "[macro-tree]")
 		f.ClickRow("D");
 		f.Tree()->Remove(f.Tree()->GetCurrentMacro());
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B, C], G2{E, F}, H");
+		REQUIRE(DescribeMacros() == "A, G1[B, C], G2{E, F}, H");
 		REQUIRE(f.Tree()->SelectionEmpty());
 	}
 }
@@ -672,80 +569,80 @@ TEST_CASE("Macro tree up and down", "[macro-tree]")
 {
 	TreeFixture f("A, B, G1[C, D], E, G2{F}, H");
 	auto up = [&](const char *name) {
-		f.Tree()->Up(getMacro(name));
+		f.Tree()->Up(GetMacro(name));
 		f.CheckInvariants();
 	};
 	auto down = [&](const char *name) {
-		f.Tree()->Down(getMacro(name));
+		f.Tree()->Down(GetMacro(name));
 		f.CheckInvariants();
 	};
 
 	SECTION("Top level")
 	{
 		up("B");
-		REQUIRE(describeMacros() == "B, A, G1[C, D], E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "B, A, G1[C, D], E, G2{F}, H");
 		down("B");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], E, G2{F}, H");
 	}
 
 	SECTION("First and last")
 	{
 		up("A");
 		down("H");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], E, G2{F}, H");
 	}
 
 	SECTION("Within group")
 	{
 		up("D");
-		REQUIRE(describeMacros() == "A, B, G1[D, C], E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[D, C], E, G2{F}, H");
 		up("D");
-		REQUIRE(describeMacros() == "A, B, G1[D, C], E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[D, C], E, G2{F}, H");
 		down("D");
 		down("D");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], E, G2{F}, H");
 	}
 
 	SECTION("Macro past expanded group")
 	{
 		down("B");
-		REQUIRE(describeMacros() == "A, G1[C, D], B, E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, G1[C, D], B, E, G2{F}, H");
 		up("E");
 		up("E");
-		REQUIRE(describeMacros() == "A, E, G1[C, D], B, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, E, G1[C, D], B, G2{F}, H");
 	}
 
 	SECTION("Macro past collapsed group")
 	{
 		down("E");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], G2{F}, E, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], G2{F}, E, H");
 		up("E");
 		up("H");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], E, H, G2{F}");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], E, H, G2{F}");
 	}
 
 	SECTION("Expanded group")
 	{
 		down("G1");
-		REQUIRE(describeMacros() == "A, B, E, G1[C, D], G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, B, E, G1[C, D], G2{F}, H");
 		down("G1");
-		REQUIRE(describeMacros() == "A, B, E, G2{F}, G1[C, D], H");
+		REQUIRE(DescribeMacros() == "A, B, E, G2{F}, G1[C, D], H");
 		up("G1");
 		up("G1");
 		up("G1");
-		REQUIRE(describeMacros() == "A, G1[C, D], B, E, G2{F}, H");
+		REQUIRE(DescribeMacros() == "A, G1[C, D], B, E, G2{F}, H");
 	}
 
 	SECTION("Collapsed group")
 	{
 		up("G2");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], G2{F}, E, H");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], G2{F}, E, H");
 		up("G2");
-		REQUIRE(describeMacros() == "A, B, G2{F}, G1[C, D], E, H");
+		REQUIRE(DescribeMacros() == "A, B, G2{F}, G1[C, D], E, H");
 		down("G2");
 		down("G2");
 		down("G2");
-		REQUIRE(describeMacros() == "A, B, G1[C, D], E, H, G2{F}");
+		REQUIRE(DescribeMacros() == "A, B, G1[C, D], E, H, G2{F}");
 	}
 }
 
@@ -757,7 +654,7 @@ TEST_CASE("Macro tree group and ungroup", "[macro-tree]")
 		f.SelectRows({"B", "C"});
 		f.Tree()->GroupSelectedItems();
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, " + newGroupName + "[B, C], D");
+		REQUIRE(DescribeMacros() == "A, " + newGroupName + "[B, C], D");
 	}
 
 	SECTION("Group non adjacent macros")
@@ -766,7 +663,7 @@ TEST_CASE("Macro tree group and ungroup", "[macro-tree]")
 		f.SelectRows({"D", "B"});
 		f.Tree()->GroupSelectedItems();
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, " + newGroupName + "[B, D], C");
+		REQUIRE(DescribeMacros() == "A, " + newGroupName + "[B, D], C");
 	}
 
 	SECTION("Group after collapsed group")
@@ -775,7 +672,7 @@ TEST_CASE("Macro tree group and ungroup", "[macro-tree]")
 		f.SelectRows({"B", "C"});
 		f.Tree()->GroupSelectedItems();
 		f.CheckInvariants();
-		REQUIRE(describeMacros() ==
+		REQUIRE(DescribeMacros() ==
 			"G1{X}, A, " + newGroupName + "[B, C]");
 	}
 
@@ -785,7 +682,7 @@ TEST_CASE("Macro tree group and ungroup", "[macro-tree]")
 		f.SelectRows({"G1"});
 		f.Tree()->UngroupSelectedGroups();
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, B, C, D");
+		REQUIRE(DescribeMacros() == "A, B, C, D");
 	}
 
 	SECTION("Ungroup collapsed group")
@@ -794,7 +691,7 @@ TEST_CASE("Macro tree group and ungroup", "[macro-tree]")
 		f.SelectRows({"G1"});
 		f.Tree()->UngroupSelectedGroups();
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, B, C, D");
+		REQUIRE(DescribeMacros() == "A, B, C, D");
 		REQUIRE(f.VisibleRows() == Names{"A", "B", "C", "D"});
 	}
 
@@ -804,7 +701,7 @@ TEST_CASE("Macro tree group and ungroup", "[macro-tree]")
 		f.SelectRows({"G1", "G2"});
 		f.Tree()->UngroupSelectedGroups();
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, B, C, D");
+		REQUIRE(DescribeMacros() == "A, B, C, D");
 	}
 }
 
@@ -816,7 +713,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("A"), f.RowBottom("C"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "B, C, A, D");
+		REQUIRE(DescribeMacros() == "B, C, A, D");
 	}
 
 	SECTION("Macro above macro")
@@ -825,7 +722,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("D"), f.RowTop("A"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "D, A, B, C");
+		REQUIRE(DescribeMacros() == "D, A, B, C");
 	}
 
 	SECTION("Macro below last row")
@@ -835,7 +732,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.Drag(f.RowCenter("A"),
 		       QPoint(40, f.Viewport()->height() - 5));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "B, C, A");
+		REQUIRE(DescribeMacros() == "B, C, A");
 	}
 
 	SECTION("Macro onto expanded group")
@@ -844,7 +741,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("A"), f.RowCenter("G1"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "G1[A, B, C], D");
+		REQUIRE(DescribeMacros() == "G1[A, B, C], D");
 	}
 
 	SECTION("Macro between subitems")
@@ -853,7 +750,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("D"), f.RowTop("C"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[B, D, C]");
+		REQUIRE(DescribeMacros() == "A, G1[B, D, C]");
 	}
 
 	SECTION("Subitem out of group")
@@ -862,7 +759,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("B"), f.RowBottom("D"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, G1[C], D, B");
+		REQUIRE(DescribeMacros() == "A, G1[C], D, B");
 	}
 
 	SECTION("Subitem to top")
@@ -871,7 +768,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("C"), f.RowTop("A"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "C, A, G1[B], D");
+		REQUIRE(DescribeMacros() == "C, A, G1[B], D");
 	}
 
 	SECTION("Macro past collapsed group")
@@ -880,7 +777,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("D"), f.RowTop("A"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "D, A, G1{B, C}");
+		REQUIRE(DescribeMacros() == "D, A, G1{B, C}");
 	}
 
 	SECTION("Expanded group")
@@ -889,7 +786,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("G1"), f.RowBottom("D"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, D, G1[B, C], E");
+		REQUIRE(DescribeMacros() == "A, D, G1[B, C], E");
 	}
 
 	SECTION("Collapsed group")
@@ -898,7 +795,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("G1"), f.RowBottom("D"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "A, D, G1{B, C}, E");
+		REQUIRE(DescribeMacros() == "A, D, G1{B, C}, E");
 	}
 
 	SECTION("Group onto group is rejected")
@@ -907,7 +804,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.IgnoreModelSignalErrors();
 		f.Drag(f.RowCenter("G2"), f.RowCenter("G1"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "G1[A], G2[B]");
+		REQUIRE(DescribeMacros() == "G1[A], G2[B]");
 	}
 
 	SECTION("Multiple macros")
@@ -917,7 +814,7 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		f.SelectRows({"A", "C"});
 		f.Drag(f.RowCenter("C"), f.RowBottom("D"));
 		f.CheckInvariants();
-		REQUIRE(describeMacros() == "B, D, A, C");
+		REQUIRE(DescribeMacros() == "B, D, A, C");
 	}
 }
 
@@ -929,7 +826,7 @@ TEST_CASE("Macro tree drop onto collapsed group", "[macro-tree][!shouldfail]")
 	f.IgnoreModelSignalErrors();
 	f.Drag(f.RowCenter("D"), f.RowCenter("G1"));
 	f.CheckInvariants();
-	REQUIRE(describeMacros() == "A, G1{D, B, C}");
+	REQUIRE(DescribeMacros() == "A, G1{D, B, C}");
 }
 
 TEST_CASE("Macro tree search", "[macro-tree]")
@@ -962,9 +859,9 @@ TEST_CASE("Macro tree search", "[macro-tree]")
 		TreeFixture f("A1, G1[B1, C2], D2, E2");
 		f.SetupSearch();
 		f.Search("2");
-		f.Tree()->Remove(getMacro("D2"));
+		f.Tree()->Remove(GetMacro("D2"));
 		f.CheckInvariants();
-		f.Tree()->Up(getMacro("E2"));
+		f.Tree()->Up(GetMacro("E2"));
 		f.CheckInvariants();
 		f.ClickCheckBox(f.ExpandCheckBox("G1"));
 		f.CheckInvariants();
@@ -986,9 +883,9 @@ TEST_CASE("Macro tree running state", "[macro-tree]")
 		REQUIRE(groupCheckBox->checkState() == Qt::Checked);
 
 		f.ClickCheckBox(groupCheckBox);
-		REQUIRE(getMacro("B")->Paused());
-		REQUIRE(getMacro("C")->Paused());
-		REQUIRE_FALSE(getMacro("A")->Paused());
+		REQUIRE(GetMacro("B")->Paused());
+		REQUIRE(GetMacro("C")->Paused());
+		REQUIRE_FALSE(GetMacro("A")->Paused());
 		REQUIRE(groupCheckBox->checkState() == Qt::Unchecked);
 		f.CheckInvariants();
 	}
@@ -997,7 +894,7 @@ TEST_CASE("Macro tree running state", "[macro-tree]")
 	{
 		TreeFixture f("A, G1[B, C]");
 		f.ClickCheckBox(f.RunningCheckBox("B"));
-		REQUIRE(getMacro("B")->Paused());
+		REQUIRE(GetMacro("B")->Paused());
 		REQUIRE(f.RunningCheckBox("G1")->checkState() ==
 			Qt::PartiallyChecked);
 		f.CheckInvariants();
@@ -1006,7 +903,7 @@ TEST_CASE("Macro tree running state", "[macro-tree]")
 	SECTION("Update after backend change")
 	{
 		TreeFixture f("G0{X}, A, B");
-		getMacro("B")->SetPaused(true);
+		GetMacro("B")->SetPaused(true);
 		f.Tree()->UpdateRunningStates();
 		f.CheckInvariants();
 	}
@@ -1019,14 +916,14 @@ TEST_CASE("Macro tree running state after collapsed group",
 {
 	TreeFixture f("G0{X}, A, G1[B, C]");
 	f.ClickCheckBox(f.RunningCheckBox("B"));
-	REQUIRE(getMacro("B")->Paused());
+	REQUIRE(GetMacro("B")->Paused());
 	REQUIRE(f.RunningCheckBox("G1")->checkState() == Qt::PartiallyChecked);
 }
 
 TEST_CASE("Macro tree rename", "[macro-tree]")
 {
 	TreeFixture f("A, G1{B}, C");
-	getMacro("C")->SetName("Z");
+	GetMacro("C")->SetName("Z");
 	emit MacroSignalManager::Instance()->Rename("C", "Z");
 	f.CheckInvariants();
 	REQUIRE(f.VisibleRows() == Names{"A", "G1", "Z"});

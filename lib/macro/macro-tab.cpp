@@ -155,7 +155,7 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
 			     const std::shared_ptr<Macro> &group)
 {
-	auto subitems = GetGroupMacroEntries(group.get());
+	auto subitems = GetGroupDescendants(group.get());
 
 	// Remove subitems which were already selected to avoid duplicates
 	for (const auto &subitem : subitems) {

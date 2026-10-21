@@ -137,6 +137,9 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE test-macro.cpp
           test-macro-condition.cpp
+          test-macro-group.cpp
+          macro-test-helpers.cpp
+          macro-test-helpers.hpp
           stubs/path-helpers.cpp
           stubs/ui-helpers.cpp
           stubs/plugin-state-helpers.cpp
