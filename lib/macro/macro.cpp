@@ -1290,17 +1290,13 @@ void Macro::SetHotkeysDesc() const
 
 void SaveMacros(obs_data_t *obj)
 {
-	obs_data_array_t *macroArray = obs_data_array_create();
+	OBSDataArrayAutoRelease macroArray = obs_data_array_create();
 	for (const auto &m : GetTopLevelMacros()) {
-		obs_data_t *array_obj = obs_data_create();
-
+		OBSDataAutoRelease array_obj = obs_data_create();
 		m->Save(array_obj);
 		obs_data_array_push_back(macroArray, array_obj);
-
-		obs_data_release(array_obj);
 	}
 	obs_data_set_array(obj, "macros", macroArray);
-	obs_data_array_release(macroArray);
 }
 
 void LoadMacros(obs_data_t *obj)
@@ -1308,21 +1304,62 @@ void LoadMacros(obs_data_t *obj)
 	auto &macros = GetTopLevelMacros();
 	macros.clear();
 
-	obs_data_array_t *macroArray = obs_data_get_array(obj, "macros");
+	OBSDataArrayAutoRelease macroArray = obs_data_get_array(obj, "macros");
 	size_t count = obs_data_array_count(macroArray);
 
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *array_obj = obs_data_array_item(macroArray, i);
+		OBSDataAutoRelease array_obj =
+			obs_data_array_item(macroArray, i);
 		macros.emplace_back(std::make_shared<Macro>());
 		macros.back()->Load(array_obj);
-		obs_data_release(array_obj);
 	}
-	obs_data_array_release(macroArray);
 
 	Macro::RestoreGroupHierarchy(macros);
 	for (const auto &m : macros) {
 		m->PostLoad();
 	}
+}
+
+std::vector<std::shared_ptr<Macro>> LoadImportedMacros(
+	obs_data_array_t *array,
+	const std::function<bool(const std::shared_ptr<Macro> &)> &shouldImport)
+{
+	std::deque<std::shared_ptr<Macro>> loaded;
+	auto &tempMacros = GetTemporaryMacros();
+	const size_t count = obs_data_array_count(array);
+	for (size_t i = 0; i < count; i++) {
+		tempMacros.clear();
+		OBSDataAutoRelease obj = obs_data_array_item(array, i);
+		auto macro = std::make_shared<Macro>();
+		tempMacros.emplace_back(macro);
+		macro->Load(obj);
+		RunAndClearPostLoadSteps();
+		loaded.emplace_back(macro);
+	}
+	tempMacros.clear();
+	Macro::RestoreGroupHierarchy(loaded);
+
+	std::vector<std::shared_ptr<Macro>> imported;
+	for (const auto &macro : loaded) {
+		if (!shouldImport(macro)) {
+			for (const auto &child : loaded) {
+				if (child->Parent() == macro) {
+					Macro::PrepareMoveToGroup(
+						macro->Parent(), child);
+				}
+			}
+			Macro::PrepareMoveToGroup(nullptr, macro);
+			continue;
+		}
+		GetTopLevelMacros().emplace_back(macro);
+		imported.emplace_back(macro);
+	}
+
+	for (const auto &macro : imported) {
+		macro->PostLoad();
+	}
+	RunAndClearPostLoadSteps();
+	return imported;
 }
 
 bool CheckMacros()
