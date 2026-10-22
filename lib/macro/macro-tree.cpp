@@ -830,13 +830,20 @@ bool MacroTree::GroupsSelected() const
 			   });
 }
 
-bool MacroTree::GroupedItemsSelected() const
+bool MacroTree::CanGroupSelection() const
 {
-	const auto selected = GetCurrentMacros();
-	return std::any_of(selected.begin(), selected.end(),
-			   [](const std::shared_ptr<Macro> &macro) {
-				   return !!macro->Parent();
-			   });
+	const auto items = GetSelectedSubtreeRoots();
+	if (items.empty()) {
+		return false;
+	}
+
+	auto treeModel = GetModel();
+	const auto parent = treeModel->ParentOf(items.front().get());
+	return std::all_of(
+		items.begin(), items.end(),
+		[treeModel, parent](const std::shared_ptr<Macro> &m) {
+			return treeModel->ParentOf(m.get()) == parent;
+		});
 }
 
 bool MacroTree::SingleItemSelected() const
@@ -933,10 +940,6 @@ bool MacroTree::MoveSelection(const DropTarget &target)
 		    IsMacroInGroup(target.parent, item.get())) {
 			return false;
 		}
-		// Nested groups are not supported yet
-		if (target.parent && item->IsGroup()) {
-			return false;
-		}
 	}
 
 	auto lock = LockContext();
@@ -990,19 +993,13 @@ QString MacroTree::GetNewGroupName() const
 
 void MacroTree::GroupSelectedItems()
 {
-	const auto items = GetSelectedSubtreeRoots();
-	if (items.empty()) {
+	if (!CanGroupSelection()) {
 		return;
 	}
 
+	const auto items = GetSelectedSubtreeRoots();
 	auto treeModel = GetModel();
 	const auto parent = treeModel->ParentOf(items.front().get());
-	for (const auto &item : items) {
-		if (treeModel->ParentOf(item.get()) != parent) {
-			return;
-		}
-	}
-
 	const auto name = GetNewGroupName().toStdString();
 	std::shared_ptr<Macro> group;
 	{

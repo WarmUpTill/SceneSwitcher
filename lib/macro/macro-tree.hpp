@@ -137,7 +137,7 @@ public:
 	std::shared_ptr<Macro> GetCurrentMacro() const;
 	std::vector<std::shared_ptr<Macro>> GetCurrentMacros() const;
 	bool GroupsSelected() const;
-	bool GroupedItemsSelected() const;
+	bool CanGroupSelection() const;
 	bool SingleItemSelected() const;
 	bool SelectionEmpty() const;
 	bool GroupsExist() const;

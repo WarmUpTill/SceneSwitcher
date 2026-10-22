@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <random>
 
 namespace {
 
@@ -36,6 +37,18 @@ bool isHiddenByCollapsedAncestor(const Macro *macro)
 		}
 	}
 	return false;
+}
+
+// Group names cannot be generated in tests as obs_module_text() returns the
+// locale key, which does not contain a placeholder for the number
+void renameNewGroup(const std::string &name)
+{
+	auto group = GetMacro(newGroupName);
+	REQUIRE(group);
+	group->SetName(name);
+	emit MacroSignalManager::Instance()->Rename(
+		QString::fromStdString(newGroupName),
+		QString::fromStdString(name));
 }
 
 class TreeFixture {
@@ -387,7 +400,7 @@ TEST_CASE("Macro tree selection", "[macro-tree]")
 		f.ClickRow("E");
 		REQUIRE(f.Tree()->GetCurrentMacro()->Name() == "E");
 		REQUIRE(f.Tree()->SingleItemSelected());
-		REQUIRE(f.Tree()->GroupedItemsSelected());
+		REQUIRE(f.Tree()->CanGroupSelection());
 		REQUIRE_FALSE(f.Tree()->GroupsSelected());
 	}
 
@@ -397,7 +410,6 @@ TEST_CASE("Macro tree selection", "[macro-tree]")
 		REQUIRE(f.Tree()->GetCurrentMacro()->Name() == "H");
 		f.ClickRow("D");
 		REQUIRE(f.Tree()->GetCurrentMacro()->Name() == "D");
-		REQUIRE_FALSE(f.Tree()->GroupedItemsSelected());
 	}
 
 	SECTION("Ctrl click")
@@ -407,7 +419,7 @@ TEST_CASE("Macro tree selection", "[macro-tree]")
 		f.ClickRow("G1", Qt::ControlModifier);
 		REQUIRE(f.CurrentMacros() == Names{"A", "F", "G1"});
 		REQUIRE(f.Tree()->GroupsSelected());
-		REQUIRE(f.Tree()->GroupedItemsSelected());
+		REQUIRE_FALSE(f.Tree()->CanGroupSelection());
 		REQUIRE_FALSE(f.Tree()->SingleItemSelected());
 	}
 
@@ -416,6 +428,8 @@ TEST_CASE("Macro tree selection", "[macro-tree]")
 		f.ClickRow("D");
 		f.ClickRow("F", Qt::ShiftModifier);
 		REQUIRE(f.CurrentMacros() == Names{"D", "E", "F", "G2"});
+		// E and F are part of the selected G2
+		REQUIRE(f.Tree()->CanGroupSelection());
 	}
 
 	f.CheckInvariants();
@@ -801,12 +815,61 @@ TEST_CASE("Macro tree drag and drop", "[macro-tree]")
 		REQUIRE(DescribeMacros() == "A, D, G1{B, C}, E");
 	}
 
-	SECTION("Group onto group is rejected")
+	SECTION("Group onto group")
 	{
 		TreeFixture f("G1[A], G2[B]");
 		f.Drag(f.RowCenter("G2"), f.RowCenter("G1"));
 		f.CheckInvariants();
-		REQUIRE(DescribeMacros() == "G1[A], G2[B]");
+		REQUIRE(DescribeMacros() == "G1[G2[B], A]");
+	}
+
+	SECTION("Group onto collapsed group")
+	{
+		TreeFixture f("G1{A}, G2[B]");
+		f.Drag(f.RowCenter("G2"), f.RowCenter("G1"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1{G2[B], A}");
+	}
+
+	SECTION("Group into own nested group is rejected")
+	{
+		TreeFixture f("G1[A, G2[B]]");
+		f.Drag(f.RowCenter("G1"), f.RowCenter("G2"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[A, G2[B]]");
+	}
+
+	SECTION("Macro onto nested group")
+	{
+		TreeFixture f("A, G1[G2[B]]");
+		f.Drag(f.RowCenter("A"), f.RowCenter("G2"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[G2[A, B]]");
+	}
+
+	SECTION("Macro between nested subitems")
+	{
+		TreeFixture f("G1[G2[A, B]], C");
+		f.Drag(f.RowCenter("C"), f.RowTop("B"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[G2[A, C, B]]");
+	}
+
+	SECTION("Nested group to top level")
+	{
+		TreeFixture f("G1[G2[B], C], D");
+		f.Drag(f.RowCenter("G2"), f.RowBottom("D"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[C], D, G2[B]");
+	}
+
+	SECTION("Multiple macros from different levels")
+	{
+		TreeFixture f("A, G1[B, C], D");
+		f.SelectRows({"A", "C"});
+		f.Drag(f.RowCenter("C"), f.RowBottom("D"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[B], D, A, C");
 	}
 
 	SECTION("Multiple macros")
@@ -922,4 +985,286 @@ TEST_CASE("Macro tree rename", "[macro-tree]")
 	emit MacroSignalManager::Instance()->Rename("C", "Z");
 	f.CheckInvariants();
 	REQUIRE(f.VisibleRows() == Names{"A", "G1", "Z"});
+}
+
+TEST_CASE("Macro tree nested groups", "[macro-tree]")
+{
+	SECTION("Group macros within group")
+	{
+		TreeFixture f("A, G1[B, C, D]");
+		f.SelectRows({"C", "D"});
+		REQUIRE(f.Tree()->CanGroupSelection());
+		f.Tree()->GroupSelectedItems();
+		renameNewGroup("G2");
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, G1[B, G2[C, D]]");
+	}
+
+	SECTION("Group selection containing group")
+	{
+		TreeFixture f("A, G1[B], C");
+		f.SelectRows({"G1", "C"});
+		f.Tree()->GroupSelectedItems();
+		renameNewGroup("G2");
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, G2[G1[B], C]");
+	}
+
+	SECTION("Group collapsed nested group")
+	{
+		TreeFixture f("G1[G2{A, B}, C]");
+		f.SelectRows({"G2", "C"});
+		f.Tree()->GroupSelectedItems();
+		renameNewGroup("G3");
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[G3[G2{A, B}, C]]");
+	}
+
+	SECTION("Group macros of different groups is rejected")
+	{
+		TreeFixture f("A, G1[B]");
+		f.SelectRows({"A", "B"});
+		REQUIRE_FALSE(f.Tree()->CanGroupSelection());
+		f.Tree()->GroupSelectedItems();
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, G1[B]");
+	}
+
+	SECTION("Ungroup inner group")
+	{
+		TreeFixture f("A, G1[B, G2[C, D], E]");
+		f.SelectRows({"G2"});
+		f.Tree()->UngroupSelectedGroups();
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, G1[B, C, D, E]");
+	}
+
+	SECTION("Ungroup outer group")
+	{
+		TreeFixture f("A, G1[B, G2[C, D], E]");
+		f.SelectRows({"G1"});
+		f.Tree()->UngroupSelectedGroups();
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, B, G2[C, D], E");
+	}
+
+	SECTION("Ungroup inner and outer group")
+	{
+		TreeFixture f("A, G1[B, G2[C, D], E]");
+		f.SelectRows({"G1", "G2"});
+		f.Tree()->UngroupSelectedGroups();
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, B, C, D, E");
+	}
+
+	SECTION("Remove group containing groups")
+	{
+		TreeFixture f("A, G1[B, G2[C, G3{D}]], E");
+		f.Tree()->Remove(GetMacro("G1"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "A, E");
+	}
+
+	// Mirrors AdvSceneSwitcher::on_macroAdd_clicked()
+	SECTION("Add after nested subitem")
+	{
+		TreeFixture f("G1[G2[A, B]]");
+		auto newMacro = std::make_shared<Macro>("X");
+		Macro::PrepareMoveToGroup(GetMacro("G2"), newMacro);
+		f.Tree()->Add(newMacro, GetMacro("A"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[G2[A, X, B]]");
+	}
+
+	SECTION("Add into nested group")
+	{
+		TreeFixture f("G1[G2{A, B}]");
+		auto newMacro = std::make_shared<Macro>("X");
+		auto group = GetMacro("G2");
+		f.Tree()->ExpandGroup(group);
+		Macro::PrepareMoveToGroup(group, newMacro);
+		f.Tree()->AddToGroup(newMacro, group);
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[G2[X, A, B]]");
+	}
+
+	SECTION("Up and down stay within group")
+	{
+		TreeFixture f("G1[A, G2[B], C]");
+		f.Tree()->Down(GetMacro("G2"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[A, C, G2[B]]");
+		f.Tree()->Down(GetMacro("G2"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[A, C, G2[B]]");
+		f.Tree()->Up(GetMacro("G2"));
+		f.Tree()->Up(GetMacro("G2"));
+		f.Tree()->Up(GetMacro("G2"));
+		f.CheckInvariants();
+		REQUIRE(DescribeMacros() == "G1[G2[B], A, C]");
+	}
+
+	SECTION("Collapse outer group")
+	{
+		TreeFixture f("G1[G2{A}, B]");
+		f.ClickRow("B");
+		f.ClickCheckBox(f.ExpandCheckBox("G1"));
+		f.CheckInvariants();
+		REQUIRE(f.VisibleRows() == Names{"G1"});
+		REQUIRE(f.Tree()->SelectionEmpty());
+
+		f.ClickCheckBox(f.ExpandCheckBox("G1"));
+		f.CheckInvariants();
+		REQUIRE(f.VisibleRows() == Names{"G1", "G2", "B"});
+	}
+
+	SECTION("Running state")
+	{
+		TreeFixture f("G1[A, G2[B, C]]");
+		f.ClickCheckBox(f.RunningCheckBox("G1"));
+		REQUIRE(GetMacro("A")->Paused());
+		REQUIRE(GetMacro("B")->Paused());
+		REQUIRE(GetMacro("C")->Paused());
+		REQUIRE(f.RunningCheckBox("G2")->checkState() == Qt::Unchecked);
+
+		f.ClickCheckBox(f.RunningCheckBox("C"));
+		REQUIRE(f.RunningCheckBox("G2")->checkState() ==
+			Qt::PartiallyChecked);
+		REQUIRE(f.RunningCheckBox("G1")->checkState() ==
+			Qt::PartiallyChecked);
+		f.CheckInvariants();
+	}
+
+	SECTION("Search")
+	{
+		TreeFixture f("G1[G2[A1, B2], C1], D1");
+		f.SetupSearch();
+		f.Search("2");
+		f.CheckInvariants();
+		REQUIRE(f.VisibleRows() == Names{"G1", "G2", "B2"});
+	}
+}
+
+TEST_CASE("Macro tree random operations", "[macro-tree]")
+{
+	const auto seed = GENERATE(1u, 2u, 3u, 4u, 5u);
+	std::mt19937 rng(seed);
+	auto random = [&rng](int max) {
+		return std::uniform_int_distribution<int>(0, max)(rng);
+	};
+
+	TreeFixture f("A, G1[B, G2[C, D], E], F, G3{G, H}, I");
+	f.SetupSearch();
+	int macroCount = 0;
+	int groupCount = 3;
+
+	auto randomVisibleRow = [&]() -> std::string {
+		const auto rows = f.VisibleRows();
+		return rows.empty() ? "" : rows[random((int)rows.size() - 1)];
+	};
+	auto randomDropPoint = [&]() {
+		const auto row = randomVisibleRow();
+		if (row.empty() || random(10) == 0) {
+			return QPoint(40, f.Viewport()->height() - 5);
+		}
+		switch (random(2)) {
+		case 0:
+			return f.RowTop(row);
+		case 1:
+			return f.RowCenter(row);
+		default:
+			return f.RowBottom(row);
+		}
+	};
+
+	for (int step = 0; step < 150; step++) {
+		const int operation = random(10);
+		INFO("seed " << seed << ", step " << step << ", operation "
+			     << operation << ", before: " << DescribeMacros());
+		const auto row = randomVisibleRow();
+		const auto macro = row.empty() ? nullptr : GetMacro(row);
+
+		switch (operation) {
+		case 0:
+			if (macro) {
+				f.Tree()->Up(macro);
+			}
+			break;
+		case 1:
+			if (macro) {
+				f.Tree()->Down(macro);
+			}
+			break;
+		case 2:
+			if (macro && random(1) == 0) {
+				f.Tree()->Remove(macro);
+			}
+			break;
+		case 3: {
+			auto newMacro = std::make_shared<Macro>(
+				"M" + std::to_string(macroCount++));
+			if (macro && macro->IsGroup()) {
+				f.Tree()->ExpandGroup(macro);
+				Macro::PrepareMoveToGroup(macro, newMacro);
+				f.Tree()->AddToGroup(newMacro, macro);
+			} else if (macro) {
+				Macro::PrepareMoveToGroup(macro->Parent(),
+							  newMacro);
+				f.Tree()->Add(newMacro, macro);
+			} else {
+				f.Tree()->Add(newMacro);
+			}
+			break;
+		}
+		case 4: {
+			Names rows;
+			for (int i = random(2); i >= 0; i--) {
+				const auto name = randomVisibleRow();
+				if (!name.empty()) {
+					rows.emplace_back(name);
+				}
+			}
+			if (rows.empty()) {
+				break;
+			}
+			f.SelectRows(rows);
+			const bool canGroup = f.Tree()->CanGroupSelection();
+			f.Tree()->GroupSelectedItems();
+			if (canGroup) {
+				renameNewGroup("G" +
+					       std::to_string(++groupCount));
+			}
+			break;
+		}
+		case 5:
+			if (macro && macro->IsGroup()) {
+				f.SelectRows({row});
+				f.Tree()->UngroupSelectedGroups();
+			}
+			break;
+		case 6:
+			if (macro && macro->IsGroup()) {
+				f.ClickCheckBox(f.ExpandCheckBox(row));
+			}
+			break;
+		case 7:
+		case 8:
+			if (macro) {
+				f.Drag(f.RowCenter(row), randomDropPoint());
+			}
+			break;
+		case 9:
+			f.Search(random(3) == 0 ? "1" : "");
+			break;
+		default:
+			if (random(1)) {
+				f.Tree()->ExpandAll();
+			} else {
+				f.Tree()->CollapseAll();
+			}
+			break;
+		}
+
+		f.CheckInvariants();
+	}
 }
