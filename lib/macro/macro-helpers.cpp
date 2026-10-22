@@ -180,6 +180,114 @@ bool IsMacroInGroup(const Macro *macro, const Macro *group)
 	return false;
 }
 
+std::vector<std::shared_ptr<Macro>>
+GetOutermostMacros(const std::vector<std::shared_ptr<Macro>> &macros)
+{
+	std::vector<std::shared_ptr<Macro>> result;
+	for (const auto &macro : GetTopLevelMacros()) {
+		const bool isGiven = std::find(macros.begin(), macros.end(),
+					       macro) != macros.end();
+		const bool isInGivenGroup = std::any_of(
+			macros.begin(), macros.end(),
+			[&macro](const std::shared_ptr<Macro> &group) {
+				return IsMacroInGroup(macro.get(), group.get());
+			});
+		if (isGiven && !isInGivenGroup) {
+			result.emplace_back(macro);
+		}
+	}
+	return result;
+}
+
+std::vector<std::shared_ptr<Macro>>
+GetMacrosWithGroupContents(const std::vector<std::shared_ptr<Macro>> &macros)
+{
+	std::vector<std::shared_ptr<Macro>> result;
+	for (const auto &macro : GetTopLevelMacros()) {
+		const bool include = std::any_of(
+			macros.begin(), macros.end(),
+			[&macro](const std::shared_ptr<Macro> &given) {
+				return given == macro ||
+				       IsMacroInGroup(macro.get(), given.get());
+			});
+		if (include) {
+			result.emplace_back(macro);
+		}
+	}
+	return result;
+}
+
+static std::deque<std::shared_ptr<Macro>>::iterator
+subtreeEnd(std::deque<std::shared_ptr<Macro>> &macros,
+	   std::deque<std::shared_ptr<Macro>>::iterator it)
+{
+	const auto remaining = std::distance(it, macros.end());
+	const auto size =
+		std::min<std::ptrdiff_t>(1 + (*it)->GroupSize(), remaining);
+	return std::next(it, size);
+}
+
+void InsertMacroSubtree(int index,
+			const std::deque<std::shared_ptr<Macro>> &subtree,
+			const std::shared_ptr<Macro> &parent)
+{
+	if (subtree.empty()) {
+		return;
+	}
+
+	auto &macros = GetTopLevelMacros();
+	Macro::PrepareMoveToGroup(parent, subtree.front());
+	index = std::clamp(index, 0, (int)macros.size());
+	macros.insert(macros.begin() + index, subtree.begin(), subtree.end());
+}
+
+void RemoveMacroSubtree(const std::shared_ptr<Macro> &macro)
+{
+	auto &macros = GetTopLevelMacros();
+	auto it = std::find(macros.begin(), macros.end(), macro);
+	if (it == macros.end()) {
+		return;
+	}
+
+	const auto end = subtreeEnd(macros, it);
+	Macro::PrepareMoveToGroup(nullptr, macro);
+	macros.erase(it, end);
+}
+
+std::shared_ptr<Macro>
+InsertGroup(const std::string &name, int index,
+	    std::vector<std::shared_ptr<Macro>> &children,
+	    const std::shared_ptr<Macro> &parent)
+{
+	auto group = Macro::CreateGroup(name, children);
+	if (children.empty()) {
+		Macro::PrepareMoveToGroup(parent, group);
+	}
+
+	auto &macros = GetTopLevelMacros();
+	index = std::clamp(index, 0, (int)macros.size());
+	macros.insert(macros.begin() + index, group);
+
+	auto previous = group;
+	for (const auto &child : children) {
+		auto start = std::find(macros.begin(), macros.end(), child);
+		if (start == macros.end()) {
+			continue;
+		}
+		const auto end = subtreeEnd(macros, start);
+		const std::vector<std::shared_ptr<Macro>> subtree(start, end);
+		macros.erase(start, end);
+
+		auto position =
+			std::find(macros.begin(), macros.end(), previous);
+		position = previous == group ? std::next(position)
+					     : subtreeEnd(macros, position);
+		macros.insert(position, subtree.begin(), subtree.end());
+		previous = child;
+	}
+	return group;
+}
+
 std::condition_variable &GetMacroWaitCV()
 {
 	static std::condition_variable cv;

@@ -7,11 +7,14 @@
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <functional>
 #include <optional>
 #include <thread>
 
 struct obs_data;
 typedef struct obs_data obs_data_t;
+struct obs_data_array;
+typedef struct obs_data_array obs_data_array_t;
 
 namespace advss {
 
@@ -42,6 +45,27 @@ EXPORT std::vector<std::shared_ptr<Macro>> GetGroupMacroEntries(Macro *);
 std::vector<std::shared_ptr<Macro>> GetGroupChildren(const Macro *group);
 std::vector<std::shared_ptr<Macro>> GetGroupDescendants(const Macro *group);
 bool IsMacroInGroup(const Macro *macro, const Macro *group);
+// Returns the given macros without the ones contained in one of the given
+// groups, sorted by their position in the macro list
+std::vector<std::shared_ptr<Macro>>
+GetOutermostMacros(const std::vector<std::shared_ptr<Macro>> &macros);
+// Returns the given macros and the contents of the given groups, sorted by
+// their position in the macro list
+std::vector<std::shared_ptr<Macro>>
+GetMacrosWithGroupContents(const std::vector<std::shared_ptr<Macro>> &macros);
+// Inserts the macro and its group contents at the given position of the macro
+// list
+void InsertMacroSubtree(int index,
+			const std::deque<std::shared_ptr<Macro>> &subtree,
+			const std::shared_ptr<Macro> &parent);
+// Removes the macro and its group contents from the macro list
+void RemoveMacroSubtree(const std::shared_ptr<Macro> &macro);
+// Creates a group at the given position of the macro list and moves the given
+// macros and their group contents into it
+std::shared_ptr<Macro>
+InsertGroup(const std::string &name, int index,
+	    std::vector<std::shared_ptr<Macro>> &children,
+	    const std::shared_ptr<Macro> &parent);
 
 EXPORT std::condition_variable &GetMacroWaitCV();
 EXPORT std::condition_variable &GetMacroTransitionCV();
@@ -85,6 +109,12 @@ void WaitForAllMacros();
 
 EXPORT void LoadMacros(obs_data_t *obj);
 EXPORT void SaveMacros(obs_data_t *obj);
+// Appends the exported macros to the macro list.
+// Macros for which shouldImport returns false are skipped and their group
+// contents are moved to the parent group of the skipped group.
+std::vector<std::shared_ptr<Macro>> LoadImportedMacros(
+	obs_data_array_t *macros,
+	const std::function<bool(const std::shared_ptr<Macro> &)> &shouldImport);
 
 EXPORT void InvalidateMacroTempVarValues();
 EXPORT void ResetMacroConditionTimers(Macro *);

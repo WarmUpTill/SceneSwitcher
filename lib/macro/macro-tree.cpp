@@ -798,27 +798,7 @@ std::vector<std::shared_ptr<Macro>> MacroTree::GetCurrentMacros() const
 
 std::vector<std::shared_ptr<Macro>> MacroTree::GetSelectedSubtreeRoots() const
 {
-	auto selected = GetCurrentMacros();
-	std::vector<std::shared_ptr<Macro>> roots;
-	for (const auto &macro : selected) {
-		const bool hasSelectedAncestor = std::any_of(
-			selected.begin(), selected.end(),
-			[&macro](const std::shared_ptr<Macro> &other) {
-				return IsMacroInGroup(macro.get(), other.get());
-			});
-		if (!hasSelectedAncestor) {
-			roots.emplace_back(macro);
-		}
-	}
-
-	auto treeModel = GetModel();
-	std::sort(roots.begin(), roots.end(),
-		  [treeModel](const std::shared_ptr<Macro> &a,
-			      const std::shared_ptr<Macro> &b) {
-			  return treeModel->PositionOf(a.get()) <
-				 treeModel->PositionOf(b.get());
-		  });
-	return roots;
+	return GetOutermostMacros(GetCurrentMacros());
 }
 
 bool MacroTree::GroupsSelected() const
