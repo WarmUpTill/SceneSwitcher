@@ -774,9 +774,7 @@ void AdvSceneSwitcher::ShowMacroContextMenu(const QPoint &pos)
 	auto group = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.group"), ui->macros,
 		&MacroTree::GroupSelectedItems);
-	group->setDisabled(ui->macros->GroupedItemsSelected() ||
-			   ui->macros->GroupsSelected() ||
-			   ui->macros->SelectionEmpty());
+	group->setEnabled(ui->macros->CanGroupSelection());
 
 	auto ungroup = menu.addAction(
 		obs_module_text("AdvSceneSwitcher.macroTab.ungroup"),
