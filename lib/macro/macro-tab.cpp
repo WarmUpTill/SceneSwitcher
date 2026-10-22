@@ -152,29 +152,6 @@ void AdvSceneSwitcher::on_macroAdd_clicked()
 	RegisterMacroAddUndoRedo(name);
 }
 
-static void addGroupSubitems(std::vector<std::shared_ptr<Macro>> &macros,
-			     const std::shared_ptr<Macro> &group)
-{
-	auto subitems = GetGroupDescendants(group.get());
-
-	// Remove subitems which were already selected to avoid duplicates
-	for (const auto &subitem : subitems) {
-		auto it = std::find(macros.begin(), macros.end(), subitem);
-		if (it == macros.end()) {
-			continue;
-		}
-		macros.erase(it);
-	}
-
-	// Add group subitems
-	auto it = std::find(macros.begin(), macros.end(), group);
-	if (it == macros.end()) {
-		return;
-	}
-	it = std::next(it);
-	macros.insert(it, subitems.begin(), subitems.end());
-}
-
 void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 {
 	if (!macro) {
@@ -196,14 +173,8 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 		RegisterMacroRemoveUndoRedo(macro.get());
 	}
 
-	if (macro->IsGroup()) {
-		std::vector<std::shared_ptr<Macro>> macros = {macro};
-		addGroupSubitems(macros, macro);
-		for (auto macro : macros) {
-			ui->macroEdit->ClearSegmentWidgetCacheFor(macro.get());
-		}
-	} else {
-		ui->macroEdit->ClearSegmentWidgetCacheFor(macro.get());
+	for (const auto &m : GetMacrosWithGroupContents({macro})) {
+		ui->macroEdit->ClearSegmentWidgetCacheFor(m.get());
 	}
 
 	// Don't cache widgets for about to be deleted macros
@@ -216,7 +187,7 @@ void AdvSceneSwitcher::RemoveMacro(std::shared_ptr<Macro> &macro)
 
 void AdvSceneSwitcher::RemoveSelectedMacros()
 {
-	auto macros = GetSelectedMacros();
+	auto macros = GetOutermostMacros(GetSelectedMacros());
 	if (macros.empty()) {
 		return;
 	}
@@ -315,13 +286,7 @@ void AdvSceneSwitcher::RenameSelectedMacro()
 
 void AdvSceneSwitcher::ExportMacros() const
 {
-	auto selectedMacros = GetSelectedMacros();
-	auto macros = selectedMacros;
-	for (const auto &macro : selectedMacros) {
-		if (macro->IsGroup() && macro->GroupSize() > 0) {
-			addGroupSubitems(macros, macro);
-		}
-	}
+	const auto macros = GetMacrosWithGroupContents(GetSelectedMacros());
 
 	OBSDataAutoRelease data = obs_data_create();
 	OBSDataArrayAutoRelease macroArray = obs_data_array_create();
@@ -404,55 +369,20 @@ void AdvSceneSwitcher::ImportMacros()
 	}
 
 	OBSDataArrayAutoRelease array = obs_data_get_array(data, "macros");
-	size_t count = obs_data_array_count(array);
-
-	int groupSize = 0;
-	std::shared_ptr<Macro> group;
-	std::vector<std::shared_ptr<Macro>> importedMacros;
-	auto &tempMacros = GetTemporaryMacros();
 
 	std::unique_lock<std::mutex> lock(*GetMutex());
-	for (size_t i = 0; i < count; i++) {
-		tempMacros.clear();
-
-		OBSDataAutoRelease array_obj = obs_data_array_item(array, i);
-		auto macro = std::make_shared<Macro>();
-		tempMacros.emplace_back(macro);
-		macro->Load(array_obj);
-		RunAndClearPostLoadSteps();
-
-		if (macroNameExists(macro->Name())) {
-			lock.unlock();
-			bool resolved = ResolveMacroImportNameConflict(macro);
-			lock.lock();
-			if (!resolved) {
-				groupSize--;
-				continue;
+	const auto importedMacros = LoadImportedMacros(
+		array, [this, &lock](const std::shared_ptr<Macro> &macro) {
+			if (!macroNameExists(macro->Name())) {
+				return true;
 			}
-		}
-
-		importedMacros.emplace_back(macro);
-		GetTopLevelMacros().emplace_back(macro);
-		if (groupSize > 0 && !macro->IsGroup()) {
-			Macro::PrepareMoveToGroup(group, macro);
-			groupSize--;
-		}
-
-		if (macro->IsGroup()) {
-			group = macro;
-			groupSize = macro->GroupSize();
-			// We are not sure if all elements will be added so we
-			// have to reset the group size to zero and add elements
-			// to the group as they come up.
-			macro->ResetGroupSize();
-		}
-	}
-
-	for (const auto &macro : importedMacros) {
-		macro->PostLoad();
-	}
-	RunAndClearPostLoadSteps();
-	tempMacros.clear();
+			lock.unlock();
+			auto renamedMacro = macro;
+			const bool resolved =
+				ResolveMacroImportNameConflict(renamedMacro);
+			lock.lock();
+			return resolved;
+		});
 
 	ui->macros->Reset(GetTopLevelMacros(),
 			  GetGlobalMacroSettings()._highlightExecuted);

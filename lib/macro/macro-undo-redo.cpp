@@ -143,11 +143,7 @@ static void deleteMacroByName(const char *jsonData)
 						   QEvent::DeferredDelete);
 	} else {
 		auto lock = LockContext();
-		auto &macros = GetTopLevelMacros();
-		const auto it = std::find(macros.begin(), macros.end(), macro);
-		if (it != macros.end()) {
-			macros.erase(it);
-		}
+		RemoveMacroSubtree(macro);
 	}
 
 	MacroSignalManager::Instance()->Remove(QString::fromStdString(name));
@@ -178,17 +174,9 @@ static void restoreMacroFromData(const char *jsonData)
 		macro->PostLoad();
 		RunAndClearPostLoadSteps();
 
-		if (!parentGroup.empty()) {
-			const auto parent =
-				GetWeakMacroByName(parentGroup.c_str()).lock();
-			if (parent) {
-				Macro::PrepareMoveToGroup(parent, macro);
-			}
-		}
-
-		auto &macros = GetTopLevelMacros();
-		const int insertIdx = std::min(index, (int)macros.size());
-		macros.insert(macros.begin() + insertIdx, macro);
+		const auto parent =
+			GetWeakMacroByName(parentGroup.c_str()).lock();
+		InsertMacroSubtree(index, {macro}, parent);
 		macroName = macro->Name();
 	}
 
@@ -207,8 +195,9 @@ static void restoreMacroFromData(const char *jsonData)
 // ---------------------------------------------------------------------------
 
 // Callback data format:
-// {"group_name": "...", "group_index": N, "group_data": {...},
-//  "children": [{"data": {...}}, ...]}
+// {"group_name": "...", "group_index": N, "parent_group": "...",
+//  "group_data": {...}, "children": [{"data": {...}}, ...]}
+// The children contain the contents of nested groups as well.
 static void deleteGroupWithChildrenFromData(const char *jsonData)
 {
 	OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
@@ -222,7 +211,7 @@ static void deleteGroupWithChildrenFromData(const char *jsonData)
 		return;
 	}
 
-	const auto children = GetGroupChildren(group.get());
+	const auto children = GetGroupDescendants(group.get());
 
 	auto *const window = AdvSceneSwitcher::window;
 	if (SettingsWindowIsOpened() && window) {
@@ -238,11 +227,7 @@ static void deleteGroupWithChildrenFromData(const char *jsonData)
 						   QEvent::DeferredDelete);
 	} else {
 		auto lock = LockContext();
-		auto &macros = GetTopLevelMacros();
-		const auto it = std::find(macros.begin(), macros.end(), group);
-		if (it != macros.end()) {
-			macros.erase(it, std::next(it, 1 + group->GroupSize()));
-		}
+		RemoveMacroSubtree(group);
 	}
 
 	for (const auto &child : children) {
@@ -261,20 +246,17 @@ static void restoreGroupWithChildrenFromData(const char *jsonData)
 	}
 
 	const int groupIndex = (int)obs_data_get_int(data, "group_index");
+	const std::string parentGroup =
+		obs_data_get_string(data, "parent_group");
 	OBSDataAutoRelease groupData = obs_data_get_obj(data, "group_data");
 	OBSDataArrayAutoRelease childArray =
 		obs_data_get_array(data, "children");
-
-	std::string groupName;
-	bool collapsed = false;
-	if (groupData) {
-		groupName = obs_data_get_string(groupData, "name");
-		OBSDataAutoRelease gd =
-			obs_data_get_obj(groupData, "groupData");
-		if (gd) {
-			collapsed = obs_data_get_bool(gd, "collapsed");
-		}
+	if (!groupData) {
+		return;
 	}
+
+	auto group = std::make_shared<Macro>();
+	group->Load(groupData);
 
 	std::vector<std::shared_ptr<Macro>> children;
 	const size_t count = obs_data_array_count(childArray);
@@ -294,22 +276,15 @@ static void restoreGroupWithChildrenFromData(const char *jsonData)
 		children.push_back(child);
 	}
 
-	std::string restoredGroupName;
+	const std::string restoredGroupName = group->Name();
 	{
 		auto lock = LockContext();
-		auto group = Macro::CreateGroup(groupName, children);
-		group->SetCollapsed(collapsed);
-		restoredGroupName = group->Name();
-
-		auto &macros = GetTopLevelMacros();
-		const int insertIdx = std::min(groupIndex, (int)macros.size());
-		macros.insert(macros.begin() + insertIdx, group);
-		int offset = 1;
-		for (const auto &child : children) {
-			macros.insert(macros.begin() + insertIdx + offset,
-				      child);
-			offset++;
-		}
+		std::deque<std::shared_ptr<Macro>> subtree = {group};
+		subtree.insert(subtree.end(), children.begin(), children.end());
+		Macro::RestoreGroupHierarchy(subtree);
+		const auto parent =
+			GetWeakMacroByName(parentGroup.c_str()).lock();
+		InsertMacroSubtree(groupIndex, subtree, parent);
 	}
 
 	auto *const window = AdvSceneSwitcher::window;
@@ -332,7 +307,8 @@ static void restoreGroupWithChildrenFromData(const char *jsonData)
 // ---------------------------------------------------------------------------
 
 // Callback data format for both group and ungroup:
-// {"group_name": "...", "group_index": N, "children": [{"name": "..."}, ...]}
+// {"group_name": "...", "group_index": N, "parent_group": "...",
+//  "children": [{"name": "..."}, ...]}
 static void removeGroupFromData(const char *jsonData)
 {
 	OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
@@ -371,6 +347,8 @@ static void restoreGroupFromData(const char *jsonData)
 
 	const std::string groupName = obs_data_get_string(data, "group_name");
 	const int groupIndex = (int)obs_data_get_int(data, "group_index");
+	const std::string parentGroup =
+		obs_data_get_string(data, "parent_group");
 	OBSDataArrayAutoRelease childArray =
 		obs_data_get_array(data, "children");
 
@@ -387,23 +365,9 @@ static void restoreGroupFromData(const char *jsonData)
 
 	{
 		auto lock = LockContext();
-		auto group = Macro::CreateGroup(groupName, children);
-
-		auto &macros = GetTopLevelMacros();
-		const int insertIdx = std::min(groupIndex, (int)macros.size());
-		macros.insert(macros.begin() + insertIdx, group);
-
-		int offset = 1;
-		for (const auto &child : children) {
-			const auto it =
-				std::find(macros.begin(), macros.end(), child);
-			if (it != macros.end()) {
-				macros.erase(it);
-			}
-			macros.insert(macros.begin() + insertIdx + offset,
-				      child);
-			offset++;
-		}
+		const auto parent =
+			GetWeakMacroByName(parentGroup.c_str()).lock();
+		InsertGroup(groupName, groupIndex, children, parent);
 	}
 
 	auto *const window = AdvSceneSwitcher::window;
@@ -804,12 +768,7 @@ static void deleteMacrosBatch(const char *jsonData)
 				nullptr, QEvent::DeferredDelete);
 		} else {
 			auto lock = LockContext();
-			auto &macros = GetTopLevelMacros();
-			const auto it =
-				std::find(macros.begin(), macros.end(), macro);
-			if (it != macros.end()) {
-				macros.erase(it);
-			}
+			RemoveMacroSubtree(macro);
 		}
 
 		MacroSignalManager::Instance()->Remove(
@@ -847,20 +806,13 @@ static void restoreMacrosBatch(const char *jsonData)
 			macro->PostLoad();
 			RunAndClearPostLoadSteps();
 
-			if (!parentGroup.empty()) {
-				const auto parent =
-					GetWeakMacroByName(parentGroup.c_str())
-						.lock();
-				if (parent) {
-					Macro::PrepareMoveToGroup(parent,
-								  macro);
-				}
-			}
+			// The group contents are restored by the following
+			// entries, which will update the group size
+			macro->ResetGroupSize();
 
-			auto &macros = GetTopLevelMacros();
-			const int insertIdx =
-				std::min(index, (int)macros.size());
-			macros.insert(macros.begin() + insertIdx, macro);
+			const auto parent =
+				GetWeakMacroByName(parentGroup.c_str()).lock();
+			InsertMacroSubtree(index, {macro}, parent);
 		}
 
 		addedNames.push_back(macro->Name());
@@ -1113,17 +1065,22 @@ void RegisterGroupCreateUndoRedo(const std::string &groupName)
 		return;
 	}
 
+	const auto parent = group->Parent();
+	const std::string parentGroup = parent ? parent->Name() : "";
+
 	const auto children = GetGroupChildren(group.get());
 	OBSDataArrayAutoRelease childArray = buildChildArray(children);
 
 	OBSDataAutoRelease undoData = obs_data_create();
 	obs_data_set_string(undoData, "group_name", groupName.c_str());
 	obs_data_set_int(undoData, "group_index", groupIndex);
+	obs_data_set_string(undoData, "parent_group", parentGroup.c_str());
 	obs_data_set_array(undoData, "children", childArray);
 
 	OBSDataAutoRelease redoData = obs_data_create();
 	obs_data_set_string(redoData, "group_name", groupName.c_str());
 	obs_data_set_int(redoData, "group_index", groupIndex);
+	obs_data_set_string(redoData, "parent_group", parentGroup.c_str());
 	obs_data_set_array(redoData, "children", childArray);
 
 	const std::string actionName =
@@ -1157,17 +1114,22 @@ void RegisterGroupRemoveUndoRedo(const std::string &groupName)
 		return;
 	}
 
+	const auto parent = group->Parent();
+	const std::string parentGroup = parent ? parent->Name() : "";
+
 	const auto children = GetGroupChildren(group.get());
 	OBSDataArrayAutoRelease childArray = buildChildArray(children);
 
 	OBSDataAutoRelease undoData = obs_data_create();
 	obs_data_set_string(undoData, "group_name", groupName.c_str());
 	obs_data_set_int(undoData, "group_index", groupIndex);
+	obs_data_set_string(undoData, "parent_group", parentGroup.c_str());
 	obs_data_set_array(undoData, "children", childArray);
 
 	OBSDataAutoRelease redoData = obs_data_create();
 	obs_data_set_string(redoData, "group_name", groupName.c_str());
 	obs_data_set_int(redoData, "group_index", groupIndex);
+	obs_data_set_string(redoData, "parent_group", parentGroup.c_str());
 	obs_data_set_array(redoData, "children", childArray);
 
 	const std::string actionName =
@@ -1202,10 +1164,13 @@ void RegisterGroupDeleteUndoRedo(Macro *macro)
 		return;
 	}
 
+	const auto parent = macro->Parent();
+	const std::string parentGroup = parent ? parent->Name() : "";
+
 	OBSDataAutoRelease groupData = obs_data_create();
 	macro->Save(groupData);
 
-	const auto children = GetGroupChildren(macro);
+	const auto children = GetGroupDescendants(macro);
 	OBSDataArrayAutoRelease childArray = obs_data_array_create();
 	for (const auto &child : children) {
 		OBSDataAutoRelease childData = obs_data_create();
@@ -1218,12 +1183,14 @@ void RegisterGroupDeleteUndoRedo(Macro *macro)
 	OBSDataAutoRelease undoData = obs_data_create();
 	obs_data_set_string(undoData, "group_name", groupName.c_str());
 	obs_data_set_int(undoData, "group_index", groupIndex);
+	obs_data_set_string(undoData, "parent_group", parentGroup.c_str());
 	obs_data_set_obj(undoData, "group_data", groupData);
 	obs_data_set_array(undoData, "children", childArray);
 
 	OBSDataAutoRelease redoData = obs_data_create();
 	obs_data_set_string(redoData, "group_name", groupName.c_str());
 	obs_data_set_int(redoData, "group_index", groupIndex);
+	obs_data_set_string(redoData, "parent_group", parentGroup.c_str());
 	obs_data_set_obj(redoData, "group_data", groupData);
 	obs_data_set_array(redoData, "children", childArray);
 
