@@ -1,23 +1,21 @@
 #pragma once
 #include "macro-action-edit.hpp"
-#include "help-icon.hpp"
-#include "macro-segment-selection.hpp"
-#include "regex-config.hpp"
-#include "resizing-text-edit.hpp"
-#include "scene-selection.hpp"
-#include "single-char-selection.hpp"
-#include "string-list.hpp"
-#include "value-input.hpp"
-#include "variable-line-edit.hpp"
 #include "variable-ref.hpp"
 #include "variable-text-edit.hpp"
-#include "variable-spinbox.hpp"
+#include "variable.hpp"
+
+#include <memory>
+#include <vector>
 
 namespace advss {
 
+class VariableActionGroup;
+class VariableActionGroupEdit;
+
 class MacroActionVariable : public MacroAction {
 public:
-	MacroActionVariable(Macro *m) : MacroAction(m) {}
+	MacroActionVariable(Macro *m);
+	MacroActionVariable(const MacroActionVariable &);
 	~MacroActionVariable();
 	bool PerformAction();
 	bool Save(obs_data_t *obj) const;
@@ -28,10 +26,19 @@ public:
 	std::vector<TempVariableRef> GetTempVarRefs() const;
 	static std::shared_ptr<MacroAction> Create(Macro *m);
 	std::shared_ptr<MacroAction> Copy() const;
-	void SetSegmentIndexValue(int);
-	int GetSegmentIndexValue() const;
 	void ResolveVariablesToFixedValues();
 
+	template<class T> T *GetGroup() const
+	{
+		for (const auto &group : _groups) {
+			if (auto result = dynamic_cast<T *>(group.get())) {
+				return result;
+			}
+		}
+		return nullptr;
+	}
+
+	// Values are persisted, do not change existing ones
 	enum class Action {
 		SET_VALUE,
 		APPEND,
@@ -61,80 +68,27 @@ public:
 		ARRAY_JSON,
 		COPY_VAR,
 		RANDOM_LIST_VALUE,
+		CURRENT_SCENE,
+		PREVIOUS_SCENE,
+		PREVIEW_SCENE,
+		CURRENT_TRANSITION,
+		CURRENT_DATE_TIME,
+		DATE_TIME_WITH_OFFSET,
+		UNIX_TIMESTAMP,
+		TIME_SINCE_SCENE_CHANGE,
+		JSON_ARRAY_LENGTH,
+		SET_JSON_FIELD,
+		FORMAT_NUMBER,
 	};
 
 	Action _action = Action::SET_VALUE;
 	VariableRef _variable;
 	VariableRef _variable2;
 	StringVariable _strValue = "";
-	DoubleVariable _numValue = 0;
-	IntVariable _subStringStart = 0;
-	IntVariable _subStringSize = 0;
-	RegexConfig _subStringRegex = RegexConfig::PartialMatchRegexConfig();
-	std::string _regexPattern = ".*";
-	IntVariable _regexMatchIdx = 0;
-	RegexConfig _findRegex;
-	StringVariable _findStr = obs_module_text(
-		"AdvSceneSwitcher.action.variable.findAndReplace.find");
-	StringVariable _replaceStr = obs_module_text(
-		"AdvSceneSwitcher.action.variable.findAndReplace.replace");
-	StringVariable _mathExpression = obs_module_text(
-		"AdvSceneSwitcher.action.variable.mathExpression.example");
-	bool _useCustomPrompt = false;
-	StringVariable _inputPrompt = obs_module_text(
-		"AdvSceneSwitcher.action.variable.askForValuePrompt");
-	bool _useInputPlaceholder = false;
-	StringVariable _inputPlaceholder =
-		obs_module_text("AdvSceneSwitcher.enterText");
-	ValueInputType _inputType = ValueInputType::String;
-	StringList _inputOptions = {"value1", "value2", "value3"};
-#ifdef _WIN32
-	StringVariable _envVariableName = "USERPROFILE";
-#else
-	StringVariable _envVariableName = "HOME";
-#endif
-	SceneSelection _scene;
-	TempVariableRef _tempVar;
-	IntVariable _sceneItemIndex = 1;
-
-	enum class Direction { LEFT, RIGHT };
-	Direction _direction = Direction::LEFT;
-	IntVariable _stringLength = 1;
-	char _paddingChar = '0';
-
-	enum class CaseType {
-		LOWER_CASE,
-		UPPER_CASE,
-		CAPITALIZED,
-		START_CASE,
-	};
-
-	CaseType _caseType = CaseType::LOWER_CASE;
-	DoubleVariable _randomNumberStart = 0;
-	DoubleVariable _randomNumberEnd = 100;
-	bool _generateInteger = true;
-
-	StringList _randomValues = {"value1", "value2", "value3"};
-	bool _allowRepeatValues = true;
-	std::optional<std::string> _lastRandomValue;
-
-	StringVariable _jsonQuery = "$.some.nested.value";
-	IntVariable _jsonIndex = 0;
-	bool _jsonQueryExtractSingle = true;
 
 private:
-	void DecrementCurrentSegmentVariableRef();
-	void HandleIndexSubString(Variable *);
-	void HandleRegexSubString(Variable *);
-	void HandleFindAndReplace(Variable *);
-	void HandleMathExpression(Variable *);
-	void HandleCaseChange(Variable *);
-	void SetToSceneItemName(Variable *);
-	void GenerateRandomNumber(Variable *);
-	void PickRandomValue(Variable *);
+	std::vector<std::unique_ptr<VariableActionGroup>> _groups;
 
-	std::weak_ptr<MacroSegment> _macroSegment;
-	int _segmentIdxLoadValue = -1;
 	static bool _registered;
 	static const std::string id;
 };
@@ -160,105 +114,22 @@ private slots:
 	void Variable2Changed(const QString &);
 	void ActionChanged(int);
 	void StrValueChanged();
-	void NumValueChanged(const NumberVariable<double> &value);
-	void SegmentIndexChanged(const IntVariable &);
-	void UpdateSegmentVariableValue();
-	void MacroSegmentOrderChanged();
-	void SubStringStartChanged(const NumberVariable<int> &start);
-	void SubStringSizeChanged(const NumberVariable<int> &size);
-	void SubStringRegexChanged(const RegexConfig &conf);
-	void RegexPatternChanged();
-	void RegexMatchIdxChanged(const NumberVariable<int> &index);
-	void FindStrValueChanged();
-	void FindRegexChanged(const RegexConfig &conf);
-	void ReplaceStrValueChanged();
-	void MathExpressionChanged();
-	void UseCustomPromptChanged(int);
-	void InputPromptChanged();
-	void UseInputPlaceholderChanged(int);
-	void InputPlaceholderChanged();
-	void InputTypeChanged(int);
-	void InputOptionsChanged(const StringList &);
-	void EnvVariableChanged();
-	void SceneChanged(const SceneSelection &);
-	void SelectionChanged(const TempVariableRef &var);
-	void SceneItemIndexChanged(const NumberVariable<int> &);
-	void DirectionChanged(int);
-	void StringLengthChanged(const NumberVariable<int> &);
-	void CharSelectionChanged(const QString &);
-	void CaseTypeChanged(int index);
-	void RandomNumberStartChanged(const NumberVariable<double> &);
-	void RandomNumberEndChanged(const NumberVariable<double> &);
-	void GenerateIntegerChanged(int);
-	void RandomValueListChanged(const StringList &);
-	void AllowRepeatValuesChanged(int);
-	void JsonQueryChanged();
-	void JsonIndexChanged(const NumberVariable<int> &);
-	void JsonQueryExtractSingleChanged(int);
 
 signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
 	void SetWidgetVisibility();
-	void SetSegmentValueError(const QString &);
+	std::unordered_map<std::string, QWidget *> GetInlineWidgets() const;
 
 	VariableSelection *_variables;
 	VariableSelection *_variables2;
 	FilterComboBox *_actions;
 	VariableTextEdit *_strValue;
-	VariableDoubleSpinBox *_numValue;
-	MacroSegmentSelection *_segmentIdx;
-	QLabel *_segmentValueStatus;
-	ResizingPlainTextEdit *_segmentValue;
-	QVBoxLayout *_substringLayout;
-	QHBoxLayout *_subStringControlsLayout;
-	VariableSpinBox *_subStringStart;
-	VariableSpinBox *_subStringSize;
-	RegexConfigWidget *_subStringRegex;
-	ResizingPlainTextEdit *_regexPattern;
-	VariableSpinBox *_regexMatchIdx;
-	QHBoxLayout *_findReplaceLayout;
-	RegexConfigWidget *_findRegex;
-	VariableTextEdit *_findStr;
-	VariableTextEdit *_replaceStr;
-	VariableLineEdit *_mathExpression;
-	QLabel *_mathExpressionResult;
-	QHBoxLayout *_promptLayout;
-	QCheckBox *_useCustomPrompt;
-	VariableLineEdit *_inputPrompt;
-	QHBoxLayout *_placeholderLayout;
-	QCheckBox *_useInputPlaceholder;
-	VariableLineEdit *_inputPlaceholder;
-	QHBoxLayout *_inputTypeLayout;
-	QComboBox *_inputType;
-	StringListEdit *_inputOptions;
-	VariableLineEdit *_envVariable;
-	SceneSelectionWidget *_scenes;
-	TempVariableSelection *_tempVars;
-	HelpIcon *_tempVarsHelp;
-	VariableSpinBox *_sceneItemIndex;
-	QComboBox *_direction;
-	VariableSpinBox *_stringLength;
-	SingleCharSelection *_paddingCharSelection;
-	FilterComboBox *_caseType;
-	VariableDoubleSpinBox *_randomNumberStart;
-	VariableDoubleSpinBox *_randomNumberEnd;
-	QCheckBox *_generateInteger;
-	QVBoxLayout *_randomNumberLayout;
-	StringListEdit *_randomValues;
-	QCheckBox *_allowRepeatValues;
-	QVBoxLayout *_randomValueLayout;
-	VariableLineEdit *_jsonQuery;
-	HelpIcon *_jsonQueryHelp;
-	VariableSpinBox *_jsonIndex;
-	QCheckBox *_jsonExtractSingle;
-	HelpIcon *_jsonExtractSingleHelp;
-	QVBoxLayout *_jsonQueryLayout;
 	QHBoxLayout *_entryLayout;
+	std::vector<VariableActionGroupEdit *> _groupEdits;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
-	QTimer _timer;
 	bool _loading = true;
 };
 

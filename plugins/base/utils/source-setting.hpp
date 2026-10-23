@@ -20,6 +20,7 @@ public:
 	bool Save(obs_data_t *obj) const;
 	bool Load(obs_data_t *obj);
 	std::string GetID() const { return _id; }
+	obs_property_type GetType() const { return _type; }
 	bool IsList() const;
 	bool operator==(const SourceSetting &other) const;
 
@@ -60,6 +61,7 @@ signals:
 
 private:
 	void Populate(const OBSWeakSource &);
+	void Select(const SourceSetting &);
 
 	FilterComboBox *_settings;
 	HelpIcon *_tooltip;

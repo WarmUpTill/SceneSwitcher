@@ -121,6 +121,44 @@ ExtractSingleJsonArrayElement(const std::string &jsonStr)
 	return {};
 }
 
+std::optional<int> GetJsonArrayLength(const std::string &jsonStr)
+{
+	try {
+		nlohmann::json json = nlohmann::json::parse(jsonStr);
+		if (!json.is_array()) {
+			return {};
+		}
+		return static_cast<int>(json.size());
+	} catch (const nlohmann::json::exception &) {
+		return {};
+	}
+}
+
+std::optional<std::string> SetJsonField(const std::string &jsonStr,
+					const std::string &id,
+					const std::string &value)
+{
+	try {
+		auto json = jsonStr.empty() ? nlohmann::json::object()
+					    : nlohmann::json::parse(jsonStr);
+		if (!json.is_object()) {
+			return {};
+		}
+
+		// Store valid JSON values (numbers, objects, ...) as is and
+		// everything else as a plain string
+		auto parsedValue = nlohmann::json::parse(value, nullptr, false);
+		if (parsedValue.is_discarded()) {
+			json[id] = value;
+		} else {
+			json[id] = parsedValue;
+		}
+		return json.dump();
+	} catch (const nlohmann::json::exception &) {
+		return {};
+	}
+}
+
 static void collectStrings(const nlohmann::json &json,
 			   std::vector<std::pair<std::string, int>> &result,
 			   std::unordered_map<std::string, size_t> &index)

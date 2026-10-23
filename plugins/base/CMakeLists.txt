@@ -9,6 +9,8 @@ target_sources(
           macro-action-audio.hpp
           macro-action-clipboard.cpp
           macro-action-clipboard.hpp
+          macro-action-create-source.cpp
+          macro-action-create-source.hpp
           macro-action-file.cpp
           macro-action-file.hpp
           macro-action-filter.cpp

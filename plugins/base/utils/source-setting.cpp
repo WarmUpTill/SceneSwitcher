@@ -280,6 +280,59 @@ GetSourceSettingListEntryName(const OBSWeakSource &source,
 	return {};
 }
 
+static std::pair<obs_data_type, obs_data_number_type>
+getListDataType(obs_source_t *source, const SourceSetting &setting)
+{
+	const auto &[property, properties] =
+		findListPropertyById(source, setting.GetID());
+	if (!property) {
+		return {OBS_DATA_NULL, OBS_DATA_NUM_INVALID};
+	}
+
+	switch (obs_property_list_format(property)) {
+	case OBS_COMBO_FORMAT_INT:
+		return {OBS_DATA_NUMBER, OBS_DATA_NUM_INT};
+	case OBS_COMBO_FORMAT_FLOAT:
+		return {OBS_DATA_NUMBER, OBS_DATA_NUM_DOUBLE};
+	case OBS_COMBO_FORMAT_STRING:
+		return {OBS_DATA_STRING, OBS_DATA_NUM_INVALID};
+	case OBS_COMBO_FORMAT_BOOL:
+		return {OBS_DATA_BOOLEAN, OBS_DATA_NUM_INVALID};
+	default:
+		break;
+	}
+	return {OBS_DATA_NULL, OBS_DATA_NUM_INVALID};
+}
+
+// Used for settings which have neither a value nor a default value yet, e.g.
+// the "text" setting of a text source which was not created via the OBS UI
+static std::pair<obs_data_type, obs_data_number_type>
+getDataTypeFromProperty(obs_source_t *source, const SourceSetting &setting)
+{
+	switch (setting.GetType()) {
+	case OBS_PROPERTY_BOOL:
+		return {OBS_DATA_BOOLEAN, OBS_DATA_NUM_INVALID};
+	case OBS_PROPERTY_INT:
+	case OBS_PROPERTY_COLOR:
+	case OBS_PROPERTY_COLOR_ALPHA:
+		return {OBS_DATA_NUMBER, OBS_DATA_NUM_INT};
+	case OBS_PROPERTY_FLOAT:
+		return {OBS_DATA_NUMBER, OBS_DATA_NUM_DOUBLE};
+	case OBS_PROPERTY_TEXT:
+	case OBS_PROPERTY_PATH:
+		return {OBS_DATA_STRING, OBS_DATA_NUM_INVALID};
+	case OBS_PROPERTY_FONT:
+		return {OBS_DATA_OBJECT, OBS_DATA_NUM_INVALID};
+	case OBS_PROPERTY_EDITABLE_LIST:
+		return {OBS_DATA_ARRAY, OBS_DATA_NUM_INVALID};
+	case OBS_PROPERTY_LIST:
+		return getListDataType(source, setting);
+	default:
+		break;
+	}
+	return {OBS_DATA_NULL, OBS_DATA_NUM_INVALID};
+}
+
 void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 		      const std::string &value)
 {
@@ -289,6 +342,11 @@ void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 	obs_data_apply(dataWithDefaults, data);
 	auto item = obs_data_item_byname(dataWithDefaults, id.c_str());
 	auto type = obs_data_item_gettype(item);
+	auto numType = obs_data_item_numtype(item);
+	if (type == OBS_DATA_NULL) {
+		std::tie(type, numType) =
+			getDataTypeFromProperty(source, setting);
+	}
 	switch (type) {
 	case OBS_DATA_NULL:
 		vblog(LOG_WARNING,
@@ -298,8 +356,7 @@ void SetSourceSetting(obs_source_t *source, const SourceSetting &setting,
 		obs_data_set_string(data, id.c_str(), value.c_str());
 		break;
 	case OBS_DATA_NUMBER: {
-		auto type = obs_data_item_numtype(item);
-		switch (type) {
+		switch (numType) {
 		case OBS_DATA_NUM_INVALID:
 			break;
 		case OBS_DATA_NUM_INT: {
@@ -455,9 +512,8 @@ void SourceSettingSelection::SetSource(const OBSWeakSource &source,
 {
 	const auto previousSelection = _settings->currentData();
 	Populate(source);
-	if (restorePreviousSelection) {
-		_settings->setCurrentIndex(
-			_settings->findData(previousSelection));
+	if (restorePreviousSelection && previousSelection.isValid()) {
+		Select(previousSelection.value<SourceSetting>());
 	}
 }
 
@@ -465,9 +521,30 @@ void SourceSettingSelection::SetSelection(const OBSWeakSource &source,
 					  const SourceSetting &setting)
 {
 	SetSource(source, false);
+	Select(setting);
+}
+
+void SourceSettingSelection::Select(const SourceSetting &setting)
+{
 	QVariant variant;
 	variant.setValue(setting);
-	_settings->setCurrentIndex(_settings->findData(variant));
+	int idx = _settings->findData(variant);
+
+	// Keep showing the selected setting even if the source does not provide
+	// at the moment.
+	// So when a variable acts as the source the UI does not just show the
+	// placeholder value
+	if (idx == -1 && !setting._id.empty()) {
+		const auto &name = setting._description.empty()
+					   ? setting._id
+					   : setting._description;
+		_settings->addItem(QString::fromStdString(name), variant);
+		idx = _settings->count() - 1;
+		adjustSize();
+		updateGeometry();
+	}
+
+	_settings->setCurrentIndex(idx);
 }
 
 void SourceSettingSelection::SelectionIdxChanged(int idx)
