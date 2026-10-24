@@ -89,6 +89,24 @@ SpeechRecognizer::~SpeechRecognizer()
 	}
 }
 
+static whisper_context *initWhisper(const std::string &modelPath, bool useGpu)
+{
+	whisper_context_params cparams = whisper_context_default_params();
+	cparams.use_gpu = useGpu;
+
+	try {
+		return whisper_init_from_file_with_params(modelPath.c_str(),
+							  cparams);
+	} catch (const std::exception &e) {
+		blog(LOG_WARNING, "exception while loading whisper model: %s",
+		     e.what());
+	} catch (...) {
+		blog(LOG_WARNING,
+		     "unknown exception while loading whisper model");
+	}
+	return nullptr;
+}
+
 bool SpeechRecognizer::LoadModel(const std::string &modelPath)
 {
 	std::lock_guard<std::mutex> lock(_ctxMutex);
@@ -100,9 +118,13 @@ bool SpeechRecognizer::LoadModel(const std::string &modelPath)
 
 	whisper_log_set(whisperLogCallback, nullptr);
 
-	whisper_context_params cparams = whisper_context_default_params();
-	cparams.use_gpu = _useGpu;
-	_ctx = whisper_init_from_file_with_params(modelPath.c_str(), cparams);
+	const bool useGpu = _useGpu;
+	_ctx = initWhisper(modelPath, useGpu);
+	if (!_ctx && useGpu) {
+		blog(LOG_WARNING,
+		     "failed to load whisper model with GPU, falling back to CPU");
+		_ctx = initWhisper(modelPath, false);
+	}
 	if (!_ctx) {
 		blog(LOG_WARNING, "failed to load whisper model: %s",
 		     modelPath.c_str());
@@ -217,7 +239,6 @@ void SpeechRecognizer::SetListenWhenMuted(bool listen)
 
 void SpeechRecognizer::SetUseGpu(bool useGpu)
 {
-	std::lock_guard<std::mutex> lock(_ctxMutex);
 	_useGpu = useGpu;
 }
 
@@ -371,8 +392,19 @@ void SpeechRecognizer::InferenceLoop()
 			std::min(1500, (int)((float)buffer.size() /
 					     (float)whisperSampleRate * 50.0f));
 
-		int rc = whisper_full(_ctx, params, buffer.data(),
-				      (int)buffer.size());
+		int rc = -1;
+		try {
+			rc = whisper_full(_ctx, params, buffer.data(),
+					  (int)buffer.size());
+		} catch (const std::exception &e) {
+			blog(LOG_WARNING, "exception during whisper_full: %s",
+			     e.what());
+			continue;
+		} catch (...) {
+			blog(LOG_WARNING,
+			     "unknown exception during whisper_full");
+			continue;
+		}
 		if (rc != 0) {
 			blog(LOG_WARNING, "whisper_full returned %d", rc);
 			continue;

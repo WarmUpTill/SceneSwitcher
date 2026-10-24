@@ -74,7 +74,7 @@ private:
 	bool _suppressNonSpeechTokens = true;
 	bool _noContext = true;
 	bool _listenWhenMuted = false;
-	bool _useGpu = true;
+	std::atomic_bool _useGpu{true};
 
 	OBSWeakSource _captureSource;
 	int _sourceSampleRate = 44100;
