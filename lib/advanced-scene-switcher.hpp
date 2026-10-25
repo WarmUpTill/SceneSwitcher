@@ -61,6 +61,7 @@ public slots:
 	void on_saveWindowGeo_stateChanged(int state);
 	void on_showTrayNotifications_stateChanged(int state);
 	void on_uiHintsDisable_stateChanged(int state);
+	void on_inactiveStatusBlinkDisable_stateChanged(int state);
 	void on_disableComboBoxFilter_stateChanged(int state);
 	void on_warnPluginLoadFailure_stateChanged(int state);
 	void on_suppressCrashRecoveryDialog_stateChanged(int state);

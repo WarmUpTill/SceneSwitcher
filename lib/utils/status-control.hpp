@@ -25,6 +25,7 @@ private:
 	void SetStopped();
 	void SetStarted();
 	void SetStatusStyleSheet(bool stopped) const;
+	void UpdateStatusHighlight();
 
 	QPushButton *_button;
 	QHBoxLayout *_buttonLayout;

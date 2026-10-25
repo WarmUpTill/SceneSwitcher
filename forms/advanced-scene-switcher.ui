@@ -320,6 +320,16 @@
                </widget>
               </item>
               <item>
+               <widget class="QCheckBox" name="inactiveStatusBlinkDisable">
+                <property name="toolTip">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableInactiveStatusBlink.tooltip</string>
+                </property>
+                <property name="text">
+                 <string>AdvSceneSwitcher.generalTab.generalBehavior.disableInactiveStatusBlink</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QCheckBox" name="hideLegacyTabs">
                 <property name="text">
                  <string>AdvSceneSwitcher.generalTab.generalBehavior.hideLegacyTabs</string>

@@ -161,6 +161,7 @@ public:
 	QStringList loadFailureLibs;
 	bool warnPluginLoadFailure = true;
 	bool disableHints = false;
+	bool disableInactiveStatusBlink = false;
 	bool disableFilterComboboxFilter = false;
 	bool hideLegacyTabs = true;
 	bool settingsLockEnabled = false;

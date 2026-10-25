@@ -134,17 +134,13 @@ void StatusControl::ButtonClicked()
 
 void StatusControl::UpdateStatus()
 {
-	if (PluginIsRunning()) {
-		if (!_setToStopped) {
-			return;
-		}
+	const bool running = PluginIsRunning();
+	if (running && _setToStopped) {
 		SetStarted();
-	} else {
-		if (_setToStopped) {
-			return;
-		}
+	} else if (!running && !_setToStopped) {
 		SetStopped();
 	}
+	UpdateStatusHighlight();
 }
 
 void StatusControl::SetStarted()
@@ -152,12 +148,9 @@ void StatusControl::SetStarted()
 	_button->setText(
 		obs_module_text("AdvSceneSwitcher.generalTab.status.stop"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.active"));
-	if (_pulse) {
-		_pulse->deleteLater();
-		_pulse = nullptr;
-	}
 	SetStatusStyleSheet(false);
 	_setToStopped = false;
+	UpdateStatusHighlight();
 }
 
 void StatusControl::SetStopped()
@@ -166,11 +159,21 @@ void StatusControl::SetStopped()
 		obs_module_text("AdvSceneSwitcher.generalTab.status.start"));
 	_status->setText(obs_module_text("AdvSceneSwitcher.status.inactive"));
 	SetStatusStyleSheet(true);
-	if (HighlightUIElementsEnabled()) {
-		_pulse = HighlightWidget(_status, QColor(Qt::red),
-					 QColor(0, 0, 0, 0));
-	}
 	_setToStopped = true;
+	UpdateStatusHighlight();
+}
+
+void StatusControl::UpdateStatusHighlight()
+{
+	if (_setToStopped && InactiveStatusBlinkEnabled()) {
+		if (!_pulse) {
+			_pulse = HighlightWidget(_status, QColor(Qt::red),
+						 QColor(0, 0, 0, 0));
+		}
+	} else if (_pulse) {
+		delete _pulse;
+		_pulse = nullptr;
+	}
 }
 
 void StatusControl::SetStatusStyleSheet(bool stopped) const
