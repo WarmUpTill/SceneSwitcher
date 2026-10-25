@@ -181,6 +181,15 @@ void AdvSceneSwitcher::on_uiHintsDisable_stateChanged(int state)
 	switcher->disableHints = state;
 }
 
+void AdvSceneSwitcher::on_inactiveStatusBlinkDisable_stateChanged(int state)
+{
+	if (loading) {
+		return;
+	}
+
+	switcher->disableInactiveStatusBlink = state;
+}
+
 void AdvSceneSwitcher::on_disableComboBoxFilter_stateChanged(int state)
 {
 	if (loading) {
@@ -626,6 +635,8 @@ void SwitcherData::SaveGeneralSettings(obs_data_t *obj)
 	obs_data_set_bool(obj, "showSystemTrayNotifications",
 			  showSystemTrayNotifications);
 	obs_data_set_bool(obj, "disableHints", disableHints);
+	obs_data_set_bool(obj, "disableInactiveStatusBlink",
+			  disableInactiveStatusBlink);
 	obs_data_set_bool(obj, "disableFilterComboboxFilter",
 			  disableFilterComboboxFilter);
 	obs_data_set_bool(obj, "warnPluginLoadFailure", warnPluginLoadFailure);
@@ -698,6 +709,8 @@ void SwitcherData::LoadGeneralSettings(obs_data_t *obj)
 	showSystemTrayNotifications =
 		obs_data_get_bool(obj, "showSystemTrayNotifications");
 	disableHints = obs_data_get_bool(obj, "disableHints");
+	disableInactiveStatusBlink =
+		obs_data_get_bool(obj, "disableInactiveStatusBlink");
 	disableFilterComboboxFilter =
 		obs_data_get_bool(obj, "disableFilterComboboxFilter");
 	obs_data_set_default_bool(obj, "warnPluginLoadFailure", true);
@@ -1021,6 +1034,8 @@ void AdvSceneSwitcher::SetupGeneralTab()
 	ui->showTrayNotifications->setChecked(
 		switcher->showSystemTrayNotifications);
 	ui->uiHintsDisable->setChecked(switcher->disableHints);
+	ui->inactiveStatusBlinkDisable->setChecked(
+		switcher->disableInactiveStatusBlink);
 	ui->disableComboBoxFilter->setChecked(
 		switcher->disableFilterComboboxFilter);
 	FilterComboBox::SetFilterBehaviourEnabled(

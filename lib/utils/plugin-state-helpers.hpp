@@ -49,6 +49,7 @@ EXPORT std::string PreviousForegroundWindowTitle();
 
 EXPORT bool SettingsWindowIsOpened();
 EXPORT bool HighlightUIElementsEnabled();
+EXPORT bool InactiveStatusBlinkEnabled();
 
 EXPORT bool OBSIsShuttingDown();
 EXPORT bool InitialLoadIsComplete();

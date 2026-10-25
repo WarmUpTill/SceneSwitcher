@@ -338,6 +338,12 @@ bool HighlightUIElementsEnabled()
 	return GetSwitcher() && !GetSwitcher()->disableHints;
 }
 
+bool InactiveStatusBlinkEnabled()
+{
+	return HighlightUIElementsEnabled() &&
+	       !GetSwitcher()->disableInactiveStatusBlink;
+}
+
 bool OBSIsShuttingDown()
 {
 	return !GetSwitcher() || GetSwitcher()->obsIsShuttingDown;
