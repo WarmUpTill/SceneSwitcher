@@ -80,6 +80,7 @@ private:
 	int _dragPosition = -1;
 	int _dropLineIdx = -1;
 	QPoint _dragCursorPos;
+	QPoint _dragStartPos;
 	std::thread _autoScrollThread;
 	std::atomic_bool _autoScroll{false};
 
