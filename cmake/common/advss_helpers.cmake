@@ -320,7 +320,7 @@ function(setup_advss_plugin target)
   target_include_directories(
     ${target}
     PRIVATE "${ADVSS_BINARY_DIR}/advanced-scene-switcher-lib_autogen/include")
-  foreach(_CONF Release RelWithDebInfo Debug MinSizeRe)
+  foreach(_CONF Release RelWithDebInfo Debug MinSizeRel)
     target_include_directories(
       ${target}
       PRIVATE
