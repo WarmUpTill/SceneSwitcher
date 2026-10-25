@@ -115,8 +115,9 @@ jobs:
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-ccache-${{ needs.check-event.outputs.config }}-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-ccache-${{ needs.check-event.outputs.config }}-
             ${{ runner.os }}-ccache-
 
       - name: Build Dependencies 🏗️
@@ -206,9 +207,10 @@ jobs:
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-ubuntu-24.04-ccache-x86_64-${{ needs.check-event.outputs.config }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-ccache-x86_64-
+            ${{ runner.os }}-ubuntu-24.04-ccache-x86_64-${{ needs.check-event.outputs.config }}-
+            ${{ runner.os }}-ubuntu-24.04-ccache-x86_64-
 
       - name: Set up Homebrew 🍺
         uses: Homebrew/actions/setup-homebrew@main
@@ -296,9 +298,10 @@ jobs:
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-ubuntu-26.04-ccache-x86_64-${{ needs.check-event.outputs.config }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-ccache-x86_64-
+            ${{ runner.os }}-ubuntu-26.04-ccache-x86_64-${{ needs.check-event.outputs.config }}-
+            ${{ runner.os }}-ubuntu-26.04-ccache-x86_64-
 
       - name: Set up Homebrew 🍺
         uses: Homebrew/actions/setup-homebrew@main

@@ -7,6 +7,11 @@ include(compiler_common)
 
 add_compile_options(-fopenmp-simd)
 
+if(ENABLE_CCACHE AND CCACHE_PROGRAM)
+  # ccache cannot cache compiles using a PCH that embeds a timestamp
+  add_compile_options("SHELL:-Xclang -fno-pch-timestamp")
+endif()
+
 if(XCODE)
   # Use Xcode's standard architecture selection
   set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD)")

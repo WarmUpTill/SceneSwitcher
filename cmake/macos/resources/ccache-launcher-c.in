@@ -10,7 +10,7 @@ export CCACHE_DIRECT=true
 export CCACHE_FILECLONE=true
 export CCACHE_INODECACHE=true
 export CCACHE_NOCOMPILERCHECK='content'
-export CCACHE_SLOPPINESS='include_file_mtime,include_file_ctime,clang_index_store,system_headers'
+export CCACHE_SLOPPINESS='include_file_mtime,include_file_ctime,clang_index_store,system_headers,modules,pch_defines,time_macros'
 if [[ "${CI}" ]]; then
     export CCACHE_NOHASHDIR=true
 fi

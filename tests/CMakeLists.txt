@@ -37,13 +37,14 @@ endif()
 target_include_directories(
   ${PROJECT_NAME}
   PRIVATE "${ADVSS_BINARY_DIR}/advanced-scene-switcher-lib_autogen/include")
-foreach(_conf Release RelWithDebInfo Debug MinSizeRe)
+foreach(_conf Release RelWithDebInfo Debug MinSizeRel)
   target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
       "${ADVSS_BINARY_DIR}/advanced-scene-switcher-lib_autogen/include_${_conf}"
   )
 endforeach()
+add_dependencies(${PROJECT_NAME} advanced-scene-switcher-lib)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC Qt::Core Qt::Widgets)
 
