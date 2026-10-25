@@ -74,6 +74,7 @@ private slots:
 	void MaxYChanged(const NumberVariable<int> &pos);
 	void UpdateCursorPos();
 	void ToggleFrame();
+	void DrawFrame();
 
 protected:
 	VariableSpinBox *_minX;
@@ -83,6 +84,7 @@ protected:
 	QComboBox *_conditions;
 	QComboBox *_buttons;
 	QPushButton *_frameToggle;
+	QPushButton *_drawFrame;
 	QLabel *_xPos;
 	QLabel *_yPos;
 	QHBoxLayout *_curentPosLayout;

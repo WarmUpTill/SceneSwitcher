@@ -180,6 +180,8 @@ target_sources(
           utils/process-config.hpp
           utils/profile-helpers.cpp
           utils/profile-helpers.hpp
+          utils/screen-region-selection.cpp
+          utils/screen-region-selection.hpp
           utils/scene-item-selection.cpp
           utils/scene-item-selection.hpp
           utils/scene-item-transform-helpers.cpp
