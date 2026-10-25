@@ -197,7 +197,7 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 	connect(_drawFrame, &QPushButton::clicked, this,
 		&MacroConditionCursorEdit::DrawFrame, Qt::QueuedConnection);
 
-	std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
+	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{conditions}}", _conditions},
 		{"{{buttons}}", _buttons},
 		{"{{minX}}", _minX},
@@ -207,16 +207,16 @@ MacroConditionCursorEdit::MacroConditionCursorEdit(
 		{"{{xPos}}", _xPos},
 		{"{{yPos}}", _yPos},
 		{"{{toggleFrameButton}}", _frameToggle},
+		{"{{drawFrameButton}}", _drawFrame},
 	};
-	QHBoxLayout *line1 = new QHBoxLayout;
+	auto line1 = new QHBoxLayout;
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.cursor.entry.line1"),
+			     "AdvSceneSwitcher.condition.cursor.layout.line1"),
 		     line1, widgetPlaceholders);
 	PlaceWidgets(obs_module_text(
-			     "AdvSceneSwitcher.condition.cursor.entry.line2"),
+			     "AdvSceneSwitcher.condition.cursor.layout.line2"),
 		     _curentPosLayout, widgetPlaceholders);
-	_curentPosLayout->addWidget(_drawFrame);
-	QVBoxLayout *mainLayout = new QVBoxLayout;
+	auto mainLayout = new QVBoxLayout;
 	mainLayout->addLayout(line1);
 	mainLayout->addLayout(_curentPosLayout);
 	setLayout(mainLayout);
@@ -345,8 +345,6 @@ void MacroConditionCursorEdit::SetWidgetVisibility()
 	_minY->setVisible(isRegionCondition);
 	_maxX->setVisible(isRegionCondition);
 	_maxY->setVisible(isRegionCondition);
-	_frameToggle->setVisible(isRegionCondition);
-	_drawFrame->setVisible(isRegionCondition);
 	SetLayoutVisible(_curentPosLayout, isRegionCondition);
 	if (_frame.isVisible()) {
 		ToggleFrame();
