@@ -3,6 +3,7 @@
 #include "ui-helpers.hpp"
 
 #include <QEvent>
+#include <QApplication>
 #include <QDrag>
 #include <QGridLayout>
 #include <QMimeData>
@@ -277,6 +278,7 @@ void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton ||
 	    event->button() == Qt::RightButton) {
+		_dragStartPos = event->globalPosition().toPoint();
 		_dragPosition = GetDragIndex(event->globalPosition().toPoint());
 		emit SelectionChanged(_dragPosition);
 	} else {
@@ -287,6 +289,11 @@ void MacroSegmentList::mousePressEvent(QMouseEvent *event)
 void MacroSegmentList::mouseMoveEvent(QMouseEvent *event)
 {
 	if (event->buttons() & Qt::LeftButton && _dragPosition != -1) {
+		if ((event->globalPosition().toPoint() - _dragStartPos)
+			    .manhattanLength() <
+		    QApplication::startDragDistance()) {
+			return;
+		}
 		auto item = _contentLayout->itemAt(_dragPosition);
 		if (!item) {
 			return;
