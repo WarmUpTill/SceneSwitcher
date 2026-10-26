@@ -254,6 +254,9 @@ MacroActionProjectorEdit::MacroActionProjectorEdit(
 	// scenes of secondary canvases
 	_scenes->LockToMainCanvas();
 
+	setToolTip(
+		obs_module_text("AdvSceneSwitcher.action.projector.tooltip"));
+
 	populateActionSelection(_actions);
 	populateWindowTypes(_windowTypes);
 	populateSelectionTypes(_types);
