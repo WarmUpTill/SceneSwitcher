@@ -100,7 +100,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "ADVSS_ENABLE_TESTS": true
+        "ADVSS_ENABLE_TESTS": true,
+        "CMAKE_C_FLAGS": "-march=x86-64 -mtune=generic",
+        "CMAKE_CXX_FLAGS": "-march=x86-64 -mtune=generic",
+        "GGML_NATIVE": false
       }
     },
     {
