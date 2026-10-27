@@ -1,6 +1,7 @@
 #include "macro-condition-speech.hpp"
 
 #include "layout-helpers.hpp"
+#include "log-helper.hpp"
 #include "macro-helpers.hpp"
 #include "selection-helpers.hpp"
 
@@ -31,12 +32,33 @@ static QStringList getAudioSourcesList()
 	return sources;
 }
 
+// On Linux, whisper.cpp's CPU backend is built with AVX2 and related
+// instruction set extensions, so running it on CPUs without them would crash
+// OBS with SIGILL
+static bool cpuSupported()
+{
+#if defined(__linux__) && defined(__x86_64__)
+	__builtin_cpu_init();
+	if (!__builtin_cpu_supports("sse4.2") ||
+	    !__builtin_cpu_supports("avx") || !__builtin_cpu_supports("avx2") ||
+	    !__builtin_cpu_supports("bmi2") || !__builtin_cpu_supports("fma") ||
+	    !__builtin_cpu_supports("f16c")) {
+		blog(LOG_WARNING,
+		     "speech condition disabled as the CPU lacks required instruction set extensions (AVX2, FMA, ...)");
+		return false;
+	}
+#endif
+	return true;
+}
+
 const std::string MacroConditionSpeech::id = "speech";
 
-bool MacroConditionSpeech::_registered = MacroConditionFactory::Register(
-	MacroConditionSpeech::id,
-	{MacroConditionSpeech::Create, MacroConditionSpeechEdit::Create,
-	 "AdvSceneSwitcher.condition.speech"});
+bool MacroConditionSpeech::_registered =
+	cpuSupported() &&
+	MacroConditionFactory::Register(MacroConditionSpeech::id,
+					{MacroConditionSpeech::Create,
+					 MacroConditionSpeechEdit::Create,
+					 "AdvSceneSwitcher.condition.speech"});
 
 MacroConditionSpeech::MacroConditionSpeech(Macro *m)
 	: MacroCondition(m),
