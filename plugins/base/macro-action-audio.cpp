@@ -273,7 +273,7 @@ bool MacroActionAudio::PerformAction()
 		setSyncOffsetHelper(s, _syncOffset * nsPerMs);
 		break;
 	case Action::MONITOR:
-		obs_source_set_monitoring_type(s, _monitorType);
+		SetMonitoringType(s, _monitorType);
 		break;
 	case Action::BALANCE:
 		obs_source_set_balance_value(s, _balance);
@@ -337,8 +337,9 @@ bool MacroActionAudio::Load(obs_data_t *obj)
 	_duration.Load(obj);
 	_audioSource.Load(obj, "audioSource");
 	_action = static_cast<Action>(obs_data_get_int(obj, "action"));
-	_monitorType = static_cast<obs_monitoring_type>(
-		obs_data_get_int(obj, "monitor"));
+	_monitorType =
+		ToSupportedMonitoringType(static_cast<obs_monitoring_type>(
+			obs_data_get_int(obj, "monitor")));
 	if (!obs_data_has_user_value(obj, "version")) {
 		_syncOffset = obs_data_get_int(obj, "syncOffset");
 		_balance = obs_data_get_double(obj, "balance");
@@ -658,7 +659,8 @@ void MacroActionAudioEdit::UpdateEntryData()
 	_actions->setCurrentIndex(
 		_actions->findData(static_cast<int>(_entryData->_action)));
 	_syncOffset->SetValue(_entryData->_syncOffset);
-	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
+	_monitorTypes->setCurrentIndex(
+		_monitorTypes->findData(_entryData->_monitorType));
 	_balance->SetDoubleValue(_entryData->_balance);
 	_track->SetValue(_entryData->_track);
 	_volumePercent->SetValue(_entryData->_volume);
@@ -697,7 +699,8 @@ void MacroActionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value)
 void MacroActionAudioEdit::MonitorTypeChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
+	_entryData->_monitorType = static_cast<obs_monitoring_type>(
+		_monitorTypes->itemData(value).toInt());
 }
 
 void MacroActionAudioEdit::BalanceChanged(const NumberVariable<double> &value)

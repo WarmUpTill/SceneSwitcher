@@ -156,7 +156,7 @@ bool MacroActionPlayAudio::PerformAction()
 	const float vol =
 		DecibelToPercent(static_cast<float>(_volumeDB.GetValue()));
 	obs_source_set_volume(source, vol);
-	obs_source_set_monitoring_type(source, _monitorType);
+	SetMonitoringType(source, _monitorType);
 	if (_mono) {
 		obs_source_set_flags(source, OBS_SOURCE_FLAG_FORCE_MONO);
 	}
@@ -167,8 +167,7 @@ bool MacroActionPlayAudio::PerformAction()
 		(_audioMixers != 0);
 	if (!wantsOutput &&
 	    _monitorType == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT) {
-		obs_source_set_monitoring_type(
-			source, OBS_MONITORING_TYPE_MONITOR_ONLY);
+		SetMonitoringType(source, OBS_MONITORING_TYPE_MONITOR_ONLY);
 	}
 
 	if (wantsOutput) {
@@ -316,7 +315,8 @@ MacroActionPlayAudioEdit::MacroActionPlayAudioEdit(
 	_volumeDB->setSpecialValueText("-inf");
 
 	if (obs_audio_monitoring_available()) {
-		PopulateMonitorTypeSelection(_monitorTypes);
+		// Monitor only is implemented by not routing to the output scene
+		PopulateMonitorTypeSelection(_monitorTypes, true);
 	} else {
 		_monitorTypes->addItem(obs_module_text(
 			"AdvSceneSwitcher.action.playAudio.monitorUnavailable"));

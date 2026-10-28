@@ -220,10 +220,10 @@ bool MacroConditionAudio::CheckMonitor()
 	bool ret = false;
 	OBSSourceAutoRelease source =
 		obs_weak_source_get_source(_audioSource.GetSource());
-	ret = obs_source_get_monitoring_type(source) == _monitorType;
+	const auto monitorType = GetMonitoringType(source);
+	ret = monitorType == _monitorType;
 	SetVariableValue("");
-	SetTempVarValue("monitor",
-			std::to_string(obs_source_get_monitoring_type(source)));
+	SetTempVarValue("monitor", std::to_string(monitorType));
 	return ret && source;
 }
 
@@ -332,8 +332,9 @@ bool MacroConditionAudio::Load(obs_data_t *obj)
 {
 	MacroCondition::Load(obj);
 	_audioSource.Load(obj, "audioSource");
-	_monitorType = static_cast<obs_monitoring_type>(
-		obs_data_get_int(obj, "monitor"));
+	_monitorType =
+		ToSupportedMonitoringType(static_cast<obs_monitoring_type>(
+			obs_data_get_int(obj, "monitor")));
 	if (!obs_data_has_user_value(obj, "version")) {
 		_volumePercent = obs_data_get_int(obj, "volume");
 		_syncOffset = obs_data_get_int(obj, "syncOffset");
@@ -620,7 +621,8 @@ void MacroConditionAudioEdit::SyncOffsetChanged(const NumberVariable<int> &value
 void MacroConditionAudioEdit::MonitorTypeChanged(int value)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_monitorType = static_cast<obs_monitoring_type>(value);
+	_entryData->_monitorType = static_cast<obs_monitoring_type>(
+		_monitorTypes->itemData(value).toInt());
 }
 
 void MacroConditionAudioEdit::BalanceChanged(const NumberVariable<double> &value)
@@ -735,7 +737,8 @@ void MacroConditionAudioEdit::UpdateEntryData()
 	_volumePercent->SetValue(_entryData->_volumePercent);
 	_volumeDB->SetValue(_entryData->_volumeDB);
 	_syncOffset->SetValue(_entryData->_syncOffset);
-	_monitorTypes->setCurrentIndex(_entryData->_monitorType);
+	_monitorTypes->setCurrentIndex(
+		_monitorTypes->findData(_entryData->_monitorType));
 	_balance->SetDoubleValue(_entryData->_balance);
 	_track->SetValue(_entryData->_track);
 	_checkTypes->setCurrentIndex(
