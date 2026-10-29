@@ -413,9 +413,12 @@ void AdvSceneSwitcher::on_importSettings_clicked()
 	// the new settings are loaded
 	ui->macros->clearSelection();
 
-	std::lock_guard<std::mutex> lock(switcher->m);
-	switcher->LoadSettings(obj);
-	switcher->lastImportPath = path.toStdString();
+	{
+		// DisplayMessage() runs an event loop whose slots take this lock
+		std::lock_guard<std::mutex> lock(switcher->m);
+		switcher->LoadSettings(obj);
+		switcher->lastImportPath = path.toStdString();
+	}
 
 	(void)DisplayMessage(obs_module_text(
 		"AdvSceneSwitcher.generalTab.saveOrLoadsettings.loadSuccess"));
