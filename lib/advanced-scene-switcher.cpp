@@ -431,6 +431,10 @@ void AutoStartActionQueues();
 
 void SwitcherData::Start()
 {
+	if (obsIsShuttingDown) {
+		return;
+	}
+
 	if (!(th && th->isRunning())) {
 		RunIntervalResetSteps();
 		ResetMacros();
@@ -591,10 +595,12 @@ static void handleShutdown()
 		return;
 	}
 	switcher->obsIsShuttingDown = true;
+	// Nothing may run once obs_shutdown() starts freeing sources and audio
+	switcher->Stop();
 	if (ShutdownCheckIsNecessary()) {
-		switcher->Stop();
 		CheckMacros();
 		RunMacros();
+		WaitForAllMacros();
 
 		// Unfortunately this will not work as OBS will now allow saving
 		// the scene collection data at this point, So any OBS specific
