@@ -598,6 +598,7 @@ static void handleShutdown()
 	// Nothing may run once obs_shutdown() starts freeing sources and audio
 	switcher->Stop();
 	if (ShutdownCheckIsNecessary()) {
+		blog(LOG_INFO, "running shutdown macros");
 		CheckMacros();
 		RunMacros();
 		WaitForAllMacros();

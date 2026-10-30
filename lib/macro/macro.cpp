@@ -1439,9 +1439,11 @@ void SignalStopAllMacros()
 
 void WaitForAllMacros()
 {
+	blog(LOG_INFO, "waiting for all macros to stop");
 	for (const auto &m : GetAllMacros()) {
 		m->Stop();
 	}
+	blog(LOG_INFO, "all macros stopped");
 }
 
 void InvalidateMacroTempVarValues()
