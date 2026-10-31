@@ -156,9 +156,9 @@ MqttConnectionsTable::MqttConnectionsTable(QTabWidget *parent)
 		  parent,
 		  obs_module_text("AdvSceneSwitcher.mqttConnectionTab.help"),
 		  obs_module_text(
-			  "AdvSceneSwitcher.mqttConnectionTab.websocketConnectionAddButton.tooltip"),
+			  "AdvSceneSwitcher.mqttConnectionTab.mqttConnectionAddButton.tooltip"),
 		  obs_module_text(
-			  "AdvSceneSwitcher.mqttConnectionTab.websocketConnectionRemoveButton.tooltip"),
+			  "AdvSceneSwitcher.mqttConnectionTab.mqttConnectionRemoveButton.tooltip"),
 		  headers, openSettingsDialog)
 {
 	for (const auto &connection : GetMqttConnections()) {

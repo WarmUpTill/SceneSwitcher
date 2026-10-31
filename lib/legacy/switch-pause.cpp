@@ -298,7 +298,7 @@ void populatePauseTargets(QComboBox *list)
 	list->addItem(
 		obs_module_text("AdvSceneSwitcher.sceneSequenceTab.title"));
 	list->addItem(obs_module_text("AdvSceneSwitcher.audioTab.title"));
-	list->addItem(obs_module_text("AdvSceneSwitcher.VideoTab.title"));
+	list->addItem(obs_module_text("AdvSceneSwitcher.videoTab.title"));
 }
 
 PauseEntryWidget::PauseEntryWidget(QWidget *parent, PauseEntry *s)
