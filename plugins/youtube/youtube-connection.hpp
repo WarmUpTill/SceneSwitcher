@@ -37,6 +37,8 @@ public:
 	std::string GetChannelID() const;
 	bool WarnIfInvalid() const { return _warnIfInvalid; }
 	void SetWarnIfInvalid(bool value) { _warnIfInvalid = value; }
+	void PauseRequests(std::chrono::seconds duration);
+	bool RequestsArePaused() const;
 
 private:
 	std::string _customClientId;
@@ -49,6 +51,8 @@ private:
 	std::string _accessToken;
 	std::chrono::system_clock::time_point _accessTokenExpiry;
 	bool _refreshTokenRevoked = false;
+	std::chrono::steady_clock::time_point _lastRefreshFailure;
+	std::chrono::steady_clock::time_point _requestsPausedUntil;
 
 	friend YouTubeConnectionSettingsDialog;
 };

@@ -31,7 +31,7 @@ public:
 	void Save(obs_data_t *obj) const;
 	void ResolveVariables();
 	std::optional<YouTubeBroadcastInfo>
-	GetInfo(YouTubeConnection &connection) const;
+	GetInfo(YouTubeConnection &connection, bool useCache = false) const;
 
 private:
 	Type _type = Type::BOUND_TO_OBS_STREAM_KEY;

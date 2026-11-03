@@ -38,13 +38,14 @@ static YouTubeBroadcastInfo parseBroadcast(obs_data_t *item)
 }
 
 static std::vector<YouTubeBroadcastInfo>
-listBroadcasts(YouTubeConnection &connection, httplib::Params params)
+listBroadcasts(YouTubeConnection &connection, httplib::Params params,
+	       bool useCache)
 {
 	params.emplace("part", broadcastParts);
 	params.emplace("maxResults", "50");
-	const auto result = SendYouTubeRequest(connection,
-					       YouTubeRequestMethod::GET,
-					       "/liveBroadcasts", params);
+	const auto result =
+		SendYouTubeRequest(connection, YouTubeRequestMethod::GET,
+				   "/liveBroadcasts", params, "", useCache);
 	if (result.status != 200) {
 		return {};
 	}
@@ -72,11 +73,12 @@ static std::string getObsStreamKey()
 }
 
 static std::string requestStreamId(YouTubeConnection &connection,
-				   const std::string &streamKey)
+				   const std::string &streamKey, bool useCache)
 {
 	const auto result = SendYouTubeRequest(
 		connection, YouTubeRequestMethod::GET, "/liveStreams",
-		{{"part", "cdn"}, {"mine", "true"}, {"maxResults", "50"}});
+		{{"part", "cdn"}, {"mine", "true"}, {"maxResults", "50"}}, "",
+		useCache);
 	if (result.status != 200) {
 		return "";
 	}
@@ -98,7 +100,7 @@ static std::string requestStreamId(YouTubeConnection &connection,
 }
 
 static std::string getStreamId(YouTubeConnection &connection,
-			       const std::string &streamKey)
+			       const std::string &streamKey, bool useCache)
 {
 	// The stream belonging to a stream key does not change, so there is
 	// no need to spend API quota on looking it up again
@@ -114,7 +116,7 @@ static std::string getStreamId(YouTubeConnection &connection,
 		}
 	}
 
-	const auto streamId = requestStreamId(connection, streamKey);
+	const auto streamId = requestStreamId(connection, streamKey, useCache);
 	if (streamId.empty()) {
 		return "";
 	}
@@ -125,7 +127,7 @@ static std::string getStreamId(YouTubeConnection &connection,
 }
 
 static std::optional<YouTubeBroadcastInfo>
-getBroadcastBoundToObsStreamKey(YouTubeConnection &connection)
+getBroadcastBoundToObsStreamKey(YouTubeConnection &connection, bool useCache)
 {
 	const auto streamKey = getObsStreamKey();
 	if (streamKey.empty()) {
@@ -133,7 +135,7 @@ getBroadcastBoundToObsStreamKey(YouTubeConnection &connection)
 		return {};
 	}
 
-	const auto streamId = getStreamId(connection, streamKey);
+	const auto streamId = getStreamId(connection, streamKey, useCache);
 	if (streamId.empty()) {
 		vblog(LOG_INFO,
 		      "OBS stream key does not belong to YouTube channel \"%s\"",
@@ -142,9 +144,10 @@ getBroadcastBoundToObsStreamKey(YouTubeConnection &connection)
 	}
 
 	for (const auto status : {"active", "upcoming"}) {
-		const auto broadcasts =
-			listBroadcasts(connection, {{"broadcastStatus", status},
-						    {"broadcastType", "all"}});
+		const auto broadcasts = listBroadcasts(
+			connection,
+			{{"broadcastStatus", status}, {"broadcastType", "all"}},
+			useCache);
 		for (const auto &broadcast : broadcasts) {
 			if (broadcast.boundStreamId == streamId) {
 				return broadcast;
@@ -155,11 +158,12 @@ getBroadcastBoundToObsStreamKey(YouTubeConnection &connection)
 }
 
 static std::optional<YouTubeBroadcastInfo>
-getNextUpcomingBroadcast(YouTubeConnection &connection)
+getNextUpcomingBroadcast(YouTubeConnection &connection, bool useCache)
 {
-	const auto broadcasts =
-		listBroadcasts(connection, {{"broadcastStatus", "upcoming"},
-					    {"broadcastType", "all"}});
+	const auto broadcasts = listBroadcasts(connection,
+					       {{"broadcastStatus", "upcoming"},
+						{"broadcastType", "all"}},
+					       useCache);
 
 	std::optional<YouTubeBroadcastInfo> next;
 	for (const auto &broadcast : broadcasts) {
@@ -180,13 +184,15 @@ getNextUpcomingBroadcast(YouTubeConnection &connection)
 }
 
 static std::optional<YouTubeBroadcastInfo>
-getBroadcastById(YouTubeConnection &connection, const std::string &id)
+getBroadcastById(YouTubeConnection &connection, const std::string &id,
+		 bool useCache)
 {
 	if (id.empty()) {
 		return {};
 	}
 
-	const auto broadcasts = listBroadcasts(connection, {{"id", id}});
+	const auto broadcasts =
+		listBroadcasts(connection, {{"id", id}}, useCache);
 	if (broadcasts.empty()) {
 		return {};
 	}
@@ -214,15 +220,15 @@ void YouTubeBroadcast::ResolveVariables()
 }
 
 std::optional<YouTubeBroadcastInfo>
-YouTubeBroadcast::GetInfo(YouTubeConnection &connection) const
+YouTubeBroadcast::GetInfo(YouTubeConnection &connection, bool useCache) const
 {
 	switch (_type) {
 	case Type::BOUND_TO_OBS_STREAM_KEY:
-		return getBroadcastBoundToObsStreamKey(connection);
+		return getBroadcastBoundToObsStreamKey(connection, useCache);
 	case Type::NEXT_UPCOMING:
-		return getNextUpcomingBroadcast(connection);
+		return getNextUpcomingBroadcast(connection, useCache);
 	case Type::ID:
-		return getBroadcastById(connection, _id);
+		return getBroadcastById(connection, _id, useCache);
 	}
 	return {};
 }

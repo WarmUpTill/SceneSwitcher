@@ -27,10 +27,9 @@ TokenResponse RefreshAccessToken(const OAuthClientConfig &config,
 				 const std::string &refreshToken);
 void RevokeToken(const std::string &token);
 
-YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
-					YouTubeRequestMethod method,
-					const std::string &path,
-					const httplib::Params &params = {},
-					const std::string &body = "");
+YouTubeRequestResult
+SendYouTubeRequest(YouTubeConnection &connection, YouTubeRequestMethod method,
+		   const std::string &path, const httplib::Params &params = {},
+		   const std::string &body = "", bool useCache = false);
 
 } // namespace advss

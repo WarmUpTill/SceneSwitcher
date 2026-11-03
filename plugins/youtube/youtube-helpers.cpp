@@ -2,12 +2,27 @@
 #include "youtube-connection.hpp"
 
 #include <log-helper.hpp>
+#include <plugin-state-helpers.hpp>
+
+#include <mutex>
+#include <unordered_map>
 
 namespace advss {
 
 static const char *tokenHost = "https://oauth2.googleapis.com";
 static const char *apiHost = "https://www.googleapis.com";
 static const char *apiBasePath = "/youtube/v3";
+// Conditions are checked frequently, so cache responses to stay within the
+// daily API quota
+static const int cacheTimeoutSeconds = 30;
+static const int quotaPauseMinutes = 15;
+
+static bool isQuotaError(const std::string &errorReason)
+{
+	return errorReason == "quotaExceeded" ||
+	       errorReason == "rateLimitExceeded" ||
+	       errorReason == "userRateLimitExceeded";
+}
 
 static TokenResponse sendTokenRequest(const httplib::Params &params)
 {
@@ -102,12 +117,18 @@ static httplib::Result sendRequest(YouTubeRequestMethod method,
 	return httplib::Result();
 }
 
-YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
-					YouTubeRequestMethod method,
-					const std::string &path,
-					const httplib::Params &params,
-					const std::string &body)
+static YouTubeRequestResult sendYouTubeRequest(YouTubeConnection &connection,
+					       YouTubeRequestMethod method,
+					       const std::string &path,
+					       const httplib::Params &params,
+					       const std::string &body)
 {
+	if (connection.RequestsArePaused()) {
+		vblog(LOG_INFO, "skipping YouTube request to %s due to quota",
+		      path.c_str());
+		return {};
+	}
+
 	auto accessToken = connection.GetAccessToken();
 	if (!accessToken) {
 		return {};
@@ -148,6 +169,68 @@ YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
 		vblog(LOG_INFO, "YouTube API error response: %s",
 		      response->body.c_str());
 	}
+
+	if (isQuotaError(result.errorReason)) {
+		blog(LOG_WARNING,
+		     "pausing requests of YouTube connection \"%s\" for %d minutes",
+		     connection.Name().c_str(), quotaPauseMinutes);
+		connection.PauseRequests(
+			std::chrono::minutes(quotaPauseMinutes));
+	}
+	return result;
+}
+
+struct CacheEntry {
+	YouTubeRequestResult result;
+	std::chrono::steady_clock::time_point time;
+};
+
+static std::string getCacheKey(const YouTubeConnection &connection,
+			       const std::string &path,
+			       const httplib::Params &params)
+{
+	return connection.GetChannelID() +
+	       httplib::append_query_params(path, params);
+}
+
+YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
+					YouTubeRequestMethod method,
+					const std::string &path,
+					const httplib::Params &params,
+					const std::string &body, bool useCache)
+{
+	if (!useCache || method != YouTubeRequestMethod::GET) {
+		return sendYouTubeRequest(connection, method, path, params,
+					  body);
+	}
+
+	static std::mutex mutex;
+	static std::unordered_map<std::string, CacheEntry> cache;
+	[[maybe_unused]] static bool cleanupRegistered = []() {
+		AddPluginCleanupStep([]() {
+			std::lock_guard<std::mutex> lock(mutex);
+			cache.clear();
+		});
+		return true;
+	}();
+
+	const auto key = getCacheKey(connection, path, params);
+	const auto now = std::chrono::steady_clock::now();
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		const auto it = cache.find(key);
+		if (it != cache.end() &&
+		    now - it->second.time <
+			    std::chrono::seconds(cacheTimeoutSeconds)) {
+			return it->second.result;
+		}
+	}
+
+	// Failed requests are cached as well, as they also cost API quota
+	auto result =
+		sendYouTubeRequest(connection, method, path, params, body);
+	std::lock_guard<std::mutex> lock(mutex);
+	cache[key] = {result, now};
 	return result;
 }
 

@@ -21,6 +21,7 @@
 namespace advss {
 
 static const int authTimeoutSeconds = 120;
+static const int refreshRetryDelaySeconds = 30;
 
 static std::deque<std::shared_ptr<Item>> youtubeConnections;
 
@@ -207,6 +208,12 @@ std::optional<std::string> YouTubeConnection::GetAccessToken(bool forceRefresh)
 		return {};
 	}
 
+	const auto now = std::chrono::steady_clock::now();
+	if (now - _lastRefreshFailure <
+	    std::chrono::seconds(refreshRetryDelaySeconds)) {
+		return {};
+	}
+
 	const auto response = RefreshAccessToken(*config, _refreshToken);
 	if (response.error == "invalid_grant") {
 		blog(LOG_WARNING,
@@ -223,6 +230,7 @@ std::optional<std::string> YouTubeConnection::GetAccessToken(bool forceRefresh)
 		return {};
 	}
 	if (!response.error.empty()) {
+		_lastRefreshFailure = now;
 		return {};
 	}
 
@@ -254,6 +262,7 @@ bool YouTubeConnection::SetAuthResult(const TokenResponse &response,
 		_accessTokenExpiry = response.expiresAt;
 		_refreshToken = response.refreshToken;
 		_refreshTokenRevoked = false;
+		_lastRefreshFailure = {};
 	}
 
 	const auto result = SendYouTubeRequest(
@@ -285,6 +294,18 @@ bool YouTubeConnection::IsValid() const
 	std::lock_guard<std::mutex> lock(_mutex);
 	return !_refreshToken.empty() && !_refreshTokenRevoked &&
 	       GetClientConfig();
+}
+
+void YouTubeConnection::PauseRequests(std::chrono::seconds duration)
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+	_requestsPausedUntil = std::chrono::steady_clock::now() + duration;
+}
+
+bool YouTubeConnection::RequestsArePaused() const
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+	return std::chrono::steady_clock::now() < _requestsPausedUntil;
 }
 
 void YouTubeConnection::Revoke()
