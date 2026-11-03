@@ -2,12 +2,13 @@
 #include "youtube-connection.hpp"
 #include "youtube-helpers.hpp"
 
+#include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
 
 #include <obs-frontend-api.h>
 #include <mutex>
-#include <QHBoxLayout>
+#include <QLabel>
 #include <unordered_map>
 
 namespace advss {
@@ -235,10 +236,14 @@ static const std::unordered_map<YouTubeBroadcast::Type, const char *> types{
 	 "AdvSceneSwitcher.youtube.broadcast.type.id"},
 };
 
+static const int typeRow = 0;
+static const int idRow = 1;
+
 YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	: QWidget(parent),
 	  _type(new QComboBox(this)),
-	  _id(new VariableLineEdit(this))
+	  _id(new VariableLineEdit(this)),
+	  _layout(new QGridLayout())
 {
 	for (const auto type : {YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY,
 				YouTubeBroadcast::Type::NEXT_UPCOMING,
@@ -252,11 +257,17 @@ YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	QWidget::connect(_id, SIGNAL(editingFinished()), this,
 			 SLOT(IdChanged()));
 
-	auto layout = new QHBoxLayout();
-	layout->setContentsMargins(0, 0, 0, 0);
-	layout->addWidget(_type);
-	layout->addWidget(_id);
-	setLayout(layout);
+	_layout->setContentsMargins(0, 0, 0, 0);
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.youtube.broadcast")),
+			   typeRow, 0);
+	_layout->addWidget(_type, typeRow, 1);
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.youtube.broadcast.id")),
+			   idRow, 0);
+	_layout->addWidget(_id, idRow, 1);
+	_layout->setColumnStretch(2, 1);
+	setLayout(_layout);
 
 	SetWidgetVisibility();
 }
@@ -286,7 +297,10 @@ void YouTubeBroadcastSelection::IdChanged()
 
 void YouTubeBroadcastSelection::SetWidgetVisibility()
 {
-	_id->setVisible(_broadcast._type == YouTubeBroadcast::Type::ID);
+	SetGridLayoutRowVisible(_layout, idRow,
+				_broadcast._type == YouTubeBroadcast::Type::ID);
+	adjustSize();
+	updateGeometry();
 }
 
 } // namespace advss

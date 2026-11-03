@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <QComboBox>
+#include <QGridLayout>
 
 namespace advss {
 
@@ -58,6 +59,7 @@ private:
 
 	QComboBox *_type;
 	VariableLineEdit *_id;
+	QGridLayout *_layout;
 	YouTubeBroadcast _broadcast;
 };
 
