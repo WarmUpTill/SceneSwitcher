@@ -58,7 +58,9 @@ endif()
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE youtube-connection.cpp
+  PRIVATE broadcast-selection.cpp
+          broadcast-selection.hpp
+          youtube-connection.cpp
           youtube-connection.hpp
           youtube-helpers.cpp
           youtube-helpers.hpp
