@@ -233,6 +233,16 @@ target_sources(
   ${PROJECT_NAME} PRIVATE test-twitch-timestamp.cpp
                           "${TWITCH_PLUGIN_DIR}/twitch-timestamp.cpp")
 
+# --- youtube oauth --- #
+
+set(YOUTUBE_PLUGIN_DIR
+    "${ADVSS_SOURCE_DIR}/plugins/youtube"
+    CACHE INTERNAL "")
+target_include_directories(${PROJECT_NAME} PRIVATE "${YOUTUBE_PLUGIN_DIR}")
+target_sources(
+  ${PROJECT_NAME} PRIVATE test-youtube-oauth.cpp
+                          "${YOUTUBE_PLUGIN_DIR}/youtube-oauth.cpp")
+
 # --- Testing --- #
 
 enable_testing()
