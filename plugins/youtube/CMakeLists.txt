@@ -56,7 +56,10 @@ if(MSVC)
   target_compile_options(${PROJECT_NAME} PRIVATE /wd4834)
 endif()
 
-target_sources(${PROJECT_NAME} PRIVATE youtube-oauth.cpp youtube-oauth.hpp)
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE youtube-connection.cpp youtube-connection.hpp youtube-helpers.cpp
+          youtube-helpers.hpp youtube-oauth.cpp youtube-oauth.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
