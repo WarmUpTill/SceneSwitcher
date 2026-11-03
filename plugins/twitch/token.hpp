@@ -96,7 +96,6 @@ private:
 	QString _scope;
 	std::optional<QString> _tokenString;
 
-	static int _timeout;
 	std::mutex _mutex;
 	std::atomic_bool _stopWaiting = {false};
 	std::condition_variable _cv;
@@ -118,6 +117,7 @@ private slots:
 	void RequestToken();
 	void GotToken(const std::optional<QString> &);
 	void CheckIfTokenValid();
+	void UpdateWaitingStatus();
 
 private:
 	std::set<TokenOption> GetEnabledOptions();
@@ -136,6 +136,8 @@ private:
 	QCheckBox *_validateTimestamps;
 	QCheckBox *_warnIfInvalid;
 	QTimer _validationTimer;
+	QTimer _countdownTimer;
+	std::chrono::steady_clock::time_point _tokenDeadline;
 };
 
 class TwitchConnectionSelection : public ItemSelection {
