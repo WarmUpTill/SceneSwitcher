@@ -1,5 +1,6 @@
 #include "youtube-connection.hpp"
 #include "youtube-helpers.hpp"
+#include "youtube-tab.hpp"
 
 #include <help-icon.hpp>
 #include <log-helper.hpp>
@@ -13,6 +14,7 @@
 #include <QHBoxLayout>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <algorithm>
 #include <thread>
 #include <unordered_map>
 
@@ -117,7 +119,8 @@ YouTubeConnection::YouTubeConnection(const YouTubeConnection &other)
 	  _customClientId(other._customClientId),
 	  _customClientSecret(other._customClientSecret),
 	  _refreshToken(other._refreshToken),
-	  _channelId(other._channelId)
+	  _channelId(other._channelId),
+	  _warnIfInvalid(other._warnIfInvalid.load())
 {
 	std::lock_guard<std::mutex> lock(other._mutex);
 	_accessToken = other._accessToken;
@@ -137,6 +140,7 @@ YouTubeConnection &YouTubeConnection::operator=(const YouTubeConnection &other)
 	_customClientSecret = other._customClientSecret;
 	_refreshToken = other._refreshToken;
 	_channelId = other._channelId;
+	_warnIfInvalid = other._warnIfInvalid.load();
 	_accessToken = other._accessToken;
 	_accessTokenExpiry = other._accessTokenExpiry;
 	_refreshTokenRevoked = other._refreshTokenRevoked;
@@ -151,6 +155,8 @@ void YouTubeConnection::Load(obs_data_t *obj)
 	_customClientSecret = obs_data_get_string(obj, "customClientSecret");
 	_refreshToken = obs_data_get_string(obj, "refreshToken");
 	_channelId = obs_data_get_string(obj, "channelID");
+	obs_data_set_default_bool(obj, "warnIfInvalid", true);
+	_warnIfInvalid = obs_data_get_bool(obj, "warnIfInvalid");
 	_accessToken.clear();
 	_refreshTokenRevoked = false;
 }
@@ -162,6 +168,7 @@ void YouTubeConnection::Save(obs_data_t *obj) const
 	obs_data_set_string(obj, "customClientSecret",
 			    _customClientSecret.c_str());
 	obs_data_set_string(obj, "refreshToken", _refreshToken.c_str());
+	obs_data_set_bool(obj, "warnIfInvalid", _warnIfInvalid);
 }
 
 void YouTubeConnection::SaveForExport(obs_data_t *obj) const
@@ -207,6 +214,12 @@ std::optional<std::string> YouTubeConnection::GetAccessToken(bool forceRefresh)
 		     _name.c_str());
 		_refreshTokenRevoked = true;
 		_accessToken.clear();
+		if (_warnIfInvalid) {
+			const auto name = QString::fromStdString(_name);
+			QueueUITask([name]() {
+				InvalidConnectionDialog::ShowWarning(name);
+			});
+		}
 		return {};
 	}
 	if (!response.error.empty()) {
@@ -272,6 +285,16 @@ bool YouTubeConnection::IsValid() const
 	std::lock_guard<std::mutex> lock(_mutex);
 	return !_refreshToken.empty() && !_refreshTokenRevoked &&
 	       GetClientConfig();
+}
+
+void YouTubeConnection::Revoke()
+{
+	std::lock_guard<std::mutex> lock(_mutex);
+	if (!_refreshToken.empty()) {
+		RevokeToken(_refreshToken);
+	}
+	_refreshToken.clear();
+	_accessToken.clear();
 }
 
 std::string YouTubeConnection::GetChannelID() const
@@ -407,8 +430,11 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 	  _connect(new QPushButton(obs_module_text(
 		  "AdvSceneSwitcher.youtubeConnection.connect"))),
 	  _status(new QLabel()),
+	  _warnIfInvalid(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.youtubeConnection.warnIfInvalid"))),
 	  _currentConnection(settings)
 {
+	_warnIfInvalid->setChecked(settings.WarnIfInvalid());
 	_name->setReadOnly(true);
 	_clientSecret->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 	_status->setWordWrap(true);
@@ -421,6 +447,8 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 			 &YouTubeConnectionSettingsDialog::Connect);
 	QWidget::connect(&_authGrabber, &QThread::finished, this,
 			 &YouTubeConnectionSettingsDialog::AuthFinished);
+	QWidget::connect(&_countdownTimer, &QTimer::timeout, this,
+			 &YouTubeConnectionSettingsDialog::UpdateWaitingStatus);
 
 	auto grid = new QGridLayout();
 	int row = 0;
@@ -452,6 +480,7 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 
 	auto layout = new QVBoxLayout();
 	layout->addLayout(grid);
+	layout->addWidget(_warnIfInvalid);
 	layout->addWidget(_buttonbox);
 	setLayout(layout);
 
@@ -494,12 +523,25 @@ void YouTubeConnectionSettingsDialog::Connect()
 	_connect->setDisabled(true);
 	_authGrabber.SetClientConfig(*config);
 	_authGrabber.start();
-	_status->setText(obs_module_text(
-		"AdvSceneSwitcher.youtubeConnection.connect.waiting"));
+	_authDeadline = std::chrono::steady_clock::now() +
+			std::chrono::seconds(authTimeoutSeconds);
+	UpdateWaitingStatus();
+	_countdownTimer.start(1000);
+}
+
+void YouTubeConnectionSettingsDialog::UpdateWaitingStatus()
+{
+	const auto remaining = std::chrono::ceil<std::chrono::seconds>(
+		_authDeadline - std::chrono::steady_clock::now());
+	_status->setText(
+		QString(obs_module_text(
+				"AdvSceneSwitcher.youtubeConnection.connect.waiting"))
+			.arg(std::max<long long>(remaining.count(), 0)));
 }
 
 void YouTubeConnectionSettingsDialog::AuthFinished()
 {
+	_countdownTimer.stop();
 	_connect->setEnabled(true);
 
 	std::string errorReason;
@@ -565,6 +607,7 @@ bool YouTubeConnectionSettingsDialog::AskForSettings(
 	}
 
 	settings = dialog._currentConnection;
+	settings.SetWarnIfInvalid(dialog._warnIfInvalid->isChecked());
 	return true;
 }
 

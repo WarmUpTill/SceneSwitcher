@@ -25,6 +25,7 @@ TokenResponse ExchangeAuthCode(const OAuthClientConfig &config,
 			       const std::string &redirectUri);
 TokenResponse RefreshAccessToken(const OAuthClientConfig &config,
 				 const std::string &refreshToken);
+void RevokeToken(const std::string &token);
 
 YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
 					YouTubeRequestMethod method,

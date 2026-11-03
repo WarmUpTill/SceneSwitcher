@@ -58,8 +58,14 @@ endif()
 
 target_sources(
   ${PROJECT_NAME}
-  PRIVATE youtube-connection.cpp youtube-connection.hpp youtube-helpers.cpp
-          youtube-helpers.hpp youtube-oauth.cpp youtube-oauth.hpp)
+  PRIVATE youtube-connection.cpp
+          youtube-connection.hpp
+          youtube-helpers.cpp
+          youtube-helpers.hpp
+          youtube-oauth.cpp
+          youtube-oauth.hpp
+          youtube-tab.cpp
+          youtube-tab.hpp)
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

@@ -6,7 +6,9 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <QCheckBox>
 #include <QThread>
+#include <QTimer>
 
 namespace advss {
 
@@ -31,13 +33,17 @@ public:
 	std::optional<std::string> GetAccessToken(bool forceRefresh = false);
 	bool SetAuthResult(const TokenResponse &, std::string &errorReason);
 	bool IsValid() const;
+	void Revoke();
 	std::string GetChannelID() const;
+	bool WarnIfInvalid() const { return _warnIfInvalid; }
+	void SetWarnIfInvalid(bool value) { _warnIfInvalid = value; }
 
 private:
 	std::string _customClientId;
 	std::string _customClientSecret;
 	std::string _refreshToken;
 	std::string _channelId;
+	std::atomic_bool _warnIfInvalid = {true};
 
 	mutable std::mutex _mutex;
 	std::string _accessToken;
@@ -83,6 +89,7 @@ private slots:
 	void ClientConfigChanged();
 	void Connect();
 	void AuthFinished();
+	void UpdateWaitingStatus();
 
 private:
 	void SetErrorStatus(const std::string &errorReason);
@@ -91,7 +98,10 @@ private:
 	QLineEdit *_clientSecret;
 	QPushButton *_connect;
 	QLabel *_status;
+	QCheckBox *_warnIfInvalid;
 	AuthCodeGrabberThread _authGrabber;
+	QTimer _countdownTimer;
+	std::chrono::steady_clock::time_point _authDeadline;
 	YouTubeConnection _currentConnection;
 };
 

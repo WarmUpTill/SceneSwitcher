@@ -55,6 +55,22 @@ TokenResponse RefreshAccessToken(const OAuthClientConfig &config,
 	});
 }
 
+void RevokeToken(const std::string &token)
+{
+	httplib::Client cli(tokenHost);
+	const auto response =
+		cli.Post("/revoke", httplib::Params{{"token", token}});
+	if (!response) {
+		blog(LOG_WARNING, "failed to revoke YouTube token: %s",
+		     httplib::to_string(response.error()).c_str());
+		return;
+	}
+	if (response->status != 200) {
+		blog(LOG_WARNING, "failed to revoke YouTube token: %d",
+		     response->status);
+	}
+}
+
 static std::string getErrorReason(obs_data_t *data)
 {
 	OBSDataAutoRelease error = obs_data_get_obj(data, "error");
