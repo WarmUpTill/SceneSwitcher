@@ -232,6 +232,7 @@ void MacroConditionYouTubeEdit::UpdateEntryData()
 		QString::fromStdString(_entryData->_broadcastStatus)));
 	_streamHealth->setCurrentIndex(_streamHealth->findData(
 		QString::fromStdString(_entryData->_streamHealth)));
+	_broadcast->SetConnection(_entryData->_connection);
 	_broadcast->SetBroadcast(_entryData->_broadcast);
 	SetWidgetVisibility();
 	CheckConnection();
@@ -242,6 +243,7 @@ void MacroConditionYouTubeEdit::ConnectionChanged(const QString &name)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_connection =
 		GetWeakYouTubeConnectionByName(name.toStdString());
+	_broadcast->SetConnection(_entryData->_connection);
 	CheckConnection();
 	emit HeaderInfoChanged(name);
 }

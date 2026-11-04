@@ -8,7 +8,9 @@
 
 #include <obs-frontend-api.h>
 #include <mutex>
+#include <QDateTime>
 #include <QLabel>
+#include <QLocale>
 #include <unordered_map>
 
 namespace advss {
@@ -158,32 +160,6 @@ getBroadcastBoundToObsStreamKey(YouTubeConnection &connection, bool useCache)
 }
 
 static std::optional<YouTubeBroadcastInfo>
-getNextUpcomingBroadcast(YouTubeConnection &connection, bool useCache)
-{
-	const auto broadcasts = listBroadcasts(connection,
-					       {{"broadcastStatus", "upcoming"},
-						{"broadcastType", "all"}},
-					       useCache);
-
-	std::optional<YouTubeBroadcastInfo> next;
-	for (const auto &broadcast : broadcasts) {
-		// Persistent broadcasts have no scheduled start time
-		if (broadcast.scheduledStartTime.empty()) {
-			if (!next) {
-				next = broadcast;
-			}
-			continue;
-		}
-		// Timestamps are ISO 8601 in UTC, so comparing strings is enough
-		if (!next || next->scheduledStartTime.empty() ||
-		    broadcast.scheduledStartTime < next->scheduledStartTime) {
-			next = broadcast;
-		}
-	}
-	return next;
-}
-
-static std::optional<YouTubeBroadcastInfo>
 getBroadcastById(YouTubeConnection &connection, const std::string &id,
 		 bool useCache)
 {
@@ -202,8 +178,13 @@ getBroadcastById(YouTubeConnection &connection, const std::string &id,
 void YouTubeBroadcast::Load(obs_data_t *obj)
 {
 	OBSDataAutoRelease data = obs_data_get_obj(obj, "broadcast");
-	_type = static_cast<Type>(obs_data_get_int(data, "type"));
+	const auto type = static_cast<Type>(obs_data_get_int(data, "type"));
+	_type = (type == Type::ID || type == Type::SELECTED)
+			? type
+			: Type::BOUND_TO_OBS_STREAM_KEY;
 	_id.Load(data, "id");
+	_selectedId = obs_data_get_string(data, "selectedId");
+	_selectedTitle = obs_data_get_string(data, "selectedTitle");
 }
 
 void YouTubeBroadcast::Save(obs_data_t *obj) const
@@ -211,6 +192,8 @@ void YouTubeBroadcast::Save(obs_data_t *obj) const
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_int(data, "type", static_cast<int>(_type));
 	_id.Save(data, "id");
+	obs_data_set_string(data, "selectedId", _selectedId.c_str());
+	obs_data_set_string(data, "selectedTitle", _selectedTitle.c_str());
 	obs_data_set_obj(obj, "broadcast", data);
 }
 
@@ -225,49 +208,91 @@ YouTubeBroadcast::GetInfo(YouTubeConnection &connection, bool useCache) const
 	switch (_type) {
 	case Type::BOUND_TO_OBS_STREAM_KEY:
 		return getBroadcastBoundToObsStreamKey(connection, useCache);
-	case Type::NEXT_UPCOMING:
-		return getNextUpcomingBroadcast(connection, useCache);
 	case Type::ID:
 		return getBroadcastById(connection, _id, useCache);
+	case Type::SELECTED:
+		return getBroadcastById(connection, _selectedId, useCache);
 	}
 	return {};
 }
 
-static const std::unordered_map<YouTubeBroadcast::Type, const char *> types{
-	{YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY,
-	 "AdvSceneSwitcher.youtube.broadcast.type.boundToObsStreamKey"},
-	{YouTubeBroadcast::Type::NEXT_UPCOMING,
-	 "AdvSceneSwitcher.youtube.broadcast.type.nextUpcoming"},
-	{YouTubeBroadcast::Type::ID,
-	 "AdvSceneSwitcher.youtube.broadcast.type.id"},
-};
+void BroadcastComboBox::showPopup()
+{
+	emit AboutToShowPopup();
+	QComboBox::showPopup();
+}
 
-static const int typeRow = 0;
+static const int typeRole = Qt::UserRole;
+static const int idRole = Qt::UserRole + 1;
+static const int titleRole = Qt::UserRole + 2;
+
+static const int selectionRow = 0;
 static const int idRow = 1;
+
+static bool isLive(const std::string &lifeCycleStatus)
+{
+	return lifeCycleStatus == "live" || lifeCycleStatus == "liveStarting";
+}
+
+static bool isComplete(const std::string &lifeCycleStatus)
+{
+	return lifeCycleStatus == "complete" || lifeCycleStatus == "revoked";
+}
+
+static QString getStatusText(const std::string &lifeCycleStatus)
+{
+	if (isLive(lifeCycleStatus)) {
+		return obs_module_text(
+			"AdvSceneSwitcher.youtube.broadcast.status.live");
+	}
+	if (isComplete(lifeCycleStatus)) {
+		return obs_module_text(
+			"AdvSceneSwitcher.youtube.broadcast.status.complete");
+	}
+	return obs_module_text(
+		"AdvSceneSwitcher.youtube.broadcast.status.upcoming");
+}
+
+static QString getDisplayText(const YouTubeBroadcastInfo &broadcast)
+{
+	const auto title = QString::fromStdString(broadcast.title);
+	const auto status = getStatusText(broadcast.lifeCycleStatus);
+	const auto start = QDateTime::fromString(
+		QString::fromStdString(broadcast.scheduledStartTime),
+		Qt::ISODate);
+	const bool isUpcoming = !isLive(broadcast.lifeCycleStatus) &&
+				!isComplete(broadcast.lifeCycleStatus);
+	if (!isUpcoming || !start.isValid()) {
+		return QString(obs_module_text(
+				       "AdvSceneSwitcher.youtube.broadcast.entry"))
+			.arg(title, status);
+	}
+
+	return QString(obs_module_text(
+			       "AdvSceneSwitcher.youtube.broadcast.entry.scheduled"))
+		.arg(title, status,
+		     QLocale().toString(start.toLocalTime(),
+					QLocale::ShortFormat));
+}
 
 YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	: QWidget(parent),
-	  _type(new QComboBox(this)),
+	  _selection(new BroadcastComboBox(this)),
 	  _id(new VariableLineEdit(this)),
 	  _layout(new QGridLayout())
 {
-	for (const auto type : {YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY,
-				YouTubeBroadcast::Type::NEXT_UPCOMING,
-				YouTubeBroadcast::Type::ID}) {
-		_type->addItem(obs_module_text(types.at(type)),
-			       static_cast<int>(type));
-	}
-
-	QWidget::connect(_type, SIGNAL(currentIndexChanged(int)), this,
-			 SLOT(TypeChanged(int)));
+	QWidget::connect(_selection, SIGNAL(currentIndexChanged(int)), this,
+			 SLOT(SelectionChanged(int)));
+	QWidget::connect(_selection, SIGNAL(AboutToShowPopup()), this,
+			 SLOT(UpdateBroadcastList()));
 	QWidget::connect(_id, SIGNAL(editingFinished()), this,
 			 SLOT(IdChanged()));
 
 	_layout->setContentsMargins(0, 0, 0, 0);
 	_layout->addWidget(new QLabel(obs_module_text(
 				   "AdvSceneSwitcher.youtube.broadcast")),
-			   typeRow, 0);
-	_layout->addWidget(_type, typeRow, 1);
+			   selectionRow, 0);
+	_layout->addWidget(_selection, selectionRow, 1);
 	_layout->addWidget(new QLabel(obs_module_text(
 				   "AdvSceneSwitcher.youtube.broadcast.id")),
 			   idRow, 0);
@@ -275,22 +300,113 @@ YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	_layout->setColumnStretch(2, 1);
 	setLayout(_layout);
 
+	PopulateSelection({});
 	SetWidgetVisibility();
 }
 
 void YouTubeBroadcastSelection::SetBroadcast(const YouTubeBroadcast &broadcast)
 {
 	_broadcast = broadcast;
-	_type->setCurrentIndex(
-		_type->findData(static_cast<int>(broadcast._type)));
+	PopulateSelection({});
 	_id->setText(broadcast._id);
 	SetWidgetVisibility();
 }
 
-void YouTubeBroadcastSelection::TypeChanged(int index)
+void YouTubeBroadcastSelection::SetConnection(
+	const std::weak_ptr<YouTubeConnection> &connection)
+{
+	_connection = connection;
+}
+
+void YouTubeBroadcastSelection::AddSelectionItem(const QString &text,
+						 YouTubeBroadcast::Type type,
+						 const std::string &id,
+						 const std::string &title)
+{
+	_selection->addItem(text);
+	const int index = _selection->count() - 1;
+	_selection->setItemData(index, static_cast<int>(type), typeRole);
+	_selection->setItemData(index, QString::fromStdString(id), idRole);
+	_selection->setItemData(index, QString::fromStdString(title),
+				titleRole);
+}
+
+void YouTubeBroadcastSelection::PopulateSelection(
+	const std::vector<YouTubeBroadcastInfo> &broadcasts)
+{
+	const QSignalBlocker blocker(_selection);
+	_selection->clear();
+
+	AddSelectionItem(
+		obs_module_text(
+			"AdvSceneSwitcher.youtube.broadcast.type.boundToObsStreamKey"),
+		YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY);
+	AddSelectionItem(
+		obs_module_text("AdvSceneSwitcher.youtube.broadcast.type.id"),
+		YouTubeBroadcast::Type::ID);
+	_selection->insertSeparator(_selection->count());
+
+	bool selectedBroadcastListed = false;
+	for (const auto &broadcast : broadcasts) {
+		AddSelectionItem(getDisplayText(broadcast),
+				 YouTubeBroadcast::Type::SELECTED, broadcast.id,
+				 broadcast.title);
+		selectedBroadcastListed |= broadcast.id ==
+					   _broadcast._selectedId;
+	}
+
+	// Keep showing the selection if the list was not fetched yet or the
+	// broadcast is no longer part of it
+	if (_broadcast._type == YouTubeBroadcast::Type::SELECTED &&
+	    !selectedBroadcastListed) {
+		AddSelectionItem(
+			QString::fromStdString(_broadcast._selectedTitle),
+			YouTubeBroadcast::Type::SELECTED,
+			_broadcast._selectedId, _broadcast._selectedTitle);
+	}
+
+	for (int i = 0; i < _selection->count(); i++) {
+		const auto type = static_cast<YouTubeBroadcast::Type>(
+			_selection->itemData(i, typeRole).toInt());
+		if (type != _broadcast._type) {
+			continue;
+		}
+		if (type == YouTubeBroadcast::Type::SELECTED &&
+		    _selection->itemData(i, idRole).toString().toStdString() !=
+			    _broadcast._selectedId) {
+			continue;
+		}
+		_selection->setCurrentIndex(i);
+		break;
+	}
+}
+
+void YouTubeBroadcastSelection::UpdateBroadcastList()
+{
+	auto connection = _connection.lock();
+	if (!connection) {
+		PopulateSelection({});
+		return;
+	}
+
+	PopulateSelection(listBroadcasts(
+		*connection,
+		{{"broadcastStatus", "all"}, {"broadcastType", "all"}}, true));
+}
+
+void YouTubeBroadcastSelection::SelectionChanged(int index)
 {
 	_broadcast._type = static_cast<YouTubeBroadcast::Type>(
-		_type->itemData(index).toInt());
+		_selection->itemData(index, typeRole).toInt());
+	if (_broadcast._type == YouTubeBroadcast::Type::SELECTED) {
+		_broadcast._selectedId = _selection->itemData(index, idRole)
+						 .toString()
+						 .toStdString();
+		_broadcast._selectedTitle =
+			_selection->itemData(index, titleRole)
+				.toString()
+				.toStdString();
+	}
 	SetWidgetVisibility();
 	emit BroadcastChanged(_broadcast);
 }

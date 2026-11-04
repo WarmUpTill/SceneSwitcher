@@ -241,6 +241,7 @@ void MacroActionYouTubeEdit::UpdateEntryData()
 	_connections->SetConnection(_entryData->_connection);
 	_actions->setCurrentIndex(
 		_actions->findData(static_cast<int>(_entryData->_action)));
+	_broadcast->SetConnection(_entryData->_connection);
 	_broadcast->SetBroadcast(_entryData->_broadcast);
 	CheckConnection();
 }
@@ -250,6 +251,7 @@ void MacroActionYouTubeEdit::ConnectionChanged(const QString &name)
 	GUARD_LOADING_AND_LOCK();
 	_entryData->_connection =
 		GetWeakYouTubeConnectionByName(name.toStdString());
+	_broadcast->SetConnection(_entryData->_connection);
 	CheckConnection();
 	emit HeaderInfoChanged(name);
 }
