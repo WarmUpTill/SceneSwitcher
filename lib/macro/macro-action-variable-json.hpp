@@ -4,6 +4,8 @@
 #include "variable-line-edit.hpp"
 #include "variable-spinbox.hpp"
 
+#include <QCheckBox>
+
 namespace advss {
 
 class VariableActionJson : public VariableActionGroup {

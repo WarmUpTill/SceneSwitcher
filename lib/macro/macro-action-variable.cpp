@@ -67,7 +67,7 @@ bool MacroActionVariable::Save(obs_data_t *obj) const
 	for (const auto &group : _groups) {
 		group->Save(obj, *this);
 	}
-	obs_data_set_int(obj, "version", 1);
+	obs_data_set_int(obj, "version", 2);
 	return true;
 }
 
@@ -136,7 +136,7 @@ MacroActionVariableEdit::MacroActionVariableEdit(
 	  _variables2(new VariableSelection(this)),
 	  _actions(new FilterComboBox(this)),
 	  _strValue(new VariableTextEdit(this, 5, 1, 1)),
-	  _entryLayout(new QHBoxLayout())
+	  _entryLayout(new QVBoxLayout())
 {
 	populateActionSelection(_actions);
 
@@ -242,23 +242,26 @@ void MacroActionVariableEdit::SetWidgetVisibility()
 	}
 
 	const auto widgets = GetInlineWidgets();
-	for (const auto &[_, widget] : widgets) {
-		_entryLayout->removeWidget(widget);
+	for (int i = 0; i < _entryLayout->count(); i++) {
+		auto row = _entryLayout->itemAt(i)->layout();
+		for (const auto &[_, widget] : widgets) {
+			row->removeWidget(widget);
+		}
 	}
 	ClearLayout(_entryLayout);
 
 	const std::string layoutString = obs_module_text(option->layout);
-	PlaceWidgets(layoutString, _entryLayout, widgets);
+	const auto rows = QString::fromStdString(layoutString).split('\n');
+	for (int i = 0; i < rows.size(); i++) {
+		auto row = new QHBoxLayout();
+		_entryLayout->addLayout(row);
+		const bool expandRow = option->expandInlineRow && i == 0;
+		PlaceWidgets(rows[i].toStdString(), row, widgets, !expandRow);
+	}
 
 	for (const auto &[placeholder, widget] : widgets) {
 		widget->setVisible(layoutString.find(placeholder) !=
 				   std::string::npos);
-	}
-
-	if (option->expandInlineRow) {
-		RemoveStretchIfPresent(_entryLayout);
-	} else {
-		AddStretchIfNecessary(_entryLayout);
 	}
 
 	for (const auto &groupEdit : _groupEdits) {
