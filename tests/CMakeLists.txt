@@ -183,6 +183,15 @@ target_sources(
           ${ADVSS_SOURCE_DIR}/lib/variables/variable-spinbox.cpp
           ${ADVSS_SOURCE_DIR}/lib/variables/variable-string.cpp)
 
+# --- macro-action-variable --- #
+
+target_sources(
+  ${PROJECT_NAME}
+  PRIVATE test-macro-action-variable-json.cpp
+          ${ADVSS_SOURCE_DIR}/lib/macro/macro-action-variable.cpp
+          ${ADVSS_SOURCE_DIR}/lib/macro/macro-action-variable-group.cpp
+          ${ADVSS_SOURCE_DIR}/lib/macro/macro-action-variable-json.cpp)
+
 # --- macro-tree --- #
 
 target_sources(

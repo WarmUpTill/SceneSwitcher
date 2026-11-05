@@ -126,7 +126,7 @@ private:
 	VariableSelection *_variables2;
 	FilterComboBox *_actions;
 	VariableTextEdit *_strValue;
-	QHBoxLayout *_entryLayout;
+	QVBoxLayout *_entryLayout;
 	std::vector<VariableActionGroupEdit *> _groupEdits;
 
 	std::shared_ptr<MacroActionVariable> _entryData;
