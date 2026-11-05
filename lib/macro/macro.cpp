@@ -10,6 +10,7 @@
 #include "sync-helpers.hpp"
 
 #include <obs-frontend-api.h>
+#include <util/platform.h>
 
 #include <QAction>
 #include <QMainWindow>
@@ -917,6 +918,9 @@ bool Macro::Save(obs_data_t *obj, bool saveForCopy) const
 			"macroElseActionSplitterPosition");
 
 	obs_data_set_bool(obj, "registerHotkeys", _registerHotkeys);
+	if (!saveForCopy) {
+		obs_data_set_string(obj, "hotkeyId", _hotkeyId.c_str());
+	}
 	OBSDataArrayAutoRelease pauseHotkey = obs_hotkey_save(_pauseHotkey);
 	obs_data_set_array(obj, "pauseHotkey", pauseHotkey);
 	OBSDataArrayAutoRelease unpauseHotkey = obs_hotkey_save(_unpauseHotkey);
@@ -1013,6 +1017,7 @@ bool Macro::Load(obs_data_t *obj)
 	obs_data_set_default_bool(obj, "registerHotkeys", true);
 	_registerHotkeys = !_isNested &&
 			   obs_data_get_bool(obj, "registerHotkeys");
+	_hotkeyId = obs_data_get_string(obj, "hotkeyId");
 	_pauseHotkeyData = obs_data_get_array(obj, "pauseHotkey");
 	_unpauseHotkeyData = obs_data_get_array(obj, "unpauseHotkey");
 	_togglePauseHotkeyData = obs_data_get_array(obj, "togglePauseHotkey");
@@ -1221,15 +1226,10 @@ static void togglePauseCB(void *data, obs_hotkey_id, obs_hotkey_t *,
 	}
 }
 
-static int macroHotkeyID = 0;
-
-static obs_hotkey_id registerHotkeyHelper(const std::string prefix,
+static obs_hotkey_id registerHotkeyHelper(const std::string &hotkeyName,
 					  const char *formatModuleText,
 					  Macro *macro, obs_hotkey_func func)
 {
-	macroHotkeyID++;
-
-	std::string hotkeyName = prefix + std::to_string(macroHotkeyID);
 	QString format{obs_module_text(formatModuleText)};
 	QString hotkeyDesc = format.arg(QString::fromStdString(macro->Name()));
 	return obs_hotkey_register_frontend(hotkeyName.c_str(),
@@ -1249,14 +1249,20 @@ void Macro::SetupHotkeys()
 		ClearHotkeys();
 	}
 
+	if (_hotkeyId.empty()) {
+		char *uuid = os_generate_uuid();
+		_hotkeyId = uuid;
+		bfree(uuid);
+	}
+
 	_pauseHotkey = registerHotkeyHelper(
-		"macro_pause_hotkey_", "AdvSceneSwitcher.hotkey.macro.pause",
-		this, pauseCB);
+		"macro_pause_hotkey_" + _hotkeyId,
+		"AdvSceneSwitcher.hotkey.macro.pause", this, pauseCB);
 	_unpauseHotkey = registerHotkeyHelper(
-		"macro_unpause_hotkey_",
+		"macro_unpause_hotkey_" + _hotkeyId,
 		"AdvSceneSwitcher.hotkey.macro.unpause", this, unpauseCB);
 	_togglePauseHotkey = registerHotkeyHelper(
-		"macro_toggle_pause_hotkey_",
+		"macro_toggle_pause_hotkey_" + _hotkeyId,
 		"AdvSceneSwitcher.hotkey.macro.togglePause", this,
 		togglePauseCB);
 }
@@ -1330,6 +1336,8 @@ std::vector<std::shared_ptr<Macro>> LoadImportedMacros(
 	for (size_t i = 0; i < count; i++) {
 		tempMacros.clear();
 		OBSDataAutoRelease obj = obs_data_array_item(array, i);
+		// The exported original might still exist in this collection
+		obs_data_erase(obj, "hotkeyId");
 		auto macro = std::make_shared<Macro>();
 		tempMacros.emplace_back(macro);
 		macro->Load(obj);

@@ -1,8 +1,11 @@
 #include "catch.hpp"
 
+#include <macro-helpers.hpp>
+#include <macro-settings.hpp>
 #include <macro.hpp>
 
 #include <memory>
+#include <string>
 
 namespace {
 
@@ -413,4 +416,112 @@ TEST_CASE("GetActionTriggerMode returns the set mode", "[macro]")
 		advss::Macro::ActionTriggerMode::ANY_CONDITION_TRIGGERED);
 	REQUIRE(m.GetActionTriggerMode() ==
 		advss::Macro::ActionTriggerMode::ANY_CONDITION_TRIGGERED);
+}
+
+// ---------------------------------------------------------------------------
+// Hotkey ID persistence
+// ---------------------------------------------------------------------------
+
+static std::string savedHotkeyId(const advss::Macro &macro,
+				 bool saveForCopy = false)
+{
+	OBSDataAutoRelease data = obs_data_create();
+	macro.Save(data, saveForCopy);
+	return obs_data_get_string(data, "hotkeyId");
+}
+
+TEST_CASE("New macros with hotkeys enabled get a hotkey ID", "[macro]")
+{
+	advss::GlobalMacroSettings settings;
+	advss::Macro first("first", settings);
+	advss::Macro second("second", settings);
+
+	REQUIRE_FALSE(savedHotkeyId(first).empty());
+	REQUIRE(savedHotkeyId(first) != savedHotkeyId(second));
+}
+
+TEST_CASE("New macros with hotkeys disabled have no hotkey ID", "[macro]")
+{
+	advss::GlobalMacroSettings settings;
+	settings._newMacroRegisterHotkeys = false;
+	advss::Macro macro("macro", settings);
+
+	REQUIRE(savedHotkeyId(macro).empty());
+}
+
+TEST_CASE("Hotkey ID is kept across save and load", "[macro]")
+{
+	advss::GlobalMacroSettings settings;
+	advss::Macro original("macro", settings);
+
+	OBSDataAutoRelease data = obs_data_create();
+	original.Save(data);
+
+	advss::Macro loaded;
+	loaded.Load(data);
+	loaded.PostLoad();
+
+	REQUIRE(savedHotkeyId(loaded) == savedHotkeyId(original));
+}
+
+TEST_CASE("Hotkey ID is kept when hotkeys are toggled", "[macro]")
+{
+	advss::GlobalMacroSettings settings;
+	advss::Macro macro("macro", settings);
+	const auto id = savedHotkeyId(macro);
+
+	macro.EnablePauseHotkeys(false);
+	macro.EnablePauseHotkeys(true);
+
+	REQUIRE(savedHotkeyId(macro) == id);
+}
+
+TEST_CASE("Macros saved without a hotkey ID get one on load", "[macro]")
+{
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "name", "macro");
+
+	advss::Macro macro;
+	macro.Load(data);
+	macro.PostLoad();
+
+	REQUIRE_FALSE(savedHotkeyId(macro).empty());
+}
+
+TEST_CASE("Copied macros get a new hotkey ID", "[macro]")
+{
+	advss::GlobalMacroSettings settings;
+	advss::Macro original("macro", settings);
+	REQUIRE(savedHotkeyId(original, true).empty());
+
+	OBSDataAutoRelease data = obs_data_create();
+	original.Save(data, true);
+
+	advss::Macro copy("copy", settings);
+	copy.Load(data);
+	copy.PostLoad();
+
+	REQUIRE_FALSE(savedHotkeyId(copy).empty());
+	REQUIRE(savedHotkeyId(copy) != savedHotkeyId(original));
+}
+
+TEST_CASE("Imported macros get a new hotkey ID", "[macro]")
+{
+	advss::GlobalMacroSettings settings;
+	advss::Macro original("macro", settings);
+
+	OBSDataAutoRelease data = obs_data_create();
+	original.Save(data);
+	OBSDataArrayAutoRelease array = obs_data_array_create();
+	obs_data_array_push_back(array, data);
+
+	const auto imported = advss::LoadImportedMacros(
+		array,
+		[](const std::shared_ptr<advss::Macro> &) { return true; });
+
+	REQUIRE(imported.size() == 1);
+	REQUIRE_FALSE(savedHotkeyId(*imported[0]).empty());
+	REQUIRE(savedHotkeyId(*imported[0]) != savedHotkeyId(original));
+
+	advss::GetTopLevelMacros().clear();
 }
