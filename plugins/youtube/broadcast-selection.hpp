@@ -1,11 +1,13 @@
 #pragma once
+#include <filter-combo-box.hpp>
 #include <obs-data.h>
 #include <variable-line-edit.hpp>
 
 #include <memory>
 #include <optional>
-#include <QComboBox>
-#include <QGridLayout>
+#include <QActionGroup>
+#include <QLabel>
+#include <QPushButton>
 #include <vector>
 
 namespace advss {
@@ -36,7 +38,7 @@ public:
 	GetInfo(YouTubeConnection &connection, bool useCache = false) const;
 
 private:
-	Type _type = Type::BOUND_TO_OBS_STREAM_KEY;
+	Type _type = Type::SELECTED;
 	StringVariable _id = "";
 	std::string _selectedId;
 	std::string _selectedTitle;
@@ -44,15 +46,18 @@ private:
 	friend class YouTubeBroadcastSelection;
 };
 
-class BroadcastComboBox : public QComboBox {
+class BroadcastComboBox : public FilterComboBox {
 	Q_OBJECT
 
 public:
-	using QComboBox::QComboBox;
+	using FilterComboBox::FilterComboBox;
 	void showPopup() override;
 
+protected:
+	void focusInEvent(QFocusEvent *event) override;
+
 signals:
-	void AboutToShowPopup();
+	void BroadcastListNeeded();
 };
 
 class YouTubeBroadcastSelection : public QWidget {
@@ -66,6 +71,7 @@ public:
 private slots:
 	void SelectionChanged(int);
 	void IdChanged();
+	void ModeChanged(QAction *);
 	void UpdateBroadcastList();
 
 signals:
@@ -73,14 +79,17 @@ signals:
 
 private:
 	void PopulateSelection(const std::vector<YouTubeBroadcastInfo> &);
-	void AddSelectionItem(const QString &text, YouTubeBroadcast::Type type,
-			      const std::string &id = "",
-			      const std::string &title = "");
+	void AddSelectionItem(const QString &text, const std::string &id,
+			      const std::string &title);
+	void AddModeAction(QMenu *menu, const char *text,
+			   YouTubeBroadcast::Type type);
 	void SetWidgetVisibility();
 
 	BroadcastComboBox *_selection;
+	QLabel *_boundToObsStreamKey;
 	VariableLineEdit *_id;
-	QGridLayout *_layout;
+	QPushButton *_mode;
+	QActionGroup *_modes;
 	YouTubeBroadcast _broadcast;
 	std::weak_ptr<YouTubeConnection> _connection;
 };

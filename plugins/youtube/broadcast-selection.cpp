@@ -2,15 +2,19 @@
 #include "youtube-connection.hpp"
 #include "youtube-helpers.hpp"
 
-#include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <obs-module-helper.hpp>
+#include <ui-helpers.hpp>
 
 #include <obs-frontend-api.h>
 #include <mutex>
+#include <QAbstractItemView>
 #include <QDateTime>
-#include <QLabel>
+#include <QFocusEvent>
+#include <QHBoxLayout>
 #include <QLocale>
+#include <QMenu>
+#include <QScrollBar>
 #include <unordered_map>
 
 namespace advss {
@@ -218,34 +222,35 @@ YouTubeBroadcast::GetInfo(YouTubeConnection &connection, bool useCache) const
 
 void BroadcastComboBox::showPopup()
 {
-	emit AboutToShowPopup();
-	QComboBox::showPopup();
+	emit BroadcastListNeeded();
+	FilterComboBox::showPopup();
 }
 
-static const int typeRole = Qt::UserRole;
-static const int idRole = Qt::UserRole + 1;
-static const int titleRole = Qt::UserRole + 2;
-
-static const int selectionRow = 0;
-static const int idRow = 1;
-
-static bool isLive(const std::string &lifeCycleStatus)
+void BroadcastComboBox::focusInEvent(QFocusEvent *event)
 {
-	return lifeCycleStatus == "live" || lifeCycleStatus == "liveStarting";
+	FilterComboBox::focusInEvent(event);
+
+	// Focus also returns when closing the popup or switching windows,
+	// neither of which should block the UI by requesting the list
+	const auto reason = event->reason();
+	if (reason == Qt::PopupFocusReason ||
+	    reason == Qt::ActiveWindowFocusReason) {
+		return;
+	}
+	emit BroadcastListNeeded();
 }
 
-static bool isComplete(const std::string &lifeCycleStatus)
-{
-	return lifeCycleStatus == "complete" || lifeCycleStatus == "revoked";
-}
+static const int selectionWidthInCharacters = 40;
+static const int idRole = Qt::UserRole;
+static const int titleRole = Qt::UserRole + 1;
 
 static QString getStatusText(const std::string &lifeCycleStatus)
 {
-	if (isLive(lifeCycleStatus)) {
+	if (lifeCycleStatus == "live" || lifeCycleStatus == "liveStarting") {
 		return obs_module_text(
 			"AdvSceneSwitcher.youtube.broadcast.status.live");
 	}
-	if (isComplete(lifeCycleStatus)) {
+	if (lifeCycleStatus == "complete" || lifeCycleStatus == "revoked") {
 		return obs_module_text(
 			"AdvSceneSwitcher.youtube.broadcast.status.complete");
 	}
@@ -260,9 +265,7 @@ static QString getDisplayText(const YouTubeBroadcastInfo &broadcast)
 	const auto start = QDateTime::fromString(
 		QString::fromStdString(broadcast.scheduledStartTime),
 		Qt::ISODate);
-	const bool isUpcoming = !isLive(broadcast.lifeCycleStatus) &&
-				!isComplete(broadcast.lifeCycleStatus);
-	if (!isUpcoming || !start.isValid()) {
+	if (!start.isValid()) {
 		return QString(obs_module_text(
 				       "AdvSceneSwitcher.youtube.broadcast.entry"))
 			.arg(title, status);
@@ -277,28 +280,59 @@ static QString getDisplayText(const YouTubeBroadcastInfo &broadcast)
 
 YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	: QWidget(parent),
-	  _selection(new BroadcastComboBox(this)),
+	  _selection(new BroadcastComboBox(
+		  this, obs_module_text(
+				"AdvSceneSwitcher.youtube.broadcast.select"))),
+	  _boundToObsStreamKey(new QLabel(
+		  obs_module_text(
+			  "AdvSceneSwitcher.youtube.broadcast.mode.boundToObsStreamKey"),
+		  this)),
 	  _id(new VariableLineEdit(this)),
-	  _layout(new QGridLayout())
+	  _mode(new QPushButton(this)),
+	  _modes(new QActionGroup(this))
 {
+	auto menu = new QMenu(_mode);
+	AddModeAction(menu, "AdvSceneSwitcher.youtube.broadcast.mode.select",
+		      YouTubeBroadcast::Type::SELECTED);
+	AddModeAction(
+		menu,
+		"AdvSceneSwitcher.youtube.broadcast.mode.boundToObsStreamKey",
+		YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY);
+	AddModeAction(menu, "AdvSceneSwitcher.youtube.broadcast.mode.id",
+		      YouTubeBroadcast::Type::ID);
+	_mode->setMaximumWidth(11);
+	SetButtonIcon(_mode, GetThemeTypeName() == "Light"
+				     ? ":/res/images/dots-vert.svg"
+				     : "theme:Dark/dots-vert.svg");
+	_mode->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.youtube.broadcast.mode.tooltip"));
+
+	_selection->setMinimumContentsLength(selectionWidthInCharacters);
+	_selection->setSizeAdjustPolicy(
+		QComboBox::AdjustToMinimumContentsLengthWithIcon);
+
 	QWidget::connect(_selection, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SelectionChanged(int)));
-	QWidget::connect(_selection, SIGNAL(AboutToShowPopup()), this,
+	QWidget::connect(_selection, SIGNAL(BroadcastListNeeded()), this,
 			 SLOT(UpdateBroadcastList()));
 	QWidget::connect(_id, SIGNAL(editingFinished()), this,
 			 SLOT(IdChanged()));
+	QWidget::connect(_modes, &QActionGroup::triggered, this,
+			 &YouTubeBroadcastSelection::ModeChanged);
+	QWidget::connect(_mode, &QPushButton::clicked, this, [this, menu]() {
+		menu->exec(_mode->mapToGlobal(QPoint(0, _mode->height())));
+	});
 
-	_layout->setContentsMargins(0, 0, 0, 0);
-	_layout->addWidget(new QLabel(obs_module_text(
-				   "AdvSceneSwitcher.youtube.broadcast")),
-			   selectionRow, 0);
-	_layout->addWidget(_selection, selectionRow, 1);
-	_layout->addWidget(new QLabel(obs_module_text(
-				   "AdvSceneSwitcher.youtube.broadcast.id")),
-			   idRow, 0);
-	_layout->addWidget(_id, idRow, 1);
-	_layout->setColumnStretch(2, 1);
-	setLayout(_layout);
+	auto layout = new QHBoxLayout();
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addWidget(new QLabel(
+		obs_module_text("AdvSceneSwitcher.youtube.broadcast")));
+	layout->addWidget(_selection);
+	layout->addWidget(_boundToObsStreamKey);
+	layout->addWidget(_id);
+	layout->addWidget(_mode);
+	layout->addStretch();
+	setLayout(layout);
 
 	PopulateSelection({});
 	SetWidgetVisibility();
@@ -318,14 +352,21 @@ void YouTubeBroadcastSelection::SetConnection(
 	_connection = connection;
 }
 
+void YouTubeBroadcastSelection::AddModeAction(QMenu *menu, const char *text,
+					      YouTubeBroadcast::Type type)
+{
+	auto action = menu->addAction(obs_module_text(text));
+	action->setCheckable(true);
+	action->setData(static_cast<int>(type));
+	_modes->addAction(action);
+}
+
 void YouTubeBroadcastSelection::AddSelectionItem(const QString &text,
-						 YouTubeBroadcast::Type type,
 						 const std::string &id,
 						 const std::string &title)
 {
 	_selection->addItem(text);
 	const int index = _selection->count() - 1;
-	_selection->setItemData(index, static_cast<int>(type), typeRole);
 	_selection->setItemData(index, QString::fromStdString(id), idRole);
 	_selection->setItemData(index, QString::fromStdString(title),
 				titleRole);
@@ -337,19 +378,9 @@ void YouTubeBroadcastSelection::PopulateSelection(
 	const QSignalBlocker blocker(_selection);
 	_selection->clear();
 
-	AddSelectionItem(
-		obs_module_text(
-			"AdvSceneSwitcher.youtube.broadcast.type.boundToObsStreamKey"),
-		YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY);
-	AddSelectionItem(
-		obs_module_text("AdvSceneSwitcher.youtube.broadcast.type.id"),
-		YouTubeBroadcast::Type::ID);
-	_selection->insertSeparator(_selection->count());
-
 	bool selectedBroadcastListed = false;
 	for (const auto &broadcast : broadcasts) {
-		AddSelectionItem(getDisplayText(broadcast),
-				 YouTubeBroadcast::Type::SELECTED, broadcast.id,
+		AddSelectionItem(getDisplayText(broadcast), broadcast.id,
 				 broadcast.title);
 		selectedBroadcastListed |= broadcast.id ==
 					   _broadcast._selectedId;
@@ -357,28 +388,19 @@ void YouTubeBroadcastSelection::PopulateSelection(
 
 	// Keep showing the selection if the list was not fetched yet or the
 	// broadcast is no longer part of it
-	if (_broadcast._type == YouTubeBroadcast::Type::SELECTED &&
-	    !selectedBroadcastListed) {
+	if (!_broadcast._selectedId.empty() && !selectedBroadcastListed) {
 		AddSelectionItem(
 			QString::fromStdString(_broadcast._selectedTitle),
-			YouTubeBroadcast::Type::SELECTED,
 			_broadcast._selectedId, _broadcast._selectedTitle);
 	}
 
-	for (int i = 0; i < _selection->count(); i++) {
-		const auto type = static_cast<YouTubeBroadcast::Type>(
-			_selection->itemData(i, typeRole).toInt());
-		if (type != _broadcast._type) {
-			continue;
-		}
-		if (type == YouTubeBroadcast::Type::SELECTED &&
-		    _selection->itemData(i, idRole).toString().toStdString() !=
-			    _broadcast._selectedId) {
-			continue;
-		}
-		_selection->setCurrentIndex(i);
-		break;
-	}
+	_selection->setCurrentIndex(_selection->findData(
+		QString::fromStdString(_broadcast._selectedId), idRole));
+
+	// Keep long titles readable in the popup without widening the selection
+	const auto view = _selection->view();
+	view->setMinimumWidth(view->sizeHintForColumn(0) +
+			      view->verticalScrollBar()->sizeHint().width());
 }
 
 void YouTubeBroadcastSelection::UpdateBroadcastList()
@@ -396,17 +418,17 @@ void YouTubeBroadcastSelection::UpdateBroadcastList()
 
 void YouTubeBroadcastSelection::SelectionChanged(int index)
 {
-	_broadcast._type = static_cast<YouTubeBroadcast::Type>(
-		_selection->itemData(index, typeRole).toInt());
-	if (_broadcast._type == YouTubeBroadcast::Type::SELECTED) {
-		_broadcast._selectedId = _selection->itemData(index, idRole)
-						 .toString()
-						 .toStdString();
-		_broadcast._selectedTitle =
-			_selection->itemData(index, titleRole)
-				.toString()
-				.toStdString();
-	}
+	_broadcast._selectedId =
+		_selection->itemData(index, idRole).toString().toStdString();
+	_broadcast._selectedTitle =
+		_selection->itemData(index, titleRole).toString().toStdString();
+	emit BroadcastChanged(_broadcast);
+}
+
+void YouTubeBroadcastSelection::ModeChanged(QAction *action)
+{
+	_broadcast._type =
+		static_cast<YouTubeBroadcast::Type>(action->data().toInt());
 	SetWidgetVisibility();
 	emit BroadcastChanged(_broadcast);
 }
@@ -419,8 +441,15 @@ void YouTubeBroadcastSelection::IdChanged()
 
 void YouTubeBroadcastSelection::SetWidgetVisibility()
 {
-	SetGridLayoutRowVisible(_layout, idRow,
-				_broadcast._type == YouTubeBroadcast::Type::ID);
+	const auto type = _broadcast._type;
+	_selection->setVisible(type == YouTubeBroadcast::Type::SELECTED);
+	_boundToObsStreamKey->setVisible(
+		type == YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY);
+	_id->setVisible(type == YouTubeBroadcast::Type::ID);
+	for (auto action : _modes->actions()) {
+		action->setChecked(action->data().toInt() ==
+				   static_cast<int>(type));
+	}
 	adjustSize();
 	updateGeometry();
 }
