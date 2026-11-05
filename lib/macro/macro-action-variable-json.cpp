@@ -1,6 +1,8 @@
 #include "macro-action-variable-json.hpp"
 #include "json-helpers.hpp"
 
+#include <QCheckBox>
+
 namespace advss {
 
 using Action = MacroActionVariable::Action;
@@ -10,13 +12,13 @@ static bool registered = RegisterVariableActionGroup(
 	 {
 		 {Action::EXTRACT_JSON,
 		  "AdvSceneSwitcher.action.variable.type.extractJsonField",
-		  "AdvSceneSwitcher.action.variable.layout.strValue", true},
+		  "AdvSceneSwitcher.action.variable.layout.jsonField", true},
 		 {Action::QUERY_JSON,
 		  "AdvSceneSwitcher.action.variable.type.queryJson",
-		  "AdvSceneSwitcher.action.variable.layout.queryJson", true},
+		  "AdvSceneSwitcher.action.variable.layout.jsonQuery", true},
 		 {Action::ARRAY_JSON,
 		  "AdvSceneSwitcher.action.variable.type.accessJsonArray",
-		  "AdvSceneSwitcher.action.variable.layout.accessJsonArray"},
+		  "AdvSceneSwitcher.action.variable.layout.jsonIndex"},
 		 {Action::JSON_ARRAY_LENGTH,
 		  "AdvSceneSwitcher.action.variable.type.jsonArrayLength",
 		  "AdvSceneSwitcher.action.variable.layout.jsonArrayLength"},
@@ -42,7 +44,7 @@ void VariableActionJson::Save(obs_data_t *obj,
 	_jsonValue.Save(obj, "jsonValue");
 }
 
-void VariableActionJson::Load(obs_data_t *obj, MacroActionVariable &)
+void VariableActionJson::Load(obs_data_t *obj, MacroActionVariable &action)
 {
 	_jsonQuery.Load(obj, "jsonQuery");
 	_jsonIndex.Load(obj, "jsonIndex");
@@ -50,6 +52,14 @@ void VariableActionJson::Load(obs_data_t *obj, MacroActionVariable &)
 		obs_data_get_bool(obj, "jsonQueryExtractSingle");
 	if (obs_data_has_user_value(obj, "jsonValue")) {
 		_jsonValue.Load(obj, "jsonValue");
+	}
+
+	// Old settings modified _variable in place
+	const bool modifiedInPlace = action._action == Action::EXTRACT_JSON ||
+				     action._action == Action::QUERY_JSON ||
+				     action._action == Action::ARRAY_JSON;
+	if (modifiedInPlace && obs_data_get_int(obj, "version") < 2) {
+		action._variable2 = action._variable;
 	}
 }
 
@@ -66,7 +76,11 @@ bool VariableActionJson::Perform(MacroActionVariable &action,
 {
 	switch (type) {
 	case Action::EXTRACT_JSON: {
-		auto value = GetJsonField(var.Value(), action._strValue);
+		auto input = action._variable2.lock();
+		if (!input) {
+			return true;
+		}
+		auto value = GetJsonField(input->Value(), action._strValue);
 		if (!value.has_value()) {
 			return true;
 		}
@@ -74,7 +88,11 @@ bool VariableActionJson::Perform(MacroActionVariable &action,
 		return true;
 	}
 	case Action::QUERY_JSON: {
-		auto value = QueryJson(var.Value(), _jsonQuery);
+		auto input = action._variable2.lock();
+		if (!input) {
+			return true;
+		}
+		auto value = QueryJson(input->Value(), _jsonQuery);
 		if (!value.has_value()) {
 			return true;
 		}
@@ -93,7 +111,11 @@ bool VariableActionJson::Perform(MacroActionVariable &action,
 		return true;
 	}
 	case Action::ARRAY_JSON: {
-		auto value = AccessJsonArrayIndex(var.Value(), _jsonIndex);
+		auto input = action._variable2.lock();
+		if (!input) {
+			return true;
+		}
+		auto value = AccessJsonArrayIndex(input->Value(), _jsonIndex);
 		if (!value.has_value()) {
 			return true;
 		}
