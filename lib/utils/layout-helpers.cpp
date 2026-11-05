@@ -78,7 +78,6 @@ void ClearLayout(QLayout *layout, int afterIdx)
 	while ((item = layout->takeAt(afterIdx))) {
 		if (item->layout()) {
 			ClearLayout(item->layout());
-			delete item->layout();
 		}
 		DeleteLayoutItemWidget(item);
 	}
