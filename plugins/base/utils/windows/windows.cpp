@@ -278,6 +278,21 @@ std::chrono::high_resolution_clock::time_point GetLastMouseRightClickTime()
 	return lastMouseRightClickTime;
 }
 
+bool IsMouseLeftButtonDown()
+{
+	return GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+}
+
+bool IsMouseMiddleButtonDown()
+{
+	return GetAsyncKeyState(VK_MBUTTON) & 0x8000;
+}
+
+bool IsMouseRightButtonDown()
+{
+	return GetAsyncKeyState(VK_RBUTTON) & 0x8000;
+}
+
 static void handleRawMouseInput(LPARAM lParam)
 {
 	UINT dwSize;

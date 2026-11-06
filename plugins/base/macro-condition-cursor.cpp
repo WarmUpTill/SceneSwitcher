@@ -25,6 +25,8 @@ const static std::map<MacroConditionCursor::Condition, std::string>
 #ifdef _WIN32 // Not implemented for MacOS and Linux
 		{MacroConditionCursor::Condition::CLICK,
 		 "AdvSceneSwitcher.condition.cursor.type.click"},
+		{MacroConditionCursor::Condition::HELD,
+		 "AdvSceneSwitcher.condition.cursor.type.held"},
 #endif
 };
 
@@ -50,6 +52,19 @@ bool MacroConditionCursor::CheckClick()
 	return false;
 }
 
+bool MacroConditionCursor::CheckHeld()
+{
+	switch (_button) {
+	case MacroConditionCursor::Button::LEFT:
+		return IsMouseLeftButtonDown() || CheckClick();
+	case MacroConditionCursor::Button::MIDDLE:
+		return IsMouseMiddleButtonDown() || CheckClick();
+	case MacroConditionCursor::Button::RIGHT:
+		return IsMouseRightButtonDown() || CheckClick();
+	}
+	return false;
+}
+
 bool MacroConditionCursor::CheckCondition()
 {
 	bool ret = false;
@@ -67,6 +82,9 @@ bool MacroConditionCursor::CheckCondition()
 		break;
 	case Condition::CLICK:
 		ret = CheckClick();
+		break;
+	case Condition::HELD:
+		ret = CheckHeld();
 		break;
 	}
 
@@ -351,7 +369,9 @@ void MacroConditionCursorEdit::SetWidgetVisibility()
 	}
 
 	_buttons->setVisible(_entryData->_condition ==
-			     MacroConditionCursor::Condition::CLICK);
+				     MacroConditionCursor::Condition::CLICK ||
+			     _entryData->_condition ==
+				     MacroConditionCursor::Condition::HELD);
 
 	adjustSize();
 }
