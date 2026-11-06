@@ -318,6 +318,7 @@ MacroActionYouTubeEdit::MacroActionYouTubeEdit(
 	  _connections(new YouTubeConnectionSelection(this)),
 	  _actions(new QComboBox(this)),
 	  _broadcast(new YouTubeBroadcastSelection(this)),
+	  _help(new HelpIcon("", this)),
 	  _createSettings(new QWidget(this)),
 	  _title(new VariableLineEdit(this)),
 	  _description(new VariableTextEdit(this, 5, 1, 1)),
@@ -365,7 +366,8 @@ MacroActionYouTubeEdit::MacroActionYouTubeEdit(
 	PlaceWidgets(obs_module_text("AdvSceneSwitcher.action.youtube.layout"),
 		     entryLayout,
 		     {{"{{connection}}", _connections},
-		      {"{{actions}}", _actions}});
+		      {"{{actions}}", _actions},
+		      {"{{help}}", _help}});
 
 	auto titleLayout = new QHBoxLayout();
 	PlaceWidgets(
@@ -484,10 +486,17 @@ void MacroActionYouTubeEdit::SetWidgetVisibility()
 		return;
 	}
 
-	const bool isCreate = _entryData->GetAction() ==
+	const auto action = _entryData->GetAction();
+	const bool isCreate = action ==
 			      MacroActionYouTube::Action::CREATE_BROADCAST;
+	const bool isStart = action ==
+			     MacroActionYouTube::Action::START_BROADCAST;
 	_broadcast->setVisible(!isCreate);
 	_createSettings->setVisible(isCreate);
+	_help->setVisible(isCreate || isStart);
+	_help->setToolTip(obs_module_text(
+		isCreate ? "AdvSceneSwitcher.action.youtube.create.help"
+			 : "AdvSceneSwitcher.action.youtube.start.help"));
 	adjustSize();
 	updateGeometry();
 }

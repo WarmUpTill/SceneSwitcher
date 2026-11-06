@@ -2,6 +2,7 @@
 #include "broadcast-selection.hpp"
 #include "youtube-connection.hpp"
 
+#include <help-icon.hpp>
 #include <macro-action-edit.hpp>
 #include <variable-text-edit.hpp>
 
@@ -90,6 +91,7 @@ private:
 	YouTubeConnectionSelection *_connections;
 	QComboBox *_actions;
 	YouTubeBroadcastSelection *_broadcast;
+	HelpIcon *_help;
 	QWidget *_createSettings;
 	VariableLineEdit *_title;
 	VariableTextEdit *_description;
