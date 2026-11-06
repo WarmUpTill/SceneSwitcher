@@ -67,6 +67,17 @@ listBroadcasts(YouTubeConnection &connection, httplib::Params params,
 	return broadcasts;
 }
 
+static std::string getBroadcastIdSelectedInObs()
+{
+	auto service = obs_frontend_get_streaming_service();
+	if (!service) {
+		return "";
+	}
+	// Set by the "Manage Broadcast" dialog of the OBS YouTube integration
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
+	return obs_data_get_string(settings, "broadcast_id");
+}
+
 static std::string getObsStreamKey()
 {
 	auto service = obs_frontend_get_streaming_service();
@@ -192,7 +203,8 @@ void YouTubeBroadcast::Load(obs_data_t *obj)
 {
 	OBSDataAutoRelease data = obs_data_get_obj(obj, "broadcast");
 	const auto type = static_cast<Type>(obs_data_get_int(data, "type"));
-	_type = (type == Type::ID || type == Type::SELECTED)
+	_type = (type == Type::ID || type == Type::SELECTED ||
+		 type == Type::SELECTED_IN_OBS)
 			? type
 			: Type::BOUND_TO_OBS_STREAM_KEY;
 	_id.Load(data, "id");
@@ -225,6 +237,9 @@ YouTubeBroadcast::GetInfo(YouTubeConnection &connection, bool useCache) const
 		return getBroadcastById(connection, _id, useCache);
 	case Type::SELECTED:
 		return getBroadcastById(connection, _selectedId, useCache);
+	case Type::SELECTED_IN_OBS:
+		return getBroadcastById(
+			connection, getBroadcastIdSelectedInObs(), useCache);
 	}
 	return {};
 }
@@ -296,6 +311,10 @@ YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 		  obs_module_text(
 			  "AdvSceneSwitcher.youtube.broadcast.mode.boundToObsStreamKey"),
 		  this)),
+	  _selectedInObs(new QLabel(
+		  obs_module_text(
+			  "AdvSceneSwitcher.youtube.broadcast.mode.selectedInObs"),
+		  this)),
 	  _id(new VariableLineEdit(this)),
 	  _mode(new QPushButton(this)),
 	  _modes(new QActionGroup(this))
@@ -303,6 +322,9 @@ YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	auto menu = new QMenu(_mode);
 	AddModeAction(menu, "AdvSceneSwitcher.youtube.broadcast.mode.select",
 		      YouTubeBroadcast::Type::SELECTED);
+	AddModeAction(menu,
+		      "AdvSceneSwitcher.youtube.broadcast.mode.selectedInObs",
+		      YouTubeBroadcast::Type::SELECTED_IN_OBS);
 	AddModeAction(
 		menu,
 		"AdvSceneSwitcher.youtube.broadcast.mode.boundToObsStreamKey",
@@ -338,6 +360,7 @@ YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 		obs_module_text("AdvSceneSwitcher.youtube.broadcast")));
 	layout->addWidget(_selection);
 	layout->addWidget(_boundToObsStreamKey);
+	layout->addWidget(_selectedInObs);
 	layout->addWidget(_id);
 	layout->addWidget(_mode);
 	layout->addStretch();
@@ -454,6 +477,8 @@ void YouTubeBroadcastSelection::SetWidgetVisibility()
 	_selection->setVisible(type == YouTubeBroadcast::Type::SELECTED);
 	_boundToObsStreamKey->setVisible(
 		type == YouTubeBroadcast::Type::BOUND_TO_OBS_STREAM_KEY);
+	_selectedInObs->setVisible(type ==
+				   YouTubeBroadcast::Type::SELECTED_IN_OBS);
 	_id->setVisible(type == YouTubeBroadcast::Type::ID);
 	for (auto action : _modes->actions()) {
 		action->setChecked(action->data().toInt() ==

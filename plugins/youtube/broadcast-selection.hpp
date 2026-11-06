@@ -29,6 +29,7 @@ public:
 		BOUND_TO_OBS_STREAM_KEY = 0,
 		ID = 2,
 		SELECTED = 3,
+		SELECTED_IN_OBS = 4,
 	};
 
 	void Load(obs_data_t *obj);
@@ -89,6 +90,7 @@ private:
 
 	BroadcastComboBox *_selection;
 	QLabel *_boundToObsStreamKey;
+	QLabel *_selectedInObs;
 	VariableLineEdit *_id;
 	QPushButton *_mode;
 	QActionGroup *_modes;
