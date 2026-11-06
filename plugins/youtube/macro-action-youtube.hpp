@@ -3,7 +3,9 @@
 #include "youtube-connection.hpp"
 
 #include <macro-action-edit.hpp>
+#include <variable-text-edit.hpp>
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QTimer>
@@ -26,13 +28,29 @@ public:
 	enum class Action {
 		START_BROADCAST = 10,
 		END_BROADCAST = 20,
+		CREATE_BROADCAST = 30,
 	};
 
-	Action _action = Action::START_BROADCAST;
+	void SetAction(Action);
+	Action GetAction() const { return _action; }
+
 	std::weak_ptr<YouTubeConnection> _connection;
 	YouTubeBroadcast _broadcast;
+	StringVariable _title = obs_module_text(
+		"AdvSceneSwitcher.action.youtube.create.title.default");
+	StringVariable _description = "";
+	std::string _privacy = "private";
+	bool _autoStart = true;
+	bool _autoStop = true;
+	bool _madeForKids = false;
+	bool _bindToObsStreamKey = true;
 
 private:
+	void CreateBroadcast(YouTubeConnection &connection);
+	void SetupTempVars();
+
+	Action _action = Action::START_BROADCAST;
+
 	static bool _registered;
 	static const std::string id;
 };
@@ -57,15 +75,29 @@ private slots:
 	void ConnectionChanged(const QString &);
 	void ActionChanged(int);
 	void BroadcastChanged(const YouTubeBroadcast &);
+	void TitleChanged();
+	void DescriptionChanged();
+	void PrivacyChanged(int);
+	void CreateOptionsChanged();
 	void CheckConnection();
 
 signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
+	void SetWidgetVisibility();
+
 	YouTubeConnectionSelection *_connections;
 	QComboBox *_actions;
 	YouTubeBroadcastSelection *_broadcast;
+	QWidget *_createSettings;
+	VariableLineEdit *_title;
+	VariableTextEdit *_description;
+	QComboBox *_privacy;
+	QCheckBox *_autoStart;
+	QCheckBox *_autoStop;
+	QCheckBox *_madeForKids;
+	QCheckBox *_bindToObsStreamKey;
 	QLabel *_connectionWarning;
 	QTimer _connectionCheckTimer;
 

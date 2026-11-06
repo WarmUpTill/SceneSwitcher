@@ -132,6 +132,15 @@ static std::string getStreamId(YouTubeConnection &connection,
 	return streamId;
 }
 
+std::string GetObsStreamId(YouTubeConnection &connection)
+{
+	const auto streamKey = getObsStreamKey();
+	if (streamKey.empty()) {
+		return "";
+	}
+	return getStreamId(connection, streamKey, false);
+}
+
 static std::optional<YouTubeBroadcastInfo>
 getBroadcastBoundToObsStreamKey(YouTubeConnection &connection, bool useCache)
 {

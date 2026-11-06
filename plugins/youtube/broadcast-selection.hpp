@@ -46,6 +46,8 @@ private:
 	friend class YouTubeBroadcastSelection;
 };
 
+std::string GetObsStreamId(YouTubeConnection &connection);
+
 class BroadcastComboBox : public FilterComboBox {
 	Q_OBJECT
 
