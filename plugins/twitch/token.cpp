@@ -5,6 +5,7 @@
 
 #include <obs-module-helper.hpp>
 
+#include <algorithm>
 #include <QDesktopServices>
 #include <QGroupBox>
 #include <QScrollArea>
@@ -20,6 +21,7 @@
 namespace advss {
 
 static const int tokenGrabberPort = 42171;
+static const int tokenTimeoutSeconds = 120;
 
 static std::deque<std::shared_ptr<Item>> twitchTokens;
 
@@ -684,6 +686,8 @@ TwitchTokenSettingsDialog::TwitchTokenSettingsDialog(
 
 	QWidget::connect(&_validationTimer, &QTimer::timeout, this,
 			 &TwitchTokenSettingsDialog::CheckIfTokenValid);
+	QWidget::connect(&_countdownTimer, &QTimer::timeout, this,
+			 &TwitchTokenSettingsDialog::UpdateWaitingStatus);
 	_validationTimer.start(10000);
 	CheckIfTokenValid();
 }
@@ -825,12 +829,29 @@ void TwitchTokenSettingsDialog::RequestToken()
 	_validationTimer.stop();
 	_tokenGrabber.SetTokenScope(scope);
 	_tokenGrabber.start();
-	_tokenStatus->setText(obs_module_text(
-		"AdvSceneSwitcher.twitchToken.request.waiting"));
+	_tokenDeadline = std::chrono::steady_clock::now() +
+			 std::chrono::seconds(tokenTimeoutSeconds);
+	UpdateWaitingStatus();
+	_countdownTimer.start(1000);
+}
+
+void TwitchTokenSettingsDialog::UpdateWaitingStatus()
+{
+	const auto remaining = std::chrono::ceil<std::chrono::seconds>(
+		_tokenDeadline - std::chrono::steady_clock::now());
+	const QString remainingText =
+		QString(obs_module_text(
+				"AdvSceneSwitcher.twitchToken.request.waiting.remaining"))
+			.arg(std::max<long long>(remaining.count(), 0));
+	_tokenStatus->setText(
+		QString(obs_module_text(
+			"AdvSceneSwitcher.twitchToken.request.waiting")) +
+		" " + remainingText);
 }
 
 void TwitchTokenSettingsDialog::GotToken(const std::optional<QString> &value)
 {
+	_countdownTimer.stop();
 	_currentTokenValue->setText(value.value_or(""));
 	if (!value) {
 		_tokenStatus->setText(obs_module_text(
@@ -897,8 +918,6 @@ bool TwitchTokenSettingsDialog::AskForSettings(QWidget *parent,
 	}
 	return true;
 }
-
-int TokenGrabberThread::_timeout = 15;
 
 TokenGrabberThread::~TokenGrabberThread()
 {
@@ -1010,7 +1029,7 @@ void TokenGrabberThread::run()
 		vblog(LOG_INFO, "Token server stopped!");
 	});
 	auto time = std::chrono::high_resolution_clock::now() +
-		    std::chrono::seconds(_timeout);
+		    std::chrono::seconds(tokenTimeoutSeconds);
 	while (!_stopWaiting) {
 		if (_cv.wait_until(lock, time) == std::cv_status::timeout) {
 			break;

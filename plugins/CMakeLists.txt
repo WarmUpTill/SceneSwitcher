@@ -43,6 +43,7 @@ add_plugin(usb)
 add_plugin(video)
 add_plugin(speech)
 add_plugin(now-playing)
+add_plugin(youtube)
 
 # ---------------------------------------------------------------------------- #
 
