@@ -211,6 +211,7 @@ target_sources(
 
 if(OS_WINDOWS)
   target_sources(${PROJECT_NAME} PRIVATE utils/windows/windows.cpp)
+  target_link_libraries(${PROJECT_NAME} PRIVATE hid)
 elseif(OS_MACOS)
   target_sources(${PROJECT_NAME} PRIVATE utils/osx/osx.mm)
 else()

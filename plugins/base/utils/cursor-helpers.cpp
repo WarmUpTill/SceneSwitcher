@@ -29,6 +29,22 @@ bool IsMouseRightButtonDown()
 {
 	return false;
 }
+std::chrono::high_resolution_clock::time_point GetLastPenTipClickTime()
+{
+	return {};
+}
+std::chrono::high_resolution_clock::time_point GetLastPenBarrelClickTime()
+{
+	return {};
+}
+bool IsPenTipDown()
+{
+	return false;
+}
+bool IsPenBarrelDown()
+{
+	return false;
+}
 #endif
 
 } // namespace advss

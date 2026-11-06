@@ -32,6 +32,8 @@ public:
 		LEFT,
 		MIDDLE,
 		RIGHT,
+		PEN_TIP,
+		PEN_BARREL,
 	};
 
 	Condition _condition = Condition::REGION;
