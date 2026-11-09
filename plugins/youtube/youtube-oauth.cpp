@@ -13,11 +13,6 @@ static const char *authEndpoint =
 	"https://accounts.google.com/o/oauth2/v2/auth";
 static const char *youtubeScope = "https://www.googleapis.com/auth/youtube";
 
-std::optional<OAuthClientConfig> GetBuiltInClientConfig()
-{
-	return {};
-}
-
 static std::string generateRandomString(size_t length)
 {
 	static const std::string chars =

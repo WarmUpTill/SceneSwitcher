@@ -3,6 +3,7 @@
 #include "youtube-tab.hpp"
 
 #include <help-icon.hpp>
+#include <layout-helpers.hpp>
 #include <log-helper.hpp>
 #include <macro-export-extensions.hpp>
 #include <obs-module-helper.hpp>
@@ -444,6 +445,9 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 		  "AdvSceneSwitcher.youtubeConnection.add",
 		  "AdvSceneSwitcher.youtubeConnection.nameNotAvailable", false,
 		  parent),
+	  _useOwnClient(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.youtubeConnection.useOwnClient"))),
+	  _layout(new QGridLayout()),
 	  _clientId(new QLineEdit(
 		  QString::fromStdString(settings._customClientId))),
 	  _clientSecret(new QLineEdit(
@@ -459,7 +463,13 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 	_name->setReadOnly(true);
 	_clientSecret->setEchoMode(QLineEdit::PasswordEchoOnEdit);
 	_status->setWordWrap(true);
+	_useOwnClient->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.youtubeConnection.useOwnClient.tooltip"));
+	_useOwnClient->setChecked(!settings._customClientId.empty());
+	_useOwnClient->setVisible(GetBuiltInClientConfig().has_value());
 
+	QWidget::connect(_useOwnClient, &QCheckBox::toggled, this,
+			 &YouTubeConnectionSettingsDialog::UseOwnClientChanged);
 	QWidget::connect(_clientId, &QLineEdit::textEdited, this,
 			 &YouTubeConnectionSettingsDialog::ClientConfigChanged);
 	QWidget::connect(_clientSecret, &QLineEdit::textEdited, this,
@@ -471,15 +481,16 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 	QWidget::connect(&_countdownTimer, &QTimer::timeout, this,
 			 &YouTubeConnectionSettingsDialog::UpdateWaitingStatus);
 
-	auto grid = new QGridLayout();
 	int row = 0;
-	grid->addWidget(new QLabel(obs_module_text(
-				"AdvSceneSwitcher.youtubeConnection.name")),
-			row, 0);
+	_layout->addWidget(new QLabel(obs_module_text(
+				   "AdvSceneSwitcher.youtubeConnection.name")),
+			   row, 0);
 	auto nameLayout = new QHBoxLayout();
 	nameLayout->addWidget(_name);
 	nameLayout->addWidget(_nameHint);
-	grid->addLayout(nameLayout, row, 1);
+	_layout->addLayout(nameLayout, row, 1);
+	++row;
+	_layout->addWidget(_useOwnClient, row, 0, 1, 2);
 	++row;
 	auto clientIdLabelLayout = new QHBoxLayout();
 	clientIdLabelLayout->addWidget(new QLabel(obs_module_text(
@@ -487,20 +498,27 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 	clientIdLabelLayout->addWidget(new HelpIcon(obs_module_text(
 		"AdvSceneSwitcher.youtubeConnection.clientConfig.help")));
 	clientIdLabelLayout->addStretch();
-	grid->addLayout(clientIdLabelLayout, row, 0);
-	grid->addWidget(_clientId, row, 1);
+	_layout->addLayout(clientIdLabelLayout, row, 0);
+	_layout->addWidget(_clientId, row, 1);
+	_clientIdRow = row;
 	++row;
-	grid->addWidget(
+	_layout->addWidget(
 		new QLabel(obs_module_text(
 			"AdvSceneSwitcher.youtubeConnection.clientSecret")),
 		row, 0);
-	grid->addWidget(_clientSecret, row, 1);
+	_layout->addWidget(_clientSecret, row, 1);
+	_clientSecretRow = row;
 	++row;
-	grid->addWidget(_connect, row, 0);
-	grid->addWidget(_status, row, 1);
+	_layout->addWidget(_connect, row, 0);
+	_layout->addWidget(_status, row, 1);
+
+	auto setupGuide = new QLabel(obs_module_text(
+		"AdvSceneSwitcher.youtubeConnection.setupGuide"));
+	setupGuide->setOpenExternalLinks(true);
 
 	auto layout = new QVBoxLayout();
-	layout->addLayout(grid);
+	layout->addLayout(_layout);
+	layout->addWidget(setupGuide);
 	layout->addWidget(_warnIfInvalid);
 	layout->addWidget(_buttonbox);
 	setLayout(layout);
@@ -513,14 +531,38 @@ YouTubeConnectionSettingsDialog::YouTubeConnectionSettingsDialog(
 	if (_name->text().isEmpty()) {
 		HighlightWidget(_connect, Qt::green, QColor(0, 0, 0, 0), true);
 	}
+
+	SetClientConfigVisibility();
+}
+
+bool YouTubeConnectionSettingsDialog::UseOwnClient() const
+{
+	return !GetBuiltInClientConfig() || _useOwnClient->isChecked();
+}
+
+void YouTubeConnectionSettingsDialog::SetClientConfigVisibility()
+{
+	const bool visible = UseOwnClient();
+	SetGridLayoutRowVisible(_layout, _clientIdRow, visible);
+	SetGridLayoutRowVisible(_layout, _clientSecretRow, visible);
+	adjustSize();
+}
+
+void YouTubeConnectionSettingsDialog::UseOwnClientChanged()
+{
+	SetClientConfigVisibility();
+	ClientConfigChanged();
 }
 
 void YouTubeConnectionSettingsDialog::ClientConfigChanged()
 {
+	// An empty custom client ID selects the built-in client
+	const bool useOwnClient = UseOwnClient();
 	_currentConnection._customClientId =
-		_clientId->text().trimmed().toStdString();
+		useOwnClient ? _clientId->text().trimmed().toStdString() : "";
 	_currentConnection._customClientSecret =
-		_clientSecret->text().trimmed().toStdString();
+		useOwnClient ? _clientSecret->text().trimmed().toStdString()
+			     : "";
 	_currentConnection._refreshToken.clear();
 	_currentConnection._accessToken.clear();
 

@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <QCheckBox>
+#include <QGridLayout>
 #include <QThread>
 #include <QTimer>
 
@@ -91,13 +92,20 @@ public:
 
 private slots:
 	void ClientConfigChanged();
+	void UseOwnClientChanged();
 	void Connect();
 	void AuthFinished();
 	void UpdateWaitingStatus();
 
 private:
 	void SetErrorStatus(const std::string &errorReason);
+	bool UseOwnClient() const;
+	void SetClientConfigVisibility();
 
+	QCheckBox *_useOwnClient;
+	QGridLayout *_layout;
+	int _clientIdRow = -1;
+	int _clientSecretRow = -1;
 	QLineEdit *_clientId;
 	QLineEdit *_clientSecret;
 	QPushButton *_connect;

@@ -64,6 +64,7 @@ target_sources(
           macro-action-youtube.hpp
           macro-condition-youtube.cpp
           macro-condition-youtube.hpp
+          youtube-builtin-client.cpp
           youtube-connection.cpp
           youtube-connection.hpp
           youtube-helpers.cpp
@@ -72,6 +73,20 @@ target_sources(
           youtube-oauth.hpp
           youtube-tab.cpp
           youtube-tab.hpp)
+
+# Without these the users have to provide the OAuth credentials of their own
+# Google Cloud project
+set(ADVSS_YOUTUBE_CLIENT_ID
+    "$ENV{ADVSS_YOUTUBE_CLIENT_ID}"
+    CACHE STRING "OAuth client ID of the built-in YouTube client")
+set(ADVSS_YOUTUBE_CLIENT_SECRET
+    "$ENV{ADVSS_YOUTUBE_CLIENT_SECRET}"
+    CACHE STRING "OAuth client secret of the built-in YouTube client")
+mark_as_advanced(ADVSS_YOUTUBE_CLIENT_ID ADVSS_YOUTUBE_CLIENT_SECRET)
+configure_file(youtube-client-config.hpp.in
+               "${CMAKE_CURRENT_BINARY_DIR}/youtube-client-config.hpp" @ONLY)
+target_include_directories(${PROJECT_NAME}
+                           PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 setup_advss_plugin(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")

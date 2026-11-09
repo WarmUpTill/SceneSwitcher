@@ -7,6 +7,8 @@ on:
         value: ${{ jobs.check-event.outputs.pluginName }}
 env:
   DEP_DIR: .deps/advss-build-dependencies-6
+  ADVSS_YOUTUBE_CLIENT_ID: ${{ secrets.ADVSS_YOUTUBE_CLIENT_ID }}
+  ADVSS_YOUTUBE_CLIENT_SECRET: ${{ secrets.ADVSS_YOUTUBE_CLIENT_SECRET }}
 jobs:
   check-event:
     name: Check GitHub Event Data 🔎
