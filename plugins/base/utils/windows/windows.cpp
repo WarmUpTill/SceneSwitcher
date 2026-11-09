@@ -2,12 +2,18 @@
 #include "log-helper.hpp"
 #include "plugin-state-helpers.hpp"
 
+#include <algorithm>
+#include <atomic>
 #include <obs-frontend-api.h>
 #include <QAbstractEventDispatcher>
 #include <QAbstractNativeEventFilter>
 #include <unordered_map>
 #include <util/platform.h>
+#include <vector>
 #include <windows.h>
+
+// Must be included after windows.h
+#include <hidsdi.h>
 
 namespace advss {
 
@@ -278,6 +284,173 @@ std::chrono::high_resolution_clock::time_point GetLastMouseRightClickTime()
 	return lastMouseRightClickTime;
 }
 
+bool IsMouseLeftButtonDown()
+{
+	return GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+}
+
+bool IsMouseMiddleButtonDown()
+{
+	return GetAsyncKeyState(VK_MBUTTON) & 0x8000;
+}
+
+bool IsMouseRightButtonDown()
+{
+	return GetAsyncKeyState(VK_RBUTTON) & 0x8000;
+}
+
+static constexpr USAGE hidUsagePageDigitizer = 0x0D;
+static constexpr USAGE hidUsageExternalPen = 0x01;
+static constexpr USAGE hidUsageIntegratedPen = 0x02;
+static constexpr USAGE hidUsageTipSwitch = 0x42;
+static constexpr USAGE hidUsageBarrelSwitch = 0x44;
+
+// Written on the Qt main thread and read on the macro thread
+static std::atomic<bool> penTipDown = false;
+static std::atomic<bool> penBarrelDown = false;
+static std::atomic<std::chrono::high_resolution_clock::time_point>
+	lastPenTipClickTime{std::chrono::high_resolution_clock::time_point{}};
+static std::atomic<std::chrono::high_resolution_clock::time_point>
+	lastPenBarrelClickTime{
+		std::chrono::high_resolution_clock::time_point{}};
+
+std::chrono::high_resolution_clock::time_point GetLastPenTipClickTime()
+{
+	return lastPenTipClickTime;
+}
+
+std::chrono::high_resolution_clock::time_point GetLastPenBarrelClickTime()
+{
+	return lastPenBarrelClickTime;
+}
+
+bool IsPenTipDown()
+{
+	return penTipDown;
+}
+
+bool IsPenBarrelDown()
+{
+	return penBarrelDown;
+}
+
+// Temporary diagnostics for testing with real tablets, remove before merging
+static void logPenDevice(HANDLE device, size_t preparsedSize)
+{
+	RID_DEVICE_INFO info{};
+	info.cbSize = sizeof(info);
+	UINT infoSize = sizeof(info);
+	GetRawInputDeviceInfoA(device, RIDI_DEVICEINFO, &info, &infoSize);
+	char name[512] = {};
+	UINT nameSize = sizeof(name);
+	GetRawInputDeviceInfoA(device, RIDI_DEVICENAME, name, &nameSize);
+	blog(LOG_INFO,
+	     "[pen-test] device %p page=0x%02x usage=0x%02x vid=0x%04lx pid=0x%04lx preparsedBytes=%zu name=%s",
+	     device, info.hid.usUsagePage, info.hid.usUsage,
+	     info.hid.dwVendorId, info.hid.dwProductId, preparsedSize, name);
+}
+
+static void logPenReport(HANDLE device, const USAGE *usages, ULONG count)
+{
+	static bool lastInRange = false, lastTip = false, lastBarrel = false;
+	const auto end = usages + count;
+	const bool inRange = std::find(usages, end, (USAGE)0x32) != end;
+	const bool tip = std::find(usages, end, hidUsageTipSwitch) != end;
+	const bool barrel = std::find(usages, end, hidUsageBarrelSwitch) != end;
+	if (inRange == lastInRange && tip == lastTip && barrel == lastBarrel) {
+		return;
+	}
+	blog(LOG_INFO, "[pen-test] device %p inRange=%d tip=%d barrel=%d",
+	     device, inRange, tip, barrel);
+	lastInRange = inRange;
+	lastTip = tip;
+	lastBarrel = barrel;
+}
+
+static void logPenParseFailure(HANDLE device, long status)
+{
+	static int failures = 0;
+	if (failures++ < 10) {
+		blog(LOG_WARNING,
+		     "[pen-test] device %p HidP_GetUsages failed status=0x%08lx",
+		     device, status);
+	}
+}
+
+static void logPenMouseEvent(const RAWMOUSE &mouse)
+{
+	const bool penSignature = (mouse.ulExtraInformation & 0xFFFFFF00) ==
+				  0xFF515700;
+	const bool absolute = mouse.usFlags & MOUSE_MOVE_ABSOLUTE;
+	if (mouse.usButtonFlags == 0 || (!penSignature && !absolute)) {
+		return;
+	}
+	blog(LOG_INFO,
+	     "[pen-test] mouse event buttonFlags=0x%04x usFlags=0x%04x extra=0x%08lx",
+	     mouse.usButtonFlags, mouse.usFlags, mouse.ulExtraInformation);
+}
+
+static const std::vector<BYTE> &getPenPreparsedData(HANDLE device)
+{
+	static std::unordered_map<HANDLE, std::vector<BYTE>> cache;
+	const auto it = cache.find(device);
+	if (it != cache.end()) {
+		return it->second;
+	}
+
+	UINT size = 0;
+	GetRawInputDeviceInfo(device, RIDI_PREPARSEDDATA, NULL, &size);
+	std::vector<BYTE> data(size);
+	if (size == 0 || GetRawInputDeviceInfo(device, RIDI_PREPARSEDDATA,
+					       data.data(), &size) != size) {
+		data.clear();
+	}
+	logPenDevice(device, data.size());
+	return cache.emplace(device, std::move(data)).first->second;
+}
+
+static void updatePenButton(
+	bool down, std::atomic<bool> &state,
+	std::atomic<std::chrono::high_resolution_clock::time_point> &lastClick)
+{
+	if (down && !state) {
+		lastClick = std::chrono::high_resolution_clock::now();
+	}
+	state = down;
+}
+
+static void handleRawPenInput(RAWINPUT *raw)
+{
+	const auto &preparsedData = getPenPreparsedData(raw->header.hDevice);
+	if (preparsedData.empty()) {
+		return;
+	}
+
+	for (DWORD i = 0; i < raw->data.hid.dwCount; i++) {
+		auto report = (PCHAR)raw->data.hid.bRawData +
+			      i * raw->data.hid.dwSizeHid;
+		USAGE usages[32];
+		ULONG count = 32;
+		const auto status = HidP_GetUsages(
+			HidP_Input, hidUsagePageDigitizer, 0, usages, &count,
+			(PHIDP_PREPARSED_DATA)preparsedData.data(), report,
+			raw->data.hid.dwSizeHid);
+		if (status != HIDP_STATUS_SUCCESS) {
+			logPenParseFailure(raw->header.hDevice, status);
+			continue;
+		}
+		logPenReport(raw->header.hDevice, usages, count);
+
+		const auto end = usages + count;
+		updatePenButton(std::find(usages, end, hidUsageTipSwitch) !=
+					end,
+				penTipDown, lastPenTipClickTime);
+		updatePenButton(std::find(usages, end, hidUsageBarrelSwitch) !=
+					end,
+				penBarrelDown, lastPenBarrelClickTime);
+	}
+}
+
 static void handleRawMouseInput(LPARAM lParam)
 {
 	UINT dwSize;
@@ -295,6 +468,7 @@ static void handleRawMouseInput(LPARAM lParam)
 
 	RAWINPUT *raw = (RAWINPUT *)lpb;
 	if (raw->header.dwType == RIM_TYPEMOUSE) {
+		logPenMouseEvent(raw->data.mouse);
 		switch (raw->data.mouse.usButtonFlags) {
 		case RI_MOUSE_BUTTON_1_DOWN:
 			lastMouseLeftClickTime =
@@ -311,6 +485,8 @@ static void handleRawMouseInput(LPARAM lParam)
 		default:
 			break;
 		}
+	} else if (raw->header.dwType == RIM_TYPEHID) {
+		handleRawPenInput(raw);
 	}
 	delete[] lpb;
 }
@@ -333,6 +509,24 @@ public:
 	}
 };
 
+// A held pen is not visible through raw mouse input or GetAsyncKeyState
+static void registerRawPenInput(HWND window)
+{
+	RAWINPUTDEVICE devices[2];
+	devices[0].dwFlags = RIDEV_INPUTSINK;
+	devices[0].usUsagePage = hidUsagePageDigitizer;
+	devices[0].usUsage = hidUsageIntegratedPen;
+	devices[0].hwndTarget = window;
+	devices[1] = devices[0];
+	devices[1].usUsage = hidUsageExternalPen;
+	if (!RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE))) {
+		blog(LOG_WARNING, "Registering for raw pen input failed!\n"
+				  "Pen click detection not functional!");
+	} else {
+		blog(LOG_INFO, "[pen-test] registered for raw pen input");
+	}
+}
+
 static void setupMouseEeventFilter()
 {
 	mouseInputFilter = new RawMouseInputFilter;
@@ -348,6 +542,7 @@ static void setupMouseEeventFilter()
 		blog(LOG_WARNING, "Registering for raw mouse input failed!\n"
 				  "Mouse click detection not functional!");
 	}
+	registerRawPenInput(rid.hwndTarget);
 }
 
 static bool setup()
