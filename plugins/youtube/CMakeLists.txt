@@ -62,6 +62,8 @@ target_sources(
           broadcast-selection.hpp
           macro-action-youtube.cpp
           macro-action-youtube.hpp
+          macro-condition-youtube.cpp
+          macro-condition-youtube.hpp
           youtube-connection.cpp
           youtube-connection.hpp
           youtube-helpers.cpp
