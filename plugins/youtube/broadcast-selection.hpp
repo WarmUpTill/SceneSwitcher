@@ -49,7 +49,7 @@ private:
 
 std::string GetObsStreamId(YouTubeConnection &connection);
 
-class BroadcastComboBox : public FilterComboBox {
+class LazyFilterComboBox : public FilterComboBox {
 	Q_OBJECT
 
 public:
@@ -60,7 +60,7 @@ protected:
 	void focusInEvent(QFocusEvent *event) override;
 
 signals:
-	void BroadcastListNeeded();
+	void ItemsNeeded();
 };
 
 class YouTubeBroadcastSelection : public QWidget {
@@ -88,7 +88,7 @@ private:
 			   YouTubeBroadcast::Type type);
 	void SetWidgetVisibility();
 
-	BroadcastComboBox *_selection;
+	LazyFilterComboBox *_selection;
 	QLabel *_boundToObsStreamKey;
 	QLabel *_selectedInObs;
 	VariableLineEdit *_id;

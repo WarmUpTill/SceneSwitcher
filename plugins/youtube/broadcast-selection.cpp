@@ -244,13 +244,13 @@ YouTubeBroadcast::GetInfo(YouTubeConnection &connection, bool useCache) const
 	return {};
 }
 
-void BroadcastComboBox::showPopup()
+void LazyFilterComboBox::showPopup()
 {
-	emit BroadcastListNeeded();
+	emit ItemsNeeded();
 	FilterComboBox::showPopup();
 }
 
-void BroadcastComboBox::focusInEvent(QFocusEvent *event)
+void LazyFilterComboBox::focusInEvent(QFocusEvent *event)
 {
 	FilterComboBox::focusInEvent(event);
 
@@ -261,7 +261,7 @@ void BroadcastComboBox::focusInEvent(QFocusEvent *event)
 	    reason == Qt::ActiveWindowFocusReason) {
 		return;
 	}
-	emit BroadcastListNeeded();
+	emit ItemsNeeded();
 }
 
 static const int selectionWidthInCharacters = 40;
@@ -304,7 +304,7 @@ static QString getDisplayText(const YouTubeBroadcastInfo &broadcast)
 
 YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 	: QWidget(parent),
-	  _selection(new BroadcastComboBox(
+	  _selection(new LazyFilterComboBox(
 		  this, obs_module_text(
 				"AdvSceneSwitcher.youtube.broadcast.select"))),
 	  _boundToObsStreamKey(new QLabel(
@@ -344,7 +344,7 @@ YouTubeBroadcastSelection::YouTubeBroadcastSelection(QWidget *parent)
 
 	QWidget::connect(_selection, SIGNAL(currentIndexChanged(int)), this,
 			 SLOT(SelectionChanged(int)));
-	QWidget::connect(_selection, SIGNAL(BroadcastListNeeded()), this,
+	QWidget::connect(_selection, SIGNAL(ItemsNeeded()), this,
 			 SLOT(UpdateBroadcastList()));
 	QWidget::connect(_id, SIGNAL(editingFinished()), this,
 			 SLOT(IdChanged()));

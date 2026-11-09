@@ -2,6 +2,9 @@
 #include "broadcast-selection.hpp"
 #include "youtube-connection.hpp"
 
+#include <duration-control.hpp>
+#include <duration.hpp>
+#include <file-selection.hpp>
 #include <help-icon.hpp>
 #include <macro-action-edit.hpp>
 #include <variable-text-edit.hpp>
@@ -12,6 +15,11 @@
 #include <QTimer>
 
 namespace advss {
+
+struct YouTubeVideoCategory {
+	std::string id;
+	std::string title;
+};
 
 class MacroActionYouTube : public MacroAction {
 public:
@@ -45,6 +53,14 @@ public:
 	bool _autoStop = true;
 	bool _madeForKids = false;
 	bool _bindToObsStreamKey = true;
+	std::string _categoryId;
+	std::string _categoryTitle;
+	StringVariable _thumbnail = "";
+	std::string _latency = "normal";
+	bool _dvr = true;
+	bool _projection360 = false;
+	bool _scheduleForLater = false;
+	Duration _scheduledStartIn = 3600.0;
 
 private:
 	void CreateBroadcast(YouTubeConnection &connection);
@@ -79,6 +95,11 @@ private slots:
 	void TitleChanged();
 	void DescriptionChanged();
 	void PrivacyChanged(int);
+	void CategoryChanged(int);
+	void UpdateCategoryList();
+	void ThumbnailChanged(const QString &);
+	void LatencyChanged(int);
+	void ScheduledStartInChanged(const Duration &);
 	void CreateOptionsChanged();
 	void CheckConnection();
 
@@ -86,6 +107,7 @@ signals:
 	void HeaderInfoChanged(const QString &);
 
 private:
+	void PopulateCategories(const std::vector<YouTubeVideoCategory> &);
 	void SetWidgetVisibility();
 
 	YouTubeConnectionSelection *_connections;
@@ -96,8 +118,15 @@ private:
 	VariableLineEdit *_title;
 	VariableTextEdit *_description;
 	QComboBox *_privacy;
+	LazyFilterComboBox *_category;
+	FileSelection *_thumbnail;
+	QComboBox *_latency;
+	QCheckBox *_scheduleForLater;
+	DurationSelection *_scheduledStartIn;
 	QCheckBox *_autoStart;
 	QCheckBox *_autoStop;
+	QCheckBox *_dvr;
+	QCheckBox *_projection360;
 	QCheckBox *_madeForKids;
 	QCheckBox *_bindToObsStreamKey;
 	QLabel *_connectionWarning;

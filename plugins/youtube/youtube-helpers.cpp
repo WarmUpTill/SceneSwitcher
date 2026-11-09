@@ -12,6 +12,7 @@ namespace advss {
 static const char *tokenHost = "https://oauth2.googleapis.com";
 static const char *apiHost = "https://www.googleapis.com";
 static const char *apiBasePath = "/youtube/v3";
+static const char *uploadBasePath = "/upload/youtube/v3";
 // Conditions are checked frequently, so cache responses to stay within the
 // daily API quota
 static const int cacheTimeoutSeconds = 30;
@@ -94,17 +95,21 @@ static std::string getErrorReason(obs_data_t *data)
 	return obs_data_get_string(firstError, "reason");
 }
 
-static httplib::Result sendRequest(YouTubeRequestMethod method,
-				   const std::string &path,
-				   const httplib::Params &params,
-				   const std::string &body,
-				   const std::string &accessToken)
+struct RequestBody {
+	const std::string &data;
+	const char *contentType = "application/json";
+};
+
+static httplib::Result
+sendRequest(YouTubeRequestMethod method, const std::string &basePath,
+	    const std::string &path, const httplib::Params &params,
+	    const RequestBody &body, const std::string &accessToken)
 {
 	httplib::Client cli(apiHost);
 	const httplib::Headers headers{
 		{"Authorization", "Bearer " + accessToken}};
 	const auto fullPath =
-		httplib::append_query_params(apiBasePath + path, params);
+		httplib::append_query_params(basePath + path, params);
 
 	switch (method) {
 	case YouTubeRequestMethod::GET:
@@ -112,16 +117,18 @@ static httplib::Result sendRequest(YouTubeRequestMethod method,
 		return cli.Get(fullPath, headers);
 	case YouTubeRequestMethod::POST:
 		vblog(LOG_INFO, "YouTube POST request to %s", fullPath.c_str());
-		return cli.Post(fullPath, headers, body, "application/json");
+		return cli.Post(fullPath, headers, body.data, body.contentType);
+	case YouTubeRequestMethod::PUT:
+		vblog(LOG_INFO, "YouTube PUT request to %s", fullPath.c_str());
+		return cli.Put(fullPath, headers, body.data, body.contentType);
 	}
 	return httplib::Result();
 }
 
-static YouTubeRequestResult sendYouTubeRequest(YouTubeConnection &connection,
-					       YouTubeRequestMethod method,
-					       const std::string &path,
-					       const httplib::Params &params,
-					       const std::string &body)
+static YouTubeRequestResult
+sendYouTubeRequest(YouTubeConnection &connection, YouTubeRequestMethod method,
+		   const std::string &basePath, const std::string &path,
+		   const httplib::Params &params, const RequestBody &body)
 {
 	if (connection.RequestsArePaused()) {
 		vblog(LOG_INFO, "skipping YouTube request to %s due to quota",
@@ -134,14 +141,15 @@ static YouTubeRequestResult sendYouTubeRequest(YouTubeConnection &connection,
 		return {};
 	}
 
-	auto response = sendRequest(method, path, params, body, *accessToken);
+	auto response =
+		sendRequest(method, basePath, path, params, body, *accessToken);
 	if (response && response->status == 401) {
 		accessToken = connection.GetAccessToken(true);
 		if (!accessToken) {
 			return {};
 		}
-		response =
-			sendRequest(method, path, params, body, *accessToken);
+		response = sendRequest(method, basePath, path, params, body,
+				       *accessToken);
 	}
 
 	if (!response) {
@@ -200,8 +208,8 @@ YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
 					const std::string &body, bool useCache)
 {
 	if (!useCache || method != YouTubeRequestMethod::GET) {
-		return sendYouTubeRequest(connection, method, path, params,
-					  body);
+		return sendYouTubeRequest(connection, method, apiBasePath, path,
+					  params, {body});
 	}
 
 	static std::mutex mutex;
@@ -227,11 +235,22 @@ YouTubeRequestResult SendYouTubeRequest(YouTubeConnection &connection,
 	}
 
 	// Failed requests are cached as well, as they also cost API quota
-	auto result =
-		sendYouTubeRequest(connection, method, path, params, body);
+	auto result = sendYouTubeRequest(connection, method, apiBasePath, path,
+					 params, {body});
 	std::lock_guard<std::mutex> lock(mutex);
 	cache[key] = {result, now};
 	return result;
+}
+
+YouTubeRequestResult SendYouTubeUploadRequest(YouTubeConnection &connection,
+					      const std::string &path,
+					      const httplib::Params &params,
+					      const std::string &data,
+					      const std::string &contentType)
+{
+	return sendYouTubeRequest(connection, YouTubeRequestMethod::POST,
+				  uploadBasePath, path, params,
+				  {data, contentType.c_str()});
 }
 
 } // namespace advss

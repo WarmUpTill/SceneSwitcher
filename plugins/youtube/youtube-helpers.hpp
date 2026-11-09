@@ -17,6 +17,7 @@ struct YouTubeRequestResult {
 enum class YouTubeRequestMethod {
 	GET,
 	POST,
+	PUT,
 };
 
 TokenResponse ExchangeAuthCode(const OAuthClientConfig &config,
@@ -31,5 +32,10 @@ YouTubeRequestResult
 SendYouTubeRequest(YouTubeConnection &connection, YouTubeRequestMethod method,
 		   const std::string &path, const httplib::Params &params = {},
 		   const std::string &body = "", bool useCache = false);
+YouTubeRequestResult SendYouTubeUploadRequest(YouTubeConnection &connection,
+					      const std::string &path,
+					      const httplib::Params &params,
+					      const std::string &data,
+					      const std::string &contentType);
 
 } // namespace advss
