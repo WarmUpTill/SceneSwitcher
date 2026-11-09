@@ -334,6 +334,62 @@ bool IsPenBarrelDown()
 	return penBarrelDown;
 }
 
+// Temporary diagnostics for testing with real tablets, remove before merging
+static void logPenDevice(HANDLE device, size_t preparsedSize)
+{
+	RID_DEVICE_INFO info{};
+	info.cbSize = sizeof(info);
+	UINT infoSize = sizeof(info);
+	GetRawInputDeviceInfoA(device, RIDI_DEVICEINFO, &info, &infoSize);
+	char name[512] = {};
+	UINT nameSize = sizeof(name);
+	GetRawInputDeviceInfoA(device, RIDI_DEVICENAME, name, &nameSize);
+	blog(LOG_INFO,
+	     "[pen-test] device %p page=0x%02x usage=0x%02x vid=0x%04lx pid=0x%04lx preparsedBytes=%zu name=%s",
+	     device, info.hid.usUsagePage, info.hid.usUsage,
+	     info.hid.dwVendorId, info.hid.dwProductId, preparsedSize, name);
+}
+
+static void logPenReport(HANDLE device, const USAGE *usages, ULONG count)
+{
+	static bool lastInRange = false, lastTip = false, lastBarrel = false;
+	const auto end = usages + count;
+	const bool inRange = std::find(usages, end, (USAGE)0x32) != end;
+	const bool tip = std::find(usages, end, hidUsageTipSwitch) != end;
+	const bool barrel = std::find(usages, end, hidUsageBarrelSwitch) != end;
+	if (inRange == lastInRange && tip == lastTip && barrel == lastBarrel) {
+		return;
+	}
+	blog(LOG_INFO, "[pen-test] device %p inRange=%d tip=%d barrel=%d",
+	     device, inRange, tip, barrel);
+	lastInRange = inRange;
+	lastTip = tip;
+	lastBarrel = barrel;
+}
+
+static void logPenParseFailure(HANDLE device, long status)
+{
+	static int failures = 0;
+	if (failures++ < 10) {
+		blog(LOG_WARNING,
+		     "[pen-test] device %p HidP_GetUsages failed status=0x%08lx",
+		     device, status);
+	}
+}
+
+static void logPenMouseEvent(const RAWMOUSE &mouse)
+{
+	const bool penSignature = (mouse.ulExtraInformation & 0xFFFFFF00) ==
+				  0xFF515700;
+	const bool absolute = mouse.usFlags & MOUSE_MOVE_ABSOLUTE;
+	if (mouse.usButtonFlags == 0 || (!penSignature && !absolute)) {
+		return;
+	}
+	blog(LOG_INFO,
+	     "[pen-test] mouse event buttonFlags=0x%04x usFlags=0x%04x extra=0x%08lx",
+	     mouse.usButtonFlags, mouse.usFlags, mouse.ulExtraInformation);
+}
+
 static const std::vector<BYTE> &getPenPreparsedData(HANDLE device)
 {
 	static std::unordered_map<HANDLE, std::vector<BYTE>> cache;
@@ -349,6 +405,7 @@ static const std::vector<BYTE> &getPenPreparsedData(HANDLE device)
 					       data.data(), &size) != size) {
 		data.clear();
 	}
+	logPenDevice(device, data.size());
 	return cache.emplace(device, std::move(data)).first->second;
 }
 
@@ -379,8 +436,10 @@ static void handleRawPenInput(RAWINPUT *raw)
 			(PHIDP_PREPARSED_DATA)preparsedData.data(), report,
 			raw->data.hid.dwSizeHid);
 		if (status != HIDP_STATUS_SUCCESS) {
+			logPenParseFailure(raw->header.hDevice, status);
 			continue;
 		}
+		logPenReport(raw->header.hDevice, usages, count);
 
 		const auto end = usages + count;
 		updatePenButton(std::find(usages, end, hidUsageTipSwitch) !=
@@ -409,6 +468,7 @@ static void handleRawMouseInput(LPARAM lParam)
 
 	RAWINPUT *raw = (RAWINPUT *)lpb;
 	if (raw->header.dwType == RIM_TYPEMOUSE) {
+		logPenMouseEvent(raw->data.mouse);
 		switch (raw->data.mouse.usButtonFlags) {
 		case RI_MOUSE_BUTTON_1_DOWN:
 			lastMouseLeftClickTime =
@@ -462,6 +522,8 @@ static void registerRawPenInput(HWND window)
 	if (!RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE))) {
 		blog(LOG_WARNING, "Registering for raw pen input failed!\n"
 				  "Pen click detection not functional!");
+	} else {
+		blog(LOG_INFO, "[pen-test] registered for raw pen input");
 	}
 }
 
