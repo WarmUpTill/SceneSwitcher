@@ -6,6 +6,8 @@
 
 namespace advss {
 
+class HelpIcon;
+
 class VariableActionInput : public VariableActionGroup {
 public:
 	std::unique_ptr<VariableActionGroup> Copy() const override;
@@ -48,6 +50,7 @@ public:
 private slots:
 	void UseCustomPromptChanged(int);
 	void InputPromptChanged();
+	void ChoicePromptChanged();
 	void UseInputPlaceholderChanged(int);
 	void InputPlaceholderChanged();
 	void InputTypeChanged(int);
@@ -60,11 +63,14 @@ private:
 	QHBoxLayout *_promptLayout;
 	QCheckBox *_useCustomPrompt;
 	VariableLineEdit *_inputPrompt;
+	QHBoxLayout *_choicePromptLayout;
+	VariableLineEdit *_choicePrompt;
 	QHBoxLayout *_placeholderLayout;
 	QCheckBox *_useInputPlaceholder;
 	VariableLineEdit *_inputPlaceholder;
 	QHBoxLayout *_inputTypeLayout;
 	QComboBox *_inputType;
+	HelpIcon *_inputTypeHelp;
 	StringListEdit *_inputOptions;
 	VariableLineEdit *_envVariable;
 };

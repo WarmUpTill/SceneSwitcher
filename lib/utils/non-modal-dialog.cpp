@@ -29,6 +29,18 @@ NonModalMessageDialog::NonModalMessageDialog(const QString &message,
 					     const QStringList &options)
 	: NonModalMessageDialog(message, Type::INPUT)
 {
+	if (inputType == ValueInputType::YesNo ||
+	    inputType == ValueInputType::OkCancel) {
+		layout()->removeWidget(_inputEdit);
+		delete _inputEdit;
+		_inputEdit = nullptr;
+		if (inputType == ValueInputType::YesNo) {
+			findChild<QDialogButtonBox *>()->setStandardButtons(
+				QDialogButtonBox::Yes | QDialogButtonBox::No);
+		}
+		return;
+	}
+
 	_valueInput =
 		new ValueInputWidget(inputType, defaultValue, options, this);
 	layout()->replaceWidget(_inputEdit, _valueInput);
