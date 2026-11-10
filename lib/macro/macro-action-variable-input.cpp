@@ -1,4 +1,5 @@
 #include "macro-action-variable-input.hpp"
+#include "help-icon.hpp"
 #include "layout-helpers.hpp"
 #include "macro.hpp"
 #include "non-modal-dialog.hpp"
@@ -37,10 +38,33 @@ struct AskForInputParams {
 	std::atomic_bool resultReady = {false};
 };
 
+static bool isChoiceInputType(ValueInputType type)
+{
+	return type == ValueInputType::YesNo ||
+	       type == ValueInputType::OkCancel;
+}
+
+static std::string getChoiceValue(ValueInputType type, bool accepted)
+{
+	if (type == ValueInputType::YesNo) {
+		return accepted ? "yes" : "no";
+	}
+	return accepted ? "ok" : "cancel";
+}
+
 static void askForInput(void *param)
 {
 	auto parameters =
 		*static_cast<std::shared_ptr<AskForInputParams> *>(param);
+	if (isChoiceInputType(parameters->type)) {
+		auto dialog = new NonModalMessageDialog(
+			parameters->prompt, parameters->type, "", {});
+		const bool accepted = dialog->ShowMessage() == QMessageBox::Yes;
+		parameters->result = getChoiceValue(parameters->type, accepted);
+		parameters->resultReady = true;
+		return;
+	}
+
 	NonModalMessageDialog *dialog = nullptr;
 	if (parameters->type == ValueInputType::String) {
 		dialog = new NonModalMessageDialog(
@@ -103,13 +127,15 @@ bool VariableActionInput::AskForUserInput(MacroActionVariable &action,
 	for (const auto &option : _inputOptions) {
 		options << QString::fromStdString(option);
 	}
+	const bool useCustomPrompt = _useCustomPrompt ||
+				     isChoiceInputType(_inputType);
 	auto params = std::make_shared<AskForInputParams>(
-		_useCustomPrompt
+		useCustomPrompt
 			? QString::fromStdString(_inputPrompt)
 			: QString(obs_module_text(
 					  "AdvSceneSwitcher.action.variable.askForValuePromptDefault"))
 				  .arg(QString::fromStdString(var.Name())),
-		_useCustomPrompt && _useInputPlaceholder
+		useCustomPrompt && _useInputPlaceholder
 			? QString::fromStdString(_inputPlaceholder)
 			: "",
 		_inputType, options);
@@ -154,23 +180,36 @@ VariableActionInputEdit::VariableActionInputEdit(
 	  _promptLayout(new QHBoxLayout()),
 	  _useCustomPrompt(new QCheckBox(this)),
 	  _inputPrompt(new VariableLineEdit(this)),
+	  _choicePromptLayout(new QHBoxLayout()),
+	  _choicePrompt(new VariableLineEdit(this)),
 	  _placeholderLayout(new QHBoxLayout()),
 	  _useInputPlaceholder(new QCheckBox(this)),
 	  _inputPlaceholder(new VariableLineEdit(this)),
 	  _inputTypeLayout(new QHBoxLayout()),
 	  _inputType(new QComboBox(this)),
+	  _inputTypeHelp(new HelpIcon("", this)),
 	  _inputOptions(new StringListEdit(this)),
 	  _envVariable(new VariableLineEdit(this))
 {
 	_inputPrompt->setSizePolicy(QSizePolicy::MinimumExpanding,
 				    QSizePolicy::Preferred);
+	_choicePrompt->setSizePolicy(QSizePolicy::MinimumExpanding,
+				     QSizePolicy::Preferred);
 	_inputOptions->SetMaxStringSize(99999999);
 	PopulateValueInputTypeSelection(_inputType);
+	_inputType->addItem(
+		obs_module_text("AdvSceneSwitcher.valueInputType.yesNo"),
+		static_cast<int>(ValueInputType::YesNo));
+	_inputType->addItem(
+		obs_module_text("AdvSceneSwitcher.valueInputType.okCancel"),
+		static_cast<int>(ValueInputType::OkCancel));
 
 	QWidget::connect(_useCustomPrompt, SIGNAL(stateChanged(int)), this,
 			 SLOT(UseCustomPromptChanged(int)));
 	QWidget::connect(_inputPrompt, SIGNAL(editingFinished()), this,
 			 SLOT(InputPromptChanged()));
+	QWidget::connect(_choicePrompt, SIGNAL(editingFinished()), this,
+			 SLOT(ChoicePromptChanged()));
 	QWidget::connect(_useInputPlaceholder, SIGNAL(stateChanged(int)), this,
 			 SLOT(UseInputPlaceholderChanged(int)));
 	QWidget::connect(_inputPlaceholder, SIGNAL(editingFinished()), this,
@@ -186,9 +225,11 @@ VariableActionInputEdit::VariableActionInputEdit(
 	const std::unordered_map<std::string, QWidget *> widgetPlaceholders = {
 		{"{{useCustomPrompt}}", _useCustomPrompt},
 		{"{{inputPrompt}}", _inputPrompt},
+		{"{{choicePrompt}}", _choicePrompt},
 		{"{{useInputPlaceholder}}", _useInputPlaceholder},
 		{"{{inputPlaceholder}}", _inputPlaceholder},
 		{"{{inputType}}", _inputType},
+		{"{{inputTypeHelp}}", _inputTypeHelp},
 	};
 	PlaceWidgets(
 		obs_module_text(
@@ -200,6 +241,10 @@ VariableActionInputEdit::VariableActionInputEdit(
 		_promptLayout, widgetPlaceholders);
 	PlaceWidgets(
 		obs_module_text(
+			"AdvSceneSwitcher.action.variable.layout.userInput.choicePrompt"),
+		_choicePromptLayout, widgetPlaceholders, false);
+	PlaceWidgets(
+		obs_module_text(
 			"AdvSceneSwitcher.action.variable.layout.userInput.placeholder"),
 		_placeholderLayout, widgetPlaceholders);
 
@@ -208,6 +253,7 @@ VariableActionInputEdit::VariableActionInputEdit(
 	layout->addLayout(_inputTypeLayout);
 	layout->addWidget(_inputOptions);
 	layout->addLayout(_promptLayout);
+	layout->addLayout(_choicePromptLayout);
 	layout->addLayout(_placeholderLayout);
 	setLayout(layout);
 }
@@ -233,6 +279,7 @@ void VariableActionInputEdit::UpdateEntryData()
 
 	_useCustomPrompt->setChecked(_data->_useCustomPrompt);
 	_inputPrompt->setText(_data->_inputPrompt);
+	_choicePrompt->setText(_data->_inputPrompt);
 	_useInputPlaceholder->setChecked(_data->_useInputPlaceholder);
 	_inputPlaceholder->setText(_data->_inputPlaceholder);
 	_inputType->setCurrentIndex(
@@ -250,21 +297,32 @@ void VariableActionInputEdit::SetWidgetVisibility(
 	}
 
 	const bool isUserInput = action == Action::USER_INPUT;
+	const bool isChoice = isUserInput &&
+			      isChoiceInputType(_data->_inputType);
 	SetLayoutVisible(_inputTypeLayout, isUserInput);
+	_inputTypeHelp->setVisible(isChoice);
+	_inputTypeHelp->setToolTip(
+		_data->_inputType == ValueInputType::YesNo
+			? obs_module_text(
+				  "AdvSceneSwitcher.action.variable.userInput.yesNo.help")
+			: obs_module_text(
+				  "AdvSceneSwitcher.action.variable.userInput.okCancel.help"));
 	_inputOptions->setVisible(
 		isUserInput && _data->_inputType == ValueInputType::Selection);
-	SetLayoutVisible(_promptLayout, isUserInput);
-	_inputPrompt->setVisible(isUserInput && _data->_useCustomPrompt);
+	SetLayoutVisible(_promptLayout, isUserInput && !isChoice);
+	_inputPrompt->setVisible(isUserInput && !isChoice &&
+				 _data->_useCustomPrompt);
+	SetLayoutVisible(_choicePromptLayout, isChoice);
 	if (_data->_useCustomPrompt) {
 		RemoveStretchIfPresent(_promptLayout);
 	} else {
 		AddStretchIfNecessary(_promptLayout);
 	}
-	SetLayoutVisible(_placeholderLayout,
-			 isUserInput && _data->_useCustomPrompt);
-	_useInputPlaceholder->setVisible(isUserInput &&
-					 _data->_useCustomPrompt);
-	_inputPlaceholder->setVisible(isUserInput && _data->_useCustomPrompt &&
+	const bool showPlaceholder = isUserInput && !isChoice &&
+				     _data->_useCustomPrompt;
+	SetLayoutVisible(_placeholderLayout, showPlaceholder);
+	_useInputPlaceholder->setVisible(showPlaceholder);
+	_inputPlaceholder->setVisible(showPlaceholder &&
 				      _data->_useInputPlaceholder);
 	if (_data->_useInputPlaceholder) {
 		RemoveStretchIfPresent(_placeholderLayout);
@@ -286,6 +344,14 @@ void VariableActionInputEdit::InputPromptChanged()
 {
 	GUARD_LOADING_AND_LOCK();
 	_data->_inputPrompt = _inputPrompt->text().toStdString();
+	_choicePrompt->setText(_data->_inputPrompt);
+}
+
+void VariableActionInputEdit::ChoicePromptChanged()
+{
+	GUARD_LOADING_AND_LOCK();
+	_data->_inputPrompt = _choicePrompt->text().toStdString();
+	_inputPrompt->setText(_data->_inputPrompt);
 }
 
 void VariableActionInputEdit::UseInputPlaceholderChanged(int value)

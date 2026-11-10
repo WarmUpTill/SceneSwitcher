@@ -18,6 +18,8 @@ enum class ValueInputType {
 	String,
 	Variable,
 	Selection,
+	YesNo,
+	OkCancel,
 };
 
 void PopulateValueInputTypeSelection(QComboBox *list);
