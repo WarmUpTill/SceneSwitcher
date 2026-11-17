@@ -194,9 +194,11 @@ static std::vector<HWND> getHWNDfromTitle(const std::string &title)
 	HWND hwnd = nullptr;
 	HWND hPrevWnd = nullptr;
 	std::vector<HWND> hwnds;
-	wchar_t wTitle[512];
-	os_utf8_to_wcs(title.c_str(), 0, wTitle, 512);
-	while ((hwnd = FindWindowEx(NULL, hPrevWnd, NULL, wTitle)) != nullptr) {
+	size_t len = os_utf8_to_wcs(title.c_str(), 0, nullptr, 0);
+	std::wstring wTitle(len, L'\0');
+	os_utf8_to_wcs(title.c_str(), 0, wTitle.data(), len + 1);
+	while ((hwnd = FindWindowEx(NULL, hPrevWnd, NULL, wTitle.c_str())) !=
+	       nullptr) {
 		if (windowIsValid(hwnd)) {
 			hwnds.emplace_back(hwnd);
 		}
