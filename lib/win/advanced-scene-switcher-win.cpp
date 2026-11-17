@@ -309,11 +309,10 @@ std::string GetCurrentWindowTitle()
 
 static HWND getHWNDfromTitle(const std::string &title)
 {
-	HWND hwnd = NULL;
-	wchar_t wTitle[512];
-	os_utf8_to_wcs(title.c_str(), 0, wTitle, 512);
-	hwnd = FindWindowEx(NULL, NULL, NULL, wTitle);
-	return hwnd;
+	size_t len = os_utf8_to_wcs(title.c_str(), 0, nullptr, 0);
+	std::wstring wTitle(len, L'\0');
+	os_utf8_to_wcs(title.c_str(), 0, wTitle.data(), len + 1);
+	return FindWindowEx(NULL, NULL, NULL, wTitle.c_str());
 }
 
 static std::wstring GetControlText(HWND hwnd, IUIAutomationElement *element)
