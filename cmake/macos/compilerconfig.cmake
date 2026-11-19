@@ -13,8 +13,11 @@ if(ENABLE_CCACHE AND CCACHE_PROGRAM)
 endif()
 
 if(XCODE)
-  # Use Xcode's standard architecture selection
-  set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD)")
+  # Use Xcode's standard architecture selection, unless specific architectures
+  # were requested (e.g. -DCMAKE_OSX_ARCHITECTURES=arm64 for a native build)
+  if(NOT CMAKE_OSX_ARCHITECTURES)
+    set(CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD)")
+  endif()
   # Enable dSYM generation for Release builds
   string(APPEND CMAKE_C_FLAGS_RELEASE " -g")
   string(APPEND CMAKE_CXX_FLAGS_RELEASE " -g")
@@ -52,8 +55,11 @@ else()
 
   # Enable color diagnostics for AppleClang
   set(CMAKE_COLOR_DIAGNOSTICS ON)
-  # Set universal architectures via CMake flag for non-Xcode generators
-  set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+  # Set universal architectures via CMake flag for non-Xcode generators, unless
+  # specific architectures were requested
+  if(NOT CMAKE_OSX_ARCHITECTURES)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+  endif()
 
   # Enable compiler and build tracing (requires Ninja generator)
   if(ENABLE_COMPILER_TRACE AND CMAKE_GENERATOR STREQUAL "Ninja")

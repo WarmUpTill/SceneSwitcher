@@ -2,7 +2,7 @@
 <installer-gui-script minSpecVersion="1.0">
     <options
         rootVolumeOnly="true"
-        hostArchitectures="arm64,x86_64"
+        hostArchitectures="@MACOS_HOST_ARCHITECTURES@"
         customize="never"
         allow-external-scripts="no" />
     <domains enable_currentUserHome="true" enable_anywhere="false" enable_localSystem="false" />

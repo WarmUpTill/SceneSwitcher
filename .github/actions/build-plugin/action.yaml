@@ -34,6 +34,7 @@ runs:
         : Run macOS Build
 
         local -a build_args=(
+          --target ${{ inputs.target }}
           --config ${{ inputs.config }}
           --dep ${{ env.DEP_DIR }}
         )
