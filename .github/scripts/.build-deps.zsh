@@ -53,6 +53,8 @@ build() {
   local -r _version='1.0.0'
   local -r -a _valid_targets=(
     macos-universal
+    macos-arm64
+    macos-x86_64
     linux-x86_64
   )
   local -r -a _valid_configs=(Debug RelWithDebInfo Release MinSizeRel)
@@ -70,7 +72,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
 %F{yellow} Build configuration options%f
  -----------------------------------------------------------------------------
-  %B-t | --target%b                     Specify target - default: %B%F{green}${host_os}-${CPUTYPE}%f%b
+  %B-t | --target%b                     Specify target - default: %B%F{green}macos-universal%f%b on macOS, %B%F{green}linux-${CPUTYPE}%f%b on Linux
   %B-c | --config%b                     Build configuration - default: %B%F{green}RelWithDebInfo%f%b
   %B-o | --out%b                        Output directory - default: %B%F{green}RelWithDebInfo%f%b
   %B--generator%b                       Specify build system to generate - default: %B%F{green}Ninja%f%b
@@ -155,6 +157,12 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
     }
   }
 
+  if [[ ${host_os} == macos ]] {
+    : "${target:=macos-universal}"
+  } else {
+    : "${target:="${host_os}-${CPUTYPE}"}"
+  }
+
   set -- ${(@)args}
   set_loglevel ${_verbosity}
 
@@ -214,6 +222,16 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           --preset ${_preset}
         )
 
+        # Build a universal binary by default, or a single architecture
+        # (e.g. macos-arm64) if requested
+        local -a _xcode_archs=(-arch arm64 -arch x86_64)
+        if [[ ${target##*-} == universal ]] {
+          cmake_args+=(-UCMAKE_OSX_ARCHITECTURES)
+        } else {
+          cmake_args+=(-DCMAKE_OSX_ARCHITECTURES=${target##*-})
+          _xcode_archs=(-arch ${target##*-})
+        }
+
         if (( codesign )) {
           autoload -Uz read_codesign_team && read_codesign_team
 
@@ -227,7 +245,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
           -DCODESIGN_IDENTITY=${CODESIGN_IDENT:--}
         )
 
-        cmake_build_args+=(--preset ${_preset} --parallel --config ${config} -- ONLY_ACTIVE_ARCH=NO -arch arm64 -arch x86_64)
+        cmake_build_args+=(--preset ${_preset} --parallel --config ${config} -- ONLY_ACTIVE_ARCH=NO ${_xcode_archs})
         cmake_install_args+=(build_macos --config ${config} --prefix "${project_root}/release/${config}")
 
         local -a xcbeautify_opts=()
@@ -283,10 +301,16 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
   case ${host_os} {
     macos)
+        # Architectures to build the dependencies for. Universal builds are
+        # created by building each architecture separately and merging the
+        # results using lipo.
+        local -a archs=(${target##*-})
+        if [[ ${target##*-} == universal ]] archs=(x86_64 arm64)
+        local arch
+
         local opencv_dir="${project_root}/deps/opencv"
         local opencv_contrib_dir="${project_root}/deps/opencv_contrib"
-        local opencv_install_x86="${opencv_dir}/install_x86_64"
-        local opencv_install_arm="${opencv_dir}/install_arm64"
+        local opencv_install
 
         local -a opencv_cmake_args_common=(
           -DCMAKE_BUILD_TYPE=Release
@@ -299,41 +323,56 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         pushd ${opencv_dir}
 
-        log_info "Configure OpenCV (x86_64) ..."
-        cmake -S . -B build_x86_64 ${opencv_cmake_args_common} \
-          -DCMAKE_OSX_ARCHITECTURES=x86_64 \
-          -DCMAKE_PROJECT_INCLUDE="${SCRIPT_HOME}/opencv-force-processor-x86_64.cmake" \
-          -DCMAKE_INSTALL_PREFIX="${opencv_install_x86}" \
-          -DWITH_IPP=OFF
+        for arch (${archs}) {
+          opencv_install="${opencv_dir}/install_${arch}"
 
-        log_info "Building OpenCV (x86_64) ..."
-        cmake --build build_x86_64 --config Release
+          local -a opencv_cmake_args_arch=(
+            -DCMAKE_OSX_ARCHITECTURES=${arch}
+            -DCMAKE_INSTALL_PREFIX="${opencv_install}"
+          )
+          if [[ ${arch} == x86_64 ]] {
+            opencv_cmake_args_arch+=(
+              -DCMAKE_PROJECT_INCLUDE="${SCRIPT_HOME}/opencv-force-processor-x86_64.cmake"
+              -DWITH_IPP=OFF
+            )
+          }
 
-        log_info "Installing OpenCV (x86_64) ..."
-        cmake --install build_x86_64 --prefix "${opencv_install_x86}" --config Release || true
+          log_info "Configure OpenCV (${arch}) ..."
+          cmake -S . -B build_${arch} ${opencv_cmake_args_common} ${opencv_cmake_args_arch}
 
-        log_info "Configure OpenCV (arm64) ..."
-        cmake -S . -B build_arm64 ${opencv_cmake_args_common} \
-          -DCMAKE_OSX_ARCHITECTURES=arm64 \
-          -DCMAKE_INSTALL_PREFIX="${opencv_install_arm}"
+          log_info "Building OpenCV (${arch}) ..."
+          cmake --build build_${arch} --config Release
 
-        log_info "Building OpenCV (arm64) ..."
-        cmake --build build_arm64 --config Release
+          log_info "Installing OpenCV (${arch}) ..."
+          cmake --install build_${arch} --prefix "${opencv_install}" --config Release || true
+        }
 
-        log_info "Installing OpenCV (arm64) ..."
-        cmake --install build_arm64 --prefix "${opencv_install_arm}" --config Release || true
+        # The install of the last architecture provides headers, CMake config
+        # files and (for single architecture builds) the libraries
+        opencv_install="${opencv_dir}/install_${archs[-1]}"
+        cp -R "${opencv_install}/." "${advss_dep_path}"
 
-        log_info "Merging OpenCV into universal binaries ..."
-        cp -R "${opencv_install_arm}/." "${advss_dep_path}"
-        for arm_lib in ${opencv_install_arm}/lib/**/*.(dylib|a)(.); do
-          local rel="${arm_lib#${opencv_install_arm}/}"
-          local x86_lib="${opencv_install_x86}/${rel}"
-          if [[ -f "${x86_lib}" ]]; then
-            lipo -create "${x86_lib}" "${arm_lib}" -output "${advss_dep_path}/${rel}"
-          fi
-        done
+        if (( ${#archs} > 1 )) {
+          log_info "Merging OpenCV into universal binaries ..."
+          local opencv_lib
+          local opencv_lib_rel
+          for opencv_lib in ${opencv_install}/lib/**/*.(dylib|a)(.); do
+            opencv_lib_rel="${opencv_lib#${opencv_install}/}"
+            local -a opencv_lib_slices=()
+            for arch (${archs}) {
+              if [[ -f "${opencv_dir}/install_${arch}/${opencv_lib_rel}" ]] {
+                opencv_lib_slices+=("${opencv_dir}/install_${arch}/${opencv_lib_rel}")
+              }
+            }
+            if (( ${#opencv_lib_slices} > 1 )) {
+              lipo -create ${opencv_lib_slices} -output "${advss_dep_path}/${opencv_lib_rel}"
+            }
+          done
+        }
 
-        rm -rf "${opencv_install_x86}" "${opencv_install_arm}"
+        for arch (${archs}) {
+          rm -rf "${opencv_dir}/install_${arch}"
+        }
         popd
 
         local leptonica_dir="${project_root}/deps/leptonica"
@@ -367,56 +406,49 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         popd
 
         local tesseract_dir="${project_root}/deps/tesseract"
-        local tesseract_build_dir_x86_64="${tesseract_dir}/build_x86_64"
+        local tesseract_build_dir
 
         pushd ${tesseract_dir}
-        log_info "Configure Tesseract (x86_64) ..."
 
-        local -a tesseract_cmake_args=(
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_SYSTEM_NAME="Darwin"
-          -DCMAKE_OSX_ARCHITECTURES=x86_64
-          -DCMAKE_SYSTEM_PROCESSOR=x86_64
-          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
-          -DSW_BUILD=OFF
-          -DBUILD_TRAINING_TOOLS=OFF
-          -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
-          -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
-        )
+        for arch (${archs}) {
+          # Discard changes made to the sources by the previous architecture's
+          # build
+          if [[ ${arch} != ${archs[1]} ]] git checkout .
 
-        cmake -S . -B ${tesseract_build_dir_x86_64} ${tesseract_cmake_args}
+          tesseract_build_dir="${tesseract_dir}/build_${arch}"
 
-        log_info "Building Tesseract (x86_64) ..."
-        cmake --build ${tesseract_build_dir_x86_64} --config Release
+          local -a tesseract_cmake_args=(
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_SYSTEM_NAME="Darwin"
+            -DCMAKE_OSX_ARCHITECTURES=${arch}
+            -DCMAKE_SYSTEM_PROCESSOR=${arch}
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
+            -DSW_BUILD=OFF
+            -DBUILD_TRAINING_TOOLS=OFF
+            -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
+            -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
+          )
 
-        log_info "Configure Tesseract (arm64) ..."
+          log_info "Configure Tesseract (${arch}) ..."
+          cmake -S . -B ${tesseract_build_dir} ${tesseract_cmake_args}
 
-        git checkout .
+          log_info "Building Tesseract (${arch}) ..."
+          cmake --build ${tesseract_build_dir} --config Release
+        }
 
-        local tesseract_build_dir_arm64="${tesseract_dir}/build_arm64"
-        local -a tesseract_cmake_args=(
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_SYSTEM_NAME="Darwin"
-          -DCMAKE_OSX_ARCHITECTURES=arm64
-          -DCMAKE_SYSTEM_PROCESSOR=arm64
-          -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
-          -DSW_BUILD=OFF
-          -DBUILD_TRAINING_TOOLS=OFF
-          -DCMAKE_PREFIX_PATH="${advss_dep_path};${_plugin_deps}"
-          -DCMAKE_INSTALL_PREFIX="${advss_dep_path}"
-        )
-
-        cmake -S . -B ${tesseract_build_dir_arm64} ${tesseract_cmake_args}
-
-        log_info "Building Tesseract (arm64) ..."
-        cmake --build ${tesseract_build_dir_arm64} --config Release
-
-        log_info "Combine arm and x86 libtesseract binaries ..."
-        mv ${tesseract_build_dir_arm64}/libtesseract.a ${tesseract_build_dir_arm64}/libtesseract_arm.a
-        lipo -create ${tesseract_build_dir_x86_64}/libtesseract.a ${tesseract_build_dir_arm64}/libtesseract_arm.a -output ${tesseract_build_dir_arm64}/libtesseract.a
+        if (( ${#archs} > 1 )) {
+          log_info "Combine libtesseract binaries (${archs}) ..."
+          local -a tesseract_libs=()
+          for arch (${archs}) {
+            mv ${tesseract_dir}/build_${arch}/libtesseract.a ${tesseract_dir}/build_${arch}/libtesseract_${arch}.a
+            tesseract_libs+=(${tesseract_dir}/build_${arch}/libtesseract_${arch}.a)
+          }
+          # The build directory of the last architecture is used for installing
+          lipo -create ${tesseract_libs} -output ${tesseract_build_dir}/libtesseract.a
+        }
 
         log_info "Installing Tesseract..."
-        cmake --install ${tesseract_build_dir_arm64} --prefix "${advss_dep_path}" --config Release
+        cmake --install ${tesseract_build_dir} --prefix "${advss_dep_path}" --config Release
 
         popd
 
@@ -427,79 +459,90 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
         rm -rf openssl
         git clone https://github.com/openssl/openssl.git --branch openssl-3.1.2 --depth 1
-        mv openssl openssl_x86
-        cp -r openssl_x86 openssl_arm
 
-        log_info "Building openssl x86 ..."
-        export MACOSX_DEPLOYMENT_TARGET=10.9
-        pushd openssl_x86
-        ./Configure darwin64-x86_64-cc no-shared no-module no-zlib --prefix=${advss_dep_path}
-        make -j$(nproc)
-        popd
+        for arch (${archs}) {
+          cp -r openssl openssl_${arch}
+          pushd openssl_${arch}
 
-        log_info "Building openssl arm ..."
-        export MACOSX_DEPLOYMENT_TARGET=10.15
-        pushd openssl_arm
-        ./Configure enable-rc5 darwin64-arm64-cc no-shared no-module no-asm no-zlib --prefix=${advss_dep_path}
-        make -j$(nproc)
+          log_info "Building openssl (${arch}) ..."
+          if [[ ${arch} == x86_64 ]] {
+            export MACOSX_DEPLOYMENT_TARGET=10.9
+            ./Configure darwin64-x86_64-cc no-shared no-module no-zlib --prefix=${advss_dep_path}
+          } else {
+            export MACOSX_DEPLOYMENT_TARGET=10.15
+            ./Configure enable-rc5 darwin64-arm64-cc no-shared no-module no-asm no-zlib --prefix=${advss_dep_path}
+          }
+          make -j$(nproc)
 
-        log_info "Install openssl ..."
-        make install
-        popd
+          # The last architecture provides headers and (for single architecture
+          # builds) the libraries
+          if [[ ${arch} == ${archs[-1]} ]] {
+            log_info "Install openssl ..."
+            make install
+          }
+          popd
+        }
 
-        log_info "Combine arm and x86 openssl binaries ..."
-        lipo -create openssl_x86/libcrypto.a openssl_arm/libcrypto.a -output ${advss_dep_path}/lib/libcrypto.a
-        lipo -create openssl_x86/libssl.a openssl_arm/libssl.a -output ${advss_dep_path}/lib/libssl.a
+        if (( ${#archs} > 1 )) {
+          log_info "Combine openssl binaries (${archs}) ..."
+          local -a openssl_crypto_libs=()
+          local -a openssl_ssl_libs=()
+          for arch (${archs}) {
+            openssl_crypto_libs+=(openssl_${arch}/libcrypto.a)
+            openssl_ssl_libs+=(openssl_${arch}/libssl.a)
+          }
+          lipo -create ${openssl_crypto_libs} -output ${advss_dep_path}/lib/libcrypto.a
+          lipo -create ${openssl_ssl_libs} -output ${advss_dep_path}/lib/libssl.a
+        }
 
         log_info "Clean up openssl dir ..."
-        rm -rf openssl_x86 openssl_arm
+        rm -rf openssl
+        for arch (${archs}) {
+          rm -rf openssl_${arch}
+        }
         popd
 
         pushd ${project_root}/deps/libusb
 
-        log_info "Configure libusb x86 ..."
         export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
         export CC=$(xcrun --sdk macosx --find clang)
         export CXX=$(xcrun --sdk macosx --find clang++)
-        export CFLAGS="-arch x86_64 -isysroot $SDKROOT"
-        export CXXFLAGS="-arch x86_64 -isysroot $SDKROOT"
-        export LDFLAGS="-arch x86_64 -isysroot $SDKROOT"
         export MACOSX_DEPLOYMENT_TARGET=10.15
 
-        log_info "Building libusb x86 ..."
-        mkdir ${project_root}/deps/libusb/out_x86
-        ./autogen.sh
-        ./configure --host=x86_64-apple-darwin --prefix=${advss_dep_path}
-        make -j$(nproc)
-        make install
+        local libusb_prefix
+        local -a libusb_dylibs=()
 
-        log_info "Configure libusb arm ..."
-        make clean
-        rm -r ${project_root}/deps/libusb/out_x86
-        mkdir ${project_root}/deps/libusb/out_x86
-        ./configure --host=aarch64-apple-darwin --prefix=${project_root}/deps/libusb/out_x86
-        make -j$(nproc)
-        make install
+        for arch (${archs}) {
+          log_info "Configure libusb (${arch}) ..."
+          export CFLAGS="-arch ${arch} -isysroot $SDKROOT"
+          export CXXFLAGS="-arch ${arch} -isysroot $SDKROOT"
+          export LDFLAGS="-arch ${arch} -isysroot $SDKROOT"
 
-        log_info "Building libusb arm ..."
-        make clean
-        export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-        export CC=$(xcrun --sdk macosx --find clang)
-        export CXX=$(xcrun --sdk macosx --find clang++)
-        export CFLAGS="-arch arm64 -isysroot $SDKROOT"
-        export CXXFLAGS="-arch arm64 -isysroot $SDKROOT"
-        export LDFLAGS="-arch arm64 -isysroot $SDKROOT"
-        export MACOSX_DEPLOYMENT_TARGET=10.15
-        mkdir ${project_root}/deps/libusb/out_arm
-        ./configure --host=aarch64-apple-darwin --prefix=${project_root}/deps/libusb/out_arm
-        make -j$(nproc)
-        make install
+          # The first architecture is installed into the dependency directory
+          # (including headers), any further architecture is installed to a
+          # separate location and merged into the installed library afterwards
+          if [[ ${arch} == ${archs[1]} ]] {
+            libusb_prefix="${advss_dep_path}"
+            ./autogen.sh
+          } else {
+            libusb_prefix="${project_root}/deps/libusb/out_${arch}"
+            rm -rf ${libusb_prefix}
+            make clean
+          }
 
-        log_info "Combine arm and x86 libusb binaries ..."
-        lipo -create ${project_root}/deps/libusb/out_x86/lib/libusb-1.0.0.dylib \
-          ${project_root}/deps/libusb/out_arm/lib/libusb-1.0.0.dylib \
-          -output ${advss_dep_path}/lib/temp-libusb-1.0.0.dylib
-        mv ${advss_dep_path}/lib/temp-libusb-1.0.0.dylib ${advss_dep_path}/lib/libusb-1.0.0.dylib
+          log_info "Building libusb (${arch}) ..."
+          ./configure --host=${arch/arm64/aarch64}-apple-darwin --prefix=${libusb_prefix}
+          make -j$(nproc)
+          make install
+
+          libusb_dylibs+=(${libusb_prefix}/lib/libusb-1.0.0.dylib)
+        }
+
+        if (( ${#archs} > 1 )) {
+          log_info "Combine libusb binaries (${archs}) ..."
+          lipo -create ${libusb_dylibs} -output ${advss_dep_path}/lib/temp-libusb-1.0.0.dylib
+          mv ${advss_dep_path}/lib/temp-libusb-1.0.0.dylib ${advss_dep_path}/lib/libusb-1.0.0.dylib
+        }
         install_name_tool -id @rpath/libusb-1.0.0.dylib ${advss_dep_path}/lib/libusb-1.0.0.dylib
         log_info "Clean up libusb ..."
 

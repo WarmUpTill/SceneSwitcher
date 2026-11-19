@@ -69,6 +69,12 @@ function(set_target_properties_plugin target)
     DESTINATION .
     OPTIONAL)
 
+  # Restrict the installer to the architecture the plugin was built for
+  set(MACOS_HOST_ARCHITECTURES "arm64,x86_64")
+  if(CMAKE_OSX_ARCHITECTURES MATCHES "^(arm64|x86_64)$")
+    set(MACOS_HOST_ARCHITECTURES "${CMAKE_OSX_ARCHITECTURES}")
+  endif()
+
   configure_file(cmake/macos/resources/distribution.in
                  "${CMAKE_CURRENT_BINARY_DIR}/distribution" @ONLY)
   configure_file(cmake/macos/resources/create-package.cmake.in
