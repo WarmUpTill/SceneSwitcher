@@ -33,12 +33,16 @@ private:
 
 class StubAction : public advss::MacroAction {
 public:
-	StubAction(advss::Macro *m) : MacroAction(m) {}
+	StubAction(advss::Macro *m, bool result = true)
+		: MacroAction(m),
+		  _result(result)
+	{
+	}
 
 	bool PerformAction() override
 	{
 		_performCount++;
-		return true;
+		return _result;
 	}
 
 	std::shared_ptr<MacroAction> Copy() const override
@@ -53,6 +57,7 @@ public:
 	int PerformCount() const { return _performCount; }
 
 private:
+	bool _result;
 	int _performCount = 0;
 };
 
@@ -66,9 +71,9 @@ std::shared_ptr<StubCondition> AddCondition(advss::Macro &m,
 	return cond;
 }
 
-std::shared_ptr<StubAction> AddAction(advss::Macro &m)
+std::shared_ptr<StubAction> AddAction(advss::Macro &m, bool result = true)
 {
-	auto action = std::make_shared<StubAction>(&m);
+	auto action = std::make_shared<StubAction>(&m, result);
 	m.Actions().push_back(action);
 	return action;
 }
@@ -358,6 +363,56 @@ TEST_CASE("ResetRunCount resets to zero", "[macro]")
 
 	m.ResetRunCount();
 	REQUIRE(m.RunCount() == 0);
+}
+
+// ---------------------------------------------------------------------------
+// Run status
+// ---------------------------------------------------------------------------
+
+TEST_CASE("PerformActionsWithStatus reports completed run", "[macro]")
+{
+	advss::Macro m("test");
+	auto action = AddAction(m);
+
+	REQUIRE(m.PerformActionsWithStatus(true) ==
+		advss::Macro::RunStatus::COMPLETED);
+	REQUIRE(action->PerformCount() == 1);
+}
+
+TEST_CASE("PerformActionsWithStatus reports failed run", "[macro]")
+{
+	advss::Macro m("test");
+	AddAction(m, false);
+	auto skippedAction = AddAction(m);
+
+	REQUIRE(m.PerformActionsWithStatus(true) ==
+		advss::Macro::RunStatus::FAILED);
+	REQUIRE(skippedAction->PerformCount() == 0);
+	REQUIRE_FALSE(m.PerformActions(true));
+}
+
+TEST_CASE("PerformActionsWithStatus reports paused macro", "[macro]")
+{
+	advss::Macro m("test");
+	auto action = AddAction(m);
+	m.SetPaused(true);
+
+	REQUIRE(m.PerformActionsWithStatus(true) ==
+		advss::Macro::RunStatus::PAUSED);
+	REQUIRE(action->PerformCount() == 0);
+	REQUIRE(m.PerformActions(true));
+}
+
+TEST_CASE("PerformActionsWithStatus runs else actions", "[macro]")
+{
+	advss::Macro m("test");
+	auto action = AddAction(m);
+	auto elseAction = AddElseAction(m);
+
+	REQUIRE(m.PerformActionsWithStatus(false) ==
+		advss::Macro::RunStatus::COMPLETED);
+	REQUIRE(action->PerformCount() == 0);
+	REQUIRE(elseAction->PerformCount() == 1);
 }
 
 // ---------------------------------------------------------------------------
