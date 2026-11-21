@@ -147,6 +147,7 @@ target_sources(
           stubs/macro-action-macro.cpp
           stubs/macro-edit.cpp
           stubs/macro-dock-settings.cpp
+          stubs/websocket-api.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/temp-variable.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/sync-helpers.cpp
           ${ADVSS_SOURCE_DIR}/lib/utils/help-icon.cpp

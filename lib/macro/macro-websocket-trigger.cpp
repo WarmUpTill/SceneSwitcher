@@ -90,8 +90,10 @@ static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *response)
 	}
 
 	const bool runElse = obs_data_get_bool(data, "runElseActions");
-	const auto status = macro->PerformActionsWithStatus(!runElse);
-	obs_data_set_string(response, "status", RunStatusToString(status));
+	const auto result = macro->PerformActionsWithStatus(!runElse);
+	obs_data_set_string(response, "status",
+			    RunStatusToString(result.status));
+	obs_data_set_int(response, "runId", static_cast<long long>(result.id));
 }
 
 static void receiveSetVariablesMessage(obs_data_t *data, obs_data_t *)

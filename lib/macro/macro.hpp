@@ -43,6 +43,10 @@ public:
 		SKIPPED,
 		STARTED_IN_PARALLEL,
 	};
+	struct RunResult {
+		uint64_t id = 0;
+		RunStatus status = RunStatus::COMPLETED;
+	};
 
 	Macro(const std::string &name = "");
 	Macro(const std::string &name, const GlobalMacroSettings &settings);
@@ -59,7 +63,7 @@ public:
 	bool ShouldRunActions() const;
 	bool PerformActions(bool match, bool forceParallel = false,
 			    bool ignorePause = false);
-	RunStatus PerformActionsWithStatus(bool match,
+	RunResult PerformActionsWithStatus(bool match,
 					   bool forceParallel = false,
 					   bool ignorePause = false);
 
@@ -190,6 +194,8 @@ private:
 		bool ignorePause);
 	RunStatus RunActions(bool ignorePause);
 	RunStatus RunElseActions(bool ignorePause);
+	void SendRunFinishedEvent(uint64_t runId, bool match,
+				  RunStatus status) const;
 
 	std::string _name = "";
 	bool _die = false;

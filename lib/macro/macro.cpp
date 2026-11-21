@@ -8,6 +8,7 @@
 #include "plugin-state-helpers.hpp"
 #include "splitter-helpers.hpp"
 #include "sync-helpers.hpp"
+#include "websocket-api.hpp"
 
 #include <obs-frontend-api.h>
 #include <util/platform.h>
@@ -16,6 +17,7 @@
 #include <QMainWindow>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <limits>
 #undef max
@@ -377,23 +379,28 @@ bool Macro::CheckConditions(bool ignorePause)
 bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 {
 	const auto status =
-		PerformActionsWithStatus(match, forceParallel, ignorePause);
+		PerformActionsWithStatus(match, forceParallel, ignorePause)
+			.status;
 	if (status == RunStatus::SKIPPED) {
 		return !forceParallel;
 	}
 	return status != RunStatus::FAILED;
 }
 
-Macro::RunStatus Macro::PerformActionsWithStatus(bool match, bool forceParallel,
+Macro::RunResult Macro::PerformActionsWithStatus(bool match, bool forceParallel,
 						 bool ignorePause)
 {
+	static std::atomic<uint64_t> lastRunId{0};
+	const uint64_t runId = ++lastRunId;
+
 	if (_actionRunFuture.valid() &&
 	    _actionRunFuture.wait_for(std::chrono::seconds(0)) !=
 		    std::future_status::ready) {
 		vblog(LOG_INFO, "Macro %s already running", _name.c_str());
 
 		if (!_stopActionsIfNotDone) {
-			return RunStatus::SKIPPED;
+			SendRunFinishedEvent(runId, match, RunStatus::SKIPPED);
+			return {runId, RunStatus::SKIPPED};
 		}
 
 		Stop();
@@ -412,12 +419,15 @@ Macro::RunStatus Macro::PerformActionsWithStatus(bool match, bool forceParallel,
 		if (_actionRunFuture.valid()) {
 			_actionRunFuture.get();
 		}
-		_actionRunFuture = std::async(std::launch::async,
-					      [this, runFunc, ignorePause] {
-						      runFunc(ignorePause);
-					      });
+		_actionRunFuture = std::async(
+			std::launch::async,
+			[this, runFunc, ignorePause, runId, match] {
+				SendRunFinishedEvent(runId, match,
+						     runFunc(ignorePause));
+			});
 	} else {
 		status = runFunc(ignorePause);
+		SendRunFinishedEvent(runId, match, status);
 	}
 
 	_lastExecutionTime = std::chrono::high_resolution_clock::now();
@@ -427,7 +437,22 @@ Macro::RunStatus Macro::PerformActionsWithStatus(bool match, bool forceParallel,
 	if (_runCount != std::numeric_limits<int>::max()) {
 		_runCount++;
 	}
-	return status;
+	return {runId, status};
+}
+
+void Macro::SendRunFinishedEvent(uint64_t runId, bool match,
+				 RunStatus status) const
+{
+	if (_isNested || !GetGlobalMacroSettings()._sendMacroFinishedEvent) {
+		return;
+	}
+
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "name", _name.c_str());
+	obs_data_set_int(data, "runId", static_cast<long long>(runId));
+	obs_data_set_bool(data, "elseActions", !match);
+	obs_data_set_string(data, "status", RunStatusToString(status));
+	SendWebsocketVendorEvent("AdvancedSceneSwitcherMacroFinished", data);
 }
 
 bool Macro::WasExecutedSince(const TimePoint &time) const

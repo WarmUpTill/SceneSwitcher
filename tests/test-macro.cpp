@@ -7,6 +7,15 @@
 #include <memory>
 #include <string>
 
+namespace advss {
+
+void ResetStubWebsocketEvents();
+int GetStubWebsocketEventCount();
+std::string GetStubLastWebsocketEventName();
+obs_data_t *GetStubLastWebsocketEventData();
+
+} // namespace advss
+
 namespace {
 
 // ---------------------------------------------------------------------------
@@ -374,7 +383,7 @@ TEST_CASE("PerformActionsWithStatus reports completed run", "[macro]")
 	advss::Macro m("test");
 	auto action = AddAction(m);
 
-	REQUIRE(m.PerformActionsWithStatus(true) ==
+	REQUIRE(m.PerformActionsWithStatus(true).status ==
 		advss::Macro::RunStatus::COMPLETED);
 	REQUIRE(action->PerformCount() == 1);
 }
@@ -385,7 +394,7 @@ TEST_CASE("PerformActionsWithStatus reports failed run", "[macro]")
 	AddAction(m, false);
 	auto skippedAction = AddAction(m);
 
-	REQUIRE(m.PerformActionsWithStatus(true) ==
+	REQUIRE(m.PerformActionsWithStatus(true).status ==
 		advss::Macro::RunStatus::FAILED);
 	REQUIRE(skippedAction->PerformCount() == 0);
 	REQUIRE_FALSE(m.PerformActions(true));
@@ -397,7 +406,7 @@ TEST_CASE("PerformActionsWithStatus reports paused macro", "[macro]")
 	auto action = AddAction(m);
 	m.SetPaused(true);
 
-	REQUIRE(m.PerformActionsWithStatus(true) ==
+	REQUIRE(m.PerformActionsWithStatus(true).status ==
 		advss::Macro::RunStatus::PAUSED);
 	REQUIRE(action->PerformCount() == 0);
 	REQUIRE(m.PerformActions(true));
@@ -409,10 +418,73 @@ TEST_CASE("PerformActionsWithStatus runs else actions", "[macro]")
 	auto action = AddAction(m);
 	auto elseAction = AddElseAction(m);
 
-	REQUIRE(m.PerformActionsWithStatus(false) ==
+	REQUIRE(m.PerformActionsWithStatus(false).status ==
 		advss::Macro::RunStatus::COMPLETED);
 	REQUIRE(action->PerformCount() == 0);
 	REQUIRE(elseAction->PerformCount() == 1);
+}
+
+TEST_CASE("PerformActionsWithStatus assigns increasing run ids", "[macro]")
+{
+	advss::Macro m("test");
+	AddAction(m);
+
+	const auto first = m.PerformActionsWithStatus(true).id;
+	const auto second = m.PerformActionsWithStatus(true).id;
+	REQUIRE(second > first);
+}
+
+// ---------------------------------------------------------------------------
+// Macro finished websocket event
+// ---------------------------------------------------------------------------
+
+TEST_CASE("No finished event is sent by default", "[macro]")
+{
+	advss::ResetStubWebsocketEvents();
+	advss::Macro m("test");
+	AddAction(m);
+
+	m.PerformActions(true);
+	REQUIRE(advss::GetStubWebsocketEventCount() == 0);
+}
+
+TEST_CASE("Finished event is sent when enabled", "[macro]")
+{
+	advss::ResetStubWebsocketEvents();
+	auto &settings = advss::GetGlobalMacroSettings();
+	settings._sendMacroFinishedEvent = true;
+
+	advss::Macro m("test");
+	AddElseAction(m);
+	const auto result = m.PerformActionsWithStatus(false);
+
+	settings._sendMacroFinishedEvent = false;
+
+	REQUIRE(advss::GetStubWebsocketEventCount() == 1);
+	REQUIRE(advss::GetStubLastWebsocketEventName() ==
+		"AdvancedSceneSwitcherMacroFinished");
+	auto data = advss::GetStubLastWebsocketEventData();
+	REQUIRE(std::string(obs_data_get_string(data, "name")) == "test");
+	REQUIRE(obs_data_get_int(data, "runId") ==
+		static_cast<long long>(result.id));
+	REQUIRE(obs_data_get_bool(data, "elseActions"));
+	REQUIRE(std::string(obs_data_get_string(data, "status")) ==
+		"completed");
+}
+
+TEST_CASE("Finished event is not sent for nested macros", "[macro]")
+{
+	advss::ResetStubWebsocketEvents();
+	auto &settings = advss::GetGlobalMacroSettings();
+	settings._sendMacroFinishedEvent = true;
+
+	auto nested = advss::Macro::CreateNested();
+	AddAction(*nested);
+	nested->PerformActions(true);
+
+	settings._sendMacroFinishedEvent = false;
+
+	REQUIRE(advss::GetStubWebsocketEventCount() == 0);
 }
 
 // ---------------------------------------------------------------------------
