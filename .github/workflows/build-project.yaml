@@ -367,6 +367,9 @@ jobs:
 
       - name: Set Up Environment 🔧
         id: setup
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_RELEASE_POLICY_SLUG: ${{ secrets.SIGNPATH_RELEASE_POLICY_SLUG }}
         run: |
           # Set Up Environment 🔧
           if ( $Env:RUNNER_DEBUG -ne $null ) {
@@ -379,6 +382,19 @@ jobs:
 
           "pluginName=${ProductName}" >> $env:GITHUB_OUTPUT
           "pluginVersion=${GitOutput}" >> $env:GITHUB_OUTPUT
+
+          # Secrets are not available to pull requests from forks
+          $Sign = '${{ needs.check-event.outputs.codesign }}' -eq 'true' -and $Env:SIGNPATH_API_TOKEN
+          "signpath=$($Sign.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+
+          # Release signing requires manual approval in SignPath, so allow more time
+          if ( '${{ github.ref_type }}' -eq 'tag' -and $Env:SIGNPATH_RELEASE_POLICY_SLUG ) {
+            "signpathRelease=true" >> $env:GITHUB_OUTPUT
+            "signpathTimeout=10800" >> $env:GITHUB_OUTPUT
+          } else {
+            "signpathRelease=false" >> $env:GITHUB_OUTPUT
+            "signpathTimeout=600" >> $env:GITHUB_OUTPUT
+          }
 
       - name: Build Dependencies 🏗️
         uses: ./.github/actions/build-dependencies
@@ -405,12 +421,77 @@ jobs:
           target: x64
           config: ${{ needs.check-event.outputs.config }}
 
+      - name: Upload Unsigned Binaries 📡
+        id: upload-unsigned-binaries
+        if: fromJSON(steps.setup.outputs.signpath)
+        uses: actions/upload-artifact@v7
+        with:
+          name: signpath-unsigned-binaries-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            ${{ github.workspace }}/release/${{ needs.check-event.outputs.config }}/${{ steps.setup.outputs.pluginName }}/${{ steps.setup.outputs.pluginName }}*.dll
+            ${{ github.workspace }}/release/${{ needs.check-event.outputs.config }}/${{ steps.setup.outputs.pluginName }}/${{ steps.setup.outputs.pluginName }}-plugins/${{ steps.setup.outputs.pluginName }}*.dll
+
+      - name: Sign Binaries 🔑
+        if: fromJSON(steps.setup.outputs.signpath)
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ steps.setup.outputs.signpathRelease == 'true' && secrets.SIGNPATH_RELEASE_POLICY_SLUG || secrets.SIGNPATH_TEST_POLICY_SLUG }}
+          artifact-configuration-slug: binaries
+          github-artifact-id: ${{ steps.upload-unsigned-binaries.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: ${{ steps.setup.outputs.signpathTimeout }}
+          output-artifact-directory: ${{ runner.temp }}/signed-binaries
+
+      - name: Replace Unsigned Binaries 🔁
+        if: fromJSON(steps.setup.outputs.signpath)
+        run: |
+          # Replace Unsigned Binaries 🔁
+          Copy-Item -Path "${{ runner.temp }}/signed-binaries/*" `
+            -Destination "${{ github.workspace }}/release/${{ needs.check-event.outputs.config }}/${{ steps.setup.outputs.pluginName }}" `
+            -Recurse -Force
+
       - name: Package Plugin 📀
         uses: ./.github/actions/package-plugin
         with:
           target: x64
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
+
+      - name: Upload Unsigned Installer 📡
+        id: upload-unsigned-installer
+        if: fromJSON(steps.setup.outputs.signpath) && fromJSON(needs.check-event.outputs.package)
+        uses: actions/upload-artifact@v7
+        with:
+          name: signpath-unsigned-installer-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 1
+          if-no-files-found: error
+          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-*-windows-x64-Installer.exe
+
+      - name: Sign Installer 🔑
+        if: fromJSON(steps.setup.outputs.signpath) && fromJSON(needs.check-event.outputs.package)
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ steps.setup.outputs.signpathRelease == 'true' && secrets.SIGNPATH_RELEASE_POLICY_SLUG || secrets.SIGNPATH_TEST_POLICY_SLUG }}
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.upload-unsigned-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: ${{ steps.setup.outputs.signpathTimeout }}
+          output-artifact-directory: ${{ runner.temp }}/signed-installer
+
+      - name: Replace Unsigned Installer 🔁
+        if: fromJSON(steps.setup.outputs.signpath) && fromJSON(needs.check-event.outputs.package)
+        run: |
+          # Replace Unsigned Installer 🔁
+          Copy-Item -Path "${{ runner.temp }}/signed-installer/*.exe" `
+            -Destination "${{ github.workspace }}/release" -Force
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v7
