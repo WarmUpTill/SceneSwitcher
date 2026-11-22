@@ -22,6 +22,7 @@
 !buildspec.json
 !CMakeLists.txt
 !CMakePresets.json
+!CODE_SIGNING_POLICY.md
 !LICENSE
 !README.md
 

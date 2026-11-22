@@ -3,7 +3,8 @@ More information can be found in the [OBS forums](https://obsproject.com/forum/r
 
 ## Downloads
 
-Binaries for Windows, MacOS, and Linux are available in the [Releases](https://github.com/WarmUpTill/SceneSwitcher/releases) section.
+Binaries for Windows, MacOS, and Linux are available in the [Releases](https://github.com/WarmUpTill/SceneSwitcher/releases) section.  
+Windows binaries are signed as described in the [Code signing policy](CODE_SIGNING_POLICY.md).
 
 ## Installing the plugin
 
