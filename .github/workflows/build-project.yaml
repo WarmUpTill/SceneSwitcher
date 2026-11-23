@@ -74,9 +74,15 @@ jobs:
           fi
 
   macos-build:
-    name: Build for macOS 🍏
+    name: Build for macOS 🍏 (${{ matrix.target }})
     runs-on: macos-15
     needs: check-event
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-universal builds a universal (arm64 + x86_64) binary,
+        # macos-arm64 builds a native Apple Silicon binary
+        target: [macos-universal, macos-arm64]
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
@@ -115,16 +121,16 @@ jobs:
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-${{ needs.check-event.outputs.config }}-${{ github.sha }}
+          key: ${{ runner.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-ccache-${{ needs.check-event.outputs.config }}-
-            ${{ runner.os }}-ccache-
+            ${{ runner.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}-
+            ${{ runner.os }}-ccache-${{ matrix.target }}-
 
       - name: Build Dependencies 🏗️
         uses: ./.github/actions/build-dependencies
         with:
           workingDirectory: ${{ github.workspace }}/plugin
-          target: macos-universal
+          target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
 
       - name: Set Up Codesigning 🔑
@@ -144,7 +150,7 @@ jobs:
       - name: Build Plugin 🧱
         uses: ./.github/actions/build-plugin
         with:
-          target: macos-universal
+          target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
           codesign: ${{ fromJSON(needs.check-event.outputs.codesign) }}
           codesignIdent: ${{ steps.codesign.outputs.codesignIdent }}
@@ -152,7 +158,7 @@ jobs:
       - name: Package Plugin 📀
         uses: ./.github/actions/package-plugin
         with:
-          target: macos-universal
+          target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
           codesign: ${{ fromJSON(needs.check-event.outputs.codesign) && fromJSON(steps.codesign.outputs.haveCodesignIdent) }}
@@ -166,15 +172,15 @@ jobs:
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-macos-universal-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-*-macos-universal.*
+          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-*-${{ matrix.target }}.*
 
       - name: Upload Debug Symbol Artifacts 🪲
         uses: actions/upload-artifact@v7
         if: ${{ needs.check-event.outputs.config == 'Release' }}
         with:
-          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-macos-universal-${{ needs.check-event.outputs.commitHash }}-dSYMs
-          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-*-macos-universal-dSYMs.*
+          name: ${{ steps.setup.outputs.pluginName }}-${{ steps.setup.outputs.pluginVersion }}-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}-dSYMs
+          path: ${{ github.workspace }}/release/${{ steps.setup.outputs.pluginName }}-*-${{ matrix.target }}-dSYMs.*
 
   ubuntu-build:
     name: Build for Ubuntu 🐧

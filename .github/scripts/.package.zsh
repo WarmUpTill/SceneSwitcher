@@ -62,6 +62,8 @@ package() {
   local -r _version='2.0.0'
   local -r -a _valid_targets=(
     macos-universal
+    macos-arm64
+    macos-x86_64
     linux-x86_64
   )
   local target
@@ -152,7 +154,11 @@ ${_usage_host:-}"
     }
   }
 
-  : "${target:="${host_os}-${CPUTYPE}"}"
+  if [[ ${host_os} == macos ]] {
+    : "${target:=macos-universal}"
+  } else {
+    : "${target:="${host_os}-${CPUTYPE}"}"
+  }
 
   set -- ${(@)args}
   set_loglevel ${verbosity}
@@ -173,7 +179,7 @@ ${_usage_host:-}"
   if [[ ${host_os} == macos ]] {
     autoload -Uz check_packages read_codesign read_codesign_installer read_codesign_pass
 
-    local output_name="${product_name}-${product_version}-${host_os}-universal"
+    local output_name="${product_name}-${product_version}-${host_os}-${target##*-}"
 
     if [[ ! -d ${project_root}/release/${config}/${product_name}.plugin ]] {
       log_error 'No release artifact found. Run the build script or the CMake install procedure first.'

@@ -62,6 +62,8 @@ build() {
   local -r _version='2.0.0'
   local -r -a _valid_targets=(
     macos-universal
+    macos-arm64
+    macos-x86_64
     linux-x86_64
     linux-aarch64
   )
@@ -182,7 +184,11 @@ ${_usage_host:-}"
     }
   }
 
-  : "${target:="${host_os}-${CPUTYPE}"}"
+  if [[ ${host_os} == macos ]] {
+    : "${target:=macos-universal}"
+  } else {
+    : "${target:="${host_os}-${CPUTYPE}"}"
+  }
 
   set -- ${(@)args}
   set_loglevel ${verbosity}
@@ -262,6 +268,16 @@ ${_usage_host:-}"
           --preset ${_preset}
         )
 
+        # Build a universal binary by default, or a single architecture
+        # (e.g. macos-arm64) if requested
+        local -a _xcode_archs=(-arch arm64 -arch x86_64)
+        if [[ ${target##*-} == universal ]] {
+          cmake_args+=(-UCMAKE_OSX_ARCHITECTURES)
+        } else {
+          cmake_args+=(-DCMAKE_OSX_ARCHITECTURES=${target##*-})
+          _xcode_archs=(-arch ${target##*-})
+        }
+
         if (( codesign )) {
           autoload -Uz read_codesign_team && read_codesign_team
 
@@ -275,7 +291,7 @@ ${_usage_host:-}"
           -DCODESIGN_IDENTITY=${CODESIGN_IDENT:--}
         )
 
-        cmake_build_args+=(--preset ${_preset} --parallel --config ${config} -- ONLY_ACTIVE_ARCH=NO -arch arm64 -arch x86_64)
+        cmake_build_args+=(--preset ${_preset} --parallel --config ${config} -- ONLY_ACTIVE_ARCH=NO ${_xcode_archs})
         cmake_install_args+=(build_macos --config ${config} --prefix "${project_root}/release/${config}")
 
         local -a xcbeautify_opts=()

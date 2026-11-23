@@ -60,7 +60,10 @@ runs:
       run: |
         : Run macOS Packaging
 
-        local -a package_args=(--config ${{ inputs.config }})
+        local -a package_args=(
+          --target ${{ inputs.target }}
+          --config ${{ inputs.config }}
+        )
         if (( ${+RUNNER_DEBUG} )) package_args+=(--debug)
 
         if [[ '${{ inputs.codesign }}' == 'true' ]] package_args+=(--codesign)

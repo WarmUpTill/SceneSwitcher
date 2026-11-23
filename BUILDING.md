@@ -82,6 +82,9 @@ You can rely on the CI scripts to build the dependencies for you, although it is
 | Linux   | `./.github/scripts/build-deps-linux.sh` |
 | MacOS   |  `./.github/scripts/build-deps-macos.zsh` |
 
+On MacOS the scripts build a universal binary (`--target macos-universal`) by default.  
+Pass `--target macos-arm64` (or `--target macos-x86_64`) to `build-deps-macos.zsh`, `build-macos` and `package-macos` to build for a single architecture only.
+
 
 # Contributing
 
