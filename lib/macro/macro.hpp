@@ -150,6 +150,7 @@ public:
 	std::shared_ptr<Macro> Parent() const;
 
 	static std::shared_ptr<Macro> CreateNested();
+	bool IsNested() const { return _isNested; }
 	void SetNestedParentMacro(Macro *parent);
 	Macro *GetNestedParentMacro() const { return _nestedParentMacro; }
 

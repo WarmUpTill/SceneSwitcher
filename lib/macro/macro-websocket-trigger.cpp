@@ -3,6 +3,7 @@
 #include "plugin-state-helpers.hpp"
 #include "variable.hpp"
 #include "macro-helpers.hpp"
+#include "macro-settings.hpp"
 #include "macro.hpp"
 
 #include <obs.hpp>
@@ -13,9 +14,12 @@ static bool setup();
 static bool setupDone = setup();
 static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *response);
 static void receiveSetVariablesMessage(obs_data_t *data, obs_data_t *);
+static void sendMacroFinishedEvent(const Macro &macro,
+				   const Macro::RunResult &result, bool match);
 
 static const char *runMacroMessage = "AdvancedSceneSwitcherRunMacro";
 static const char *setVariablesMessage = "AdvancedSceneSwitcherSetVariables";
+static const char *macroFinishedEvent = "AdvancedSceneSwitcherMacroFinished";
 
 static bool setup()
 {
@@ -24,8 +28,25 @@ static bool setup()
 					 receiveRunMacroMessage);
 		RegisterWebsocketRequest(setVariablesMessage,
 					 receiveSetVariablesMessage);
+		AddMacroRunFinishedCallback(sendMacroFinishedEvent);
 	});
 	return true;
+}
+
+static void sendMacroFinishedEvent(const Macro &macro,
+				   const Macro::RunResult &result, bool match)
+{
+	if (macro.IsNested() ||
+	    !GetGlobalMacroSettings()._sendMacroFinishedEvent) {
+		return;
+	}
+
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "name", macro.Name().c_str());
+	obs_data_set_int(data, "runId", static_cast<long long>(result.id));
+	obs_data_set_bool(data, "elseActions", !match);
+	obs_data_set_string(data, "status", RunStatusToString(result.status));
+	SendWebsocketVendorEvent(macroFinishedEvent, data);
 }
 
 static void setVariables(obs_data_t *data)
