@@ -35,6 +35,18 @@ public:
 		// Trigger when any individual condition evaluates to true
 		ANY_CONDITION_TRIGGERED,
 	};
+	enum class RunStatus {
+		COMPLETED,
+		FAILED,
+		STOPPED,
+		PAUSED,
+		SKIPPED,
+		STARTED_IN_PARALLEL,
+	};
+	struct RunResult {
+		uint64_t id = 0;
+		RunStatus status = RunStatus::COMPLETED;
+	};
 
 	Macro(const std::string &name = "");
 	Macro(const std::string &name, const GlobalMacroSettings &settings);
@@ -51,6 +63,9 @@ public:
 	bool ShouldRunActions() const;
 	bool PerformActions(bool match, bool forceParallel = false,
 			    bool ignorePause = false);
+	RunResult PerformActionsWithStatus(bool match,
+					   bool forceParallel = false,
+					   bool ignorePause = false);
 
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
@@ -174,11 +189,11 @@ private:
 	bool
 	CheckConditionHelper(const std::shared_ptr<MacroCondition> &) const;
 
-	bool RunActionsHelper(
+	RunStatus RunActionsHelper(
 		const std::deque<std::shared_ptr<MacroAction>> &actions,
 		bool ignorePause);
-	bool RunActions(bool ignorePause);
-	bool RunElseActions(bool ignorePause);
+	RunStatus RunActions(bool ignorePause);
+	RunStatus RunElseActions(bool ignorePause);
 
 	std::string _name = "";
 	bool _die = false;
@@ -241,6 +256,9 @@ private:
 	MacroDockSettings _dockSettings;
 };
 
+uint64_t NewMacroRunId();
+
+const char *RunStatusToString(Macro::RunStatus);
 void WaitForAllMacros();
 std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval();
 

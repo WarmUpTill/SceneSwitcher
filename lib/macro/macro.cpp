@@ -16,6 +16,7 @@
 #include <QMainWindow>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <limits>
 #undef max
@@ -376,13 +377,27 @@ bool Macro::CheckConditions(bool ignorePause)
 
 bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 {
+	const auto status =
+		PerformActionsWithStatus(match, forceParallel, ignorePause)
+			.status;
+	if (status == RunStatus::SKIPPED) {
+		return !forceParallel;
+	}
+	return status != RunStatus::FAILED;
+}
+
+Macro::RunResult Macro::PerformActionsWithStatus(bool match, bool forceParallel,
+						 bool ignorePause)
+{
+	const uint64_t id = NewMacroRunId();
+
 	if (_actionRunFuture.valid() &&
 	    _actionRunFuture.wait_for(std::chrono::seconds(0)) !=
 		    std::future_status::ready) {
 		vblog(LOG_INFO, "Macro %s already running", _name.c_str());
 
 		if (!_stopActionsIfNotDone) {
-			return !forceParallel;
+			return {id, RunStatus::SKIPPED};
 		}
 
 		Stop();
@@ -390,13 +405,13 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 		      _name.c_str());
 	}
 
-	std::function<bool(bool)> runFunc =
+	std::function<RunStatus(bool)> runFunc =
 		match ? std::bind(&Macro::RunActions, this,
 				  std::placeholders::_1)
 		      : std::bind(&Macro::RunElseActions, this,
 				  std::placeholders::_1);
 	_stop = false;
-	bool ret = true;
+	auto status = RunStatus::STARTED_IN_PARALLEL;
 	if (_runInParallel || forceParallel) {
 		if (_actionRunFuture.valid()) {
 			_actionRunFuture.get();
@@ -406,7 +421,7 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 						      runFunc(ignorePause);
 					      });
 	} else {
-		ret = runFunc(ignorePause);
+		status = runFunc(ignorePause);
 	}
 
 	_lastExecutionTime = std::chrono::high_resolution_clock::now();
@@ -416,7 +431,13 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 	if (_runCount != std::numeric_limits<int>::max()) {
 		_runCount++;
 	}
-	return ret;
+	return {id, status};
+}
+
+uint64_t NewMacroRunId()
+{
+	static std::atomic<uint64_t> lastRunId{0};
+	return ++lastRunId;
 }
 
 bool Macro::WasExecutedSince(const TimePoint &time) const
@@ -503,19 +524,18 @@ Macro::ActionTriggerMode Macro::GetActionTriggerMode() const
 	return _actionTriggerMode;
 }
 
-bool Macro::RunActionsHelper(
+Macro::RunStatus Macro::RunActionsHelper(
 	const std::deque<std::shared_ptr<MacroAction>> &actionsToRun,
 	bool ignorePause)
 {
 	if (_paused && !ignorePause) {
-		return true;
+		return RunStatus::PAUSED;
 	}
 
 	// Create copy of action list as elements might be removed, inserted, or
 	// reordered while actions are currently being executed.
 	auto actions = actionsToRun;
 
-	bool actionsExecutedSuccessfully = true;
 	for (auto &action : actions) {
 		if (!action) {
 			continue;
@@ -527,30 +547,33 @@ bool Macro::RunActionsHelper(
 				actionResult = action->PerformAction();
 			});
 			action->ApplyVarMappings();
-			actionsExecutedSuccessfully =
-				actionsExecutedSuccessfully && actionResult;
+			if (!actionResult) {
+				return RunStatus::FAILED;
+			}
 		} else {
 			vblog(LOG_INFO, "skipping disabled action %s",
 			      action->GetId().c_str());
 		}
-		if (!actionsExecutedSuccessfully || (_paused && !ignorePause) ||
-		    _stop || _die) {
-			break;
+		if (_paused && !ignorePause) {
+			return RunStatus::PAUSED;
+		}
+		if (_stop || _die) {
+			return RunStatus::STOPPED;
 		}
 		if (action->Enabled()) {
 			action->EnableHighlight();
 		}
 	}
-	return actionsExecutedSuccessfully;
+	return RunStatus::COMPLETED;
 }
 
-bool Macro::RunActions(bool ignorePause)
+Macro::RunStatus Macro::RunActions(bool ignorePause)
 {
 	mblog(LOG_INFO, "running actions of %s", _name.c_str());
 	return RunActionsHelper(_actions, ignorePause);
 }
 
-bool Macro::RunElseActions(bool ignorePause)
+Macro::RunStatus Macro::RunElseActions(bool ignorePause)
 {
 	mblog(LOG_INFO, "running else actions of %s", _name.c_str());
 	return RunActionsHelper(_elseActions, ignorePause);
@@ -1443,6 +1466,25 @@ void SignalStopAllMacros()
 	for (const auto &m : GetAllMacros()) {
 		m->SignalStop();
 	}
+}
+
+const char *RunStatusToString(Macro::RunStatus status)
+{
+	switch (status) {
+	case Macro::RunStatus::COMPLETED:
+		return "completed";
+	case Macro::RunStatus::FAILED:
+		return "failed";
+	case Macro::RunStatus::STOPPED:
+		return "stopped";
+	case Macro::RunStatus::PAUSED:
+		return "paused";
+	case Macro::RunStatus::SKIPPED:
+		return "skipped";
+	case Macro::RunStatus::STARTED_IN_PARALLEL:
+		return "startedInParallel";
+	}
+	return "unknown";
 }
 
 void WaitForAllMacros()

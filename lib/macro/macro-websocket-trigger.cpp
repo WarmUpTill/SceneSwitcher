@@ -3,6 +3,7 @@
 #include "plugin-state-helpers.hpp"
 #include "variable.hpp"
 #include "macro-helpers.hpp"
+#include "macro.hpp"
 
 #include <obs.hpp>
 
@@ -10,7 +11,7 @@ namespace advss {
 
 static bool setup();
 static bool setupDone = setup();
-static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *);
+static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *response);
 static void receiveSetVariablesMessage(obs_data_t *data, obs_data_t *);
 
 static const char *runMacroMessage = "AdvancedSceneSwitcherRunMacro";
@@ -64,7 +65,7 @@ static void setVariables(obs_data_t *data)
 	}
 }
 
-static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *)
+static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *response)
 {
 	if (!obs_data_has_user_value(data, "name")) {
 		blog(LOG_INFO,
@@ -89,11 +90,10 @@ static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *)
 	}
 
 	const bool runElse = obs_data_get_bool(data, "runElseActions");
-	if (runElse) {
-		RunMacroElseActions(macro.get());
-	} else {
-		RunMacroActions(macro.get());
-	}
+	const auto result = macro->PerformActionsWithStatus(!runElse);
+	obs_data_set_string(response, "status",
+			    RunStatusToString(result.status));
+	obs_data_set_int(response, "runId", static_cast<long long>(result.id));
 }
 
 static void receiveSetVariablesMessage(obs_data_t *data, obs_data_t *)
