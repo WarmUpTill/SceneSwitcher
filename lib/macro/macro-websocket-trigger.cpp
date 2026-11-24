@@ -8,6 +8,9 @@
 
 #include <obs.hpp>
 
+#include <mutex>
+#include <unordered_map>
+
 namespace advss {
 
 static bool setup();
@@ -21,6 +24,9 @@ static const char *runMacroMessage = "AdvancedSceneSwitcherRunMacro";
 static const char *setVariablesMessage = "AdvancedSceneSwitcherSetVariables";
 static const char *macroFinishedEvent = "AdvancedSceneSwitcherMacroFinished";
 
+static std::mutex clientRunIdsMutex;
+static std::unordered_map<uint64_t, std::string> clientRunIds;
+
 static bool setup()
 {
 	AddPluginInitStep([]() {
@@ -33,9 +39,28 @@ static bool setup()
 	return true;
 }
 
+static void addClientRunId(uint64_t runId, const std::string &clientRunId)
+{
+	std::lock_guard<std::mutex> lock(clientRunIdsMutex);
+	clientRunIds[runId] = clientRunId;
+}
+
+static std::string takeClientRunId(uint64_t runId)
+{
+	std::lock_guard<std::mutex> lock(clientRunIdsMutex);
+	auto it = clientRunIds.find(runId);
+	if (it == clientRunIds.end()) {
+		return "";
+	}
+	auto clientRunId = it->second;
+	clientRunIds.erase(it);
+	return clientRunId;
+}
+
 static void sendMacroFinishedEvent(const Macro &macro,
 				   const Macro::RunResult &result, bool match)
 {
+	const auto clientRunId = takeClientRunId(result.id);
 	if (macro.IsNested() ||
 	    !GetGlobalMacroSettings()._sendMacroFinishedEvent) {
 		return;
@@ -44,6 +69,9 @@ static void sendMacroFinishedEvent(const Macro &macro,
 	OBSDataAutoRelease data = obs_data_create();
 	obs_data_set_string(data, "name", macro.Name().c_str());
 	obs_data_set_int(data, "runId", static_cast<long long>(result.id));
+	if (!clientRunId.empty()) {
+		obs_data_set_string(data, "clientRunId", clientRunId.c_str());
+	}
 	obs_data_set_bool(data, "elseActions", !match);
 	obs_data_set_string(data, "status", RunStatusToString(result.status));
 	SendWebsocketVendorEvent(macroFinishedEvent, data);
@@ -111,10 +139,21 @@ static void receiveRunMacroMessage(obs_data_t *data, obs_data_t *response)
 	}
 
 	const bool runElse = obs_data_get_bool(data, "runElseActions");
-	const auto result = macro->PerformActionsWithStatus(!runElse);
+	const std::string clientRunId =
+		obs_data_get_string(data, "clientRunId");
+	const auto runId = NewMacroRunId();
+	if (!clientRunId.empty()) {
+		addClientRunId(runId, clientRunId);
+	}
+	const auto result =
+		macro->PerformActionsWithStatus(!runElse, false, false, runId);
 	obs_data_set_string(response, "status",
 			    RunStatusToString(result.status));
 	obs_data_set_int(response, "runId", static_cast<long long>(result.id));
+	if (!clientRunId.empty()) {
+		obs_data_set_string(response, "clientRunId",
+				    clientRunId.c_str());
+	}
 }
 
 static void receiveSetVariablesMessage(obs_data_t *data, obs_data_t *)

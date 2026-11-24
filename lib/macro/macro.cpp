@@ -388,9 +388,10 @@ bool Macro::PerformActions(bool match, bool forceParallel, bool ignorePause)
 }
 
 Macro::RunResult Macro::PerformActionsWithStatus(bool match, bool forceParallel,
-						 bool ignorePause)
+						 bool ignorePause,
+						 std::optional<uint64_t> runId)
 {
-	const uint64_t id = NewMacroRunId();
+	const uint64_t id = runId ? *runId : NewMacroRunId();
 
 	if (_actionRunFuture.valid() &&
 	    _actionRunFuture.wait_for(std::chrono::seconds(0)) !=

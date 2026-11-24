@@ -14,6 +14,7 @@
 #include <functional>
 #include <future>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -66,7 +67,8 @@ public:
 			    bool ignorePause = false);
 	RunResult PerformActionsWithStatus(bool match,
 					   bool forceParallel = false,
-					   bool ignorePause = false);
+					   bool ignorePause = false,
+					   std::optional<uint64_t> runId = {});
 
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }

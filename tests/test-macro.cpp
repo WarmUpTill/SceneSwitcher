@@ -491,6 +491,20 @@ TEST_CASE("Run finished callback reports failed run", "[macro]")
 	REQUIRE(record.match);
 }
 
+TEST_CASE("PerformActionsWithStatus uses provided run id", "[macro]")
+{
+	ResetRunFinishedRecord();
+	advss::Macro m("test");
+	AddAction(m);
+
+	const auto runId = advss::NewMacroRunId();
+	const auto result =
+		m.PerformActionsWithStatus(true, false, false, runId);
+
+	REQUIRE(result.id == runId);
+	REQUIRE(GetRunFinishedRecord().result.id == runId);
+}
+
 // ---------------------------------------------------------------------------
 // Pause state
 // ---------------------------------------------------------------------------
