@@ -23,6 +23,8 @@ static const std::map<MacroActionReplayBuffer::Action, std::string>
 		 "AdvSceneSwitcher.action.replay.type.save"},
 		{MacroActionReplayBuffer::Action::DURATION,
 		 "AdvSceneSwitcher.action.replay.type.duration"},
+		{MacroActionReplayBuffer::Action::TOGGLE,
+		 "AdvSceneSwitcher.action.replay.type.toggle"},
 };
 
 bool MacroActionReplayBuffer::PerformAction()
@@ -35,6 +37,13 @@ bool MacroActionReplayBuffer::PerformAction()
 		break;
 	case Action::START:
 		if (!obs_frontend_replay_buffer_active()) {
+			obs_frontend_replay_buffer_start();
+		}
+		break;
+	case Action::TOGGLE:
+		if (obs_frontend_replay_buffer_active()) {
+			obs_frontend_replay_buffer_stop();
+		} else {
 			obs_frontend_replay_buffer_start();
 		}
 		break;
@@ -101,8 +110,9 @@ std::shared_ptr<MacroAction> MacroActionReplayBuffer::Copy() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[_, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()));
+	for (const auto &[action, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(action));
 	}
 }
 
@@ -140,7 +150,8 @@ void MacroActionReplayBufferEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_duration->SetDuration(_entryData->_duration);
 	SetWidgetVisibility();
 }
@@ -163,11 +174,11 @@ void MacroActionReplayBufferEdit::SetWidgetVisibility()
 	updateGeometry();
 }
 
-void MacroActionReplayBufferEdit::ActionChanged(int value)
+void MacroActionReplayBufferEdit::ActionChanged(int index)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_action =
-		static_cast<MacroActionReplayBuffer::Action>(value);
+	_entryData->_action = static_cast<MacroActionReplayBuffer::Action>(
+		_actions->itemData(index).toInt());
 
 	SetWidgetVisibility();
 }

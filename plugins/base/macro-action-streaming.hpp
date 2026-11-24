@@ -29,12 +29,14 @@ public:
 		STREAM_KEY,
 		USERNAME,
 		PASSWORD,
+		TOGGLE,
 	};
 	Action _action = Action::STOP;
 	IntVariable _keyFrameInterval = 0;
 	StringVariable _stringValue;
 
 private:
+	void StartStreaming() const;
 	void SetKeyFrameInterval() const;
 	void SetStreamSettingsValue(const char *name, const std::string &value,
 				    bool enableAuth = false) const;

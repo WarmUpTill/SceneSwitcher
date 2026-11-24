@@ -22,6 +22,7 @@ public:
 		START,
 		SAVE,
 		DURATION,
+		TOGGLE,
 	};
 	Action _action = Action::STOP;
 	Duration _duration;

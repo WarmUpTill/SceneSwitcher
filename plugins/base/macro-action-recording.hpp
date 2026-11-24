@@ -31,6 +31,7 @@ public:
 		FOLDER,
 		FILE_FORMAT,
 		ADD_CHAPTER,
+		TOGGLE,
 	};
 	Action _action = Action::STOP;
 
