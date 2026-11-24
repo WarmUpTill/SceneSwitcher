@@ -85,6 +85,38 @@ std::shared_ptr<StubAction> AddElseAction(advss::Macro &m)
 	return action;
 }
 
+struct RunFinishedRecord {
+	int count = 0;
+	std::string name;
+	advss::Macro::RunResult result;
+	bool match = false;
+};
+
+RunFinishedRecord &GetRunFinishedRecord()
+{
+	static RunFinishedRecord record;
+	return record;
+}
+
+// Callbacks cannot be removed, so register a single recorder for all tests
+void ResetRunFinishedRecord()
+{
+	static const bool registered = [] {
+		advss::AddMacroRunFinishedCallback(
+			[](const advss::Macro &macro,
+			   const advss::Macro::RunResult &result, bool match) {
+				auto &record = GetRunFinishedRecord();
+				record.count++;
+				record.name = macro.Name();
+				record.result = result;
+				record.match = match;
+			});
+		return true;
+	}();
+	(void)registered;
+	GetRunFinishedRecord() = {};
+}
+
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -423,6 +455,40 @@ TEST_CASE("PerformActionsWithStatus assigns increasing run ids", "[macro]")
 	const auto first = m.PerformActionsWithStatus(true).id;
 	const auto second = m.PerformActionsWithStatus(true).id;
 	REQUIRE(second > first);
+}
+
+// ---------------------------------------------------------------------------
+// Run finished callback
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Run finished callback receives run result", "[macro]")
+{
+	ResetRunFinishedRecord();
+	advss::Macro m("test");
+	AddElseAction(m);
+
+	const auto result = m.PerformActionsWithStatus(false);
+
+	const auto &record = GetRunFinishedRecord();
+	REQUIRE(record.count == 1);
+	REQUIRE(record.name == "test");
+	REQUIRE(record.result.id == result.id);
+	REQUIRE(record.result.status == advss::Macro::RunStatus::COMPLETED);
+	REQUIRE_FALSE(record.match);
+}
+
+TEST_CASE("Run finished callback reports failed run", "[macro]")
+{
+	ResetRunFinishedRecord();
+	advss::Macro m("test");
+	AddAction(m, false);
+
+	m.PerformActions(true);
+
+	const auto &record = GetRunFinishedRecord();
+	REQUIRE(record.count == 1);
+	REQUIRE(record.result.status == advss::Macro::RunStatus::FAILED);
+	REQUIRE(record.match);
 }
 
 // ---------------------------------------------------------------------------

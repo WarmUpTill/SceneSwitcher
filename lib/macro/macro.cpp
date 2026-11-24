@@ -20,6 +20,7 @@
 #include <chrono>
 #include <limits>
 #undef max
+#include <mutex>
 #include <unordered_map>
 
 namespace advss {
@@ -397,7 +398,9 @@ Macro::RunResult Macro::PerformActionsWithStatus(bool match, bool forceParallel,
 		vblog(LOG_INFO, "Macro %s already running", _name.c_str());
 
 		if (!_stopActionsIfNotDone) {
-			return {id, RunStatus::SKIPPED};
+			const RunResult skipped{id, RunStatus::SKIPPED};
+			NotifyRunFinished(skipped, match);
+			return skipped;
 		}
 
 		Stop();
@@ -416,12 +419,15 @@ Macro::RunResult Macro::PerformActionsWithStatus(bool match, bool forceParallel,
 		if (_actionRunFuture.valid()) {
 			_actionRunFuture.get();
 		}
-		_actionRunFuture = std::async(std::launch::async,
-					      [this, runFunc, ignorePause] {
-						      runFunc(ignorePause);
-					      });
+		_actionRunFuture = std::async(std::launch::async, [this,
+								   runFunc,
+								   ignorePause,
+								   id, match] {
+			NotifyRunFinished({id, runFunc(ignorePause)}, match);
+		});
 	} else {
 		status = runFunc(ignorePause);
+		NotifyRunFinished({id, status}, match);
 	}
 
 	_lastExecutionTime = std::chrono::high_resolution_clock::now();
@@ -434,10 +440,41 @@ Macro::RunResult Macro::PerformActionsWithStatus(bool match, bool forceParallel,
 	return {id, status};
 }
 
+static std::mutex &getRunFinishedCallbacksMutex()
+{
+	static std::mutex mutex;
+	return mutex;
+}
+
+static std::vector<MacroRunFinishedCallback> &getRunFinishedCallbacks()
+{
+	static std::vector<MacroRunFinishedCallback> callbacks;
+	return callbacks;
+}
+
+void AddMacroRunFinishedCallback(const MacroRunFinishedCallback &callback)
+{
+	std::lock_guard<std::mutex> lock(getRunFinishedCallbacksMutex());
+	getRunFinishedCallbacks().emplace_back(callback);
+}
+
 uint64_t NewMacroRunId()
 {
 	static std::atomic<uint64_t> lastRunId{0};
 	return ++lastRunId;
+}
+
+void Macro::NotifyRunFinished(const RunResult &result, bool match) const
+{
+	std::vector<MacroRunFinishedCallback> callbacks;
+	{
+		std::lock_guard<std::mutex> lock(
+			getRunFinishedCallbacksMutex());
+		callbacks = getRunFinishedCallbacks();
+	}
+	for (const auto &callback : callbacks) {
+		callback(*this, result, match);
+	}
 }
 
 bool Macro::WasExecutedSince(const TimePoint &time) const

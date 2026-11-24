@@ -11,6 +11,7 @@
 #include <QList>
 
 #include <deque>
+#include <functional>
 #include <future>
 #include <memory>
 #include <string>
@@ -194,6 +195,7 @@ private:
 		bool ignorePause);
 	RunStatus RunActions(bool ignorePause);
 	RunStatus RunElseActions(bool ignorePause);
+	void NotifyRunFinished(const RunResult &result, bool match) const;
 
 	std::string _name = "";
 	bool _die = false;
@@ -256,6 +258,9 @@ private:
 	MacroDockSettings _dockSettings;
 };
 
+using MacroRunFinishedCallback =
+	std::function<void(const Macro &, const Macro::RunResult &, bool match)>;
+void AddMacroRunFinishedCallback(const MacroRunFinishedCallback &);
 uint64_t NewMacroRunId();
 
 const char *RunStatusToString(Macro::RunStatus);
