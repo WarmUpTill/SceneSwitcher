@@ -16,24 +16,44 @@ bool MacroActionStream::_registered = MacroActionFactory::Register(
 	{MacroActionStream::Create, MacroActionStreamEdit::Create,
 	 "AdvSceneSwitcher.action.streaming"});
 
-const static std::map<MacroActionStream::Action, std::string> actionTypes = {
-	{MacroActionStream::Action::STOP,
-	 "AdvSceneSwitcher.action.streaming.type.stop"},
-	{MacroActionStream::Action::START,
-	 "AdvSceneSwitcher.action.streaming.type.start"},
-	{MacroActionStream::Action::KEYFRAME_INTERVAL,
-	 "AdvSceneSwitcher.action.streaming.type.keyFrameInterval"},
-	{MacroActionStream::Action::SERVER,
-	 "AdvSceneSwitcher.action.streaming.type.server"},
-	{MacroActionStream::Action::STREAM_KEY,
-	 "AdvSceneSwitcher.action.streaming.type.streamKey"},
-	{MacroActionStream::Action::USERNAME,
-	 "AdvSceneSwitcher.action.streaming.type.username"},
-	{MacroActionStream::Action::PASSWORD,
-	 "AdvSceneSwitcher.action.streaming.type.password"},
-	{MacroActionStream::Action::TOGGLE,
-	 "AdvSceneSwitcher.action.streaming.type.toggle"},
+const static std::vector<
+	std::vector<std::pair<MacroActionStream::Action, const char *>>>
+	actionGroups = {
+		{
+			{MacroActionStream::Action::START,
+			 "AdvSceneSwitcher.action.streaming.type.start"},
+			{MacroActionStream::Action::STOP,
+			 "AdvSceneSwitcher.action.streaming.type.stop"},
+			{MacroActionStream::Action::TOGGLE,
+			 "AdvSceneSwitcher.action.streaming.type.toggle"},
+		},
+		{
+			{MacroActionStream::Action::KEYFRAME_INTERVAL,
+			 "AdvSceneSwitcher.action.streaming.type.keyFrameInterval"},
+		},
+		{
+			{MacroActionStream::Action::SERVER,
+			 "AdvSceneSwitcher.action.streaming.type.server"},
+			{MacroActionStream::Action::STREAM_KEY,
+			 "AdvSceneSwitcher.action.streaming.type.streamKey"},
+			{MacroActionStream::Action::USERNAME,
+			 "AdvSceneSwitcher.action.streaming.type.username"},
+			{MacroActionStream::Action::PASSWORD,
+			 "AdvSceneSwitcher.action.streaming.type.password"},
+		},
 };
+
+static const char *getActionName(MacroActionStream::Action action)
+{
+	for (const auto &group : actionGroups) {
+		for (const auto &[value, name] : group) {
+			if (value == action) {
+				return name;
+			}
+		}
+	}
+	return nullptr;
+}
 
 constexpr int streamStartCooldown = 5;
 std::chrono::high_resolution_clock::time_point MacroActionStream::s_lastAttempt =
@@ -142,9 +162,9 @@ bool MacroActionStream::PerformAction()
 
 void MacroActionStream::LogAction() const
 {
-	auto it = actionTypes.find(_action);
-	if (it != actionTypes.end()) {
-		ablog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+	const char *name = getActionName(_action);
+	if (name) {
+		ablog(LOG_INFO, "performed action \"%s\"", name);
 	} else {
 		blog(LOG_WARNING, "ignored unknown streaming action %d",
 		     static_cast<int>(_action));
@@ -187,9 +207,14 @@ void MacroActionStream::ResolveVariablesToFixedValues()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[action, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()),
-			      static_cast<int>(action));
+	for (const auto &group : actionGroups) {
+		if (list->count() > 0) {
+			list->insertSeparator(list->count());
+		}
+		for (const auto &[action, name] : group) {
+			list->addItem(obs_module_text(name),
+				      static_cast<int>(action));
+		}
 	}
 }
 

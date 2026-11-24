@@ -13,30 +13,52 @@ bool MacroActionRecord::_registered = MacroActionFactory::Register(
 	{MacroActionRecord::Create, MacroActionRecordEdit::Create,
 	 "AdvSceneSwitcher.action.recording"});
 
-const static std::map<MacroActionRecord::Action, std::string> actionTypes = {
-	{MacroActionRecord::Action::STOP,
-	 "AdvSceneSwitcher.action.recording.type.stop"},
-	{MacroActionRecord::Action::START,
-	 "AdvSceneSwitcher.action.recording.type.start"},
-	{MacroActionRecord::Action::PAUSE,
-	 "AdvSceneSwitcher.action.recording.type.pause"},
-	{MacroActionRecord::Action::UNPAUSE,
-	 "AdvSceneSwitcher.action.recording.type.unpause"},
+const static std::vector<
+	std::vector<std::pair<MacroActionRecord::Action, const char *>>>
+	actionGroups = {
+		{
+			{MacroActionRecord::Action::START,
+			 "AdvSceneSwitcher.action.recording.type.start"},
+			{MacroActionRecord::Action::STOP,
+			 "AdvSceneSwitcher.action.recording.type.stop"},
+			{MacroActionRecord::Action::TOGGLE,
+			 "AdvSceneSwitcher.action.recording.type.toggle"},
+		},
+		{
+			{MacroActionRecord::Action::PAUSE,
+			 "AdvSceneSwitcher.action.recording.type.pause"},
+			{MacroActionRecord::Action::UNPAUSE,
+			 "AdvSceneSwitcher.action.recording.type.unpause"},
+		},
+		{
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(28, 0, 0)
-	{MacroActionRecord::Action::SPLIT,
-	 "AdvSceneSwitcher.action.recording.type.split"},
+			{MacroActionRecord::Action::SPLIT,
+			 "AdvSceneSwitcher.action.recording.type.split"},
 #endif
-	{MacroActionRecord::Action::FOLDER,
-	 "AdvSceneSwitcher.action.recording.type.changeOutputFolder"},
-	{MacroActionRecord::Action::FILE_FORMAT,
-	 "AdvSceneSwitcher.action.recording.type.changeOutputFileFormat"},
 #if LIBOBS_API_VER >= MAKE_SEMANTIC_VERSION(30, 2, 0)
-	{MacroActionRecord::Action::ADD_CHAPTER,
-	 "AdvSceneSwitcher.action.recording.type.addChapter"},
+			{MacroActionRecord::Action::ADD_CHAPTER,
+			 "AdvSceneSwitcher.action.recording.type.addChapter"},
 #endif
-	{MacroActionRecord::Action::TOGGLE,
-	 "AdvSceneSwitcher.action.recording.type.toggle"},
+		},
+		{
+			{MacroActionRecord::Action::FOLDER,
+			 "AdvSceneSwitcher.action.recording.type.changeOutputFolder"},
+			{MacroActionRecord::Action::FILE_FORMAT,
+			 "AdvSceneSwitcher.action.recording.type.changeOutputFileFormat"},
+		},
 };
+
+static const char *getActionName(MacroActionRecord::Action action)
+{
+	for (const auto &group : actionGroups) {
+		for (const auto &[value, name] : group) {
+			if (value == action) {
+				return name;
+			}
+		}
+	}
+	return nullptr;
+}
 
 bool MacroActionRecord::PerformAction()
 {
@@ -117,9 +139,9 @@ bool MacroActionRecord::PerformAction()
 
 void MacroActionRecord::LogAction() const
 {
-	auto it = actionTypes.find(_action);
-	if (it != actionTypes.end()) {
-		ablog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+	const char *name = getActionName(_action);
+	if (name) {
+		ablog(LOG_INFO, "performed action \"%s\"", name);
 	} else {
 		blog(LOG_WARNING, "ignored unknown recording action %d",
 		     static_cast<int>(_action));
@@ -165,9 +187,17 @@ void MacroActionRecord::ResolveVariablesToFixedValues()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[action, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()),
-			      static_cast<int>(action));
+	for (const auto &group : actionGroups) {
+		if (group.empty()) {
+			continue;
+		}
+		if (list->count() > 0) {
+			list->insertSeparator(list->count());
+		}
+		for (const auto &[action, name] : group) {
+			list->addItem(obs_module_text(name),
+				      static_cast<int>(action));
+		}
 	}
 }
 

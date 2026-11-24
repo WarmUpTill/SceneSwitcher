@@ -13,19 +13,38 @@ bool MacroActionReplayBuffer::_registered = MacroActionFactory::Register(
 	{MacroActionReplayBuffer::Create, MacroActionReplayBufferEdit::Create,
 	 "AdvSceneSwitcher.action.replay"});
 
-static const std::map<MacroActionReplayBuffer::Action, std::string>
-	actionTypes = {
-		{MacroActionReplayBuffer::Action::STOP,
-		 "AdvSceneSwitcher.action.replay.type.stop"},
-		{MacroActionReplayBuffer::Action::START,
-		 "AdvSceneSwitcher.action.replay.type.start"},
-		{MacroActionReplayBuffer::Action::SAVE,
-		 "AdvSceneSwitcher.action.replay.type.save"},
-		{MacroActionReplayBuffer::Action::DURATION,
-		 "AdvSceneSwitcher.action.replay.type.duration"},
-		{MacroActionReplayBuffer::Action::TOGGLE,
-		 "AdvSceneSwitcher.action.replay.type.toggle"},
+static const std::vector<
+	std::vector<std::pair<MacroActionReplayBuffer::Action, const char *>>>
+	actionGroups = {
+		{
+			{MacroActionReplayBuffer::Action::START,
+			 "AdvSceneSwitcher.action.replay.type.start"},
+			{MacroActionReplayBuffer::Action::STOP,
+			 "AdvSceneSwitcher.action.replay.type.stop"},
+			{MacroActionReplayBuffer::Action::TOGGLE,
+			 "AdvSceneSwitcher.action.replay.type.toggle"},
+		},
+		{
+			{MacroActionReplayBuffer::Action::SAVE,
+			 "AdvSceneSwitcher.action.replay.type.save"},
+		},
+		{
+			{MacroActionReplayBuffer::Action::DURATION,
+			 "AdvSceneSwitcher.action.replay.type.duration"},
+		},
 };
+
+static const char *getActionName(MacroActionReplayBuffer::Action action)
+{
+	for (const auto &group : actionGroups) {
+		for (const auto &[value, name] : group) {
+			if (value == action) {
+				return name;
+			}
+		}
+	}
+	return nullptr;
+}
 
 bool MacroActionReplayBuffer::PerformAction()
 {
@@ -73,9 +92,9 @@ bool MacroActionReplayBuffer::PerformAction()
 
 void MacroActionReplayBuffer::LogAction() const
 {
-	auto it = actionTypes.find(_action);
-	if (it != actionTypes.end()) {
-		ablog(LOG_INFO, "performed action \"%s\"", it->second.c_str());
+	const char *name = getActionName(_action);
+	if (name) {
+		ablog(LOG_INFO, "performed action \"%s\"", name);
 	} else {
 		blog(LOG_WARNING, "ignored unknown replay buffer action %d",
 		     static_cast<int>(_action));
@@ -110,9 +129,14 @@ std::shared_ptr<MacroAction> MacroActionReplayBuffer::Copy() const
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[action, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()),
-			      static_cast<int>(action));
+	for (const auto &group : actionGroups) {
+		if (list->count() > 0) {
+			list->insertSeparator(list->count());
+		}
+		for (const auto &[action, name] : group) {
+			list->addItem(obs_module_text(name),
+				      static_cast<int>(action));
+		}
 	}
 }
 
