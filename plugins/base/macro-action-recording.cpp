@@ -34,6 +34,8 @@ const static std::map<MacroActionRecord::Action, std::string> actionTypes = {
 	{MacroActionRecord::Action::ADD_CHAPTER,
 	 "AdvSceneSwitcher.action.recording.type.addChapter"},
 #endif
+	{MacroActionRecord::Action::TOGGLE,
+	 "AdvSceneSwitcher.action.recording.type.toggle"},
 };
 
 bool MacroActionRecord::PerformAction()
@@ -46,6 +48,13 @@ bool MacroActionRecord::PerformAction()
 		break;
 	case Action::START:
 		if (!obs_frontend_recording_active()) {
+			obs_frontend_recording_start();
+		}
+		break;
+	case Action::TOGGLE:
+		if (obs_frontend_recording_active()) {
+			obs_frontend_recording_stop();
+		} else {
 			obs_frontend_recording_start();
 		}
 		break;
@@ -156,8 +165,9 @@ void MacroActionRecord::ResolveVariablesToFixedValues()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (const auto &[_, name] : actionTypes) {
-		list->addItem(obs_module_text(name.c_str()));
+	for (const auto &[action, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(action));
 	}
 }
 
@@ -215,7 +225,8 @@ void MacroActionRecordEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_recordFolder->SetPath(_entryData->_folder);
 	_recordFileFormat->setText(_entryData->_fileFormat);
 	_chapterName->setText(_entryData->_chapterName);
@@ -271,10 +282,11 @@ void MacroActionRecordEdit::SetWidgetVisibility()
 	}
 }
 
-void MacroActionRecordEdit::ActionChanged(int value)
+void MacroActionRecordEdit::ActionChanged(int index)
 {
 	GUARD_LOADING_AND_LOCK();
-	_entryData->_action = static_cast<MacroActionRecord::Action>(value);
+	_entryData->_action = static_cast<MacroActionRecord::Action>(
+		_actions->itemData(index).toInt());
 	SetWidgetVisibility();
 }
 

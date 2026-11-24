@@ -31,6 +31,8 @@ const static std::map<MacroActionStream::Action, std::string> actionTypes = {
 	 "AdvSceneSwitcher.action.streaming.type.username"},
 	{MacroActionStream::Action::PASSWORD,
 	 "AdvSceneSwitcher.action.streaming.type.password"},
+	{MacroActionStream::Action::TOGGLE,
+	 "AdvSceneSwitcher.action.streaming.type.toggle"},
 };
 
 constexpr int streamStartCooldown = 5;
@@ -88,6 +90,15 @@ bool MacroActionStream::CooldownDurationReached() const
 	return timePassed.count() >= streamStartCooldown;
 }
 
+void MacroActionStream::StartStreaming() const
+{
+	if (!CooldownDurationReached()) {
+		return;
+	}
+	obs_frontend_streaming_start();
+	s_lastAttempt = std::chrono::high_resolution_clock::now();
+}
+
 bool MacroActionStream::PerformAction()
 {
 	switch (_action) {
@@ -97,11 +108,15 @@ bool MacroActionStream::PerformAction()
 		}
 		break;
 	case Action::START:
-		if (!obs_frontend_streaming_active() &&
-		    CooldownDurationReached()) {
-			obs_frontend_streaming_start();
-			s_lastAttempt =
-				std::chrono::high_resolution_clock::now();
+		if (!obs_frontend_streaming_active()) {
+			StartStreaming();
+		}
+		break;
+	case Action::TOGGLE:
+		if (obs_frontend_streaming_active()) {
+			obs_frontend_streaming_stop();
+		} else {
+			StartStreaming();
 		}
 		break;
 	case Action::KEYFRAME_INTERVAL:
@@ -172,8 +187,9 @@ void MacroActionStream::ResolveVariablesToFixedValues()
 
 static inline void populateActionSelection(QComboBox *list)
 {
-	for (auto entry : actionTypes) {
-		list->addItem(obs_module_text(entry.second.c_str()));
+	for (const auto &[action, name] : actionTypes) {
+		list->addItem(obs_module_text(name.c_str()),
+			      static_cast<int>(action));
 	}
 }
 
@@ -234,7 +250,8 @@ void MacroActionStreamEdit::UpdateEntryData()
 	if (!_entryData) {
 		return;
 	}
-	_actions->setCurrentIndex(static_cast<int>(_entryData->_action));
+	_actions->setCurrentIndex(
+		_actions->findData(static_cast<int>(_entryData->_action)));
 	_keyFrameInterval->SetValue(_entryData->_keyFrameInterval);
 	_stringValue->setText(_entryData->_stringValue);
 	SetWidgetVisibility();
@@ -356,12 +373,12 @@ void MacroActionStreamEdit::GetCurrentValueClicked()
 	}
 }
 
-void MacroActionStreamEdit::ActionChanged(int value)
+void MacroActionStreamEdit::ActionChanged(int index)
 {
 	{
 		GUARD_LOADING_AND_LOCK();
-		_entryData->_action =
-			static_cast<MacroActionStream::Action>(value);
+		_entryData->_action = static_cast<MacroActionStream::Action>(
+			_actions->itemData(index).toInt());
 	}
 	_stringValue->setText(QString(""));
 	SetWidgetVisibility();
