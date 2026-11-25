@@ -10,9 +10,13 @@ class MonitorSelectionWidget : public FilterComboBox {
 
 public:
 	MonitorSelectionWidget(QWidget *parent);
+	void SetUnavailableMonitor(const QString &name);
 
 protected:
 	void showEvent(QShowEvent *event) override;
+
+private:
+	QString _unavailableMonitor;
 };
 
 } // namespace advss

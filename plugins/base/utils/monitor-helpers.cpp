@@ -3,6 +3,7 @@
 
 #include <QGuiApplication>
 #include <QScreen>
+#include <QStandardItemModel>
 #include <QString>
 
 namespace advss {
@@ -56,6 +57,18 @@ MonitorSelectionWidget::MonitorSelectionWidget(QWidget *parent)
 	addItems(GetMonitorNames());
 }
 
+void MonitorSelectionWidget::SetUnavailableMonitor(const QString &name)
+{
+	_unavailableMonitor = name;
+	addItem(name);
+	const int idx = count() - 1;
+	auto itemModel = qobject_cast<QStandardItemModel *>(model());
+	if (itemModel) {
+		itemModel->item(idx)->setEnabled(false);
+	}
+	setCurrentIndex(idx);
+}
+
 void MonitorSelectionWidget::showEvent(QShowEvent *event)
 {
 	FilterComboBox::showEvent(event);
@@ -63,6 +76,11 @@ void MonitorSelectionWidget::showEvent(QShowEvent *event)
 	const auto text = currentText();
 	clear();
 	addItems(GetMonitorNames());
+	if (!text.isEmpty() && text == _unavailableMonitor &&
+	    findText(text) == -1) {
+		SetUnavailableMonitor(text);
+		return;
+	}
 	setCurrentText(text);
 }
 
