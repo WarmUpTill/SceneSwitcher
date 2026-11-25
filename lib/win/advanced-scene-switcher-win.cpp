@@ -16,7 +16,6 @@
 #include <obs-frontend-api.h>
 #include <QApplication>
 #include <QWidget>
-#include <mutex>
 
 #define ADVSS_WIDEN_(x) L##x
 #define ADVSS_WIDEN(x) ADVSS_WIDEN_(x)
@@ -44,13 +43,8 @@ static bool GetWindowTitle(HWND window, std::string &title)
 static bool WindowValid(HWND window)
 {
 	LONG_PTR styles;
-	DWORD id;
 
 	if (!IsWindowVisible(window)) {
-		return false;
-	}
-	GetWindowThreadProcessId(window, &id);
-	if (id == GetCurrentProcessId()) {
 		return false;
 	}
 
@@ -63,6 +57,32 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
+static bool isOwnProcessWindow(HWND window)
+{
+	DWORD pid = 0;
+	GetWindowThreadProcessId(window, &pid);
+	return pid == GetCurrentProcessId();
+}
+
+// GetWindowText() sends WM_GETTEXT to the OBS UI thread, which deadlocks if
+// that thread is waiting on the caller, so read the cached title instead
+static std::string getOwnProcessWindowTitle(HWND window)
+{
+	std::wstring wtitle(256, L'\0');
+	int len = 0;
+	while ((len = InternalGetWindowText(window, wtitle.data(),
+					    (int)wtitle.size())) >=
+	       (int)wtitle.size() - 1) {
+		wtitle.resize(wtitle.size() * 2);
+	}
+	wtitle.resize(len);
+
+	size_t utf8Len = os_wcs_to_utf8(wtitle.c_str(), 0, nullptr, 0);
+	std::string title(utf8Len, '\0');
+	os_wcs_to_utf8(wtitle.c_str(), 0, title.data(), utf8Len + 1);
+	return title;
+}
+
 static BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
 {
 	if (!WindowValid(hwnd)) {
@@ -70,7 +90,11 @@ static BOOL CALLBACK GetTitleCB(HWND hwnd, LPARAM lParam)
 	}
 
 	std::string title;
-	GetWindowTitle(hwnd, title);
+	if (isOwnProcessWindow(hwnd)) {
+		title = getOwnProcessWindowTitle(hwnd);
+	} else {
+		GetWindowTitle(hwnd, title);
+	}
 	if (title.empty()) {
 		return TRUE;
 	}
@@ -97,58 +121,10 @@ static VOID EnumWindowsWithMetro(__in WNDENUMPROC lpEnumFunc,
 	}
 }
 
-// Asynchronously updates the OBS window list and returns the state of the last
-// successful update
-const std::vector<std::string> getOBSWindows()
-{
-	struct OBSWindowListHelper {
-		std::vector<std::string> windows;
-		std::atomic_bool done;
-	};
-	static OBSWindowListHelper obsWindowListHelper1 = {{}, {true}};
-	static OBSWindowListHelper obsWindowListHelper2 = {{}, {false}};
-	auto getQtWindowList = [](void *param) {
-		auto list = reinterpret_cast<OBSWindowListHelper *>(param);
-		for (auto w : QApplication::topLevelWidgets()) {
-			auto title = w->windowTitle();
-			if (!title.isEmpty()) {
-				list->windows.emplace_back(title.toStdString());
-			}
-		}
-		list->done = true;
-	};
-
-	static OBSWindowListHelper *lastDoneHelper = &obsWindowListHelper2;
-	static OBSWindowListHelper *pendingHelper = &obsWindowListHelper1;
-	static std::mutex mutex;
-
-	/* ------------------------------------------------------------------ */
-
-	std::lock_guard<std::mutex> lock(mutex);
-	if (pendingHelper->done) { // Check if swap is needed
-		auto temp = lastDoneHelper;
-		lastDoneHelper = pendingHelper;
-		pendingHelper = temp;
-		pendingHelper->done = false;
-		pendingHelper->windows.clear();
-		obs_queue_task(OBS_TASK_UI, getQtWindowList, pendingHelper,
-			       false);
-	}
-
-	return lastDoneHelper->windows;
-}
-
 static std::vector<std::string> getAllWindowTitles()
 {
 	std::vector<std::string> windows;
 	EnumWindowsWithMetro(GetTitleCB, reinterpret_cast<LPARAM>(&windows));
-
-	// Also add OBS windows
-	for (const auto &window : getOBSWindows()) {
-		if (!window.empty()) {
-			windows.emplace_back(window);
-		}
-	}
 
 	// Add entry for OBS Studio itself - see GetCurrentWindowTitle()
 	windows.emplace_back("OBS");
