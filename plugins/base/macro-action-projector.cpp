@@ -303,7 +303,12 @@ void MacroActionProjectorEdit::UpdateEntryData()
 	_types->setCurrentIndex(static_cast<int>(_entryData->_type));
 	_scenes->SetScene(_entryData->_scene);
 	_sources->SetSource(_entryData->_source);
-	_monitors->setCurrentIndex(_entryData->GetMonitor());
+	if (_entryData->MonitorSetupChanged()) {
+		_monitors->SetUnavailableMonitor(
+			QString::fromStdString(_entryData->GetMonitorName()));
+	} else {
+		_monitors->setCurrentIndex(_entryData->GetMonitor());
+	}
 	_projectorWindowName->setText(_entryData->_projectorWindowName);
 	_regex->SetRegexConfig(_entryData->_regex);
 	SetWidgetVisibility();

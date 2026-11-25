@@ -21,6 +21,8 @@ public:
 	void ResolveVariablesToFixedValues();
 	void SetMonitor(int);
 	int GetMonitor() const;
+	std::string GetMonitorName() const { return _monitorName; }
+	bool MonitorSetupChanged() const;
 
 	enum class Action {
 		OPEN,
@@ -44,8 +46,6 @@ public:
 	RegexConfig _regex = RegexConfig::PartialMatchRegexConfig(true);
 
 private:
-	bool MonitorSetupChanged() const;
-
 	int _monitor = -1;
 	// Only used to detect display setup changes
 	std::string _monitorName = "";
