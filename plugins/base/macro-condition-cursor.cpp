@@ -25,6 +25,8 @@ const static std::map<MacroConditionCursor::Condition, std::string>
 #ifdef _WIN32 // Not implemented for MacOS and Linux
 		{MacroConditionCursor::Condition::CLICK,
 		 "AdvSceneSwitcher.condition.cursor.type.click"},
+		{MacroConditionCursor::Condition::HELD,
+		 "AdvSceneSwitcher.condition.cursor.type.held"},
 #endif
 };
 
@@ -35,6 +37,10 @@ const static std::map<MacroConditionCursor::Button, std::string> buttonTypes = {
 	 "AdvSceneSwitcher.condition.cursor.button.middle"},
 	{MacroConditionCursor::Button::RIGHT,
 	 "AdvSceneSwitcher.condition.cursor.button.right"},
+	{MacroConditionCursor::Button::PEN_TIP,
+	 "AdvSceneSwitcher.condition.cursor.button.penTip"},
+	{MacroConditionCursor::Button::PEN_BARREL,
+	 "AdvSceneSwitcher.condition.cursor.button.penBarrel"},
 };
 
 bool MacroConditionCursor::CheckClick()
@@ -46,6 +52,27 @@ bool MacroConditionCursor::CheckClick()
 		return _lastCheckTime < GetLastMouseMiddleClickTime();
 	case MacroConditionCursor::Button::RIGHT:
 		return _lastCheckTime < GetLastMouseRightClickTime();
+	case MacroConditionCursor::Button::PEN_TIP:
+		return _lastCheckTime < GetLastPenTipClickTime();
+	case MacroConditionCursor::Button::PEN_BARREL:
+		return _lastCheckTime < GetLastPenBarrelClickTime();
+	}
+	return false;
+}
+
+bool MacroConditionCursor::CheckHeld()
+{
+	switch (_button) {
+	case MacroConditionCursor::Button::LEFT:
+		return IsMouseLeftButtonDown() || CheckClick();
+	case MacroConditionCursor::Button::MIDDLE:
+		return IsMouseMiddleButtonDown() || CheckClick();
+	case MacroConditionCursor::Button::RIGHT:
+		return IsMouseRightButtonDown() || CheckClick();
+	case MacroConditionCursor::Button::PEN_TIP:
+		return IsPenTipDown() || CheckClick();
+	case MacroConditionCursor::Button::PEN_BARREL:
+		return IsPenBarrelDown() || CheckClick();
 	}
 	return false;
 }
@@ -67,6 +94,9 @@ bool MacroConditionCursor::CheckCondition()
 		break;
 	case Condition::CLICK:
 		ret = CheckClick();
+		break;
+	case Condition::HELD:
+		ret = CheckHeld();
 		break;
 	}
 
@@ -351,7 +381,9 @@ void MacroConditionCursorEdit::SetWidgetVisibility()
 	}
 
 	_buttons->setVisible(_entryData->_condition ==
-			     MacroConditionCursor::Condition::CLICK);
+				     MacroConditionCursor::Condition::CLICK ||
+			     _entryData->_condition ==
+				     MacroConditionCursor::Condition::HELD);
 
 	adjustSize();
 }

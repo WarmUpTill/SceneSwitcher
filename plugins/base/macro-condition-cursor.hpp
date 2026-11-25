@@ -25,12 +25,15 @@ public:
 		REGION,
 		MOVING,
 		CLICK,
+		HELD,
 	};
 
 	enum class Button {
 		LEFT,
 		MIDDLE,
 		RIGHT,
+		PEN_TIP,
+		PEN_BARREL,
 	};
 
 	Condition _condition = Condition::REGION;
@@ -41,6 +44,7 @@ private:
 	void SetupTempVars();
 
 	bool CheckClick();
+	bool CheckHeld();
 	std::chrono::high_resolution_clock::time_point _lastCheckTime{};
 	int _lastX = 0;
 	int _lastY = 0;
