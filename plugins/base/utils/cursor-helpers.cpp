@@ -17,6 +17,18 @@ std::chrono::high_resolution_clock::time_point GetLastMouseRightClickTime()
 {
 	return {};
 }
+bool IsMouseLeftButtonDown()
+{
+	return false;
+}
+bool IsMouseMiddleButtonDown()
+{
+	return false;
+}
+bool IsMouseRightButtonDown()
+{
+	return false;
+}
 #endif
 
 } // namespace advss
