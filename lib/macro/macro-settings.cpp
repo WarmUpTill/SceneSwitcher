@@ -65,6 +65,8 @@ void GlobalMacroSettings::Save(obs_data_t *obj) const
 			  _newMacroUseShortCircuitEvaluation);
 	obs_data_set_bool(data, "saveSettingsOnMacroChange",
 			  _saveSettingsOnMacroChange);
+	obs_data_set_bool(data, "sendMacroFinishedEvent",
+			  _sendMacroFinishedEvent);
 	obs_data_set_obj(obj, "macroSettings", data);
 	obs_data_release(data);
 }
@@ -91,6 +93,8 @@ void GlobalMacroSettings::Load(obs_data_t *obj)
 		obs_data_has_user_value(data, "saveSettingsOnMacroChange")
 			? obs_data_get_bool(data, "saveSettingsOnMacroChange")
 			: true;
+	_sendMacroFinishedEvent =
+		obs_data_get_bool(data, "sendMacroFinishedEvent");
 	obs_data_release(data);
 }
 
@@ -112,6 +116,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		  "AdvSceneSwitcher.macroTab.newMacroUseShortCircuitEvaluation"))),
 	  _saveSettingsOnMacroChange(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.saveSettingsOnMacroChange"))),
+	  _sendMacroFinishedEvent(new QCheckBox(obs_module_text(
+		  "AdvSceneSwitcher.macroTab.sendMacroFinishedEvent"))),
 	  _currentCheckInParallel(new QCheckBox(obs_module_text(
 		  "AdvSceneSwitcher.macroTab.currentCheckInParallel"))),
 	  _currentMacroRegisterHotkeys(new QCheckBox(obs_module_text(
@@ -165,6 +171,8 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
 	_saveSettingsOnMacroChange->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.saveSettingsOnMacroChange.tooltip"));
+	_sendMacroFinishedEvent->setToolTip(obs_module_text(
+		"AdvSceneSwitcher.macroTab.sendMacroFinishedEvent.tooltip"));
 	_currentUseShortCircuitEvaluation->setToolTip(obs_module_text(
 		"AdvSceneSwitcher.macroTab.shortCircuit.tooltip"));
 
@@ -211,6 +219,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		obs_module_text("AdvSceneSwitcher.macroTab.generalSettings"));
 	auto generalLayout = new QVBoxLayout;
 	generalLayout->addWidget(_saveSettingsOnMacroChange);
+	generalLayout->addWidget(_sendMacroFinishedEvent);
 	generalLayout->addWidget(_currentCheckInParallel);
 	generalLayout->addWidget(_newMacroCheckInParallel);
 	generalLayout->addWidget(_currentSkipOnStartup);
@@ -357,6 +366,7 @@ MacroSettingsDialog::MacroSettingsDialog(QWidget *parent,
 		settings._newMacroUseShortCircuitEvaluation);
 	_saveSettingsOnMacroChange->setChecked(
 		settings._saveSettingsOnMacroChange);
+	_sendMacroFinishedEvent->setChecked(settings._sendMacroFinishedEvent);
 
 	if (!macro || macro->IsGroup()) {
 		// General group
@@ -509,6 +519,8 @@ bool MacroSettingsDialog::AskForSettings(QWidget *parent,
 		dialog._newMacroUseShortCircuitEvaluation->isChecked();
 	userInput._saveSettingsOnMacroChange =
 		dialog._saveSettingsOnMacroChange->isChecked();
+	userInput._sendMacroFinishedEvent =
+		dialog._sendMacroFinishedEvent->isChecked();
 	if (!macro) {
 		return true;
 	}

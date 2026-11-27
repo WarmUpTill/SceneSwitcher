@@ -11,8 +11,10 @@
 #include <QList>
 
 #include <deque>
+#include <functional>
 #include <future>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -35,6 +37,18 @@ public:
 		// Trigger when any individual condition evaluates to true
 		ANY_CONDITION_TRIGGERED,
 	};
+	enum class RunStatus {
+		COMPLETED,
+		FAILED,
+		STOPPED,
+		PAUSED,
+		SKIPPED,
+		STARTED_IN_PARALLEL,
+	};
+	struct RunResult {
+		uint64_t id = 0;
+		RunStatus status = RunStatus::COMPLETED;
+	};
 
 	Macro(const std::string &name = "");
 	Macro(const std::string &name, const GlobalMacroSettings &settings);
@@ -51,6 +65,10 @@ public:
 	bool ShouldRunActions() const;
 	bool PerformActions(bool match, bool forceParallel = false,
 			    bool ignorePause = false);
+	RunResult PerformActionsWithStatus(bool match,
+					   bool forceParallel = false,
+					   bool ignorePause = false,
+					   std::optional<uint64_t> runId = {});
 
 	void SetPaused(bool pause = true);
 	bool Paused() const { return _paused; }
@@ -134,6 +152,7 @@ public:
 	std::shared_ptr<Macro> Parent() const;
 
 	static std::shared_ptr<Macro> CreateNested();
+	bool IsNested() const { return _isNested; }
 	void SetNestedParentMacro(Macro *parent);
 	Macro *GetNestedParentMacro() const { return _nestedParentMacro; }
 
@@ -174,11 +193,12 @@ private:
 	bool
 	CheckConditionHelper(const std::shared_ptr<MacroCondition> &) const;
 
-	bool RunActionsHelper(
+	RunStatus RunActionsHelper(
 		const std::deque<std::shared_ptr<MacroAction>> &actions,
 		bool ignorePause);
-	bool RunActions(bool ignorePause);
-	bool RunElseActions(bool ignorePause);
+	RunStatus RunActions(bool ignorePause);
+	RunStatus RunElseActions(bool ignorePause);
+	void NotifyRunFinished(const RunResult &result, bool match) const;
 
 	std::string _name = "";
 	bool _die = false;
@@ -241,6 +261,12 @@ private:
 	MacroDockSettings _dockSettings;
 };
 
+using MacroRunFinishedCallback =
+	std::function<void(const Macro &, const Macro::RunResult &, bool match)>;
+void AddMacroRunFinishedCallback(const MacroRunFinishedCallback &);
+uint64_t NewMacroRunId();
+
+const char *RunStatusToString(Macro::RunStatus);
 void WaitForAllMacros();
 std::shared_ptr<Macro> GetMacroWithInvalidConditionInterval();
 

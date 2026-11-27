@@ -33,12 +33,16 @@ private:
 
 class StubAction : public advss::MacroAction {
 public:
-	StubAction(advss::Macro *m) : MacroAction(m) {}
+	StubAction(advss::Macro *m, bool result = true)
+		: MacroAction(m),
+		  _result(result)
+	{
+	}
 
 	bool PerformAction() override
 	{
 		_performCount++;
-		return true;
+		return _result;
 	}
 
 	std::shared_ptr<MacroAction> Copy() const override
@@ -53,6 +57,7 @@ public:
 	int PerformCount() const { return _performCount; }
 
 private:
+	bool _result;
 	int _performCount = 0;
 };
 
@@ -66,9 +71,9 @@ std::shared_ptr<StubCondition> AddCondition(advss::Macro &m,
 	return cond;
 }
 
-std::shared_ptr<StubAction> AddAction(advss::Macro &m)
+std::shared_ptr<StubAction> AddAction(advss::Macro &m, bool result = true)
 {
-	auto action = std::make_shared<StubAction>(&m);
+	auto action = std::make_shared<StubAction>(&m, result);
 	m.Actions().push_back(action);
 	return action;
 }
@@ -78,6 +83,38 @@ std::shared_ptr<StubAction> AddElseAction(advss::Macro &m)
 	auto action = std::make_shared<StubAction>(&m);
 	m.ElseActions().push_back(action);
 	return action;
+}
+
+struct RunFinishedRecord {
+	int count = 0;
+	std::string name;
+	advss::Macro::RunResult result;
+	bool match = false;
+};
+
+RunFinishedRecord &GetRunFinishedRecord()
+{
+	static RunFinishedRecord record;
+	return record;
+}
+
+// Callbacks cannot be removed, so register a single recorder for all tests
+void ResetRunFinishedRecord()
+{
+	static const bool registered = [] {
+		advss::AddMacroRunFinishedCallback(
+			[](const advss::Macro &macro,
+			   const advss::Macro::RunResult &result, bool match) {
+				auto &record = GetRunFinishedRecord();
+				record.count++;
+				record.name = macro.Name();
+				record.result = result;
+				record.match = match;
+			});
+		return true;
+	}();
+	(void)registered;
+	GetRunFinishedRecord() = {};
 }
 
 } // namespace
@@ -358,6 +395,114 @@ TEST_CASE("ResetRunCount resets to zero", "[macro]")
 
 	m.ResetRunCount();
 	REQUIRE(m.RunCount() == 0);
+}
+
+// ---------------------------------------------------------------------------
+// Run status
+// ---------------------------------------------------------------------------
+
+TEST_CASE("PerformActionsWithStatus reports completed run", "[macro]")
+{
+	advss::Macro m("test");
+	auto action = AddAction(m);
+
+	REQUIRE(m.PerformActionsWithStatus(true).status ==
+		advss::Macro::RunStatus::COMPLETED);
+	REQUIRE(action->PerformCount() == 1);
+}
+
+TEST_CASE("PerformActionsWithStatus reports failed run", "[macro]")
+{
+	advss::Macro m("test");
+	AddAction(m, false);
+	auto skippedAction = AddAction(m);
+
+	REQUIRE(m.PerformActionsWithStatus(true).status ==
+		advss::Macro::RunStatus::FAILED);
+	REQUIRE(skippedAction->PerformCount() == 0);
+	REQUIRE_FALSE(m.PerformActions(true));
+}
+
+TEST_CASE("PerformActionsWithStatus reports paused macro", "[macro]")
+{
+	advss::Macro m("test");
+	auto action = AddAction(m);
+	m.SetPaused(true);
+
+	REQUIRE(m.PerformActionsWithStatus(true).status ==
+		advss::Macro::RunStatus::PAUSED);
+	REQUIRE(action->PerformCount() == 0);
+	REQUIRE(m.PerformActions(true));
+}
+
+TEST_CASE("PerformActionsWithStatus runs else actions", "[macro]")
+{
+	advss::Macro m("test");
+	auto action = AddAction(m);
+	auto elseAction = AddElseAction(m);
+
+	REQUIRE(m.PerformActionsWithStatus(false).status ==
+		advss::Macro::RunStatus::COMPLETED);
+	REQUIRE(action->PerformCount() == 0);
+	REQUIRE(elseAction->PerformCount() == 1);
+}
+
+TEST_CASE("PerformActionsWithStatus assigns increasing run ids", "[macro]")
+{
+	advss::Macro m("test");
+	AddAction(m);
+
+	const auto first = m.PerformActionsWithStatus(true).id;
+	const auto second = m.PerformActionsWithStatus(true).id;
+	REQUIRE(second > first);
+}
+
+// ---------------------------------------------------------------------------
+// Run finished callback
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Run finished callback receives run result", "[macro]")
+{
+	ResetRunFinishedRecord();
+	advss::Macro m("test");
+	AddElseAction(m);
+
+	const auto result = m.PerformActionsWithStatus(false);
+
+	const auto &record = GetRunFinishedRecord();
+	REQUIRE(record.count == 1);
+	REQUIRE(record.name == "test");
+	REQUIRE(record.result.id == result.id);
+	REQUIRE(record.result.status == advss::Macro::RunStatus::COMPLETED);
+	REQUIRE_FALSE(record.match);
+}
+
+TEST_CASE("Run finished callback reports failed run", "[macro]")
+{
+	ResetRunFinishedRecord();
+	advss::Macro m("test");
+	AddAction(m, false);
+
+	m.PerformActions(true);
+
+	const auto &record = GetRunFinishedRecord();
+	REQUIRE(record.count == 1);
+	REQUIRE(record.result.status == advss::Macro::RunStatus::FAILED);
+	REQUIRE(record.match);
+}
+
+TEST_CASE("PerformActionsWithStatus uses provided run id", "[macro]")
+{
+	ResetRunFinishedRecord();
+	advss::Macro m("test");
+	AddAction(m);
+
+	const auto runId = advss::NewMacroRunId();
+	const auto result =
+		m.PerformActionsWithStatus(true, false, false, runId);
+
+	REQUIRE(result.id == runId);
+	REQUIRE(GetRunFinishedRecord().result.id == runId);
 }
 
 // ---------------------------------------------------------------------------

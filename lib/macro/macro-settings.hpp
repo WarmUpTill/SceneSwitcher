@@ -28,6 +28,7 @@ public:
 	bool _newMacroRegisterHotkeys = true;
 	bool _newMacroUseShortCircuitEvaluation = false;
 	bool _saveSettingsOnMacroChange = true;
+	bool _sendMacroFinishedEvent = false;
 };
 
 // Dialog for configuring global and individual macro specific settings
@@ -59,6 +60,7 @@ private:
 	QCheckBox *_newMacroRegisterHotkeys;
 	QCheckBox *_newMacroUseShortCircuitEvaluation;
 	QCheckBox *_saveSettingsOnMacroChange;
+	QCheckBox *_sendMacroFinishedEvent;
 	// Current macro specific settings
 	QCheckBox *_currentCheckInParallel;
 	QCheckBox *_currentMacroRegisterHotkeys;
